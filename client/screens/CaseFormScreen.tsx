@@ -33,6 +33,27 @@ import {
   AnastomosisEntry,
   AnatomicalRegion,
   FreeFlapDetails,
+  Gender,
+  AdmissionCategory,
+  UnplannedReadmissionReason,
+  WoundInfectionRisk,
+  AnaestheticType,
+  UnplannedICUReason,
+  DischargeOutcome,
+  MortalityClassification,
+  SnomedCodedItem,
+  Diagnosis,
+  Prophylaxis,
+  GENDER_LABELS,
+  ADMISSION_CATEGORY_LABELS,
+  UNPLANNED_READMISSION_LABELS,
+  WOUND_INFECTION_RISK_LABELS,
+  ANAESTHETIC_TYPE_LABELS,
+  UNPLANNED_ICU_LABELS,
+  DISCHARGE_OUTCOME_LABELS,
+  MORTALITY_CLASSIFICATION_LABELS,
+  ASA_GRADE_LABELS,
+  COMMON_COMORBIDITIES,
 } from "@/types/case";
 import { FormField, SelectField } from "@/components/FormField";
 import { SectionHeader } from "@/components/SectionHeader";
@@ -73,8 +94,10 @@ export default function CaseFormScreen() {
     new Date().toISOString().split("T")[0]
   );
   const [facility, setFacility] = useState("");
-  const [procedureType, setProcedureType] = useState(
-    extractedData?.flapType || PROCEDURE_TYPES[specialty][0]
+  const [procedureType, setProcedureType] = useState<string>(
+    (extractedData as FreeFlapDetails | undefined)?.flapDisplayName || 
+    (extractedData as any)?.flapType || 
+    PROCEDURE_TYPES[specialty][0]
   );
   const [asaScore, setAsaScore] = useState<string>("");
   const [bmi, setBmi] = useState("");
@@ -94,11 +117,43 @@ export default function CaseFormScreen() {
   );
 
   const [recipientSiteRegion, setRecipientSiteRegion] = useState<AnatomicalRegion | undefined>(
-    extractedData?.recipientSiteRegion
+    (extractedData as FreeFlapDetails | undefined)?.recipientSiteRegion
   );
   const [anastomoses, setAnastomoses] = useState<AnastomosisEntry[]>(
-    extractedData?.anastomoses || []
+    (extractedData as FreeFlapDetails | undefined)?.anastomoses || []
   );
+
+  // RACS MALT Patient Demographics
+  const [gender, setGender] = useState<Gender | "">("");
+  const [ethnicity, setEthnicity] = useState("");
+
+  // RACS MALT Admission Details
+  const [admissionDate, setAdmissionDate] = useState("");
+  const [dischargeDate, setDischargeDate] = useState("");
+  const [admissionCategory, setAdmissionCategory] = useState<AdmissionCategory | "">("");
+  const [unplannedReadmission, setUnplannedReadmission] = useState<UnplannedReadmissionReason>("no");
+
+  // RACS MALT Diagnoses
+  const [preManagementDiagnosis, setPreManagementDiagnosis] = useState("");
+  const [finalDiagnosis, setFinalDiagnosis] = useState("");
+  const [pathologicalDiagnosis, setPathologicalDiagnosis] = useState("");
+
+  // RACS MALT Co-morbidities
+  const [selectedComorbidities, setSelectedComorbidities] = useState<SnomedCodedItem[]>([]);
+
+  // RACS MALT Operative Factors
+  const [woundInfectionRisk, setWoundInfectionRisk] = useState<WoundInfectionRisk | "">("");
+  const [anaestheticType, setAnaestheticType] = useState<AnaestheticType | "">("");
+  const [antibioticProphylaxis, setAntibioticProphylaxis] = useState(false);
+  const [dvtProphylaxis, setDvtProphylaxis] = useState(false);
+
+  // RACS MALT Outcomes
+  const [unplannedICU, setUnplannedICU] = useState<UnplannedICUReason>("no");
+  const [returnToTheatre, setReturnToTheatre] = useState(false);
+  const [returnToTheatreReason, setReturnToTheatreReason] = useState("");
+  const [outcome, setOutcome] = useState<DischargeOutcome | "">("");
+  const [mortalityClassification, setMortalityClassification] = useState<MortalityClassification | "">("");
+  const [discussedAtMDM, setDiscussedAtMDM] = useState(false);
 
   const calculateDuration = (start: string, end: string): number | undefined => {
     if (!start || !end) return undefined;
@@ -204,6 +259,15 @@ export default function CaseFormScreen() {
           : undefined;
 
       const userId = uuidv4();
+      
+      const prophylaxis: Prophylaxis | undefined = 
+        (antibioticProphylaxis || dvtProphylaxis)
+          ? {
+              antibiotics: antibioticProphylaxis,
+              dvtPrevention: dvtProphylaxis,
+            }
+          : undefined;
+
       const newCase: Case = {
         id: uuidv4(),
         patientIdentifier: patientIdentifier.trim(),
@@ -214,10 +278,50 @@ export default function CaseFormScreen() {
         procedureCode,
         surgeryTiming,
         operatingTeam: operatingTeam.length > 0 ? operatingTeam : undefined,
+        
+        // Patient Demographics
+        gender: gender || undefined,
+        ethnicity: ethnicity.trim() || undefined,
+        
+        // Admission Details
+        admissionDate: admissionDate || undefined,
+        dischargeDate: dischargeDate || undefined,
+        admissionCategory: admissionCategory || undefined,
+        unplannedReadmission: unplannedReadmission !== "no" ? unplannedReadmission : undefined,
+        
+        // Diagnoses
+        preManagementDiagnosis: preManagementDiagnosis.trim() 
+          ? { displayName: preManagementDiagnosis.trim() } 
+          : undefined,
+        finalDiagnosis: finalDiagnosis.trim() 
+          ? { displayName: finalDiagnosis.trim() } 
+          : undefined,
+        pathologicalDiagnosis: pathologicalDiagnosis.trim() 
+          ? { displayName: pathologicalDiagnosis.trim() } 
+          : undefined,
+        
+        // Co-morbidities
+        comorbidities: selectedComorbidities.length > 0 ? selectedComorbidities : undefined,
+        
+        // Risk Factors
         asaScore: asaScore ? (parseInt(asaScore) as ASAScore) : undefined,
         bmi: bmi ? parseFloat(bmi) : undefined,
         smoker: smoker || undefined,
         diabetes: diabetes ?? undefined,
+        
+        // Operative Factors
+        woundInfectionRisk: woundInfectionRisk || undefined,
+        anaestheticType: anaestheticType || undefined,
+        prophylaxis,
+        
+        // Outcomes
+        unplannedICU: unplannedICU !== "no" ? unplannedICU : undefined,
+        returnToTheatre: returnToTheatre || undefined,
+        returnToTheatreReason: returnToTheatreReason.trim() || undefined,
+        outcome: outcome || undefined,
+        mortalityClassification: mortalityClassification || undefined,
+        discussedAtMDM: discussedAtMDM || undefined,
+        
         clinicalDetails: specialty === "free_flap" 
           ? {
               ...clinicalDetails,
@@ -308,6 +412,126 @@ export default function CaseFormScreen() {
             required
           />
         </View>
+      </View>
+
+      <SectionHeader title="Patient Demographics" />
+
+      <View style={styles.row}>
+        <View style={styles.halfField}>
+          <SelectField
+            label="Gender"
+            value={gender}
+            options={Object.entries(GENDER_LABELS).map(([value, label]) => ({ value, label }))}
+            onSelect={(v) => setGender(v as Gender)}
+          />
+        </View>
+        <View style={styles.halfField}>
+          <FormField
+            label="Ethnicity"
+            value={ethnicity}
+            onChangeText={setEthnicity}
+            placeholder="e.g., NZ European"
+          />
+        </View>
+      </View>
+
+      <SectionHeader title="Admission Details" />
+
+      <View style={styles.row}>
+        <View style={styles.halfField}>
+          <FormField
+            label="Admission Date"
+            value={admissionDate}
+            onChangeText={setAdmissionDate}
+            placeholder="YYYY-MM-DD"
+          />
+        </View>
+        <View style={styles.halfField}>
+          <FormField
+            label="Discharge Date"
+            value={dischargeDate}
+            onChangeText={setDischargeDate}
+            placeholder="YYYY-MM-DD"
+          />
+        </View>
+      </View>
+
+      <SelectField
+        label="Admission Category"
+        value={admissionCategory}
+        options={Object.entries(ADMISSION_CATEGORY_LABELS).map(([value, label]) => ({ value, label }))}
+        onSelect={(v) => setAdmissionCategory(v as AdmissionCategory)}
+      />
+
+      <SelectField
+        label="Unplanned Readmission (< 28 days)"
+        value={unplannedReadmission}
+        options={Object.entries(UNPLANNED_READMISSION_LABELS).map(([value, label]) => ({ value, label }))}
+        onSelect={(v) => setUnplannedReadmission(v as UnplannedReadmissionReason)}
+      />
+
+      <SectionHeader title="Diagnoses" subtitle="SNOMED CT coded diagnoses" />
+
+      <FormField
+        label="Pre-Management Diagnosis"
+        value={preManagementDiagnosis}
+        onChangeText={setPreManagementDiagnosis}
+        placeholder="e.g., Lower limb trauma"
+      />
+
+      <FormField
+        label="Final Diagnosis"
+        value={finalDiagnosis}
+        onChangeText={setFinalDiagnosis}
+        placeholder="e.g., Tibial fracture with soft tissue loss"
+      />
+
+      <FormField
+        label="Pathological Diagnosis"
+        value={pathologicalDiagnosis}
+        onChangeText={setPathologicalDiagnosis}
+        placeholder="e.g., Squamous cell carcinoma"
+      />
+
+      <SectionHeader title="Co-morbidities" subtitle="Select all that apply" />
+
+      <View style={styles.comorbidityGrid}>
+        {COMMON_COMORBIDITIES.slice(0, 20).map((comorbidity) => {
+          const isSelected = selectedComorbidities.some(
+            (c) => c.snomedCtCode === comorbidity.snomedCtCode
+          );
+          return (
+            <Pressable
+              key={comorbidity.snomedCtCode}
+              style={[
+                styles.comorbidityChip,
+                { 
+                  backgroundColor: isSelected ? theme.link + "20" : theme.backgroundDefault,
+                  borderColor: isSelected ? theme.link : theme.border,
+                },
+              ]}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                if (isSelected) {
+                  setSelectedComorbidities((prev) =>
+                    prev.filter((c) => c.snomedCtCode !== comorbidity.snomedCtCode)
+                  );
+                } else {
+                  setSelectedComorbidities((prev) => [...prev, comorbidity]);
+                }
+              }}
+            >
+              <ThemedText
+                style={[
+                  styles.comorbidityText,
+                  { color: isSelected ? theme.link : theme.text },
+                ]}
+              >
+                {comorbidity.commonName || comorbidity.displayName}
+              </ThemedText>
+            </Pressable>
+          );
+        })}
       </View>
 
       <SectionHeader title="Surgery Timing" subtitle="Optional but recommended" />
@@ -459,6 +683,140 @@ export default function CaseFormScreen() {
         ]}
         onSelect={(v) => setDiabetes(v === "yes")}
       />
+
+      <SectionHeader title="Operative Factors" />
+
+      <SelectField
+        label="Wound Infection Risk"
+        value={woundInfectionRisk}
+        options={Object.entries(WOUND_INFECTION_RISK_LABELS).map(([value, label]) => ({ value, label }))}
+        onSelect={(v) => setWoundInfectionRisk(v as WoundInfectionRisk)}
+      />
+
+      <SelectField
+        label="Anaesthetic Type"
+        value={anaestheticType}
+        options={Object.entries(ANAESTHETIC_TYPE_LABELS).map(([value, label]) => ({ value, label }))}
+        onSelect={(v) => setAnaestheticType(v as AnaestheticType)}
+      />
+
+      <View style={styles.checkboxRow}>
+        <Pressable
+          style={[
+            styles.checkbox,
+            { 
+              backgroundColor: antibioticProphylaxis ? theme.link + "20" : theme.backgroundDefault,
+              borderColor: antibioticProphylaxis ? theme.link : theme.border,
+            },
+          ]}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            setAntibioticProphylaxis(!antibioticProphylaxis);
+          }}
+        >
+          {antibioticProphylaxis ? (
+            <Feather name="check" size={16} color={theme.link} />
+          ) : null}
+        </Pressable>
+        <ThemedText style={styles.checkboxLabel}>Antibiotic Prophylaxis Given</ThemedText>
+      </View>
+
+      <View style={styles.checkboxRow}>
+        <Pressable
+          style={[
+            styles.checkbox,
+            { 
+              backgroundColor: dvtProphylaxis ? theme.link + "20" : theme.backgroundDefault,
+              borderColor: dvtProphylaxis ? theme.link : theme.border,
+            },
+          ]}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            setDvtProphylaxis(!dvtProphylaxis);
+          }}
+        >
+          {dvtProphylaxis ? (
+            <Feather name="check" size={16} color={theme.link} />
+          ) : null}
+        </Pressable>
+        <ThemedText style={styles.checkboxLabel}>DVT Prophylaxis Given</ThemedText>
+      </View>
+
+      <SectionHeader title="Outcomes" />
+
+      <SelectField
+        label="Unplanned ICU Admission"
+        value={unplannedICU}
+        options={Object.entries(UNPLANNED_ICU_LABELS).map(([value, label]) => ({ value, label }))}
+        onSelect={(v) => setUnplannedICU(v as UnplannedICUReason)}
+      />
+
+      <View style={styles.checkboxRow}>
+        <Pressable
+          style={[
+            styles.checkbox,
+            { 
+              backgroundColor: returnToTheatre ? theme.error + "20" : theme.backgroundDefault,
+              borderColor: returnToTheatre ? theme.error : theme.border,
+            },
+          ]}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            setReturnToTheatre(!returnToTheatre);
+          }}
+        >
+          {returnToTheatre ? (
+            <Feather name="check" size={16} color={theme.error} />
+          ) : null}
+        </Pressable>
+        <ThemedText style={styles.checkboxLabel}>Unplanned Return to Theatre</ThemedText>
+      </View>
+
+      {returnToTheatre ? (
+        <FormField
+          label="Reason for Return"
+          value={returnToTheatreReason}
+          onChangeText={setReturnToTheatreReason}
+          placeholder="e.g., Wound dehiscence"
+        />
+      ) : null}
+
+      <SelectField
+        label="Discharge Outcome"
+        value={outcome}
+        options={Object.entries(DISCHARGE_OUTCOME_LABELS).map(([value, label]) => ({ value, label }))}
+        onSelect={(v) => setOutcome(v as DischargeOutcome)}
+      />
+
+      {outcome === "died" ? (
+        <SelectField
+          label="Mortality Classification"
+          value={mortalityClassification}
+          options={Object.entries(MORTALITY_CLASSIFICATION_LABELS).map(([value, label]) => ({ value, label }))}
+          onSelect={(v) => setMortalityClassification(v as MortalityClassification)}
+        />
+      ) : null}
+
+      <View style={styles.checkboxRow}>
+        <Pressable
+          style={[
+            styles.checkbox,
+            { 
+              backgroundColor: discussedAtMDM ? theme.link + "20" : theme.backgroundDefault,
+              borderColor: discussedAtMDM ? theme.link : theme.border,
+            },
+          ]}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            setDiscussedAtMDM(!discussedAtMDM);
+          }}
+        >
+          {discussedAtMDM ? (
+            <Feather name="check" size={16} color={theme.link} />
+          ) : null}
+        </Pressable>
+        <ThemedText style={styles.checkboxLabel}>Discussed at MDM</ThemedText>
+      </View>
 
       <SectionHeader title="Clinical Details" subtitle={`${SPECIALTY_LABELS[specialty]} specific fields`} />
 
@@ -645,5 +1003,39 @@ const styles = StyleSheet.create({
   addButtonText: {
     fontSize: 14,
     fontWeight: "500",
+  },
+  comorbidityGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: Spacing.sm,
+    marginBottom: Spacing.md,
+  },
+  comorbidityChip: {
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.sm,
+    borderWidth: 1,
+  },
+  comorbidityText: {
+    fontSize: 13,
+    fontWeight: "500",
+  },
+  checkboxRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.md,
+    marginVertical: Spacing.sm,
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderRadius: BorderRadius.xs,
+    borderWidth: 1.5,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  checkboxLabel: {
+    fontSize: 15,
+    flex: 1,
   },
 });
