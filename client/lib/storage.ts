@@ -1,14 +1,22 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Case, TimelineEvent } from "@/types/case";
+import { Case, TimelineEvent, CountryCode } from "@/types/case";
 
 const CASES_KEY = "@surgical_logbook_cases";
 const TIMELINE_KEY = "@surgical_logbook_timeline";
 const USER_KEY = "@surgical_logbook_user";
+const SETTINGS_KEY = "@surgical_logbook_settings";
 
 export interface LocalUser {
   id: string;
   name: string;
   email?: string;
+}
+
+export interface AppSettings {
+  countryCode: CountryCode;
+  defaultFacility?: string;
+  showLocalCodes: boolean;
+  exportFormat: "json" | "csv" | "fhir";
 }
 
 export async function getCases(): Promise<Case[]> {
@@ -122,7 +130,7 @@ export async function saveLocalUser(user: LocalUser): Promise<void> {
 
 export async function clearAllData(): Promise<void> {
   try {
-    await AsyncStorage.multiRemove([CASES_KEY, TIMELINE_KEY, USER_KEY]);
+    await AsyncStorage.multiRemove([CASES_KEY, TIMELINE_KEY, USER_KEY, SETTINGS_KEY]);
   } catch (error) {
     console.error("Error clearing data:", error);
     throw error;
@@ -132,4 +140,37 @@ export async function clearAllData(): Promise<void> {
 export async function exportCasesAsJSON(): Promise<string> {
   const cases = await getCases();
   return JSON.stringify(cases, null, 2);
+}
+
+const DEFAULT_SETTINGS: AppSettings = {
+  countryCode: "GB",
+  showLocalCodes: true,
+  exportFormat: "json",
+};
+
+export async function getSettings(): Promise<AppSettings> {
+  try {
+    const data = await AsyncStorage.getItem(SETTINGS_KEY);
+    if (!data) return DEFAULT_SETTINGS;
+    return { ...DEFAULT_SETTINGS, ...JSON.parse(data) };
+  } catch (error) {
+    console.error("Error reading settings:", error);
+    return DEFAULT_SETTINGS;
+  }
+}
+
+export async function saveSettings(settings: Partial<AppSettings>): Promise<void> {
+  try {
+    const current = await getSettings();
+    const updated = { ...current, ...settings };
+    await AsyncStorage.setItem(SETTINGS_KEY, JSON.stringify(updated));
+  } catch (error) {
+    console.error("Error saving settings:", error);
+    throw error;
+  }
+}
+
+export async function getCountryCode(): Promise<CountryCode> {
+  const settings = await getSettings();
+  return settings.countryCode;
 }
