@@ -1,0 +1,87 @@
+1. Executive Summary Build a Local-First, AI-Enhanced Surgical Logbook specialized for Microsurgery & Free Flap Reconstruction.
+
+Immediate Goal: A fully functional logbook for free flaps (ALT, DIEP, etc.) with AI data entry.
+
+Long-term Goal: The architecture must be modular ("Universal") to support future specialties (Trauma, Skin Cancer) without rewriting the database.
+
+2. Critical Privacy Architecture (The "Privacy Firewall")
+
+Photos: Processed locally in the browser. Never uploaded to the cloud.
+
+AI Pipeline (Zero-Click Entry):
+
+Local OCR: Tesseract.js extracts text from a photo of an Op Note on the device.
+
+Local Redaction: A script automatically strips NHI numbers (e.g., [A-Z]{3}[0-9]{4}) and Dates from the text.
+
+Cloud Analysis: Only the anonymized text is sent to an LLM to extract flap details (ischemia time, vessels, etc.).
+
+Database: localStorage / IndexedDB simulating a persistent local database.
+
+3. Data Structure: The "Core + Payload" Model Do not create flat columns for flap details. Use a JSON payload to allow future expansion.
+
+A. Table: Cases (Universal Header)
+
+id: UUID.
+
+patient_identifier: String.
+
+procedure_date: Timestamp.
+
+facility: String.
+
+role: Enum (Primary, Assistant).
+
+Patient Risk Factors: asa_score (1-5), bmi, smoker (Yes/No/Ex), diabetes, ethnicity.
+
+procedure_type: String (e.g., "ALT Flap", "DIEP").
+
+clinical_details: JSON Object (Stores the specific flap data).
+
+B. Table: TimelineEvents
+
+Standard post-op tracking (Event Type, Note, Photo, Date).
+
+4. The "Free Flap" Module Configuration Create a procedureConfig.ts file. For this MVP, define only the free_flap schema, but structure it so we can add trauma later.
+
+Required Flap Fields (to be stored in clinical_details):
+
+Harvest Side: Left / Right.
+
+Indication: Trauma / Oncologic / Congenital.
+
+Recipient Vessels: Artery (Text), Vein (Text).
+
+Anastomosis: End-to-End / End-to-Side.
+
+Ischemia Time: Number (minutes).
+
+Coupler Size: Number (mm).
+
+Flap Dimensions: Width (cm) x Length (cm).
+
+For ALT Only: Perforator Count (1/2/3+), Elevation Plane (Subfascial/Suprafascial).
+
+5. Features & Workflow
+
+A. "Smart Capture" (The Key Feature)
+
+On "Add Case", allow user to "Scan Op Note".
+
+The AI must be prompted specifically to look for microsurgery keywords: "Extract flap type, ischemia time, recipient vessels, and coupler size."
+
+Auto-fill the form fields for review.
+
+B. Dashboard & Analytics
+
+Card View: Show Patient ID, Flap Type, and Date.
+
+Detail View: Read-only summary of all risk factors and flap metrics.
+
+Export: Generate an Excel file that flattens the clinical_details JSON into columns (e.g., details.ischemia_time, details.coupler_size) for research.
+
+6. UI/UX
+
+Theme: Professional Medical Blue (#0056D2). High contrast.
+
+Input Controls: Large touch targets. Number pads for Ischemia/Coupler fields.
