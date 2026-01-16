@@ -24,14 +24,16 @@ import {
   INDICATION_LABELS,
   ANASTOMOSIS_LABELS,
   FreeFlapDetails,
+  OPERATING_TEAM_ROLE_LABELS,
 } from "@/types/case";
-import { getCase, getTimelineEvents, deleteCase } from "@/lib/storage";
+import { getCase, getTimelineEvents, deleteCase, getSettings } from "@/lib/storage";
 import { SpecialtyBadge } from "@/components/SpecialtyBadge";
 import { RoleBadge } from "@/components/RoleBadge";
 import { LoadingState } from "@/components/LoadingState";
 import { EmptyState } from "@/components/EmptyState";
 import { SectionHeader } from "@/components/SectionHeader";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
+import { COUNTRY_CODING_SYSTEMS } from "@/lib/snomedCt";
 
 type RouteParams = RouteProp<RootStackParamList, "CaseDetail">;
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -69,11 +71,16 @@ export default function CaseDetailScreen() {
   const [caseData, setCaseData] = useState<Case | null>(null);
   const [timelineEvents, setTimelineEvents] = useState<TimelineEvent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [countryCode, setCountryCode] = useState<string>("GB");
 
   const loadData = async () => {
     try {
-      const data = await getCase(route.params.caseId);
+      const [data, settings] = await Promise.all([
+        getCase(route.params.caseId),
+        getSettings(),
+      ]);
       setCaseData(data);
+      setCountryCode(settings.countryCode);
       if (data) {
         const events = await getTimelineEvents(data.id);
         setTimelineEvents(events);
@@ -153,6 +160,13 @@ export default function CaseDetailScreen() {
 
   const flapDetails = caseData.clinicalDetails as FreeFlapDetails;
 
+  const formatDuration = (minutes: number | undefined): string | undefined => {
+    if (!minutes) return undefined;
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return `${hours}h ${mins}m`;
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
       <ScrollView
@@ -172,6 +186,28 @@ export default function CaseDetailScreen() {
           <ThemedText type="h2" style={styles.procedureType}>
             {caseData.procedureType}
           </ThemedText>
+          
+          {caseData.procedureCode ? (
+            <View style={[styles.codeCard, { backgroundColor: theme.backgroundRoot }]}>
+              <ThemedText style={[styles.codeLabel, { color: theme.textSecondary }]}>
+                SNOMED CT
+              </ThemedText>
+              <ThemedText style={styles.codeValue}>
+                {caseData.procedureCode.snomedCtCode}
+              </ThemedText>
+              {caseData.procedureCode.localCode ? (
+                <>
+                  <ThemedText style={[styles.codeLabel, { color: theme.textSecondary, marginTop: Spacing.xs }]}>
+                    {caseData.procedureCode.localSystem}
+                  </ThemedText>
+                  <ThemedText style={styles.codeValue}>
+                    {caseData.procedureCode.localCode}
+                  </ThemedText>
+                </>
+              ) : null}
+            </View>
+          ) : null}
+
           <View style={styles.heroMeta}>
             <View style={styles.metaItem}>
               <Feather name="calendar" size={16} color={theme.textSecondary} />
@@ -188,7 +224,56 @@ export default function CaseDetailScreen() {
           </View>
         </View>
 
-        <SectionHeader title="Team" />
+        {caseData.surgeryTiming ? (
+          <>
+            <SectionHeader title="Surgery Timing" />
+            <View style={[styles.card, { backgroundColor: theme.backgroundDefault }]}>
+              <View style={styles.timingRow}>
+                {caseData.surgeryTiming.startTime ? (
+                  <View style={styles.timingItem}>
+                    <Feather name="play-circle" size={20} color={theme.success} />
+                    <View>
+                      <ThemedText style={[styles.timingLabel, { color: theme.textSecondary }]}>
+                        Start
+                      </ThemedText>
+                      <ThemedText style={styles.timingValue}>
+                        {caseData.surgeryTiming.startTime}
+                      </ThemedText>
+                    </View>
+                  </View>
+                ) : null}
+                {caseData.surgeryTiming.endTime ? (
+                  <View style={styles.timingItem}>
+                    <Feather name="stop-circle" size={20} color={theme.error} />
+                    <View>
+                      <ThemedText style={[styles.timingLabel, { color: theme.textSecondary }]}>
+                        End
+                      </ThemedText>
+                      <ThemedText style={styles.timingValue}>
+                        {caseData.surgeryTiming.endTime}
+                      </ThemedText>
+                    </View>
+                  </View>
+                ) : null}
+                {caseData.surgeryTiming.durationMinutes ? (
+                  <View style={styles.timingItem}>
+                    <Feather name="clock" size={20} color={theme.link} />
+                    <View>
+                      <ThemedText style={[styles.timingLabel, { color: theme.textSecondary }]}>
+                        Duration
+                      </ThemedText>
+                      <ThemedText style={styles.timingValue}>
+                        {formatDuration(caseData.surgeryTiming.durationMinutes)}
+                      </ThemedText>
+                    </View>
+                  </View>
+                ) : null}
+              </View>
+            </View>
+          </>
+        ) : null}
+
+        <SectionHeader title="Surgical Team" />
         <View style={[styles.card, { backgroundColor: theme.backgroundDefault }]}>
           {caseData.teamMembers.map((member) => (
             <View key={member.id} style={styles.teamMember}>
@@ -207,6 +292,27 @@ export default function CaseDetailScreen() {
             </View>
           ))}
         </View>
+
+        {caseData.operatingTeam && caseData.operatingTeam.length > 0 ? (
+          <>
+            <SectionHeader title="Operating Team" />
+            <View style={[styles.card, { backgroundColor: theme.backgroundDefault }]}>
+              {caseData.operatingTeam.map((member) => (
+                <View key={member.id} style={styles.teamMember}>
+                  <View style={[styles.avatar, { backgroundColor: theme.success + "20" }]}>
+                    <Feather name="users" size={18} color={theme.success} />
+                  </View>
+                  <View style={styles.memberInfo}>
+                    <ThemedText style={styles.memberName}>{member.name}</ThemedText>
+                    <ThemedText style={[styles.memberRole, { color: theme.textSecondary }]}>
+                      {OPERATING_TEAM_ROLE_LABELS[member.role]}
+                    </ThemedText>
+                  </View>
+                </View>
+              ))}
+            </View>
+          </>
+        ) : null}
 
         {(caseData.asaScore || caseData.bmi || caseData.smoker || caseData.diabetes !== undefined) ? (
           <>
@@ -329,6 +435,21 @@ const styles = StyleSheet.create({
   procedureType: {
     marginBottom: Spacing.md,
   },
+  codeCard: {
+    padding: Spacing.md,
+    borderRadius: BorderRadius.sm,
+    marginBottom: Spacing.md,
+  },
+  codeLabel: {
+    fontSize: 10,
+    fontWeight: "600",
+    letterSpacing: 0.5,
+    textTransform: "uppercase",
+  },
+  codeValue: {
+    fontSize: 13,
+    fontWeight: "500",
+  },
   heroMeta: {
     gap: Spacing.sm,
   },
@@ -344,6 +465,26 @@ const styles = StyleSheet.create({
     padding: Spacing.lg,
     borderRadius: BorderRadius.md,
     ...Shadows.card,
+  },
+  timingRow: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    flexWrap: "wrap",
+    gap: Spacing.md,
+  },
+  timingItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+  },
+  timingLabel: {
+    fontSize: 11,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  timingValue: {
+    fontSize: 16,
+    fontWeight: "600",
   },
   detailRow: {
     flexDirection: "row",
@@ -379,6 +520,9 @@ const styles = StyleSheet.create({
   memberName: {
     fontSize: 15,
     fontWeight: "500",
+  },
+  memberRole: {
+    fontSize: 13,
   },
   emptyTimeline: {
     padding: Spacing["2xl"],
