@@ -30,6 +30,9 @@ import {
   OperatingTeamRole,
   OPERATING_TEAM_ROLE_LABELS,
   SurgeryTiming,
+  AnastomosisEntry,
+  AnatomicalRegion,
+  FreeFlapDetails,
 } from "@/types/case";
 import { FormField, SelectField } from "@/components/FormField";
 import { SectionHeader } from "@/components/SectionHeader";
@@ -38,6 +41,8 @@ import { saveCase, getSettings } from "@/lib/storage";
 import { getConfigForSpecialty, getDefaultClinicalDetails } from "@/lib/procedureConfig";
 import { findSnomedProcedure, getProcedureCodeForCountry } from "@/lib/snomedCt";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
+import { RecipientSiteSelector } from "@/components/RecipientSiteSelector";
+import { AnastomosisEntryCard } from "@/components/AnastomosisEntryCard";
 
 type RouteParams = RouteProp<RootStackParamList, "CaseForm">;
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -86,6 +91,13 @@ export default function CaseFormScreen() {
 
   const [clinicalDetails, setClinicalDetails] = useState<Record<string, any>>(
     extractedData || getDefaultClinicalDetails(specialty)
+  );
+
+  const [recipientSiteRegion, setRecipientSiteRegion] = useState<AnatomicalRegion | undefined>(
+    extractedData?.recipientSiteRegion
+  );
+  const [anastomoses, setAnastomoses] = useState<AnastomosisEntry[]>(
+    extractedData?.anastomoses || []
   );
 
   const calculateDuration = (start: string, end: string): number | undefined => {
@@ -143,6 +155,25 @@ export default function CaseFormScreen() {
     setOperatingTeam((prev) => prev.filter((m) => m.id !== id));
   };
 
+  const addAnastomosis = (vesselType: "artery" | "vein") => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const newEntry: AnastomosisEntry = {
+      id: uuidv4(),
+      vesselType,
+      recipientVesselName: "",
+    };
+    setAnastomoses((prev) => [...prev, newEntry]);
+  };
+
+  const updateAnastomosis = (entry: AnastomosisEntry) => {
+    setAnastomoses((prev) => prev.map((a) => (a.id === entry.id ? entry : a)));
+  };
+
+  const removeAnastomosis = (id: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setAnastomoses((prev) => prev.filter((a) => a.id !== id));
+  };
+
   const handleSave = async () => {
     if (!patientIdentifier.trim()) {
       Alert.alert("Required Field", "Please enter a patient identifier");
@@ -187,7 +218,13 @@ export default function CaseFormScreen() {
         bmi: bmi ? parseFloat(bmi) : undefined,
         smoker: smoker || undefined,
         diabetes: diabetes ?? undefined,
-        clinicalDetails: clinicalDetails as any,
+        clinicalDetails: specialty === "free_flap" 
+          ? {
+              ...clinicalDetails,
+              recipientSiteRegion,
+              anastomoses,
+            }
+          : clinicalDetails as any,
         teamMembers: [
           {
             id: uuidv4(),
@@ -425,7 +462,71 @@ export default function CaseFormScreen() {
 
       <SectionHeader title="Clinical Details" subtitle={`${SPECIALTY_LABELS[specialty]} specific fields`} />
 
-      {config.fields.map((field) => {
+      {specialty === "free_flap" ? (
+        <>
+          <RecipientSiteSelector
+            value={recipientSiteRegion}
+            onSelect={setRecipientSiteRegion}
+            required
+          />
+
+          <SectionHeader 
+            title="Anastomoses" 
+            subtitle="Add arterial and venous connections" 
+          />
+
+          {anastomoses.map((entry, index) => (
+            <AnastomosisEntryCard
+              key={entry.id}
+              entry={entry}
+              index={index}
+              recipientRegion={recipientSiteRegion}
+              onUpdate={updateAnastomosis}
+              onDelete={() => removeAnastomosis(entry.id)}
+            />
+          ))}
+
+          <View style={styles.row}>
+            <View style={styles.halfField}>
+              <Pressable
+                style={[styles.addButton, { backgroundColor: theme.error + "15" }]}
+                onPress={() => addAnastomosis("artery")}
+              >
+                <Feather name="plus" size={18} color={theme.error} />
+                <ThemedText style={[styles.addButtonText, { color: theme.error }]}>
+                  Add Artery
+                </ThemedText>
+              </Pressable>
+            </View>
+            <View style={styles.halfField}>
+              <Pressable
+                style={[styles.addButton, { backgroundColor: theme.link + "15" }]}
+                onPress={() => addAnastomosis("vein")}
+              >
+                <Feather name="plus" size={18} color={theme.link} />
+                <ThemedText style={[styles.addButtonText, { color: theme.link }]}>
+                  Add Vein
+                </ThemedText>
+              </Pressable>
+            </View>
+          </View>
+
+          <View style={{ height: Spacing.lg }} />
+        </>
+      ) : null}
+
+      {config.fields.filter((field) => {
+        if (specialty === "free_flap") {
+          const skipFields = [
+            "recipientArteryName",
+            "recipientVeinName",
+            "anastomosisType",
+            "couplerSizeMm",
+          ];
+          return !skipFields.includes(field.key);
+        }
+        return true;
+      }).map((field) => {
         if (field.conditionalOn) {
           const conditionField = field.conditionalOn.field;
           const conditionValue = field.conditionalOn.value;
