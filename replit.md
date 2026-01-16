@@ -12,11 +12,15 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (January 2026)
 
+- **Dynamic Anastomosis Tracking**: Free flap cases now support multiple arterial and venous anastomoses with SNOMED CT coded vessels
+- **Recipient Site Selection**: Anatomical region picker filters vessels dynamically (lower leg shows Anterior Tibial, Posterior Tibial; foot shows Dorsalis Pedis, etc.)
+- **SNOMED CT Reference Database**: PostgreSQL `snomed_ref` table stores vessels organized by anatomical region with real SNOMED CT codes
+- **Modular Database Design**: Universal `snomed_ref` pattern supports future expansion to other specialties (hand fractures, burns, etc.)
 - **SNOMED CT Procedure Coding**: Added international procedure coding using SNOMED CT as the canonical standard, with country-specific local code mappings (CHOP for Switzerland, OPCS-4 for UK, ACHI for Australia/NZ, CPT for US, ICD-9-CM-PL for Poland)
 - **Country/Region Settings**: Users can select their country in Settings to see procedure codes in their local coding system
 - **Surgery Timing**: Cases now capture start time, end time, and auto-calculated duration
 - **Operating Team**: Added ability to record operating team members (scrub nurse, anaesthetist, surgical assistant, etc.)
-- **Enhanced AI Extraction**: All specialty prompts now extract surgery times and team members from operation notes
+- **Enhanced AI Extraction**: All specialty prompts now extract surgery times, team members, recipient site region, and multiple anastomoses from operation notes
 
 ## System Architecture
 
@@ -54,15 +58,20 @@ Cases use a flexible JSON payload structure for clinical details, allowing futur
 
 ## Key Files
 
-- `client/types/case.ts` - Core data model types including Case, SurgeryTiming, OperatingTeamMember, ProcedureCode
+- `client/types/case.ts` - Core data model types including Case, SurgeryTiming, OperatingTeamMember, ProcedureCode, AnastomosisEntry
 - `client/lib/snomedCt.ts` - SNOMED CT procedure database with country-specific code mappings
+- `client/lib/snomedApi.ts` - API client for fetching SNOMED CT vessels by region from PostgreSQL
 - `client/lib/storage.ts` - AsyncStorage operations for cases, settings, timeline events
 - `client/lib/procedureConfig.ts` - Specialty-specific field configurations
 - `client/lib/privacyUtils.ts` - NHI/date redaction utilities
-- `client/screens/CaseFormScreen.tsx` - Case entry form with surgery timing and team fields
+- `client/screens/CaseFormScreen.tsx` - Case entry form with surgery timing, team, and anastomosis fields
 - `client/screens/CaseDetailScreen.tsx` - Case detail view with procedure codes and timing display
 - `client/screens/SettingsScreen.tsx` - Country selection and data export
-- `server/ai-prompts.ts` - AI extraction prompts for each specialty
+- `client/components/RecipientSiteSelector.tsx` - Anatomical region picker for recipient site
+- `client/components/AnastomosisEntryCard.tsx` - Dynamic vessel selection card with region filtering
+- `server/ai-prompts.ts` - AI extraction prompts for each specialty (now extracts anastomoses)
+- `server/seedData.ts` - SNOMED CT vessel seeding for PostgreSQL snomed_ref table
+- `shared/schema.ts` - Drizzle ORM schema with snomed_ref, flaps, and anastomoses tables
 
 ## External Dependencies
 
