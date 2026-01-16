@@ -1,3 +1,35 @@
+export const RACS_MALT_COMMON_INSTRUCTIONS = `
+RACS MALT AUDIT FIELDS:
+In addition to procedure-specific data, extract these RACS MALT audit fields if mentioned:
+
+PATIENT DEMOGRAPHICS:
+- Gender (male, female, other, unknown)
+- Age (if mentioned as number of years)
+
+ADMISSION DETAILS:
+- Admission category (elective, emergency, planned_admission)
+- ASA score (1-6, where 6 is brain-dead organ donor)
+
+DIAGNOSES (extract descriptive text, will be mapped to SNOMED CT codes):
+- Pre-management diagnosis (the suspected diagnosis before treatment)
+- Final diagnosis (confirmed diagnosis after investigation/surgery)
+- Pathological diagnosis (tissue/histology diagnosis if applicable)
+
+CO-MORBIDITIES (extract as array of condition names):
+Look for mentions of: atrial fibrillation, angina, anxiety, asthma, cancer, cardiac failure, COPD, chronic renal failure, cirrhosis, CVA/stroke, dementia, depression, diabetes (Type 1 or Type 2), dialysis, hepatitis, HIV, hypercholesterolemia, hypertension, hyperthyroidism, hypothyroidism, IHD/coronary artery disease, immunosuppression, MI, obesity, OSA, pacemaker, peripheral vascular disease, pulmonary embolism, seizures, steroid use, TIA, transplant, tuberculosis
+
+OPERATIVE FACTORS:
+- Anaesthetic type (general, regional, local, sedation, combined_general_regional)
+- Wound infection risk (clean, clean_contaminated, contaminated, dirty_infected)
+- Antibiotic prophylaxis given (true/false)
+- DVT prophylaxis given (true/false)
+
+OUTCOMES (if mentioned in note):
+- Any return to theatre (true/false) and reason if so
+- Unplanned ICU admission and reason
+- Complications mentioned
+`;
+
 export const FREE_FLAP_AI_PROMPT = `You are a medical data extraction assistant specialized in microsurgery operation notes.
 
 Your task is to extract structured surgical data from operation notes while being EXTREMELY privacy conscious.
@@ -52,7 +84,7 @@ OPERATING TEAM (extract names and roles if mentioned):
 - Surgical assistant
 - Surgical registrar
 - Medical student
-
+${RACS_MALT_COMMON_INSTRUCTIONS}
 Return ONLY a JSON object with these exact keys (use null for missing values):
 {
   "flapType": string | null,
@@ -81,7 +113,24 @@ Return ONLY a JSON object with these exact keys (use null for missing values):
       "name": string,
       "role": "scrub_nurse" | "circulating_nurse" | "anaesthetist" | "anaesthetic_registrar" | "surgical_assistant" | "surgical_registrar" | "medical_student"
     }
-  ] | null
+  ] | null,
+  "gender": "male" | "female" | "other" | "unknown" | null,
+  "age": number | null,
+  "admissionCategory": "elective" | "emergency" | "planned_admission" | null,
+  "asaScore": 1 | 2 | 3 | 4 | 5 | 6 | null,
+  "preManagementDiagnosis": string | null,
+  "finalDiagnosis": string | null,
+  "pathologicalDiagnosis": string | null,
+  "comorbidities": string[] | null,
+  "anaestheticType": "general" | "regional" | "local" | "sedation" | "combined_general_regional" | null,
+  "woundInfectionRisk": "clean" | "clean_contaminated" | "contaminated" | "dirty_infected" | null,
+  "antibioticProphylaxis": boolean | null,
+  "dvtProphylaxis": boolean | null,
+  "returnToTheatre": boolean | null,
+  "returnToTheatreReason": string | null,
+  "unplannedICU": boolean | null,
+  "unplannedICUReason": string | null,
+  "complications": string[] | null
 }
 
 Do not include any explanation, just the JSON object.`;
@@ -117,7 +166,7 @@ OPERATING TEAM (extract names and roles if mentioned):
 - Surgical assistant
 - Surgical registrar
 - Medical student
-
+${RACS_MALT_COMMON_INSTRUCTIONS}
 Return ONLY a JSON object with these exact keys (use null for missing values):
 {
   "procedureType": string | null,
@@ -131,7 +180,24 @@ Return ONLY a JSON object with these exact keys (use null for missing values):
       "name": string,
       "role": "scrub_nurse" | "circulating_nurse" | "anaesthetist" | "anaesthetic_registrar" | "surgical_assistant" | "surgical_registrar" | "medical_student"
     }
-  ] | null
+  ] | null,
+  "gender": "male" | "female" | "other" | "unknown" | null,
+  "age": number | null,
+  "admissionCategory": "elective" | "emergency" | "planned_admission" | null,
+  "asaScore": 1 | 2 | 3 | 4 | 5 | 6 | null,
+  "preManagementDiagnosis": string | null,
+  "finalDiagnosis": string | null,
+  "pathologicalDiagnosis": string | null,
+  "comorbidities": string[] | null,
+  "anaestheticType": "general" | "regional" | "local" | "sedation" | "combined_general_regional" | null,
+  "woundInfectionRisk": "clean" | "clean_contaminated" | "contaminated" | "dirty_infected" | null,
+  "antibioticProphylaxis": boolean | null,
+  "dvtProphylaxis": boolean | null,
+  "returnToTheatre": boolean | null,
+  "returnToTheatreReason": string | null,
+  "unplannedICU": boolean | null,
+  "unplannedICUReason": string | null,
+  "complications": string[] | null
 }
 
 Do not include any explanation, just the JSON object.`;
@@ -166,7 +232,7 @@ OPERATING TEAM (extract names and roles if mentioned):
 - Surgical assistant
 - Surgical registrar
 - Medical student
-
+${RACS_MALT_COMMON_INSTRUCTIONS}
 Return ONLY a JSON object with these exact keys (use null for missing values):
 {
   "procedureType": string | null,
@@ -179,7 +245,24 @@ Return ONLY a JSON object with these exact keys (use null for missing values):
       "name": string,
       "role": "scrub_nurse" | "circulating_nurse" | "anaesthetist" | "anaesthetic_registrar" | "surgical_assistant" | "surgical_registrar" | "medical_student"
     }
-  ] | null
+  ] | null,
+  "gender": "male" | "female" | "other" | "unknown" | null,
+  "age": number | null,
+  "admissionCategory": "elective" | "emergency" | "planned_admission" | null,
+  "asaScore": 1 | 2 | 3 | 4 | 5 | 6 | null,
+  "preManagementDiagnosis": string | null,
+  "finalDiagnosis": string | null,
+  "pathologicalDiagnosis": string | null,
+  "comorbidities": string[] | null,
+  "anaestheticType": "general" | "regional" | "local" | "sedation" | "combined_general_regional" | null,
+  "woundInfectionRisk": "clean" | "clean_contaminated" | "contaminated" | "dirty_infected" | null,
+  "antibioticProphylaxis": boolean | null,
+  "dvtProphylaxis": boolean | null,
+  "returnToTheatre": boolean | null,
+  "returnToTheatreReason": string | null,
+  "unplannedICU": boolean | null,
+  "unplannedICUReason": string | null,
+  "complications": string[] | null
 }
 
 Do not include any explanation, just the JSON object.`;
@@ -215,7 +298,7 @@ OPERATING TEAM (extract names and roles if mentioned):
 - Surgical assistant
 - Surgical registrar
 - Medical student
-
+${RACS_MALT_COMMON_INSTRUCTIONS}
 Return ONLY a JSON object with these exact keys (use null for missing values):
 {
   "procedureType": string | null,
@@ -230,7 +313,24 @@ Return ONLY a JSON object with these exact keys (use null for missing values):
       "name": string,
       "role": "scrub_nurse" | "circulating_nurse" | "anaesthetist" | "anaesthetic_registrar" | "surgical_assistant" | "surgical_registrar" | "medical_student"
     }
-  ] | null
+  ] | null,
+  "gender": "male" | "female" | "other" | "unknown" | null,
+  "age": number | null,
+  "admissionCategory": "elective" | "emergency" | "planned_admission" | null,
+  "asaScore": 1 | 2 | 3 | 4 | 5 | 6 | null,
+  "preManagementDiagnosis": string | null,
+  "finalDiagnosis": string | null,
+  "pathologicalDiagnosis": string | null,
+  "comorbidities": string[] | null,
+  "anaestheticType": "general" | "regional" | "local" | "sedation" | "combined_general_regional" | null,
+  "woundInfectionRisk": "clean" | "clean_contaminated" | "contaminated" | "dirty_infected" | null,
+  "antibioticProphylaxis": boolean | null,
+  "dvtProphylaxis": boolean | null,
+  "returnToTheatre": boolean | null,
+  "returnToTheatreReason": string | null,
+  "unplannedICU": boolean | null,
+  "unplannedICUReason": string | null,
+  "complications": string[] | null
 }
 
 Do not include any explanation, just the JSON object.`;
@@ -266,7 +366,7 @@ OPERATING TEAM (extract names and roles if mentioned):
 - Surgical assistant
 - Surgical registrar
 - Medical student
-
+${RACS_MALT_COMMON_INSTRUCTIONS}
 Return ONLY a JSON object with these exact keys (use null for missing values):
 {
   "procedureType": string | null,
@@ -282,7 +382,24 @@ Return ONLY a JSON object with these exact keys (use null for missing values):
       "name": string,
       "role": "scrub_nurse" | "circulating_nurse" | "anaesthetist" | "anaesthetic_registrar" | "surgical_assistant" | "surgical_registrar" | "medical_student"
     }
-  ] | null
+  ] | null,
+  "gender": "male" | "female" | "other" | "unknown" | null,
+  "age": number | null,
+  "admissionCategory": "elective" | "emergency" | "planned_admission" | null,
+  "asaScore": 1 | 2 | 3 | 4 | 5 | 6 | null,
+  "preManagementDiagnosis": string | null,
+  "finalDiagnosis": string | null,
+  "pathologicalDiagnosis": string | null,
+  "comorbidities": string[] | null,
+  "anaestheticType": "general" | "regional" | "local" | "sedation" | "combined_general_regional" | null,
+  "woundInfectionRisk": "clean" | "clean_contaminated" | "contaminated" | "dirty_infected" | null,
+  "antibioticProphylaxis": boolean | null,
+  "dvtProphylaxis": boolean | null,
+  "returnToTheatre": boolean | null,
+  "returnToTheatreReason": string | null,
+  "unplannedICU": boolean | null,
+  "unplannedICUReason": string | null,
+  "complications": string[] | null
 }
 
 Do not include any explanation, just the JSON object.`;

@@ -25,6 +25,14 @@ import {
   ANASTOMOSIS_LABELS,
   FreeFlapDetails,
   OPERATING_TEAM_ROLE_LABELS,
+  GENDER_LABELS,
+  ADMISSION_CATEGORY_LABELS,
+  UNPLANNED_READMISSION_LABELS,
+  WOUND_INFECTION_RISK_LABELS,
+  ANAESTHETIC_TYPE_LABELS,
+  UNPLANNED_ICU_LABELS,
+  DISCHARGE_OUTCOME_LABELS,
+  MORTALITY_CLASSIFICATION_LABELS,
 } from "@/types/case";
 import { getCase, getTimelineEvents, deleteCase, getSettings } from "@/lib/storage";
 import { SpecialtyBadge } from "@/components/SpecialtyBadge";
@@ -167,6 +175,26 @@ export default function CaseDetailScreen() {
     return `${hours}h ${mins}m`;
   };
 
+  const formatDateDisplay = (dateStr: string | undefined): string | undefined => {
+    if (!dateStr) return undefined;
+    try {
+      return new Date(dateStr).toLocaleDateString("en-NZ", { 
+        day: "numeric", 
+        month: "short", 
+        year: "numeric" 
+      });
+    } catch {
+      return dateStr;
+    }
+  };
+
+  const hasPatientDemographics = caseData.gender || caseData.ethnicity;
+  const hasAdmissionDetails = caseData.admissionDate || caseData.dischargeDate || caseData.admissionCategory || (caseData.unplannedReadmission && caseData.unplannedReadmission !== "no");
+  const hasDiagnoses = caseData.preManagementDiagnosis || caseData.finalDiagnosis || caseData.pathologicalDiagnosis;
+  const hasComorbidities = caseData.comorbidities && caseData.comorbidities.length > 0;
+  const hasOperativeFactors = caseData.woundInfectionRisk || caseData.anaestheticType || caseData.prophylaxis;
+  const hasOutcomes = caseData.unplannedICU || caseData.returnToTheatre || caseData.outcome || caseData.mortalityClassification || caseData.discussedAtMDM;
+
   return (
     <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
       <ScrollView
@@ -223,6 +251,118 @@ export default function CaseDetailScreen() {
             </View>
           </View>
         </View>
+
+        {hasPatientDemographics ? (
+          <>
+            <SectionHeader title="Patient Demographics" />
+            <View style={[styles.card, { backgroundColor: theme.backgroundDefault }]}>
+              <DetailRow 
+                label="Gender" 
+                value={caseData.gender ? GENDER_LABELS[caseData.gender] : undefined} 
+              />
+              <DetailRow label="Ethnicity" value={caseData.ethnicity} />
+            </View>
+          </>
+        ) : null}
+
+        {hasAdmissionDetails ? (
+          <>
+            <SectionHeader title="Admission Details" />
+            <View style={[styles.card, { backgroundColor: theme.backgroundDefault }]}>
+              <DetailRow 
+                label="Admission Date" 
+                value={formatDateDisplay(caseData.admissionDate)} 
+              />
+              <DetailRow 
+                label="Discharge Date" 
+                value={formatDateDisplay(caseData.dischargeDate)} 
+              />
+              <DetailRow 
+                label="Admission Category" 
+                value={caseData.admissionCategory ? ADMISSION_CATEGORY_LABELS[caseData.admissionCategory] : undefined} 
+              />
+              {caseData.unplannedReadmission && caseData.unplannedReadmission !== "no" ? (
+                <DetailRow 
+                  label="Unplanned Readmission" 
+                  value={UNPLANNED_READMISSION_LABELS[caseData.unplannedReadmission]} 
+                />
+              ) : null}
+            </View>
+          </>
+        ) : null}
+
+        {hasDiagnoses ? (
+          <>
+            <SectionHeader title="Diagnoses" />
+            <View style={[styles.card, { backgroundColor: theme.backgroundDefault }]}>
+              {caseData.preManagementDiagnosis ? (
+                <View style={styles.diagnosisItem}>
+                  <ThemedText style={[styles.diagnosisLabel, { color: theme.textSecondary }]}>
+                    Pre-Management Diagnosis
+                  </ThemedText>
+                  <ThemedText style={styles.diagnosisValue}>
+                    {caseData.preManagementDiagnosis.displayName}
+                  </ThemedText>
+                  {caseData.preManagementDiagnosis.snomedCtCode ? (
+                    <ThemedText style={[styles.snomedCode, { color: theme.textTertiary }]}>
+                      SNOMED CT: {caseData.preManagementDiagnosis.snomedCtCode}
+                    </ThemedText>
+                  ) : null}
+                </View>
+              ) : null}
+              {caseData.finalDiagnosis ? (
+                <View style={styles.diagnosisItem}>
+                  <ThemedText style={[styles.diagnosisLabel, { color: theme.textSecondary }]}>
+                    Final Diagnosis
+                  </ThemedText>
+                  <ThemedText style={styles.diagnosisValue}>
+                    {caseData.finalDiagnosis.displayName}
+                  </ThemedText>
+                  {caseData.finalDiagnosis.snomedCtCode ? (
+                    <ThemedText style={[styles.snomedCode, { color: theme.textTertiary }]}>
+                      SNOMED CT: {caseData.finalDiagnosis.snomedCtCode}
+                    </ThemedText>
+                  ) : null}
+                </View>
+              ) : null}
+              {caseData.pathologicalDiagnosis ? (
+                <View style={styles.diagnosisItem}>
+                  <ThemedText style={[styles.diagnosisLabel, { color: theme.textSecondary }]}>
+                    Pathological Diagnosis
+                  </ThemedText>
+                  <ThemedText style={styles.diagnosisValue}>
+                    {caseData.pathologicalDiagnosis.displayName}
+                  </ThemedText>
+                  {caseData.pathologicalDiagnosis.snomedCtCode ? (
+                    <ThemedText style={[styles.snomedCode, { color: theme.textTertiary }]}>
+                      SNOMED CT: {caseData.pathologicalDiagnosis.snomedCtCode}
+                    </ThemedText>
+                  ) : null}
+                </View>
+              ) : null}
+            </View>
+          </>
+        ) : null}
+
+        {hasComorbidities ? (
+          <>
+            <SectionHeader title="Co-morbidities" />
+            <View style={[styles.card, { backgroundColor: theme.backgroundDefault }]}>
+              <View style={styles.comorbidityList}>
+                {caseData.comorbidities?.map((comorbidity, index) => (
+                  <View 
+                    key={comorbidity.snomedCtCode || index} 
+                    style={[styles.comorbidityChip, { backgroundColor: theme.warning + "20", borderColor: theme.warning }]}
+                  >
+                    <ThemedText style={[styles.comorbidityText, { color: theme.warning }]}>
+                      {comorbidity.commonName || comorbidity.displayName}
+                    </ThemedText>
+                  </View>
+                ))}
+              </View>
+            </View>
+          </>
+        ) : null}
 
         {caseData.surgeryTiming ? (
           <>
@@ -327,6 +467,72 @@ export default function CaseDetailScreen() {
               <DetailRow
                 label="Diabetes"
                 value={caseData.diabetes === true ? "Yes" : caseData.diabetes === false ? "No" : undefined}
+              />
+            </View>
+          </>
+        ) : null}
+
+        {hasOperativeFactors ? (
+          <>
+            <SectionHeader title="Operative Factors" />
+            <View style={[styles.card, { backgroundColor: theme.backgroundDefault }]}>
+              <DetailRow 
+                label="Wound Infection Risk" 
+                value={caseData.woundInfectionRisk ? WOUND_INFECTION_RISK_LABELS[caseData.woundInfectionRisk] : undefined} 
+              />
+              <DetailRow 
+                label="Anaesthetic Type" 
+                value={caseData.anaestheticType ? ANAESTHETIC_TYPE_LABELS[caseData.anaestheticType] : undefined} 
+              />
+              {caseData.prophylaxis ? (
+                <>
+                  <DetailRow 
+                    label="Antibiotic Prophylaxis" 
+                    value={caseData.prophylaxis.antibiotics ? "Given" : "Not Given"} 
+                  />
+                  <DetailRow 
+                    label="DVT Prophylaxis" 
+                    value={caseData.prophylaxis.dvtPrevention ? "Given" : "Not Given"} 
+                  />
+                </>
+              ) : null}
+            </View>
+          </>
+        ) : null}
+
+        {hasOutcomes ? (
+          <>
+            <SectionHeader title="Outcomes" />
+            <View style={[styles.card, { backgroundColor: theme.backgroundDefault }]}>
+              {caseData.unplannedICU && caseData.unplannedICU !== "no" ? (
+                <DetailRow 
+                  label="Unplanned ICU Admission" 
+                  value={UNPLANNED_ICU_LABELS[caseData.unplannedICU]} 
+                />
+              ) : null}
+              {caseData.returnToTheatre ? (
+                <>
+                  <DetailRow label="Return to Theatre" value="Yes" />
+                  <DetailRow label="Reason" value={caseData.returnToTheatreReason} />
+                </>
+              ) : null}
+              <DetailRow 
+                label="Discharge Outcome" 
+                value={caseData.outcome ? DISCHARGE_OUTCOME_LABELS[caseData.outcome] : undefined} 
+              />
+              {caseData.mortalityClassification ? (
+                <DetailRow 
+                  label="Mortality Classification" 
+                  value={MORTALITY_CLASSIFICATION_LABELS[caseData.mortalityClassification]} 
+                />
+              ) : null}
+              <DetailRow 
+                label="Discussed at MDM" 
+                value={caseData.discussedAtMDM ? "Yes" : undefined} 
+              />
+              <DetailRow 
+                label="Recurrence Date" 
+                value={formatDateDisplay(caseData.recurrenceDate)} 
               />
             </View>
           </>
@@ -495,10 +701,47 @@ const styles = StyleSheet.create({
   },
   detailLabel: {
     fontSize: 14,
+    flex: 1,
   },
   detailValue: {
     fontSize: 14,
     fontWeight: "600",
+    flex: 1,
+    textAlign: "right",
+  },
+  diagnosisItem: {
+    paddingVertical: Spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(0,0,0,0.05)",
+  },
+  diagnosisLabel: {
+    fontSize: 12,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginBottom: Spacing.xs,
+  },
+  diagnosisValue: {
+    fontSize: 15,
+    fontWeight: "500",
+  },
+  snomedCode: {
+    fontSize: 11,
+    marginTop: Spacing.xs,
+  },
+  comorbidityList: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: Spacing.sm,
+  },
+  comorbidityChip: {
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+  },
+  comorbidityText: {
+    fontSize: 12,
+    fontWeight: "500",
   },
   teamMember: {
     flexDirection: "row",
