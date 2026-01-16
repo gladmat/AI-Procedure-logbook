@@ -1,38 +1,38 @@
-import React, { ReactNode } from "react";
-import { StyleSheet, Pressable, ViewStyle, StyleProp } from "react-native";
+import React from "react";
+import {
+  Pressable,
+  StyleSheet,
+  ViewStyle,
+  ActivityIndicator,
+} from "react-native";
+import * as Haptics from "expo-haptics";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withSpring,
-  WithSpringConfig,
 } from "react-native-reanimated";
-
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
-import { BorderRadius, Spacing } from "@/constants/theme";
+import { BorderRadius, Spacing, Shadows } from "@/constants/theme";
 
 interface ButtonProps {
-  onPress?: () => void;
-  children: ReactNode;
-  style?: StyleProp<ViewStyle>;
+  children: React.ReactNode;
+  onPress: () => void;
+  variant?: "primary" | "secondary" | "outline";
   disabled?: boolean;
+  loading?: boolean;
+  style?: ViewStyle;
 }
-
-const springConfig: WithSpringConfig = {
-  damping: 15,
-  mass: 0.3,
-  stiffness: 150,
-  overshootClamping: true,
-  energyThreshold: 0.001,
-};
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export function Button({
-  onPress,
   children,
-  style,
+  onPress,
+  variant = "primary",
   disabled = false,
+  loading = false,
+  style,
 }: ButtonProps) {
   const { theme } = useTheme();
   const scale = useSharedValue(1);
@@ -42,39 +42,71 @@ export function Button({
   }));
 
   const handlePressIn = () => {
-    if (!disabled) {
-      scale.value = withSpring(0.98, springConfig);
-    }
+    scale.value = withSpring(0.97, { damping: 15, stiffness: 150 });
   };
 
   const handlePressOut = () => {
-    if (!disabled) {
-      scale.value = withSpring(1, springConfig);
+    scale.value = withSpring(1, { damping: 15, stiffness: 150 });
+  };
+
+  const handlePress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    onPress();
+  };
+
+  const getBackgroundColor = () => {
+    if (disabled) return theme.textTertiary;
+    switch (variant) {
+      case "primary":
+        return theme.link;
+      case "secondary":
+        return theme.backgroundSecondary;
+      case "outline":
+        return "transparent";
+      default:
+        return theme.link;
+    }
+  };
+
+  const getTextColor = () => {
+    if (disabled) return theme.textSecondary;
+    switch (variant) {
+      case "primary":
+        return theme.buttonText;
+      case "secondary":
+        return theme.text;
+      case "outline":
+        return theme.link;
+      default:
+        return theme.buttonText;
     }
   };
 
   return (
     <AnimatedPressable
-      onPress={disabled ? undefined : onPress}
+      onPress={handlePress}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
-      disabled={disabled}
+      disabled={disabled || loading}
       style={[
         styles.button,
         {
-          backgroundColor: theme.link,
+          backgroundColor: getBackgroundColor(),
+          borderColor: variant === "outline" ? theme.link : "transparent",
+          borderWidth: variant === "outline" ? 1.5 : 0,
           opacity: disabled ? 0.5 : 1,
         },
-        style,
         animatedStyle,
+        style,
       ]}
     >
-      <ThemedText
-        type="body"
-        style={[styles.buttonText, { color: theme.buttonText }]}
-      >
-        {children}
-      </ThemedText>
+      {loading ? (
+        <ActivityIndicator color={getTextColor()} />
+      ) : (
+        <ThemedText style={[styles.text, { color: getTextColor() }]}>
+          {children}
+        </ThemedText>
+      )}
     </AnimatedPressable>
   );
 }
@@ -82,11 +114,14 @@ export function Button({
 const styles = StyleSheet.create({
   button: {
     height: Spacing.buttonHeight,
-    borderRadius: BorderRadius.full,
-    alignItems: "center",
+    borderRadius: BorderRadius.sm,
     justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: Spacing.xl,
+    ...Shadows.card,
   },
-  buttonText: {
+  text: {
+    fontSize: 16,
     fontWeight: "600",
   },
 });
