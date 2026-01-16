@@ -11,9 +11,68 @@ export type OperatingTeamRole =
 
 export type Specialty = "free_flap" | "hand_trauma" | "body_contouring" | "aesthetics" | "burns";
 
-export type ASAScore = 1 | 2 | 3 | 4 | 5;
+export type ASAScore = 1 | 2 | 3 | 4 | 5 | 6;
 
 export type SmokingStatus = "yes" | "no" | "ex";
+
+export type Gender = "male" | "female" | "other";
+
+export type AdmissionCategory = 
+  | "elective" 
+  | "emergency" 
+  | "day_case" 
+  | "unplanned_readmission" 
+  | "non_admitted";
+
+export type UnplannedReadmissionReason = 
+  | "no"
+  | "pain"
+  | "bleeding"
+  | "electrolyte_imbalance"
+  | "infection"
+  | "pulmonary_embolism"
+  | "intra_abdominal_collection"
+  | "organ_failure"
+  | "other";
+
+export type WoundInfectionRisk = 
+  | "clean" 
+  | "clean_contaminated" 
+  | "contaminated" 
+  | "dirty" 
+  | "na";
+
+export type AnaestheticType = 
+  | "general" 
+  | "local" 
+  | "regional_block" 
+  | "spinal" 
+  | "epidural" 
+  | "sedation";
+
+export type UnplannedICUReason = 
+  | "no"
+  | "localised_sepsis"
+  | "generalised_sepsis"
+  | "pneumonia"
+  | "renal_failure"
+  | "arrhythmia"
+  | "myocardial_infarction"
+  | "pulmonary_embolism"
+  | "other";
+
+export type DischargeOutcome = 
+  | "died"
+  | "discharged_home"
+  | "discharged_care"
+  | "transferred_complex_care"
+  | "absconded"
+  | "referred_other_services";
+
+export type MortalityClassification = 
+  | "expected"
+  | "unexpected"
+  | "not_applicable";
 
 export type Indication = "trauma" | "oncologic" | "congenital";
 
@@ -59,6 +118,25 @@ export interface SurgeryTiming {
   startTime?: string;
   endTime?: string;
   durationMinutes?: number;
+}
+
+export interface SnomedCodedItem {
+  snomedCtCode: string;
+  displayName: string;
+  commonName?: string;
+}
+
+export interface Diagnosis {
+  snomedCtCode?: string;
+  displayName: string;
+  date?: string;
+}
+
+export interface Prophylaxis {
+  antibiotics: boolean;
+  dvtPrevention: boolean;
+  antibioticName?: string;
+  dvtMethod?: string;
 }
 
 export interface SnomedRefItem {
@@ -142,11 +220,46 @@ export interface Case {
   procedureCode?: ProcedureCode;
   surgeryTiming?: SurgeryTiming;
   operatingTeam?: OperatingTeamMember[];
+  
+  // Patient Demographics
+  gender?: Gender;
+  ethnicity?: string;
+  
+  // Admission Details
+  admissionDate?: string;
+  dischargeDate?: string;
+  admissionCategory?: AdmissionCategory;
+  unplannedReadmission?: UnplannedReadmissionReason;
+  
+  // Diagnoses (SNOMED CT coded)
+  diagnosisDate?: string;
+  preManagementDiagnosis?: Diagnosis;
+  finalDiagnosis?: Diagnosis;
+  pathologicalDiagnosis?: Diagnosis;
+  
+  // Co-morbidities (SNOMED CT coded)
+  comorbidities?: SnomedCodedItem[];
+  
+  // Risk Factors
   asaScore?: ASAScore;
   bmi?: number;
   smoker?: SmokingStatus;
   diabetes?: boolean;
-  ethnicity?: string;
+  
+  // Operative Factors
+  woundInfectionRisk?: WoundInfectionRisk;
+  anaestheticType?: AnaestheticType;
+  prophylaxis?: Prophylaxis;
+  
+  // Outcomes
+  unplannedICU?: UnplannedICUReason;
+  returnToTheatre?: boolean;
+  returnToTheatreReason?: string;
+  outcome?: DischargeOutcome;
+  mortalityClassification?: MortalityClassification;
+  recurrenceDate?: string;
+  discussedAtMDM?: boolean;
+  
   clinicalDetails: ClinicalDetails;
   teamMembers: TeamMember[];
   ownerId: string;
@@ -272,3 +385,116 @@ export const PROCEDURE_TYPES: Record<Specialty, string[]> = {
     "Reconstruction",
   ],
 };
+
+export const GENDER_LABELS: Record<Gender, string> = {
+  male: "Male",
+  female: "Female",
+  other: "Other",
+};
+
+export const ADMISSION_CATEGORY_LABELS: Record<AdmissionCategory, string> = {
+  elective: "Elective",
+  emergency: "Emergency",
+  day_case: "Day Case",
+  unplanned_readmission: "Unplanned Readmission < 28 Days",
+  non_admitted: "Non-Admitted",
+};
+
+export const UNPLANNED_READMISSION_LABELS: Record<UnplannedReadmissionReason, string> = {
+  no: "No",
+  pain: "Yes - Pain",
+  bleeding: "Yes - Bleeding",
+  electrolyte_imbalance: "Yes - Electrolyte Imbalance",
+  infection: "Yes - Infection",
+  pulmonary_embolism: "Yes - Pulmonary Embolism",
+  intra_abdominal_collection: "Yes - Intra-abdominal Collection",
+  organ_failure: "Yes - Organ Failure",
+  other: "Yes - Other Cause",
+};
+
+export const WOUND_INFECTION_RISK_LABELS: Record<WoundInfectionRisk, string> = {
+  clean: "Clean",
+  clean_contaminated: "Clean/Contaminated",
+  contaminated: "Contaminated",
+  dirty: "Dirty",
+  na: "N/A",
+};
+
+export const ANAESTHETIC_TYPE_LABELS: Record<AnaestheticType, string> = {
+  general: "General",
+  local: "Local",
+  regional_block: "Regional Block",
+  spinal: "Spinal",
+  epidural: "Epidural",
+  sedation: "Sedation",
+};
+
+export const UNPLANNED_ICU_LABELS: Record<UnplannedICUReason, string> = {
+  no: "No",
+  localised_sepsis: "Yes - Localised Sepsis (Wound)",
+  generalised_sepsis: "Yes - Generalised Sepsis",
+  pneumonia: "Yes - Pneumonia",
+  renal_failure: "Yes - Renal Failure",
+  arrhythmia: "Yes - Arrhythmia",
+  myocardial_infarction: "Yes - Myocardial Infarction",
+  pulmonary_embolism: "Yes - Pulmonary Embolism",
+  other: "Yes - Other Cause",
+};
+
+export const DISCHARGE_OUTCOME_LABELS: Record<DischargeOutcome, string> = {
+  died: "Died",
+  discharged_home: "Discharged Home",
+  discharged_care: "Discharged for Care or Respite",
+  transferred_complex_care: "Transferred for More Complex Care",
+  absconded: "Absconded/Took Own Discharge",
+  referred_other_services: "Referred to Other Services",
+};
+
+export const MORTALITY_CLASSIFICATION_LABELS: Record<MortalityClassification, string> = {
+  expected: "Expected",
+  unexpected: "Unexpected",
+  not_applicable: "Not Applicable",
+};
+
+export const ASA_GRADE_LABELS: Record<ASAScore, string> = {
+  1: "I - Normal Healthy Patient",
+  2: "II - Mild Systemic Disease",
+  3: "III - Severe Systemic Disease",
+  4: "IV - Severe Systemic Disease (Constant Threat to Life)",
+  5: "V - Moribund Patient",
+  6: "VI - Brain-Dead Organ Donor",
+};
+
+export const COMMON_COMORBIDITIES: SnomedCodedItem[] = [
+  { snomedCtCode: "84114007", displayName: "Acquired Brain Injury" },
+  { snomedCtCode: "49436004", displayName: "Atrial Fibrillation (AF)" },
+  { snomedCtCode: "7200002", displayName: "Alcohol Abuse" },
+  { snomedCtCode: "26929004", displayName: "Alzheimer's Disease" },
+  { snomedCtCode: "87522002", displayName: "Anaemia - Blood Loss" },
+  { snomedCtCode: "271737000", displayName: "Anaemia - Deficiency" },
+  { snomedCtCode: "194828000", displayName: "Angina Pectoris" },
+  { snomedCtCode: "48694002", displayName: "Anxiety" },
+  { snomedCtCode: "195967001", displayName: "Asthma" },
+  { snomedCtCode: "73211009", displayName: "Diabetes Mellitus" },
+  { snomedCtCode: "38341003", displayName: "Hypertension" },
+  { snomedCtCode: "13645005", displayName: "COPD" },
+  { snomedCtCode: "84757009", displayName: "Epilepsy" },
+  { snomedCtCode: "22298006", displayName: "Myocardial Infarction (Previous)" },
+  { snomedCtCode: "230690007", displayName: "Stroke (Previous)" },
+  { snomedCtCode: "90708001", displayName: "Kidney Disease" },
+  { snomedCtCode: "235856003", displayName: "Liver Disease" },
+  { snomedCtCode: "36971009", displayName: "Sinusitis" },
+  { snomedCtCode: "35489007", displayName: "Depression" },
+  { snomedCtCode: "414545008", displayName: "Ischaemic Heart Disease" },
+  { snomedCtCode: "84027008", displayName: "Heart Failure" },
+  { snomedCtCode: "59621000", displayName: "Hypertension Essential" },
+  { snomedCtCode: "40930008", displayName: "Hypothyroidism" },
+  { snomedCtCode: "34486009", displayName: "Hyperthyroidism" },
+  { snomedCtCode: "64859006", displayName: "Osteoporosis" },
+  { snomedCtCode: "396275006", displayName: "Osteoarthritis" },
+  { snomedCtCode: "69896004", displayName: "Rheumatoid Arthritis" },
+  { snomedCtCode: "363346000", displayName: "Malignancy (Active)" },
+  { snomedCtCode: "414916001", displayName: "Obesity" },
+  { snomedCtCode: "59282003", displayName: "Pulmonary Embolism (Previous)" },
+  { snomedCtCode: "128053003", displayName: "Deep Vein Thrombosis (Previous)" },
+];

@@ -1,0 +1,161 @@
+1. Patient & Admission Details
+
+Gender:
+
+Male
+
+Female
+
+Ethnicity: (Text Entry/Search)
+
+Admission Date: (Date Field)
+
+Discharge Date: (Date Field)
+
+Admission Category:
+
+Elective
+
+Emergency
+
+Day case
+
+Unplanned readmission < 28 days
+
+Non-Admitted
+
+Unplanned Readmission:
+
+No
+
+Yes - Pain
+
+Yes - Bleeding
+
+Yes - Electrolyte imbalance
+
+Yes - Infection
+
+Yes - Pulmonary Embolism
+
+Yes - Intra-abdominal collection
+
+Yes - Organ failure
+
+Yes - Other cause
+
+2. Diagnosis
+
+Diagnosis Date: (Date Field)
+
+Pre-management Diagnosis: (Text/Search)
+
+Final Diagnosis: (Text/Search)
+
+Pathological Diagnoses: (Text/Search)
+
+Recognised Co-morbidities: (Searchable Multi-select)
+
+Visible options include: Acquired Brain Injury, AF (Atrial Fibrillation), Alcohol abuse, Alzheimer's disease, Anaemia - blood loss, Anaemia - deficiency, Angina pectoris, Anxiety, Associated syndrome, Asthma.
+
+3. Operative & Risk Factors
+
+Operative Procedure: (Searchable List)
+
+Visible examples: Reconstruction, Final inset of flap, Sentinel lymph node biopsy, Excision of melanoma, Excision of skin tag.
+
+ASA Grade:
+
+I - Normal Healthy Patient
+
+II - Mild Systemic Disease
+
+III - Severe Systemic Disease
+
+IV - Severe Systemic Disease that is a constant threat to life
+
+V - Moribund patient who is not expected to survive without operation
+
+VI - A declared brain-dead patient whose organs are being removed for donor
+
+Wound Infection Risk:
+
+Clean
+
+Clean/contaminated
+
+Contaminated
+
+Dirty
+
+N/A
+
+Other
+
+Type of Anaesthetic:
+
+Epidural
+
+General
+
+Local
+
+Regional block
+
+Sedation
+
+Spinal
+
+Prophylaxis:
+
+Antibiotics
+
+DVT Prevention
+
+4. Outcome & Complications
+
+Unplanned ICU:
+
+No
+
+Yes - Localised sepsis (wound)
+
+Yes - Generalised sepsis
+
+Yes - Pneumonia
+
+Yes - Renal failure
+
+Yes - Arrhythmia
+
+Yes - Myocardial Infarction
+
+Yes - Pulmonary Embolism
+
+Yes - Other Cause
+
+Return to Theatre: (Select Option - likely Yes/No similar to others, though specific options aren't expanded in the screenshots)
+
+Outcome:
+
+Died
+
+Discharged home
+
+Discharged for care or respite
+
+Transferred for more complex care
+
+Absconded/took own discharge
+
+Referred to other services
+
+Mortality Classification: (Dropdown)
+
+Recurrence Date: (Date Field)
+
+Discussed at MDM:
+
+Yes
+
+No
