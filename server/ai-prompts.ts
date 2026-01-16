@@ -15,14 +15,30 @@ PROCEDURE DETAILS:
 - Flap type (e.g., ALT, DIEP, Radial Forearm, Fibula, Latissimus Dorsi, Gracilis, SCIP)
 - Harvest side (left or right)
 - Indication (trauma, oncologic, or congenital)
-- Recipient artery name (e.g., facial artery, superior thyroid artery)
-- Recipient vein name (e.g., internal jugular vein, external jugular vein)
-- Anastomosis type (end-to-end or end-to-side)
+- Recipient site region - classify into one of these anatomical regions:
+  * lower_leg (for tibia, ankle, Achilles, mid-leg defects)
+  * foot (for foot, heel, metatarsal, toe defects)
+  * hand (for hand, finger, metacarpal defects)
+  * forearm (for forearm, wrist, radius, ulna defects)
+  * head_neck (for scalp, face, oral, mandible, neck defects)
+  * trunk (for chest, abdomen, back defects)
+  * pelvis (for perineum, groin, buttock defects)
+  * upper_arm (for humerus, elbow, upper arm defects)
+  * thigh (for thigh, hip defects)
 - Ischemia time in minutes (warm ischemia time)
-- Coupler size in mm if used
 - Flap dimensions (width x length in cm)
 - Number of perforators (for ALT flaps)
 - Elevation plane (subfascial or suprafascial for ALT flaps)
+
+ANASTOMOSES (extract ALL arterial and venous anastomoses performed):
+For each anastomosis, extract:
+- Vessel type (artery or vein)
+- Recipient vessel name (e.g., anterior tibial artery, dorsalis pedis artery, comitantes vein)
+- Anastomosis configuration (end_to_end or end_to_side)
+- Coupling method (hand_sewn, 2.5mm_coupler, 3.0mm_coupler, etc.)
+- Coupler size in mm if applicable
+
+Many free flaps have multiple venous anastomoses (e.g., two vein comitantes) - capture all of them.
 
 SURGERY TIMING:
 - Surgery start time (in HH:MM 24-hour format)
@@ -42,11 +58,18 @@ Return ONLY a JSON object with these exact keys (use null for missing values):
   "flapType": string | null,
   "harvestSide": "left" | "right" | null,
   "indication": "trauma" | "oncologic" | "congenital" | null,
-  "recipientArteryName": string | null,
-  "recipientVeinName": string | null,
-  "anastomosisType": "end_to_end" | "end_to_side" | null,
+  "recipientSiteRegion": "lower_leg" | "foot" | "hand" | "forearm" | "head_neck" | "trunk" | "pelvis" | "upper_arm" | "thigh" | null,
+  "anastomoses": [
+    {
+      "vesselType": "artery" | "vein",
+      "recipientVesselName": string,
+      "recipientVesselSnomedCode": string | null,
+      "anastomosisConfig": "end_to_end" | "end_to_side" | null,
+      "couplingMethod": "hand_sewn" | "coupler" | null,
+      "couplerSizeMm": number | null
+    }
+  ] | null,
   "ischemiaTimeMinutes": number | null,
-  "couplerSizeMm": number | null,
   "flapWidthCm": number | null,
   "flapLengthCm": number | null,
   "perforatorCount": 1 | 2 | 3 | null,
