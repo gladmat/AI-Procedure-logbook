@@ -1,0 +1,109 @@
+Here are the precise instructions you can paste directly into your Replit agent (or give to a human dev) to build the backend for your microsurgery logbook.
+
+I have also included the **Github reference** you requested.
+
+### **1. Instructions for Replit Agent**
+
+**Prompt to Replit:**
+
+```markdown
+I am building a surgical logbook app for microsurgery (Free Flaps) using a SQL backend (PostgreSQL/Supabase). 
+
+Please generate the SQL Schema (CREATE TABLE statements) for the following "Microsurgery Module". 
+
+## 1. Context & Architecture
+* **Goal:** Capture high-fidelity data on free flap procedures (e.g., ALT, DIEP, Fibula) including donor/recipient sites, tissue composition, and specific vessel anastomoses.
+* **Standards:** Use SNOMED CT Concept IDs (store as `BIGINT` or `TEXT`) for all clinical terms, but include a human-readable text column for each code to allow the app to work offline/without a terminology server lookup.
+* **Hierarchy:**
+    1.  `procedures` (Parent table - general operation info)
+    2.  `flaps` (Child of procedures - specific tissue transfer)
+    3.  `anastomoses` (Child of flaps - specific vessel connections)
+
+## 2. Table Specifications
+
+### A. Table: `flaps`
+* **Foreign Key:** Links to `procedures.id`.
+* **Type/Name:** The main flap name (e.g., "Anterolateral thigh free flap"). Store SNOMED ID + Text.
+* **Side:** (Left/Right).
+* **Composition:** (e.g., Fasciocutaneous, Muscle only, Osteocutaneous).
+* **Harvest Technique:** (e.g., Standard, Minimally Invasive).
+* **Is_Flow_Through:** Boolean (Did we hook another flap onto this one?).
+
+### B. Table: `anastomoses`
+* **Foreign Key:** Links to `flaps.id`.
+* **Vessel Type:** Enum or Code (Artery vs. Vein).
+* **Recipient Vessel:** (e.g., "Anterior Tibial Artery"). Store SNOMED ID + Text.
+* **Donor Vessel:** (e.g., "Descending branch of LCFA"). Store SNOMED ID + Text.
+* **Coupling_Method:** (e.g., "Hand-sewn", "Coupler").
+* **Coupler_Size_mm:** Decimal (e.g., 2.5, 3.0).
+* **Configuration:** (e.g., End-to-End, End-to-Side).
+* **Outcome_Check:** Boolean (Patency confirmed on table?).
+
+## 3. Reference Data (Enum/Lookup)
+Please also create a simple `snomed_ref_subset` table where we can store the list of common flaps and vessels so the dropdown menus in the frontend can populate quickly.
+
+## 4. Output Requirement
+Provide the SQL code to create these tables with appropriate Data Types, Primary Keys (UUID), and Foreign Keys.
+
+```
+
+---
+
+### **2. Visualizing the Data Model**
+
+To ensure you and your agent are on the same page, here is the structure in a text-based diagram:
+
+```mermaid
+erDiagram
+    PROCEDURES ||--|{ FLAPS : "includes"
+    FLAPS ||--|{ ANASTOMOSES : "requires"
+    
+    PROCEDURES {
+        uuid id
+        date op_date
+        string patient_id_hash
+        string main_procedure_name
+    }
+    
+    FLAPS {
+        uuid id
+        uuid procedure_id FK
+        bigint snomed_id "446078000"
+        string flap_name "ALT Flap"
+        string side "Left"
+        string composition "Fasciocutaneous"
+    }
+    
+    ANASTOMOSES {
+        uuid id
+        uuid flap_id FK
+        string type "Artery"
+        string recipient_vessel "Ant. Tibial"
+        string donor_vessel "Desc. Branch LCFA"
+        string method "Coupler"
+        float size_mm "2.5"
+    }
+
+```
+
+---
+
+### **3. Open Source SNOMED CT Resources**
+
+For your "Help/Reference" link, the best resource is the **SNOMED International GitHub Organization**.
+
+* **Best for Database Logic:** **[SNOMED Database Loader](https://github.com/IHTSDO/snomed-database-loader)**
+* *Why:* This repo contains official scripts to load SNOMED CT RF2 files into MySQL or PostgreSQL. Even if you don't load the *entire* 3GB database, reading the `.sql` files here will show you exactly how the experts structure their tables.
+
+
+* **Best for Value Sets (The "Lists"):** **[SNOMED CT SQL Practical Guide](https://docs.snomed.org/snomed-ct-practical-guides/snomed-ct-sql-practical-guide)**
+* *Why:* This is the documentation that accompanies the code. It explains how to query "All children of Flap" so you don't have to type them manually.
+
+
+
+### **Medical Caution**
+
+When you implement the **`anastomoses`** table, ensure your logic allows for **multiple veins**.
+
+* *Common scenario:* 1 Artery (Hand-sewn) + 2 Veins (Coupler 2.5mm + Coupler 2.0mm).
+* *App Logic:* Your "Add Anastomosis" button needs to be loopable.
