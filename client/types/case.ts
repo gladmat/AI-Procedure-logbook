@@ -1,5 +1,14 @@
 export type Role = "primary" | "supervising" | "assistant" | "trainee";
 
+export type OperatingTeamRole = 
+  | "scrub_nurse" 
+  | "circulating_nurse" 
+  | "anaesthetist" 
+  | "anaesthetic_registrar"
+  | "surgical_assistant"
+  | "surgical_registrar"
+  | "medical_student";
+
 export type Specialty = "free_flap" | "hand_trauma" | "body_contouring" | "aesthetics" | "burns";
 
 export type ASAScore = 1 | 2 | 3 | 4 | 5;
@@ -14,6 +23,8 @@ export type HarvestSide = "left" | "right";
 
 export type ElevationPlane = "subfascial" | "suprafascial";
 
+export type CountryCode = "CH" | "GB" | "PL" | "AU" | "NZ" | "US";
+
 export interface TeamMember {
   id: string;
   userId?: string;
@@ -22,6 +33,19 @@ export interface TeamMember {
   role: Role;
   confirmed: boolean;
   addedAt: string;
+}
+
+export interface OperatingTeamMember {
+  id: string;
+  name: string;
+  role: OperatingTeamRole;
+  specialty?: string;
+}
+
+export interface SurgeryTiming {
+  startTime?: string;
+  endTime?: string;
+  durationMinutes?: number;
 }
 
 export interface FreeFlapDetails {
@@ -51,6 +75,14 @@ export interface BodyContouringDetails {
 
 export type ClinicalDetails = FreeFlapDetails | HandTraumaDetails | BodyContouringDetails | Record<string, unknown>;
 
+export interface ProcedureCode {
+  snomedCtCode: string;
+  snomedCtDisplay: string;
+  localCode?: string;
+  localDisplay?: string;
+  localSystem?: string;
+}
+
 export interface Case {
   id: string;
   patientIdentifier: string;
@@ -58,6 +90,9 @@ export interface Case {
   facility: string;
   specialty: Specialty;
   procedureType: string;
+  procedureCode?: ProcedureCode;
+  surgeryTiming?: SurgeryTiming;
+  operatingTeam?: OperatingTeamMember[];
   asaScore?: ASAScore;
   bmi?: number;
   smoker?: SmokingStatus;
@@ -95,6 +130,16 @@ export const ROLE_LABELS: Record<Role, string> = {
   trainee: "Trainee",
 };
 
+export const OPERATING_TEAM_ROLE_LABELS: Record<OperatingTeamRole, string> = {
+  scrub_nurse: "Scrub Nurse",
+  circulating_nurse: "Circulating Nurse",
+  anaesthetist: "Anaesthetist",
+  anaesthetic_registrar: "Anaesthetic Registrar",
+  surgical_assistant: "Surgical Assistant",
+  surgical_registrar: "Surgical Registrar",
+  medical_student: "Medical Student",
+};
+
 export const INDICATION_LABELS: Record<Indication, string> = {
   trauma: "Trauma",
   oncologic: "Oncologic",
@@ -104,6 +149,15 @@ export const INDICATION_LABELS: Record<Indication, string> = {
 export const ANASTOMOSIS_LABELS: Record<AnastomosisType, string> = {
   end_to_end: "End-to-End",
   end_to_side: "End-to-Side",
+};
+
+export const COUNTRY_LABELS: Record<CountryCode, string> = {
+  CH: "Switzerland",
+  GB: "United Kingdom",
+  PL: "Poland",
+  AU: "Australia",
+  NZ: "New Zealand",
+  US: "United States",
 };
 
 export const PROCEDURE_TYPES: Record<Specialty, string[]> = {
