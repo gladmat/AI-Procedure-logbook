@@ -21,7 +21,7 @@ export type User = typeof users.$inferSelect;
 
 export const snomedRef = pgTable("snomed_ref", {
   id: serial("id").primaryKey(),
-  snomedCtCode: varchar("snomed_ct_code", { length: 20 }).notNull(),
+  snomedCtCode: varchar("snomed_ct_code", { length: 50 }).notNull(),
   displayName: text("display_name").notNull(),
   commonName: text("common_name"),
   category: varchar("category", { length: 50 }).notNull(),

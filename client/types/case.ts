@@ -17,7 +17,20 @@ export type SmokingStatus = "yes" | "no" | "ex";
 
 export type Indication = "trauma" | "oncologic" | "congenital";
 
-export type AnastomosisType = "end_to_end" | "end_to_side";
+export type AnastomosisType = "end_to_end" | "end_to_side" | "side_to_side";
+
+export type VesselType = "artery" | "vein";
+
+export type CouplingMethod = "hand_sewn" | "coupler" | "hybrid";
+
+export type AnatomicalRegion = 
+  | "lower_leg" 
+  | "foot" 
+  | "thigh" 
+  | "hand" 
+  | "forearm" 
+  | "upper_arm" 
+  | "head_neck";
 
 export type HarvestSide = "left" | "right";
 
@@ -48,18 +61,54 @@ export interface SurgeryTiming {
   durationMinutes?: number;
 }
 
+export interface SnomedRefItem {
+  id: number;
+  snomedCtCode: string;
+  displayName: string;
+  commonName?: string | null;
+  category: string;
+  subcategory?: string | null;
+  anatomicalRegion?: string | null;
+  specialty?: string | null;
+}
+
+export interface AnastomosisEntry {
+  id: string;
+  vesselType: VesselType;
+  recipientVesselSnomedCode?: string;
+  recipientVesselName: string;
+  donorVesselSnomedCode?: string;
+  donorVesselName?: string;
+  couplingMethod?: CouplingMethod;
+  couplerSizeMm?: number;
+  configuration?: AnastomosisType;
+  sutureType?: string;
+  sutureSize?: string;
+  patencyConfirmed?: boolean;
+}
+
 export interface FreeFlapDetails {
   harvestSide: HarvestSide;
   indication: Indication;
-  recipientArteryName: string;
-  recipientVeinName: string;
-  anastomosisType: AnastomosisType;
-  ischemiaTimeMinutes: number;
-  couplerSizeMm?: number;
+  flapSnomedCode?: string;
+  flapDisplayName?: string;
+  flapCommonName?: string;
+  composition?: string;
+  harvestTechnique?: string;
+  recipientSite?: string;
+  recipientSiteRegion?: AnatomicalRegion;
+  ischemiaTimeMinutes?: number;
   flapWidthCm?: number;
   flapLengthCm?: number;
   perforatorCount?: 1 | 2 | 3;
   elevationPlane?: ElevationPlane;
+  isFlowThrough?: boolean;
+  anastomoses: AnastomosisEntry[];
+  // Legacy fields for backward compatibility
+  recipientArteryName?: string;
+  recipientVeinName?: string;
+  anastomosisType?: AnastomosisType;
+  couplerSizeMm?: number;
 }
 
 export interface HandTraumaDetails {
@@ -149,6 +198,28 @@ export const INDICATION_LABELS: Record<Indication, string> = {
 export const ANASTOMOSIS_LABELS: Record<AnastomosisType, string> = {
   end_to_end: "End-to-End",
   end_to_side: "End-to-Side",
+  side_to_side: "Side-to-Side",
+};
+
+export const VESSEL_TYPE_LABELS: Record<VesselType, string> = {
+  artery: "Artery",
+  vein: "Vein",
+};
+
+export const COUPLING_METHOD_LABELS: Record<CouplingMethod, string> = {
+  hand_sewn: "Hand-sewn",
+  coupler: "Mechanical Coupler",
+  hybrid: "Hybrid",
+};
+
+export const ANATOMICAL_REGION_LABELS: Record<AnatomicalRegion, string> = {
+  lower_leg: "Lower Leg",
+  foot: "Foot",
+  thigh: "Thigh",
+  hand: "Hand",
+  forearm: "Forearm",
+  upper_arm: "Upper Arm",
+  head_neck: "Head & Neck",
 };
 
 export const COUNTRY_LABELS: Record<CountryCode, string> = {
