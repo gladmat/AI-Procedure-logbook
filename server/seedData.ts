@@ -166,6 +166,54 @@ export const anastomosisConfigOptions: InsertSnomedRef[] = [
   { snomedCtCode: "config_side_to_side", displayName: "Side-to-side", commonName: "S-S", category: "anastomosis_config", subcategory: null, anatomicalRegion: null, specialty: "free_flap", sortOrder: 3 },
 ];
 
+export const comorbidityOptions: InsertSnomedRef[] = [
+  { snomedCtCode: "84114007", displayName: "Acquired brain injury", commonName: "ABI", category: "comorbidity", subcategory: null, anatomicalRegion: null, specialty: null, sortOrder: 1 },
+  { snomedCtCode: "49436004", displayName: "Atrial fibrillation", commonName: "AF", category: "comorbidity", subcategory: null, anatomicalRegion: null, specialty: null, sortOrder: 2 },
+  { snomedCtCode: "7200002", displayName: "Alcohol abuse", commonName: null, category: "comorbidity", subcategory: null, anatomicalRegion: null, specialty: null, sortOrder: 3 },
+  { snomedCtCode: "26929004", displayName: "Alzheimer's disease", commonName: null, category: "comorbidity", subcategory: null, anatomicalRegion: null, specialty: null, sortOrder: 4 },
+  { snomedCtCode: "87522002", displayName: "Anaemia - blood loss", commonName: null, category: "comorbidity", subcategory: null, anatomicalRegion: null, specialty: null, sortOrder: 5 },
+  { snomedCtCode: "271737000", displayName: "Anaemia - deficiency", commonName: null, category: "comorbidity", subcategory: null, anatomicalRegion: null, specialty: null, sortOrder: 6 },
+  { snomedCtCode: "194828000", displayName: "Angina pectoris", commonName: "Angina", category: "comorbidity", subcategory: null, anatomicalRegion: null, specialty: null, sortOrder: 7 },
+  { snomedCtCode: "48694002", displayName: "Anxiety disorder", commonName: "Anxiety", category: "comorbidity", subcategory: null, anatomicalRegion: null, specialty: null, sortOrder: 8 },
+  { snomedCtCode: "195967001", displayName: "Asthma", commonName: null, category: "comorbidity", subcategory: null, anatomicalRegion: null, specialty: null, sortOrder: 9 },
+  { snomedCtCode: "73211009", displayName: "Diabetes mellitus", commonName: "Diabetes", category: "comorbidity", subcategory: null, anatomicalRegion: null, specialty: null, sortOrder: 10 },
+  { snomedCtCode: "44054006", displayName: "Type 2 diabetes mellitus", commonName: "T2DM", category: "comorbidity", subcategory: null, anatomicalRegion: null, specialty: null, sortOrder: 11 },
+  { snomedCtCode: "46635009", displayName: "Type 1 diabetes mellitus", commonName: "T1DM", category: "comorbidity", subcategory: null, anatomicalRegion: null, specialty: null, sortOrder: 12 },
+  { snomedCtCode: "38341003", displayName: "Essential hypertension", commonName: "Hypertension", category: "comorbidity", subcategory: null, anatomicalRegion: null, specialty: null, sortOrder: 13 },
+  { snomedCtCode: "13645005", displayName: "Chronic obstructive pulmonary disease", commonName: "COPD", category: "comorbidity", subcategory: null, anatomicalRegion: null, specialty: null, sortOrder: 14 },
+  { snomedCtCode: "84757009", displayName: "Epilepsy", commonName: null, category: "comorbidity", subcategory: null, anatomicalRegion: null, specialty: null, sortOrder: 15 },
+  { snomedCtCode: "22298006", displayName: "Previous myocardial infarction", commonName: "Previous MI", category: "comorbidity", subcategory: null, anatomicalRegion: null, specialty: null, sortOrder: 16 },
+  { snomedCtCode: "230690007", displayName: "Cerebrovascular accident", commonName: "Previous stroke", category: "comorbidity", subcategory: null, anatomicalRegion: null, specialty: null, sortOrder: 17 },
+  { snomedCtCode: "90708001", displayName: "Chronic kidney disease", commonName: "CKD", category: "comorbidity", subcategory: null, anatomicalRegion: null, specialty: null, sortOrder: 18 },
+  { snomedCtCode: "235856003", displayName: "Chronic liver disease", commonName: null, category: "comorbidity", subcategory: null, anatomicalRegion: null, specialty: null, sortOrder: 19 },
+  { snomedCtCode: "35489007", displayName: "Depressive disorder", commonName: "Depression", category: "comorbidity", subcategory: null, anatomicalRegion: null, specialty: null, sortOrder: 20 },
+  { snomedCtCode: "414545008", displayName: "Ischaemic heart disease", commonName: "IHD", category: "comorbidity", subcategory: null, anatomicalRegion: null, specialty: null, sortOrder: 21 },
+  { snomedCtCode: "84027008", displayName: "Heart failure", commonName: "CCF", category: "comorbidity", subcategory: null, anatomicalRegion: null, specialty: null, sortOrder: 22 },
+  { snomedCtCode: "40930008", displayName: "Hypothyroidism", commonName: null, category: "comorbidity", subcategory: null, anatomicalRegion: null, specialty: null, sortOrder: 23 },
+  { snomedCtCode: "34486009", displayName: "Hyperthyroidism", commonName: null, category: "comorbidity", subcategory: null, anatomicalRegion: null, specialty: null, sortOrder: 24 },
+  { snomedCtCode: "64859006", displayName: "Osteoporosis", commonName: null, category: "comorbidity", subcategory: null, anatomicalRegion: null, specialty: null, sortOrder: 25 },
+  { snomedCtCode: "396275006", displayName: "Osteoarthritis", commonName: "OA", category: "comorbidity", subcategory: null, anatomicalRegion: null, specialty: null, sortOrder: 26 },
+  { snomedCtCode: "69896004", displayName: "Rheumatoid arthritis", commonName: "RA", category: "comorbidity", subcategory: null, anatomicalRegion: null, specialty: null, sortOrder: 27 },
+  { snomedCtCode: "363346000", displayName: "Active malignancy", commonName: "Cancer", category: "comorbidity", subcategory: null, anatomicalRegion: null, specialty: null, sortOrder: 28 },
+  { snomedCtCode: "414916001", displayName: "Obesity", commonName: null, category: "comorbidity", subcategory: null, anatomicalRegion: null, specialty: null, sortOrder: 29 },
+  { snomedCtCode: "59282003", displayName: "Previous pulmonary embolism", commonName: "Previous PE", category: "comorbidity", subcategory: null, anatomicalRegion: null, specialty: null, sortOrder: 30 },
+  { snomedCtCode: "128053003", displayName: "Previous deep vein thrombosis", commonName: "Previous DVT", category: "comorbidity", subcategory: null, anatomicalRegion: null, specialty: null, sortOrder: 31 },
+  { snomedCtCode: "56265001", displayName: "Heart disease", commonName: null, category: "comorbidity", subcategory: null, anatomicalRegion: null, specialty: null, sortOrder: 32 },
+  { snomedCtCode: "19829001", displayName: "Peripheral vascular disease", commonName: "PVD", category: "comorbidity", subcategory: null, anatomicalRegion: null, specialty: null, sortOrder: 33 },
+  { snomedCtCode: "86849004", displayName: "Dementia", commonName: null, category: "comorbidity", subcategory: null, anatomicalRegion: null, specialty: null, sortOrder: 34 },
+  { snomedCtCode: "234532001", displayName: "Immunodeficiency", commonName: null, category: "comorbidity", subcategory: null, anatomicalRegion: null, specialty: null, sortOrder: 35 },
+  { snomedCtCode: "77386006", displayName: "Pregnancy", commonName: null, category: "comorbidity", subcategory: null, anatomicalRegion: null, specialty: null, sortOrder: 36 },
+];
+
+export const anaestheticTypeOptions: InsertSnomedRef[] = [
+  { snomedCtCode: "50697003", displayName: "General anaesthesia", commonName: "GA", category: "anaesthetic_type", subcategory: null, anatomicalRegion: null, specialty: null, sortOrder: 1 },
+  { snomedCtCode: "386761002", displayName: "Local anaesthesia", commonName: "LA", category: "anaesthetic_type", subcategory: null, anatomicalRegion: null, specialty: null, sortOrder: 2 },
+  { snomedCtCode: "231249005", displayName: "Regional nerve block", commonName: "Regional block", category: "anaesthetic_type", subcategory: null, anatomicalRegion: null, specialty: null, sortOrder: 3 },
+  { snomedCtCode: "18946005", displayName: "Spinal anaesthesia", commonName: "Spinal", category: "anaesthetic_type", subcategory: null, anatomicalRegion: null, specialty: null, sortOrder: 4 },
+  { snomedCtCode: "18946005", displayName: "Epidural anaesthesia", commonName: "Epidural", category: "anaesthetic_type", subcategory: null, anatomicalRegion: null, specialty: null, sortOrder: 5 },
+  { snomedCtCode: "72641008", displayName: "Procedural sedation", commonName: "Sedation", category: "anaesthetic_type", subcategory: null, anatomicalRegion: null, specialty: null, sortOrder: 6 },
+];
+
 export const allSeedData: InsertSnomedRef[] = [
   ...vesselSeedData,
   ...flapTypeSeedData,
@@ -174,4 +222,6 @@ export const allSeedData: InsertSnomedRef[] = [
   ...anatomicalRegionOptions,
   ...couplingMethodOptions,
   ...anastomosisConfigOptions,
+  ...comorbidityOptions,
+  ...anaestheticTypeOptions,
 ];
