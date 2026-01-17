@@ -791,26 +791,47 @@ export default function CaseFormScreen() {
         </View>
       </View>
 
-      <PickerField
-        label="Smoking Status"
-        value={smoker}
-        options={[
-          { value: "no", label: "No" },
-          { value: "yes", label: "Yes" },
-          { value: "ex", label: "Ex-Smoker" },
-        ]}
-        onSelect={(v) => setSmoker(v as SmokingStatus)}
-      />
+      <View style={styles.checkboxRow}>
+        <Pressable
+          style={[
+            styles.checkbox,
+            { 
+              backgroundColor: smoker === "yes" ? theme.link + "20" : theme.backgroundRoot,
+              borderColor: smoker === "yes" ? theme.link : theme.border,
+            },
+          ]}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            setSmoker(smoker === "yes" ? "no" : "yes");
+          }}
+        >
+          {smoker === "yes" ? (
+            <Feather name="check" size={16} color={theme.link} />
+          ) : null}
+        </Pressable>
+        <ThemedText style={styles.checkboxLabel}>Smoker</ThemedText>
+      </View>
 
-      <PickerField
-        label="Diabetes"
-        value={diabetes === null ? "" : diabetes ? "yes" : "no"}
-        options={[
-          { value: "no", label: "No" },
-          { value: "yes", label: "Yes" },
-        ]}
-        onSelect={(v) => setDiabetes(v === "yes")}
-      />
+      <View style={styles.checkboxRow}>
+        <Pressable
+          style={[
+            styles.checkbox,
+            { 
+              backgroundColor: diabetes === true ? theme.link + "20" : theme.backgroundRoot,
+              borderColor: diabetes === true ? theme.link : theme.border,
+            },
+          ]}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            setDiabetes(diabetes === true ? false : true);
+          }}
+        >
+          {diabetes === true ? (
+            <Feather name="check" size={16} color={theme.link} />
+          ) : null}
+        </Pressable>
+        <ThemedText style={styles.checkboxLabel}>Diabetes</ThemedText>
+      </View>
 
       <SectionHeader title="Operative Factors" />
 
