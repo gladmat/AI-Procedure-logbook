@@ -4,6 +4,31 @@ import { GoogleGenAI } from "@google/genai";
 import { FREE_FLAP_AI_PROMPT } from "./ai-prompts";
 import { storage } from "./storage";
 import { allSeedData } from "./seedData";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+
+const JWT_SECRET = process.env.JWT_SECRET || "surgical-logbook-secret-key-2026";
+
+interface AuthenticatedRequest extends Request {
+  userId?: string;
+}
+
+const authenticateToken = (req: AuthenticatedRequest, res: Response, next: Function) => {
+  const authHeader = req.headers["authorization"];
+  const token = authHeader && authHeader.split(" ")[1];
+
+  if (!token) {
+    return res.status(401).json({ error: "Authentication required" });
+  }
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET) as { userId: string };
+    req.userId = decoded.userId;
+    next();
+  } catch (error) {
+    return res.status(403).json({ error: "Invalid or expired token" });
+  }
+};
 
 const ai = new GoogleGenAI({
   apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY,
@@ -102,6 +127,150 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/health", (req: Request, res: Response) => {
     res.json({ status: "ok", timestamp: new Date().toISOString() });
+  });
+
+  // Auth Routes
+  app.post("/api/auth/signup", async (req: Request, res: Response) => {
+    try {
+      const { email, password } = req.body;
+      
+      if (!email || !password) {
+        return res.status(400).json({ error: "Email and password required" });
+      }
+
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser) {
+        return res.status(409).json({ error: "Email already registered" });
+      }
+
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const user = await storage.createUser({ email, password: hashedPassword });
+      
+      await storage.createProfile({ userId: user.id, onboardingComplete: false });
+      
+      const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: "30d" });
+      
+      res.json({ token, user: { id: user.id, email: user.email } });
+    } catch (error) {
+      console.error("Signup error:", error);
+      res.status(500).json({ error: "Failed to create account" });
+    }
+  });
+
+  app.post("/api/auth/login", async (req: Request, res: Response) => {
+    try {
+      const { email, password } = req.body;
+      
+      if (!email || !password) {
+        return res.status(400).json({ error: "Email and password required" });
+      }
+
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        return res.status(401).json({ error: "Invalid email or password" });
+      }
+
+      const validPassword = await bcrypt.compare(password, user.password);
+      if (!validPassword) {
+        return res.status(401).json({ error: "Invalid email or password" });
+      }
+
+      const profile = await storage.getProfile(user.id);
+      const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: "30d" });
+      
+      res.json({ 
+        token, 
+        user: { id: user.id, email: user.email },
+        profile,
+        onboardingComplete: profile?.onboardingComplete ?? false
+      });
+    } catch (error) {
+      console.error("Login error:", error);
+      res.status(500).json({ error: "Failed to login" });
+    }
+  });
+
+  app.get("/api/auth/me", authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const user = await storage.getUser(req.userId!);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      
+      const profile = await storage.getProfile(user.id);
+      const facilities = await storage.getUserFacilities(user.id);
+      
+      res.json({
+        user: { id: user.id, email: user.email },
+        profile,
+        facilities,
+        onboardingComplete: profile?.onboardingComplete ?? false
+      });
+    } catch (error) {
+      console.error("Auth check error:", error);
+      res.status(500).json({ error: "Failed to check authentication" });
+    }
+  });
+
+  // Profile Routes
+  app.get("/api/profile", authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const profile = await storage.getProfile(req.userId!);
+      res.json(profile || null);
+    } catch (error) {
+      console.error("Profile fetch error:", error);
+      res.status(500).json({ error: "Failed to fetch profile" });
+    }
+  });
+
+  app.put("/api/profile", authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const profile = await storage.updateProfile(req.userId!, req.body);
+      res.json(profile);
+    } catch (error) {
+      console.error("Profile update error:", error);
+      res.status(500).json({ error: "Failed to update profile" });
+    }
+  });
+
+  // Facilities Routes
+  app.get("/api/facilities", authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const facilities = await storage.getUserFacilities(req.userId!);
+      res.json(facilities);
+    } catch (error) {
+      console.error("Facilities fetch error:", error);
+      res.status(500).json({ error: "Failed to fetch facilities" });
+    }
+  });
+
+  app.post("/api/facilities", authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { facilityName, isPrimary } = req.body;
+      if (!facilityName) {
+        return res.status(400).json({ error: "Facility name required" });
+      }
+      
+      const facility = await storage.createUserFacility({ 
+        userId: req.userId!, 
+        facilityName, 
+        isPrimary: isPrimary ?? false 
+      });
+      res.json(facility);
+    } catch (error) {
+      console.error("Facility create error:", error);
+      res.status(500).json({ error: "Failed to create facility" });
+    }
+  });
+
+  app.delete("/api/facilities/:id", authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      await storage.deleteUserFacility(req.params.id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Facility delete error:", error);
+      res.status(500).json({ error: "Failed to delete facility" });
+    }
   });
 
   // SNOMED Reference Data API

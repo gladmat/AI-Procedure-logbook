@@ -1,5 +1,7 @@
 import { 
   users, type User, type InsertUser,
+  profiles, type Profile, type InsertProfile,
+  userFacilities, type UserFacility, type InsertUserFacility,
   snomedRef, type SnomedRef, type InsertSnomedRef,
   procedures, type Procedure, type InsertProcedure,
   flaps, type Flap, type InsertFlap,
@@ -10,8 +12,17 @@ import { eq, and, ilike, sql } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  
+  getProfile(userId: string): Promise<Profile | undefined>;
+  createProfile(profile: InsertProfile): Promise<Profile>;
+  updateProfile(userId: string, profile: Partial<InsertProfile>): Promise<Profile | undefined>;
+  
+  getUserFacilities(userId: string): Promise<UserFacility[]>;
+  createUserFacility(facility: InsertUserFacility): Promise<UserFacility>;
+  updateUserFacility(id: string, facility: Partial<InsertUserFacility>): Promise<UserFacility | undefined>;
+  deleteUserFacility(id: string): Promise<boolean>;
   
   getSnomedRefs(category?: string, anatomicalRegion?: string, specialty?: string): Promise<SnomedRef[]>;
   getSnomedRefByCode(snomedCtCode: string): Promise<SnomedRef | undefined>;
@@ -42,14 +53,56 @@ export class DatabaseStorage implements IStorage {
     return user || undefined;
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.username, username));
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
     return user || undefined;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const [user] = await db.insert(users).values(insertUser).returning();
     return user;
+  }
+
+  async getProfile(userId: string): Promise<Profile | undefined> {
+    const [profile] = await db.select().from(profiles).where(eq(profiles.userId, userId));
+    return profile || undefined;
+  }
+
+  async createProfile(profile: InsertProfile): Promise<Profile> {
+    const [created] = await db.insert(profiles).values(profile).returning();
+    return created;
+  }
+
+  async updateProfile(userId: string, profile: Partial<InsertProfile>): Promise<Profile | undefined> {
+    const [updated] = await db
+      .update(profiles)
+      .set({ ...profile, updatedAt: new Date() })
+      .where(eq(profiles.userId, userId))
+      .returning();
+    return updated || undefined;
+  }
+
+  async getUserFacilities(userId: string): Promise<UserFacility[]> {
+    return db.select().from(userFacilities).where(eq(userFacilities.userId, userId));
+  }
+
+  async createUserFacility(facility: InsertUserFacility): Promise<UserFacility> {
+    const [created] = await db.insert(userFacilities).values(facility).returning();
+    return created;
+  }
+
+  async updateUserFacility(id: string, facility: Partial<InsertUserFacility>): Promise<UserFacility | undefined> {
+    const [updated] = await db
+      .update(userFacilities)
+      .set(facility)
+      .where(eq(userFacilities.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async deleteUserFacility(id: string): Promise<boolean> {
+    const result = await db.delete(userFacilities).where(eq(userFacilities.id, id));
+    return true;
   }
 
   async getSnomedRefs(category?: string, anatomicalRegion?: string, specialty?: string): Promise<SnomedRef[]> {
