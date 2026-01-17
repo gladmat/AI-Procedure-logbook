@@ -23,6 +23,25 @@ export const COUNTRY_CODING_SYSTEMS: Record<CountryCode, string> = {
   US: "CPT (Current Procedural Terminology)",
 };
 
+export const PROFILE_COUNTRY_TO_CODE: Record<string, CountryCode> = {
+  new_zealand: "NZ",
+  australia: "AU",
+  united_kingdom: "GB",
+  united_states: "US",
+  poland: "PL",
+  switzerland: "CH",
+};
+
+export function getCountryCodeFromProfile(profileCountry: string | null | undefined): CountryCode {
+  if (!profileCountry) return "NZ";
+  return PROFILE_COUNTRY_TO_CODE[profileCountry] || "NZ";
+}
+
+export function getCodingSystemForProfile(profileCountry: string | null | undefined): string {
+  const countryCode = getCountryCodeFromProfile(profileCountry);
+  return COUNTRY_CODING_SYSTEMS[countryCode];
+}
+
 export const SNOMED_PROCEDURES: SnomedProcedure[] = [
   {
     snomedCtCode: "234298008",

@@ -35,14 +35,15 @@ import {
   DISCHARGE_OUTCOME_LABELS,
   MORTALITY_CLASSIFICATION_LABELS,
 } from "@/types/case";
-import { getCase, getTimelineEvents, deleteCase, getSettings } from "@/lib/storage";
+import { getCase, getTimelineEvents, deleteCase } from "@/lib/storage";
 import { SpecialtyBadge } from "@/components/SpecialtyBadge";
 import { RoleBadge } from "@/components/RoleBadge";
 import { LoadingState } from "@/components/LoadingState";
 import { EmptyState } from "@/components/EmptyState";
 import { SectionHeader } from "@/components/SectionHeader";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
-import { COUNTRY_CODING_SYSTEMS } from "@/lib/snomedCt";
+import { COUNTRY_CODING_SYSTEMS, getCountryCodeFromProfile } from "@/lib/snomedCt";
+import { useAuth } from "@/contexts/AuthContext";
 
 type RouteParams = RouteProp<RootStackParamList, "CaseDetail">;
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -76,20 +77,18 @@ export default function CaseDetailScreen() {
   const route = useRoute<RouteParams>();
   const insets = useSafeAreaInsets();
   const headerHeight = useHeaderHeight();
+  const { profile } = useAuth();
+  
+  const countryCode = getCountryCodeFromProfile(profile?.countryOfPractice);
 
   const [caseData, setCaseData] = useState<Case | null>(null);
   const [timelineEvents, setTimelineEvents] = useState<TimelineEvent[]>([]);
   const [loading, setLoading] = useState(true);
-  const [countryCode, setCountryCode] = useState<string>("GB");
 
   const loadData = async () => {
     try {
-      const [data, settings] = await Promise.all([
-        getCase(route.params.caseId),
-        getSettings(),
-      ]);
+      const data = await getCase(route.params.caseId);
       setCaseData(data);
-      setCountryCode(settings.countryCode);
       if (data) {
         const events = await getTimelineEvents(data.id);
         setTimelineEvents(events);

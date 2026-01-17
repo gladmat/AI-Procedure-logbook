@@ -17,9 +17,8 @@ import { ThemedText } from "@/components/ThemedText";
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, Shadows } from "@/constants/theme";
-import { clearAllData, exportCasesAsJSON, getCases, getSettings, saveSettings, AppSettings } from "@/lib/storage";
-import { CountryCode, COUNTRY_LABELS } from "@/types/case";
-import { COUNTRY_CODING_SYSTEMS } from "@/lib/snomedCt";
+import { clearAllData, exportCasesAsJSON, getCases, getSettings, AppSettings } from "@/lib/storage";
+import { getCodingSystemForProfile } from "@/lib/snomedCt";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface SettingsItemProps {
@@ -90,8 +89,6 @@ function SettingsItem({
   );
 }
 
-const COUNTRIES: CountryCode[] = ["CH", "GB", "PL", "AU", "NZ", "US"];
-
 const CAREER_STAGE_LABELS: Record<string, string> = {
   junior_house_officer: "Junior House Officer",
   registrar_non_training: "Registrar (Non-Training)",
@@ -119,7 +116,6 @@ export default function SettingsScreen() {
 
   const [caseCount, setCaseCount] = useState<number | null>(null);
   const [settings, setSettings] = useState<AppSettings | null>(null);
-  const [showCountryPicker, setShowCountryPicker] = useState(false);
   const [showFacilitiesModal, setShowFacilitiesModal] = useState(false);
   const [newFacilityName, setNewFacilityName] = useState("");
 
@@ -127,13 +123,6 @@ export default function SettingsScreen() {
     getCases().then((cases) => setCaseCount(cases.length));
     getSettings().then(setSettings);
   }, []);
-
-  const handleCountryChange = async (country: CountryCode) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    await saveSettings({ countryCode: country });
-    setSettings((prev) => prev ? { ...prev, countryCode: country } : null);
-    setShowCountryPicker(false);
-  };
 
   const handleExport = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -261,7 +250,17 @@ export default function SettingsScreen() {
                   {profile?.countryOfPractice ? COUNTRY_OF_PRACTICE_LABELS[profile.countryOfPractice] || profile.countryOfPractice : "Not set"}
                 </ThemedText>
               </View>
-              {profile?.medicalCouncilNumber ? (
+              <View style={styles.profileDetailItem}>
+                <ThemedText style={[styles.profileDetailLabel, { color: theme.textSecondary }]}>
+                  Coding System
+                </ThemedText>
+                <ThemedText style={styles.profileDetailValue} numberOfLines={1}>
+                  {getCodingSystemForProfile(profile?.countryOfPractice).split(' (')[0]}
+                </ThemedText>
+              </View>
+            </View>
+            {profile?.medicalCouncilNumber ? (
+              <View style={[styles.profileDetailsRow, { borderTopColor: theme.border }]}>
                 <View style={styles.profileDetailItem}>
                   <ThemedText style={[styles.profileDetailLabel, { color: theme.textSecondary }]}>
                     Registration
@@ -270,8 +269,8 @@ export default function SettingsScreen() {
                     {profile.medicalCouncilNumber}
                   </ThemedText>
                 </View>
-              ) : null}
-            </View>
+              </View>
+            ) : null}
           </View>
         </View>
 
@@ -289,23 +288,6 @@ export default function SettingsScreen() {
           </View>
         </View>
 
-        <View style={styles.section}>
-          <ThemedText style={[styles.sectionTitle, { color: theme.textSecondary }]}>
-            REGION
-          </ThemedText>
-          <View style={[styles.sectionCard, { backgroundColor: theme.backgroundDefault }]}>
-            <SettingsItem
-              icon="globe"
-              label="Country / Region"
-              subtitle={settings?.countryCode ? COUNTRY_CODING_SYSTEMS[settings.countryCode] : undefined}
-              value={settings?.countryCode ? COUNTRY_LABELS[settings.countryCode] : undefined}
-              onPress={() => setShowCountryPicker(true)}
-            />
-          </View>
-          <ThemedText style={[styles.sectionHint, { color: theme.textTertiary }]}>
-            Determines which procedure coding system is used for display and export (e.g., OPCS-4 for UK, CHOP for Switzerland).
-          </ThemedText>
-        </View>
 
         <View style={styles.section}>
           <ThemedText style={[styles.sectionTitle, { color: theme.textSecondary }]}>
@@ -462,47 +444,6 @@ export default function SettingsScreen() {
         </Pressable>
       </Modal>
 
-      <Modal
-        visible={showCountryPicker}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowCountryPicker(false)}
-      >
-        <Pressable
-          style={styles.modalOverlay}
-          onPress={() => setShowCountryPicker(false)}
-        >
-          <View style={[styles.modalContent, { backgroundColor: theme.backgroundDefault }]}>
-            <ThemedText style={styles.modalTitle}>Select Country / Region</ThemedText>
-            <ThemedText style={[styles.modalSubtitle, { color: theme.textSecondary }]}>
-              This determines the procedure coding system used
-            </ThemedText>
-            {COUNTRIES.map((country) => (
-              <Pressable
-                key={country}
-                style={({ pressed }) => [
-                  styles.countryOption,
-                  settings?.countryCode === country && { backgroundColor: theme.link + "15" },
-                  { opacity: pressed ? 0.7 : 1 },
-                ]}
-                onPress={() => handleCountryChange(country)}
-              >
-                <View style={styles.countryInfo}>
-                  <ThemedText style={styles.countryName}>
-                    {COUNTRY_LABELS[country]}
-                  </ThemedText>
-                  <ThemedText style={[styles.countrySystem, { color: theme.textSecondary }]}>
-                    {COUNTRY_CODING_SYSTEMS[country]}
-                  </ThemedText>
-                </View>
-                {settings?.countryCode === country ? (
-                  <Feather name="check" size={20} color={theme.link} />
-                ) : null}
-              </Pressable>
-            ))}
-          </View>
-        </Pressable>
-      </Modal>
     </>
   );
 }
