@@ -1,4 +1,5 @@
 import React from "react";
+import { View, ActivityIndicator, StyleSheet } from "react-native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import MainTabNavigator from "@/navigation/MainTabNavigator";
 import CaseDetailScreen from "@/screens/CaseDetailScreen";
@@ -6,10 +7,17 @@ import CaseFormScreen from "@/screens/CaseFormScreen";
 import AddCaseScreen from "@/screens/AddCaseScreen";
 import SmartCaptureScreen from "@/screens/SmartCaptureScreen";
 import AddTimelineEventScreen from "@/screens/AddTimelineEventScreen";
+import AuthScreen from "@/screens/AuthScreen";
+import OnboardingScreen from "@/screens/OnboardingScreen";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
+import { useAuth } from "@/contexts/AuthContext";
 import { Specialty } from "@/types/case";
+import { Colors } from "@/constants/theme";
+import { useColorScheme } from "@/hooks/useColorScheme";
 
 export type RootStackParamList = {
+  Auth: undefined;
+  Onboarding: undefined;
   Main: undefined;
   CaseDetail: { caseId: string };
   CaseForm: { specialty: Specialty; extractedData?: Record<string, unknown> };
@@ -22,51 +30,86 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function RootStackNavigator() {
   const screenOptions = useScreenOptions();
+  const { isAuthenticated, onboardingComplete, isLoading } = useAuth();
+  const colorScheme = useColorScheme();
+  const colors = Colors[colorScheme ?? "light"];
+
+  if (isLoading) {
+    return (
+      <View style={[styles.loadingContainer, { backgroundColor: colors.backgroundRoot }]}>
+        <ActivityIndicator size="large" color={colors.link} />
+      </View>
+    );
+  }
 
   return (
     <Stack.Navigator screenOptions={screenOptions}>
-      <Stack.Screen
-        name="Main"
-        component={MainTabNavigator}
-        options={{ headerShown: false }}
-      />
-      <Stack.Screen
-        name="CaseDetail"
-        component={CaseDetailScreen}
-        options={{
-          headerTitle: "Case Details",
-        }}
-      />
-      <Stack.Screen
-        name="CaseForm"
-        component={CaseFormScreen}
-        options={{
-          headerTitle: "New Case",
-        }}
-      />
-      <Stack.Screen
-        name="AddCase"
-        component={AddCaseScreen}
-        options={{
-          headerTitle: "Add Case",
-        }}
-      />
-      <Stack.Screen
-        name="SmartCapture"
-        component={SmartCaptureScreen}
-        options={{
-          headerShown: false,
-          presentation: "fullScreenModal",
-        }}
-      />
-      <Stack.Screen
-        name="AddTimelineEvent"
-        component={AddTimelineEventScreen}
-        options={{
-          headerTitle: "Add Event",
-          presentation: "modal",
-        }}
-      />
+      {!isAuthenticated ? (
+        <Stack.Screen
+          name="Auth"
+          component={AuthScreen}
+          options={{ headerShown: false }}
+        />
+      ) : !onboardingComplete ? (
+        <Stack.Screen
+          name="Onboarding"
+          component={OnboardingScreen}
+          options={{ headerShown: false }}
+        />
+      ) : (
+        <>
+          <Stack.Screen
+            name="Main"
+            component={MainTabNavigator}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="CaseDetail"
+            component={CaseDetailScreen}
+            options={{
+              headerTitle: "Case Details",
+            }}
+          />
+          <Stack.Screen
+            name="CaseForm"
+            component={CaseFormScreen}
+            options={{
+              headerTitle: "New Case",
+            }}
+          />
+          <Stack.Screen
+            name="AddCase"
+            component={AddCaseScreen}
+            options={{
+              headerTitle: "Add Case",
+            }}
+          />
+          <Stack.Screen
+            name="SmartCapture"
+            component={SmartCaptureScreen}
+            options={{
+              headerShown: false,
+              presentation: "fullScreenModal",
+            }}
+          />
+          <Stack.Screen
+            name="AddTimelineEvent"
+            component={AddTimelineEventScreen}
+            options={{
+              headerTitle: "Add Event",
+              presentation: "modal",
+            }}
+          />
+        </>
+      )}
     </Stack.Navigator>
   );
 }
+
+const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+});
