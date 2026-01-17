@@ -6,6 +6,7 @@ import {
   Alert,
   Share,
   Modal,
+  TextInput,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
@@ -19,6 +20,7 @@ import { Spacing, BorderRadius, Shadows } from "@/constants/theme";
 import { clearAllData, exportCasesAsJSON, getCases, getSettings, saveSettings, AppSettings } from "@/lib/storage";
 import { CountryCode, COUNTRY_LABELS } from "@/types/case";
 import { COUNTRY_CODING_SYSTEMS } from "@/lib/snomedCt";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface SettingsItemProps {
   icon: keyof typeof Feather.glyphMap;
@@ -90,15 +92,36 @@ function SettingsItem({
 
 const COUNTRIES: CountryCode[] = ["CH", "GB", "PL", "AU", "NZ", "US"];
 
+const CAREER_STAGE_LABELS: Record<string, string> = {
+  junior_house_officer: "Junior House Officer",
+  registrar_non_training: "Registrar (Non-Training)",
+  set_trainee: "SET Trainee",
+  fellow: "Fellow",
+  consultant_specialist: "Consultant / Specialist",
+  moss: "Medical Officer Special Scale",
+};
+
+const COUNTRY_OF_PRACTICE_LABELS: Record<string, string> = {
+  new_zealand: "New Zealand",
+  australia: "Australia",
+  united_kingdom: "United Kingdom",
+  united_states: "United States",
+  poland: "Poland",
+  other: "Other",
+};
+
 export default function SettingsScreen() {
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
   const headerHeight = useHeaderHeight();
   const tabBarHeight = useBottomTabBarHeight();
+  const { user, profile, facilities, logout, addFacility, removeFacility } = useAuth();
 
   const [caseCount, setCaseCount] = useState<number | null>(null);
   const [settings, setSettings] = useState<AppSettings | null>(null);
   const [showCountryPicker, setShowCountryPicker] = useState(false);
+  const [showFacilitiesModal, setShowFacilitiesModal] = useState(false);
+  const [newFacilityName, setNewFacilityName] = useState("");
 
   useEffect(() => {
     getCases().then((cases) => setCaseCount(cases.length));
@@ -147,6 +170,53 @@ export default function SettingsScreen() {
     );
   };
 
+  const handleLogout = () => {
+    Alert.alert(
+      "Sign Out",
+      "Are you sure you want to sign out?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Sign Out",
+          style: "destructive",
+          onPress: async () => {
+            await logout();
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          },
+        },
+      ]
+    );
+  };
+
+  const handleAddFacility = async () => {
+    if (!newFacilityName.trim()) return;
+    try {
+      await addFacility(newFacilityName.trim(), facilities.length === 0);
+      setNewFacilityName("");
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch (error: any) {
+      Alert.alert("Error", error.message || "Failed to add facility");
+    }
+  };
+
+  const handleRemoveFacility = (id: string, name: string) => {
+    Alert.alert(
+      "Remove Facility",
+      `Remove "${name}" from your facilities?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Remove",
+          style: "destructive",
+          onPress: async () => {
+            await removeFacility(id);
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          },
+        },
+      ]
+    );
+  };
+
   return (
     <>
       <KeyboardAwareScrollViewCompat
@@ -159,6 +229,66 @@ export default function SettingsScreen() {
           },
         ]}
       >
+        <View style={styles.section}>
+          <ThemedText style={[styles.sectionTitle, { color: theme.textSecondary }]}>
+            ACCOUNT
+          </ThemedText>
+          <View style={[styles.sectionCard, { backgroundColor: theme.backgroundDefault }]}>
+            <View style={styles.profileHeader}>
+              <View style={[styles.avatarContainer, { backgroundColor: theme.link + "15" }]}>
+                <Feather name="user" size={28} color={theme.link} />
+              </View>
+              <View style={styles.profileInfo}>
+                <ThemedText style={styles.profileName}>
+                  {profile?.fullName || "Surgeon"}
+                </ThemedText>
+                <ThemedText style={[styles.profileEmail, { color: theme.textSecondary }]}>
+                  {user?.email}
+                </ThemedText>
+                {profile?.careerStage ? (
+                  <ThemedText style={[styles.profileDetail, { color: theme.textTertiary }]}>
+                    {CAREER_STAGE_LABELS[profile.careerStage] || profile.careerStage}
+                  </ThemedText>
+                ) : null}
+              </View>
+            </View>
+            <View style={[styles.profileDetailsRow, { borderTopColor: theme.border }]}>
+              <View style={styles.profileDetailItem}>
+                <ThemedText style={[styles.profileDetailLabel, { color: theme.textSecondary }]}>
+                  Country
+                </ThemedText>
+                <ThemedText style={styles.profileDetailValue}>
+                  {profile?.countryOfPractice ? COUNTRY_OF_PRACTICE_LABELS[profile.countryOfPractice] || profile.countryOfPractice : "Not set"}
+                </ThemedText>
+              </View>
+              {profile?.medicalCouncilNumber ? (
+                <View style={styles.profileDetailItem}>
+                  <ThemedText style={[styles.profileDetailLabel, { color: theme.textSecondary }]}>
+                    Registration
+                  </ThemedText>
+                  <ThemedText style={styles.profileDetailValue}>
+                    {profile.medicalCouncilNumber}
+                  </ThemedText>
+                </View>
+              ) : null}
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <ThemedText style={[styles.sectionTitle, { color: theme.textSecondary }]}>
+            FACILITIES
+          </ThemedText>
+          <View style={[styles.sectionCard, { backgroundColor: theme.backgroundDefault }]}>
+            <SettingsItem
+              icon="home"
+              label="My Facilities"
+              subtitle={`${facilities.length} ${facilities.length === 1 ? 'hospital' : 'hospitals'}`}
+              onPress={() => setShowFacilitiesModal(true)}
+            />
+          </View>
+        </View>
+
         <View style={styles.section}>
           <ThemedText style={[styles.sectionTitle, { color: theme.textSecondary }]}>
             REGION
@@ -238,6 +368,20 @@ export default function SettingsScreen() {
 
         <View style={styles.section}>
           <ThemedText style={[styles.sectionTitle, { color: theme.textSecondary }]}>
+            ACCOUNT
+          </ThemedText>
+          <View style={[styles.sectionCard, { backgroundColor: theme.backgroundDefault }]}>
+            <SettingsItem
+              icon="log-out"
+              label="Sign Out"
+              onPress={handleLogout}
+              destructive
+            />
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <ThemedText style={[styles.sectionTitle, { color: theme.textSecondary }]}>
             DANGER ZONE
           </ThemedText>
           <View style={[styles.sectionCard, { backgroundColor: theme.backgroundDefault }]}>
@@ -250,6 +394,73 @@ export default function SettingsScreen() {
           </View>
         </View>
       </KeyboardAwareScrollViewCompat>
+
+      <Modal
+        visible={showFacilitiesModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowFacilitiesModal(false)}
+      >
+        <Pressable
+          style={styles.modalOverlay}
+          onPress={() => setShowFacilitiesModal(false)}
+        >
+          <View style={[styles.facilitiesModalContent, { backgroundColor: theme.backgroundDefault }]}>
+            <ThemedText style={styles.modalTitle}>My Facilities</ThemedText>
+            <ThemedText style={[styles.modalSubtitle, { color: theme.textSecondary }]}>
+              Hospitals and clinics where you operate
+            </ThemedText>
+            
+            <View style={styles.addFacilityRow}>
+              <TextInput
+                style={[styles.facilityInput, { backgroundColor: theme.backgroundSecondary, color: theme.text, borderColor: theme.border }]}
+                value={newFacilityName}
+                onChangeText={setNewFacilityName}
+                placeholder="Add new facility"
+                placeholderTextColor={theme.textTertiary}
+                onSubmitEditing={handleAddFacility}
+                returnKeyType="done"
+              />
+              <Pressable
+                style={[styles.addFacilityButton, { backgroundColor: theme.link, opacity: newFacilityName.trim() ? 1 : 0.5 }]}
+                onPress={handleAddFacility}
+                disabled={!newFacilityName.trim()}
+              >
+                <Feather name="plus" size={20} color="#FFF" />
+              </Pressable>
+            </View>
+
+            {facilities.length > 0 ? (
+              facilities.map((facility) => (
+                <View
+                  key={facility.id}
+                  style={[styles.facilityItem, { backgroundColor: theme.backgroundSecondary }]}
+                >
+                  <View style={styles.facilityItemInfo}>
+                    <Feather name="home" size={16} color={theme.textSecondary} />
+                    <ThemedText style={styles.facilityItemName}>{facility.facilityName}</ThemedText>
+                    {facility.isPrimary ? (
+                      <View style={[styles.primaryBadge, { backgroundColor: theme.link + "20" }]}>
+                        <ThemedText style={[styles.primaryBadgeText, { color: theme.link }]}>Primary</ThemedText>
+                      </View>
+                    ) : null}
+                  </View>
+                  <Pressable onPress={() => handleRemoveFacility(facility.id, facility.facilityName)}>
+                    <Feather name="x" size={18} color={theme.error} />
+                  </Pressable>
+                </View>
+              ))
+            ) : (
+              <View style={styles.emptyFacilities}>
+                <Feather name="home" size={32} color={theme.textTertiary} />
+                <ThemedText style={[styles.emptyFacilitiesText, { color: theme.textSecondary }]}>
+                  No facilities added
+                </ThemedText>
+              </View>
+            )}
+          </View>
+        </Pressable>
+      </Modal>
 
       <Modal
         visible={showCountryPicker}
@@ -429,5 +640,119 @@ const styles = StyleSheet.create({
   countrySystem: {
     fontSize: 12,
     marginTop: 2,
+  },
+  profileHeader: {
+    flexDirection: "row",
+    padding: Spacing.lg,
+    gap: Spacing.md,
+    alignItems: "center",
+  },
+  avatarContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  profileInfo: {
+    flex: 1,
+  },
+  profileName: {
+    fontSize: 18,
+    fontWeight: "600",
+  },
+  profileEmail: {
+    fontSize: 14,
+    marginTop: 2,
+  },
+  profileDetail: {
+    fontSize: 12,
+    marginTop: 4,
+  },
+  profileDetailsRow: {
+    flexDirection: "row",
+    borderTopWidth: 1,
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+  },
+  profileDetailItem: {
+    flex: 1,
+  },
+  profileDetailLabel: {
+    fontSize: 11,
+    fontWeight: "500",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  profileDetailValue: {
+    fontSize: 14,
+    fontWeight: "500",
+    marginTop: 2,
+  },
+  facilitiesModalContent: {
+    width: "100%",
+    maxWidth: 400,
+    maxHeight: "80%",
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.lg,
+    ...Shadows.modal,
+  },
+  addFacilityRow: {
+    flexDirection: "row",
+    gap: Spacing.sm,
+    marginBottom: Spacing.lg,
+  },
+  facilityInput: {
+    flex: 1,
+    height: 44,
+    borderRadius: BorderRadius.sm,
+    borderWidth: 1,
+    paddingHorizontal: Spacing.md,
+    fontSize: 15,
+  },
+  addFacilityButton: {
+    width: 44,
+    height: 44,
+    borderRadius: BorderRadius.sm,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  facilityItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.sm,
+    borderRadius: BorderRadius.sm,
+    marginBottom: Spacing.xs,
+  },
+  facilityItemInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+    flex: 1,
+  },
+  facilityItemName: {
+    fontSize: 15,
+    flex: 1,
+  },
+  primaryBadge: {
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 2,
+    borderRadius: BorderRadius.xs,
+  },
+  primaryBadgeText: {
+    fontSize: 10,
+    fontWeight: "600",
+    textTransform: "uppercase",
+  },
+  emptyFacilities: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: Spacing["3xl"],
+  },
+  emptyFacilitiesText: {
+    fontSize: 14,
+    marginTop: Spacing.sm,
   },
 });

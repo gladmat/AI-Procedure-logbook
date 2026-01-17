@@ -69,6 +69,7 @@ import { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { RecipientSiteSelector } from "@/components/RecipientSiteSelector";
 import { AnastomosisEntryCard } from "@/components/AnastomosisEntryCard";
 import { ProcedureEntryCard } from "@/components/ProcedureEntryCard";
+import { useAuth } from "@/contexts/AuthContext";
 
 type RouteParams = RouteProp<RootStackParamList, "CaseForm">;
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -173,16 +174,19 @@ export default function CaseFormScreen() {
   const route = useRoute<RouteParams>();
   const insets = useSafeAreaInsets();
   const headerHeight = useHeaderHeight();
+  const { facilities } = useAuth();
 
   const { specialty, extractedData } = route.params;
   const config = getConfigForSpecialty(specialty);
+
+  const primaryFacility = facilities.find(f => f.isPrimary)?.facilityName || facilities[0]?.facilityName || "";
 
   const [saving, setSaving] = useState(false);
   const [patientIdentifier, setPatientIdentifier] = useState("");
   const [procedureDate, setProcedureDate] = useState(
     new Date().toISOString().split("T")[0]
   );
-  const [facility, setFacility] = useState("");
+  const [facility, setFacility] = useState(primaryFacility);
   const [procedureType, setProcedureType] = useState<string>(
     (extractedData as FreeFlapDetails | undefined)?.flapDisplayName || 
     (extractedData as any)?.flapType || 
@@ -554,13 +558,24 @@ export default function CaseFormScreen() {
         required
       />
 
-      <FormField
-        label="Facility"
-        value={facility}
-        onChangeText={setFacility}
-        placeholder="Hospital or clinic name"
-        required
-      />
+      {facilities.length > 0 ? (
+        <PickerField
+          label="Facility"
+          value={facility}
+          options={facilities.map(f => ({ value: f.facilityName, label: f.facilityName }))}
+          onSelect={setFacility}
+          placeholder="Select facility..."
+          required
+        />
+      ) : (
+        <FormField
+          label="Facility"
+          value={facility}
+          onChangeText={setFacility}
+          placeholder="Hospital or clinic name"
+          required
+        />
+      )}
 
       <SectionHeader title="Procedures Performed" />
       
