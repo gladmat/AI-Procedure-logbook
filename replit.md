@@ -12,9 +12,22 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (January 2026)
 
+### RACS MALT Audit Integration (Latest)
+- **Comprehensive RACS MALT Data Model**: Full implementation of Royal Australasian College of Surgeons MALT (Morbidity Audit and Logbook Tool) fields
+- **Patient Demographics**: Gender (with SNOMED CT mapping), ethnicity tracking
+- **Admission Details**: Admission/discharge dates, admission category (elective/emergency/planned), unplanned readmission tracking with reason codes
+- **Three-Level Diagnosis System**: Pre-management, final, and pathological diagnoses with SNOMED CT coding capability
+- **36 SNOMED-Coded Co-morbidities**: AF, angina, anxiety, asthma, cancer, cardiac failure, COPD, chronic renal failure, cirrhosis, CVA, dementia, depression, diabetes (Type 1 & 2), dialysis, hepatitis, HIV, hypercholesterolemia, hypertension, hyperthyroidism, hypothyroidism, IHD, immunosuppression, MI, obesity, OSA, pacemaker, PVD, PE, seizures, steroid use, TIA, transplant, TB
+- **6 Anaesthetic Types**: General, regional, local, sedation, combined general/regional, local with sedation - all SNOMED CT coded
+- **Operative Factors**: Wound infection risk classification (clean/clean-contaminated/contaminated/dirty-infected), antibiotic prophylaxis, DVT prophylaxis
+- **Comprehensive Outcomes**: Unplanned ICU admission (with reason), return to theatre tracking, discharge outcome (alive/deceased), mortality classification (expected/unexpected/unrelated to surgery), MDM discussion flag, recurrence date
+- **ASA Score Extended**: 1-6 scale including brain-dead organ donor classification
+- **AI-Powered Extraction**: All specialty prompts updated to extract RACS MALT fields from operation notes automatically
+
+### Previous Updates
 - **Dynamic Anastomosis Tracking**: Free flap cases now support multiple arterial and venous anastomoses with SNOMED CT coded vessels
 - **Recipient Site Selection**: Anatomical region picker filters vessels dynamically (lower leg shows Anterior Tibial, Posterior Tibial; foot shows Dorsalis Pedis, etc.)
-- **SNOMED CT Reference Database**: PostgreSQL `snomed_ref` table stores vessels organized by anatomical region with real SNOMED CT codes
+- **SNOMED CT Reference Database**: PostgreSQL `snomed_ref` table stores vessels, co-morbidities, and anaesthetic types organized by category with real SNOMED CT codes
 - **Modular Database Design**: Universal `snomed_ref` pattern supports future expansion to other specialties (hand fractures, burns, etc.)
 - **SNOMED CT Procedure Coding**: Added international procedure coding using SNOMED CT as the canonical standard, with country-specific local code mappings (CHOP for Switzerland, OPCS-4 for UK, ACHI for Australia/NZ, CPT for US, ICD-9-CM-PL for Poland)
 - **Country/Region Settings**: Users can select their country in Settings to see procedure codes in their local coding system
@@ -34,14 +47,25 @@ Preferred communication style: Simple, everyday language.
 
 ### Backend Architecture
 - **Runtime**: Express.js server with TypeScript
-- **API Design**: RESTful endpoints for AI data extraction
+- **API Design**: RESTful endpoints for AI data extraction and SNOMED CT lookups
 - **AI Integration**: Google Gemini via Replit AI Integrations for extracting surgical data from anonymized operation note text
 
 ### Data Model (Core + Payload Pattern)
 Cases use a flexible JSON payload structure for clinical details, allowing future expansion to new surgical specialties without database schema changes:
-- **Cases table**: Universal header fields (patient ID, date, facility, role, risk factors, surgery timing, operating team, procedure codes)
+- **Cases table**: Universal header fields including:
+  - Patient ID, date, facility, role
+  - Patient demographics (gender, ethnicity)
+  - Admission details (dates, category, readmission status)
+  - Diagnoses (pre-management, final, pathological)
+  - Co-morbidities (array of SNOMED-coded conditions)
+  - Risk factors (ASA, BMI, smoking, diabetes)
+  - Operative factors (wound risk, anaesthetic type, prophylaxis)
+  - Surgery timing and operating team
+  - Procedure codes (SNOMED CT + local system)
+  - Outcomes (ICU, return to theatre, mortality, MDM)
 - **clinical_details**: JSON column storing specialty-specific data (flap type, vessels, timing)
 - **TimelineEvents table**: Post-operative tracking linked to cases
+- **snomed_ref table**: SNOMED CT coded reference data for vessels, co-morbidities, anaesthetic types
 - **Settings**: Country code, display preferences stored in AsyncStorage
 
 ### Privacy Pipeline
@@ -53,24 +77,24 @@ Cases use a flexible JSON payload structure for clinical details, allowing futur
 
 ### Key Design Patterns
 - **Procedure Configuration**: Modular config files define fields per specialty (free_flap, hand_trauma, body_contouring, burns, aesthetics)
-- **SNOMED-CT Integration**: International procedure coding with country-specific mappings (client/lib/snomedCt.ts)
+- **SNOMED-CT Integration**: International procedure and diagnosis coding with country-specific mappings
 - **Component Library**: Reusable themed components (Button, Card, FormField, etc.)
 
 ## Key Files
 
-- `client/types/case.ts` - Core data model types including Case, SurgeryTiming, OperatingTeamMember, ProcedureCode, AnastomosisEntry
+- `client/types/case.ts` - Core data model types including Case, RACS MALT types (Gender, AdmissionCategory, WoundInfectionRisk, DischargeOutcome, etc.), label constants for all enums
 - `client/lib/snomedCt.ts` - SNOMED CT procedure database with country-specific code mappings
-- `client/lib/snomedApi.ts` - API client for fetching SNOMED CT vessels by region from PostgreSQL
+- `client/lib/snomedApi.ts` - API client for fetching SNOMED CT data (vessels, co-morbidities, anaesthetic types) by category from PostgreSQL
 - `client/lib/storage.ts` - AsyncStorage operations for cases, settings, timeline events
 - `client/lib/procedureConfig.ts` - Specialty-specific field configurations
 - `client/lib/privacyUtils.ts` - NHI/date redaction utilities
-- `client/screens/CaseFormScreen.tsx` - Case entry form with surgery timing, team, and anastomosis fields
-- `client/screens/CaseDetailScreen.tsx` - Case detail view with procedure codes and timing display
+- `client/screens/CaseFormScreen.tsx` - Comprehensive case entry form with RACS MALT sections (demographics, admission, diagnoses, co-morbidities, operative factors, outcomes)
+- `client/screens/CaseDetailScreen.tsx` - Case detail view displaying all RACS MALT fields with SNOMED codes
 - `client/screens/SettingsScreen.tsx` - Country selection and data export
 - `client/components/RecipientSiteSelector.tsx` - Anatomical region picker for recipient site
 - `client/components/AnastomosisEntryCard.tsx` - Dynamic vessel selection card with region filtering
-- `server/ai-prompts.ts` - AI extraction prompts for each specialty (now extracts anastomoses)
-- `server/seedData.ts` - SNOMED CT vessel seeding for PostgreSQL snomed_ref table
+- `server/ai-prompts.ts` - AI extraction prompts for each specialty (extracts all RACS MALT fields)
+- `server/seedData.ts` - SNOMED CT seeding for vessels, co-morbidities, anaesthetic types
 - `shared/schema.ts` - Drizzle ORM schema with snomed_ref, flaps, and anastomoses tables
 
 ## External Dependencies
@@ -79,7 +103,7 @@ Cases use a flexible JSON payload structure for clinical details, allowing futur
 - **Google Gemini** (via Replit AI Integrations): Extracts structured surgical data from anonymized operation note text
 
 ### Database
-- **PostgreSQL**: Configured via Drizzle ORM for potential server-side storage
+- **PostgreSQL**: Configured via Drizzle ORM for SNOMED CT reference data
 - **AsyncStorage**: Primary local data persistence on device
 
 ### Key Libraries
@@ -91,7 +115,7 @@ Cases use a flexible JSON payload structure for clinical details, allowing futur
 
 ## Future Work (Not Yet Implemented)
 
-- RACS MALT logbook field integration (user to provide details)
 - Team collaboration with end-to-end encryption
 - Data export in multiple formats (CSV, FHIR)
 - Additional SNOMED CT procedure mappings for more flap types
+- SNOMED CT diagnosis search/autocomplete integration
