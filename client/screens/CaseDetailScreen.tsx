@@ -18,6 +18,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, Shadows } from "@/constants/theme";
 import {
   Case,
+  CaseProcedure,
   TimelineEvent,
   SPECIALTY_LABELS,
   ROLE_LABELS,
@@ -188,6 +189,7 @@ export default function CaseDetailScreen() {
     }
   };
 
+  const hasProcedures = caseData.procedures && caseData.procedures.length > 0;
   const hasPatientDemographics = caseData.gender || caseData.ethnicity;
   const hasAdmissionDetails = caseData.admissionDate || caseData.dischargeDate || caseData.admissionCategory || (caseData.unplannedReadmission && caseData.unplannedReadmission !== "no");
   const hasDiagnoses = caseData.preManagementDiagnosis || caseData.finalDiagnosis || caseData.pathologicalDiagnosis;
@@ -251,6 +253,54 @@ export default function CaseDetailScreen() {
             </View>
           </View>
         </View>
+
+        {hasProcedures ? (
+          <>
+            <SectionHeader title="Procedures Performed" />
+            {caseData.procedures?.map((proc, idx) => (
+              <View 
+                key={proc.id} 
+                style={[styles.procedureCard, { backgroundColor: theme.backgroundDefault }]}
+              >
+                <View style={styles.procedureHeader}>
+                  <View style={[styles.procedureNumber, { backgroundColor: theme.link + "20" }]}>
+                    <ThemedText style={[styles.procedureNumberText, { color: theme.link }]}>
+                      {idx + 1}
+                    </ThemedText>
+                  </View>
+                  <View style={styles.procedureInfo}>
+                    <ThemedText style={styles.procedureName}>
+                      {proc.procedureName || "Unnamed Procedure"}
+                    </ThemedText>
+                    {proc.specialty ? (
+                      <ThemedText style={[styles.procedureSpecialty, { color: theme.textSecondary }]}>
+                        {SPECIALTY_LABELS[proc.specialty]}
+                      </ThemedText>
+                    ) : null}
+                  </View>
+                  <RoleBadge role={proc.surgeonRole} />
+                </View>
+                {proc.snomedCtCode ? (
+                  <View style={[styles.procedureSnomedRow, { borderTopColor: theme.border }]}>
+                    <ThemedText style={[styles.procedureSnomedLabel, { color: theme.textTertiary }]}>
+                      SNOMED CT: {proc.snomedCtCode}
+                    </ThemedText>
+                    {proc.snomedCtDisplay ? (
+                      <ThemedText style={[styles.procedureSnomedDisplay, { color: theme.textSecondary }]}>
+                        {proc.snomedCtDisplay}
+                      </ThemedText>
+                    ) : null}
+                  </View>
+                ) : null}
+                {proc.notes ? (
+                  <ThemedText style={[styles.procedureNotes, { color: theme.textSecondary }]}>
+                    {proc.notes}
+                  </ThemedText>
+                ) : null}
+              </View>
+            ))}
+          </>
+        ) : null}
 
         {hasPatientDemographics ? (
           <>
@@ -835,5 +885,54 @@ const styles = StyleSheet.create({
   fabText: {
     fontSize: 15,
     fontWeight: "600",
+  },
+  procedureCard: {
+    borderRadius: BorderRadius.md,
+    padding: Spacing.md,
+    marginBottom: Spacing.sm,
+  },
+  procedureHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.md,
+  },
+  procedureNumber: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  procedureNumberText: {
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  procedureInfo: {
+    flex: 1,
+  },
+  procedureName: {
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  procedureSpecialty: {
+    fontSize: 13,
+    marginTop: 2,
+  },
+  procedureSnomedRow: {
+    marginTop: Spacing.md,
+    paddingTop: Spacing.md,
+    borderTopWidth: 1,
+  },
+  procedureSnomedLabel: {
+    fontSize: 11,
+  },
+  procedureSnomedDisplay: {
+    fontSize: 13,
+    marginTop: 2,
+  },
+  procedureNotes: {
+    fontSize: 13,
+    marginTop: Spacing.sm,
+    fontStyle: "italic",
   },
 });

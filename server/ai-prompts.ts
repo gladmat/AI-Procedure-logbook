@@ -148,8 +148,21 @@ IMPORTANT PRIVACY RULES:
 
 Extract the following information if present:
 
-PROCEDURE DETAILS:
-- Procedure type (e.g., Tendon Repair, Nerve Repair, Replantation, Revascularization)
+MULTIPLE PROCEDURES:
+Hand trauma often involves multiple procedures in a single surgery. Extract ALL distinct procedures performed, such as:
+- Bone fixation (K-wire, plate, screw)
+- Tendon repair (specific tendons and zones)
+- Nerve repair
+- Revascularization/replantation
+- Soft tissue coverage (local flap, skin graft, free flap)
+- Debridement
+
+For each procedure, extract:
+- Procedure name/type
+- Specialty category (hand_trauma, free_flap, burns)
+- Brief notes about technique or specifics
+
+CLINICAL DETAILS:
 - Injury mechanism (e.g., saw injury, crush injury, laceration)
 - Nerve status (e.g., digital nerve intact, median nerve repair)
 - Tendon injuries (e.g., FDP zone 2, FDS lacerated)
@@ -169,6 +182,13 @@ OPERATING TEAM (extract names and roles if mentioned):
 ${RACS_MALT_COMMON_INSTRUCTIONS}
 Return ONLY a JSON object with these exact keys (use null for missing values):
 {
+  "procedures": [
+    {
+      "procedureName": string,
+      "specialty": "hand_trauma" | "free_flap" | "burns",
+      "notes": string | null
+    }
+  ] | null,
   "procedureType": string | null,
   "injuryMechanism": string | null,
   "nerveStatus": string | null,
