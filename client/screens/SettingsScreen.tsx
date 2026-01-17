@@ -19,7 +19,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, Shadows } from "@/constants/theme";
 import { clearAllData, exportCasesAsJSON, getCases, getSettings, saveSettings, AppSettings } from "@/lib/storage";
 import { CountryCode, COUNTRY_LABELS } from "@/types/case";
-import { COUNTRY_CODING_SYSTEMS } from "@/lib/snomedCt";
+import { COUNTRY_CODING_SYSTEMS, getCodingSystemForProfile } from "@/lib/snomedCt";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface SettingsItemProps {
@@ -261,7 +261,17 @@ export default function SettingsScreen() {
                   {profile?.countryOfPractice ? COUNTRY_OF_PRACTICE_LABELS[profile.countryOfPractice] || profile.countryOfPractice : "Not set"}
                 </ThemedText>
               </View>
-              {profile?.medicalCouncilNumber ? (
+              <View style={styles.profileDetailItem}>
+                <ThemedText style={[styles.profileDetailLabel, { color: theme.textSecondary }]}>
+                  Coding System
+                </ThemedText>
+                <ThemedText style={styles.profileDetailValue} numberOfLines={1}>
+                  {getCodingSystemForProfile(profile?.countryOfPractice).split(' (')[0]}
+                </ThemedText>
+              </View>
+            </View>
+            {profile?.medicalCouncilNumber ? (
+              <View style={[styles.profileDetailsRow, { borderTopColor: theme.border }]}>
                 <View style={styles.profileDetailItem}>
                   <ThemedText style={[styles.profileDetailLabel, { color: theme.textSecondary }]}>
                     Registration
@@ -270,8 +280,8 @@ export default function SettingsScreen() {
                     {profile.medicalCouncilNumber}
                   </ThemedText>
                 </View>
-              ) : null}
-            </View>
+              </View>
+            ) : null}
           </View>
         </View>
 
@@ -289,23 +299,6 @@ export default function SettingsScreen() {
           </View>
         </View>
 
-        <View style={styles.section}>
-          <ThemedText style={[styles.sectionTitle, { color: theme.textSecondary }]}>
-            REGION
-          </ThemedText>
-          <View style={[styles.sectionCard, { backgroundColor: theme.backgroundDefault }]}>
-            <SettingsItem
-              icon="globe"
-              label="Country / Region"
-              subtitle={settings?.countryCode ? COUNTRY_CODING_SYSTEMS[settings.countryCode] : undefined}
-              value={settings?.countryCode ? COUNTRY_LABELS[settings.countryCode] : undefined}
-              onPress={() => setShowCountryPicker(true)}
-            />
-          </View>
-          <ThemedText style={[styles.sectionHint, { color: theme.textTertiary }]}>
-            Determines which procedure coding system is used for display and export (e.g., OPCS-4 for UK, CHOP for Switzerland).
-          </ThemedText>
-        </View>
 
         <View style={styles.section}>
           <ThemedText style={[styles.sectionTitle, { color: theme.textSecondary }]}>
