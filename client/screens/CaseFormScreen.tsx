@@ -21,10 +21,12 @@ import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import {
   Case,
+  CaseProcedure,
   Specialty,
   SPECIALTY_LABELS,
   PROCEDURE_TYPES,
   Role,
+  ROLE_LABELS,
   ASAScore,
   SmokingStatus,
   OperatingTeamMember,
@@ -66,6 +68,7 @@ import { findSnomedProcedure, getProcedureCodeForCountry } from "@/lib/snomedCt"
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { RecipientSiteSelector } from "@/components/RecipientSiteSelector";
 import { AnastomosisEntryCard } from "@/components/AnastomosisEntryCard";
+import { ProcedureEntryCard } from "@/components/ProcedureEntryCard";
 
 type RouteParams = RouteProp<RootStackParamList, "CaseForm">;
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -215,6 +218,19 @@ export default function CaseFormScreen() {
     (extractedData as FreeFlapDetails | undefined)?.anastomoses || []
   );
 
+  // Multi-procedure support
+  const [procedures, setProcedures] = useState<CaseProcedure[]>([
+    {
+      id: uuidv4(),
+      sequenceOrder: 1,
+      procedureName: (extractedData as FreeFlapDetails | undefined)?.flapDisplayName || 
+        (extractedData as any)?.flapType || 
+        PROCEDURE_TYPES[specialty][0],
+      specialty: specialty,
+      surgeonRole: "primary",
+    },
+  ]);
+
   // RACS MALT Patient Demographics
   const [gender, setGender] = useState<Gender | "">("");
   const [ethnicity, setEthnicity] = useState("");
@@ -335,6 +351,53 @@ export default function CaseFormScreen() {
     setAnastomoses((prev) => prev.filter((a) => a.id !== id));
   };
 
+  // Procedure management functions
+  const addProcedure = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const newProcedure: CaseProcedure = {
+      id: uuidv4(),
+      sequenceOrder: procedures.length + 1,
+      procedureName: "",
+      specialty: specialty,
+      surgeonRole: "primary",
+    };
+    setProcedures((prev) => [...prev, newProcedure]);
+  };
+
+  const updateProcedure = (updated: CaseProcedure) => {
+    setProcedures((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
+  };
+
+  const removeProcedure = (id: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setProcedures((prev) => {
+      const filtered = prev.filter((p) => p.id !== id);
+      return filtered.map((p, idx) => ({ ...p, sequenceOrder: idx + 1 }));
+    });
+  };
+
+  const moveProcedureUp = (id: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setProcedures((prev) => {
+      const idx = prev.findIndex((p) => p.id === id);
+      if (idx <= 0) return prev;
+      const newArr = [...prev];
+      [newArr[idx - 1], newArr[idx]] = [newArr[idx], newArr[idx - 1]];
+      return newArr.map((p, i) => ({ ...p, sequenceOrder: i + 1 }));
+    });
+  };
+
+  const moveProcedureDown = (id: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setProcedures((prev) => {
+      const idx = prev.findIndex((p) => p.id === id);
+      if (idx < 0 || idx >= prev.length - 1) return prev;
+      const newArr = [...prev];
+      [newArr[idx], newArr[idx + 1]] = [newArr[idx + 1], newArr[idx]];
+      return newArr.map((p, i) => ({ ...p, sequenceOrder: i + 1 }));
+    });
+  };
+
   const handleSave = async () => {
     if (!patientIdentifier.trim()) {
       Alert.alert("Required Field", "Please enter a patient identifier");
@@ -382,6 +445,7 @@ export default function CaseFormScreen() {
         specialty,
         procedureType,
         procedureCode,
+        procedures: procedures.length > 0 ? procedures : undefined,
         surgeryTiming,
         operatingTeam: operatingTeam.length > 0 ? operatingTeam : undefined,
         
@@ -504,13 +568,36 @@ export default function CaseFormScreen() {
         required
       />
 
-      <PickerField
-        label="Procedure Type"
-        value={procedureType}
-        options={procedureOptions}
-        onSelect={setProcedureType}
-        required
-      />
+      <SectionHeader title="Procedures Performed" />
+      
+      <ThemedText style={[styles.sectionDescription, { color: theme.textSecondary }]}>
+        Add all procedures performed during this surgery. Each procedure can have its own specialty and SNOMED CT code.
+      </ThemedText>
+
+      {procedures.map((proc, idx) => (
+        <ProcedureEntryCard
+          key={proc.id}
+          procedure={proc}
+          index={idx}
+          isOnlyProcedure={procedures.length === 1}
+          onUpdate={updateProcedure}
+          onDelete={() => removeProcedure(proc.id)}
+          onMoveUp={() => moveProcedureUp(proc.id)}
+          onMoveDown={() => moveProcedureDown(proc.id)}
+          canMoveUp={idx > 0}
+          canMoveDown={idx < procedures.length - 1}
+        />
+      ))}
+
+      <Pressable
+        style={[styles.addButton, { borderColor: theme.link }]}
+        onPress={addProcedure}
+      >
+        <Feather name="plus" size={18} color={theme.link} />
+        <ThemedText style={[styles.addButtonText, { color: theme.link }]}>
+          Add Another Procedure
+        </ThemedText>
+      </Pressable>
 
       <SectionHeader title="Patient Demographics" />
 
@@ -1154,7 +1241,10 @@ const styles = StyleSheet.create({
     gap: Spacing.xs,
     padding: Spacing.md,
     borderRadius: BorderRadius.sm,
+    borderWidth: 1,
+    borderStyle: "dashed",
     marginTop: Spacing.sm,
+    marginBottom: Spacing.lg,
   },
   addButtonText: {
     fontSize: 14,
@@ -1207,5 +1297,10 @@ const styles = StyleSheet.create({
   bmiValue: {
     fontSize: 20,
     fontWeight: "600",
+  },
+  sectionDescription: {
+    fontSize: 13,
+    marginBottom: Spacing.md,
+    lineHeight: 18,
   },
 });
