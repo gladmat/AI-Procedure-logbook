@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import {
   View,
   StyleSheet,
@@ -62,7 +62,14 @@ import {
 import { FormField, SelectField, PickerField, DatePickerField } from "@/components/FormField";
 import { SectionHeader } from "@/components/SectionHeader";
 import { Button } from "@/components/Button";
-import { saveCase, getSettings } from "@/lib/storage";
+import {
+  saveCase,
+  getSettings,
+  getCaseDraft,
+  saveCaseDraft,
+  clearCaseDraft,
+  CaseDraft,
+} from "@/lib/storage";
 import { getConfigForSpecialty, getDefaultClinicalDetails } from "@/lib/procedureConfig";
 import { findSnomedProcedure, getProcedureCodeForCountry } from "@/lib/snomedCt";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
@@ -175,6 +182,7 @@ export default function CaseFormScreen() {
   const insets = useSafeAreaInsets();
   const headerHeight = useHeaderHeight();
   const { facilities } = useAuth();
+  const draftLoadedRef = useRef(false);
 
   const { specialty, extractedData } = route.params;
   const config = getConfigForSpecialty(specialty);
@@ -222,8 +230,7 @@ export default function CaseFormScreen() {
     (extractedData as FreeFlapDetails | undefined)?.anastomoses || []
   );
 
-  // Multi-procedure support
-  const [procedures, setProcedures] = useState<CaseProcedure[]>([
+  const buildDefaultProcedures = useCallback((): CaseProcedure[] => ([
     {
       id: uuidv4(),
       sequenceOrder: 1,
@@ -233,7 +240,10 @@ export default function CaseFormScreen() {
       specialty: specialty,
       surgeonRole: "primary",
     },
-  ]);
+  ]), [extractedData, specialty]);
+
+  // Multi-procedure support
+  const [procedures, setProcedures] = useState<CaseProcedure[]>(buildDefaultProcedures);
 
   // RACS MALT Patient Demographics
   const [gender, setGender] = useState<Gender | "">("");
@@ -286,6 +296,61 @@ export default function CaseFormScreen() {
   };
 
   useEffect(() => {
+    const loadDraft = async () => {
+      if (extractedData) {
+        draftLoadedRef.current = true;
+        return;
+      }
+      const draft = await getCaseDraft(specialty);
+      if (!draft) {
+        draftLoadedRef.current = true;
+        return;
+      }
+
+      setPatientIdentifier(draft.patientIdentifier ?? "");
+      setProcedureDate(draft.procedureDate ?? new Date().toISOString().split("T")[0]);
+      setFacility(draft.facility ?? primaryFacility);
+      setProcedureType(draft.procedureType ?? PROCEDURE_TYPES[specialty][0]);
+      setAsaScore(draft.asaScore ? String(draft.asaScore) : "");
+      setHeightCm(draft.heightCm ? String(draft.heightCm) : "");
+      setWeightKg(draft.weightKg ? String(draft.weightKg) : "");
+      setSmoker(draft.smoker ?? "");
+      setDiabetes(draft.diabetes ?? null);
+      setRole((draft.teamMembers?.[0]?.role as Role | undefined) ?? "primary");
+      setSurgeryStartTime(draft.surgeryTiming?.startTime ?? "");
+      setSurgeryEndTime(draft.surgeryTiming?.endTime ?? "");
+      setOperatingTeam(draft.operatingTeam ?? []);
+      setClinicalDetails((draft.clinicalDetails as Record<string, any>) ?? getDefaultClinicalDetails(specialty));
+      setRecipientSiteRegion((draft.clinicalDetails as FreeFlapDetails | undefined)?.recipientSiteRegion);
+      setAnastomoses((draft.clinicalDetails as FreeFlapDetails | undefined)?.anastomoses ?? []);
+      setProcedures(draft.procedures ?? buildDefaultProcedures());
+      setGender(draft.gender ?? "");
+      setEthnicity(draft.ethnicity ?? "");
+      setAdmissionDate(draft.admissionDate ?? "");
+      setDischargeDate(draft.dischargeDate ?? "");
+      setAdmissionCategory(draft.admissionCategory ?? "");
+      setUnplannedReadmission(draft.unplannedReadmission ?? "no");
+      setIsUnplannedReadmission((draft.unplannedReadmission ?? "no") !== "no");
+      setDiagnosis(draft.finalDiagnosis?.displayName ?? "");
+      setSelectedComorbidities(draft.comorbidities ?? []);
+      setWoundInfectionRisk(draft.woundInfectionRisk ?? "");
+      setAnaestheticType(draft.anaestheticType ?? "");
+      setAntibioticProphylaxis(draft.prophylaxis?.antibiotics ?? false);
+      setDvtProphylaxis(draft.prophylaxis?.dvtPrevention ?? false);
+      setUnplannedICU(draft.unplannedICU ?? "no");
+      setReturnToTheatre(draft.returnToTheatre ?? false);
+      setReturnToTheatreReason(draft.returnToTheatreReason ?? "");
+      setOutcome(draft.outcome ?? "");
+      setMortalityClassification(draft.mortalityClassification ?? "");
+      setDiscussedAtMDM(draft.discussedAtMDM ?? false);
+
+      draftLoadedRef.current = true;
+    };
+
+    loadDraft();
+  }, [buildDefaultProcedures, extractedData, primaryFacility, specialty]);
+
+  useEffect(() => {
     navigation.setOptions({
       headerTitle: `${SPECIALTY_LABELS[specialty]} Case`,
       headerRight: () => (
@@ -301,6 +366,110 @@ export default function CaseFormScreen() {
       ),
     });
   }, [saving, patientIdentifier, facility, clinicalDetails]);
+
+  useEffect(() => {
+    if (!draftLoadedRef.current) return;
+
+    const draft: CaseDraft = {
+      id: "draft",
+      patientIdentifier,
+      procedureDate,
+      facility,
+      specialty,
+      procedureType,
+      procedures,
+      surgeryTiming: surgeryStartTime || surgeryEndTime
+        ? { startTime: surgeryStartTime || undefined, endTime: surgeryEndTime || undefined }
+        : undefined,
+      operatingTeam,
+      gender: gender || undefined,
+      ethnicity: ethnicity.trim() || undefined,
+      admissionDate: admissionDate || undefined,
+      dischargeDate: dischargeDate || undefined,
+      admissionCategory: admissionCategory || undefined,
+      unplannedReadmission: unplannedReadmission !== "no" ? unplannedReadmission : "no",
+      finalDiagnosis: diagnosis.trim() ? { displayName: diagnosis.trim() } : undefined,
+      comorbidities: selectedComorbidities.length > 0 ? selectedComorbidities : undefined,
+      asaScore: asaScore ? (parseInt(asaScore) as ASAScore) : undefined,
+      heightCm: heightCm ? parseFloat(heightCm) : undefined,
+      weightKg: weightKg ? parseFloat(weightKg) : undefined,
+      bmi: calculatedBmi,
+      smoker: smoker || undefined,
+      diabetes: diabetes ?? undefined,
+      woundInfectionRisk: woundInfectionRisk || undefined,
+      anaestheticType: anaestheticType || undefined,
+      prophylaxis: antibioticProphylaxis || dvtProphylaxis
+        ? { antibiotics: antibioticProphylaxis, dvtPrevention: dvtProphylaxis }
+        : undefined,
+      unplannedICU: unplannedICU !== "no" ? unplannedICU : "no",
+      returnToTheatre: returnToTheatre || undefined,
+      returnToTheatreReason: returnToTheatreReason.trim() || undefined,
+      outcome: outcome || undefined,
+      mortalityClassification: mortalityClassification || undefined,
+      discussedAtMDM: discussedAtMDM || undefined,
+      clinicalDetails: {
+        ...clinicalDetails,
+        ...(recipientSiteRegion ? { recipientSiteRegion } : {}),
+        ...(anastomoses.length > 0 ? { anastomoses } : {}),
+      },
+      teamMembers: [
+        {
+          id: "draft",
+          name: "You",
+          role,
+          confirmed: true,
+          addedAt: new Date().toISOString(),
+        },
+      ],
+      ownerId: "draft",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    const timeout = setTimeout(() => {
+      saveCaseDraft(specialty, draft);
+    }, 500);
+
+    return () => clearTimeout(timeout);
+  }, [
+    admissionCategory,
+    admissionDate,
+    anaestheticType,
+    anastomoses,
+    antibioticProphylaxis,
+    asaScore,
+    calculatedBmi,
+    clinicalDetails,
+    diagnosis,
+    diabetes,
+    dischargeDate,
+    discussedAtMDM,
+    dvtProphylaxis,
+    ethnicity,
+    facility,
+    gender,
+    heightCm,
+    mortalityClassification,
+    operatingTeam,
+    outcome,
+    patientIdentifier,
+    procedureDate,
+    procedureType,
+    procedures,
+    recipientSiteRegion,
+    returnToTheatre,
+    returnToTheatreReason,
+    role,
+    selectedComorbidities,
+    smoker,
+    specialty,
+    surgeryEndTime,
+    surgeryStartTime,
+    unplannedICU,
+    unplannedReadmission,
+    weightKg,
+    woundInfectionRisk,
+  ]);
 
   const updateClinicalDetail = (key: string, value: any) => {
     setClinicalDetails((prev) => ({ ...prev, [key]: value }));
@@ -509,6 +678,7 @@ export default function CaseFormScreen() {
       };
 
       await saveCase(newCase);
+      await clearCaseDraft(specialty);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       navigation.popToTop();
     } catch (error) {
