@@ -12,7 +12,18 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (January 2026)
 
-### Multi-Procedure Support with Procedure-Level Clinical Details (Latest)
+### User Authentication & Profile Management (Latest)
+- **Complete Auth System**: Email/password authentication with JWT tokens and bcrypt password hashing
+- **3-Step Onboarding Wizard**: New users complete profile setup on first login:
+  - Step 1: Country of practice and full name
+  - Step 2: Career stage selection (registrar, fellow, consultant, private practice, academic, retired)
+  - Step 3: Add hospitals/clinics where the surgeon operates
+- **Profile Management**: Users can view/edit profile and manage facilities from Settings
+- **Facility Integration**: CaseFormScreen facility dropdown uses user's configured facilities list
+- **Session Persistence**: Auth tokens stored in AsyncStorage; users stay logged in across app restarts
+- **AuthContext Provider**: Global auth state management with user profile and facilities access
+
+### Multi-Procedure Support with Procedure-Level Clinical Details
 - **Multiple Procedures Per Case**: Cases now support logging multiple distinct procedures (e.g., hand trauma with K-wire fixation + tendon repair + soft tissue coverage)
 - **Procedure-Level Clinical Details**: Each procedure has its own `clinicalDetails` JSON field storing specialty-specific data (moved from case-level)
   - Free flap procedures store: recipient site, anastomoses, harvest side, indication, ischemia time, flap dimensions
@@ -94,6 +105,16 @@ Cases use a flexible JSON payload structure for clinical details, allowing futur
 
 ## Key Files
 
+### Authentication & User Management
+- `client/contexts/AuthContext.tsx` - Global auth state management with JWT tokens, profile, and facilities
+- `client/lib/auth.ts` - API client for authentication, profile, and facilities endpoints
+- `client/screens/AuthScreen.tsx` - Login/signup screen with email and password
+- `client/screens/OnboardingScreen.tsx` - 3-step profile setup wizard for new users
+- `server/routes.ts` - API routes including auth, profile, and facilities CRUD endpoints
+- `server/storage.ts` - Server-side storage interface with user and facility operations
+- `shared/schema.ts` - Drizzle ORM schema with users, profiles, user_facilities, teams, and team_members tables
+
+### Case Management
 - `client/types/case.ts` - Core data model types including Case, RACS MALT types (Gender, AdmissionCategory, WoundInfectionRisk, DischargeOutcome, etc.), label constants for all enums
 - `client/lib/snomedCt.ts` - SNOMED CT procedure database with country-specific code mappings
 - `client/lib/snomedApi.ts` - API client for fetching SNOMED CT data (vessels, co-morbidities, anaesthetic types) by category from PostgreSQL
@@ -102,13 +123,12 @@ Cases use a flexible JSON payload structure for clinical details, allowing futur
 - `client/lib/privacyUtils.ts` - NHI/date redaction utilities
 - `client/screens/CaseFormScreen.tsx` - Comprehensive case entry form with RACS MALT sections (demographics, admission, diagnoses, co-morbidities, operative factors, outcomes)
 - `client/screens/CaseDetailScreen.tsx` - Case detail view displaying all RACS MALT fields with SNOMED codes
-- `client/screens/SettingsScreen.tsx` - Country selection and data export
+- `client/screens/SettingsScreen.tsx` - Profile management, facilities, country selection and data export
 - `client/components/RecipientSiteSelector.tsx` - Anatomical region picker for recipient site
 - `client/components/AnastomosisEntryCard.tsx` - Dynamic vessel selection card with region filtering
 - `client/components/ProcedureEntryCard.tsx` - Multi-procedure entry card with SNOMED CT coding
 - `server/ai-prompts.ts` - AI extraction prompts for each specialty (extracts all RACS MALT fields)
 - `server/seedData.ts` - SNOMED CT seeding for vessels, co-morbidities, anaesthetic types
-- `shared/schema.ts` - Drizzle ORM schema with snomed_ref, flaps, and anastomoses tables
 
 ## External Dependencies
 
