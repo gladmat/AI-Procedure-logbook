@@ -2,6 +2,8 @@ import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "node:http";
 import { GoogleGenAI } from "@google/genai";
 import { FREE_FLAP_AI_PROMPT } from "./ai-prompts";
+import { extractTextFromImage } from "./ocr";
+import { redactSensitiveData } from "./privacyUtils";
 import { storage } from "./storage";
 import { allSeedData } from "./seedData";
 import bcrypt from "bcryptjs";
@@ -46,6 +48,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!text) {
         return res.status(400).json({ error: "No text provided" });
       }
+      const redactionResult = redactSensitiveData(text);
 
       const response = await ai.models.generateContent({
         model: "gemini-2.5-flash",
@@ -54,7 +57,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             role: "user",
             parts: [
               { text: FREE_FLAP_AI_PROMPT },
-              { text: `\n\nOperation Note:\n${text}` },
+              { text: `\n\nOperation Note:\n${redactionResult.redactedText}` },
             ],
           },
         ],
@@ -87,6 +90,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "No image provided" });
       }
 
+      const extractedText = await extractTextFromImage(image);
+      const redactionResult = redactSensitiveData(extractedText);
+
       const response = await ai.models.generateContent({
         model: "gemini-2.5-flash",
         contents: [
@@ -94,13 +100,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             role: "user",
             parts: [
               { text: FREE_FLAP_AI_PROMPT },
-              { text: "\n\nExtract the surgical details from this operation note image. First perform OCR to read the text, then extract the structured data:" },
-              {
-                inlineData: {
-                  mimeType: "image/jpeg",
-                  data: image,
-                },
-              },
+              { text: "\n\nExtract the surgical details from this operation note text:" },
+              { text: `\n\nOperation Note:\n${redactionResult.redactedText}` },
             ],
           },
         ],

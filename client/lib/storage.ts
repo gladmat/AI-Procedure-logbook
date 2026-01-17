@@ -5,6 +5,7 @@ const CASES_KEY = "@surgical_logbook_cases";
 const TIMELINE_KEY = "@surgical_logbook_timeline";
 const USER_KEY = "@surgical_logbook_user";
 const SETTINGS_KEY = "@surgical_logbook_settings";
+const CASE_DRAFT_KEY_PREFIX = "@surgical_logbook_case_draft_";
 
 export interface LocalUser {
   id: string;
@@ -18,6 +19,8 @@ export interface AppSettings {
   showLocalCodes: boolean;
   exportFormat: "json" | "csv" | "fhir";
 }
+
+export type CaseDraft = Partial<Case>;
 
 export async function getCases(): Promise<Case[]> {
   try {
@@ -49,6 +52,42 @@ export async function saveCase(caseData: Case): Promise<void> {
     await AsyncStorage.setItem(CASES_KEY, JSON.stringify(cases));
   } catch (error) {
     console.error("Error saving case:", error);
+    throw error;
+  }
+}
+
+function getCaseDraftKey(specialty: Case["specialty"]): string {
+  return `${CASE_DRAFT_KEY_PREFIX}${specialty}`;
+}
+
+export async function getCaseDraft(specialty: Case["specialty"]): Promise<CaseDraft | null> {
+  try {
+    const data = await AsyncStorage.getItem(getCaseDraftKey(specialty));
+    if (!data) return null;
+    return JSON.parse(data);
+  } catch (error) {
+    console.error("Error reading case draft:", error);
+    return null;
+  }
+}
+
+export async function saveCaseDraft(
+  specialty: Case["specialty"],
+  draft: CaseDraft
+): Promise<void> {
+  try {
+    await AsyncStorage.setItem(getCaseDraftKey(specialty), JSON.stringify(draft));
+  } catch (error) {
+    console.error("Error saving case draft:", error);
+    throw error;
+  }
+}
+
+export async function clearCaseDraft(specialty: Case["specialty"]): Promise<void> {
+  try {
+    await AsyncStorage.removeItem(getCaseDraftKey(specialty));
+  } catch (error) {
+    console.error("Error clearing case draft:", error);
     throw error;
   }
 }
