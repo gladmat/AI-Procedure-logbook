@@ -12,13 +12,17 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (January 2026)
 
-### Multi-Procedure Support (Latest)
+### Multi-Procedure Support with Procedure-Level Clinical Details (Latest)
 - **Multiple Procedures Per Case**: Cases now support logging multiple distinct procedures (e.g., hand trauma with K-wire fixation + tendon repair + soft tissue coverage)
-- **Database Table**: `case_procedures` table stores individual procedures with `sequence_order`, `specialty`, `surgeon_role`, SNOMED CT codes, and notes
-- **ProcedureEntryCard Component**: Reusable card for adding/editing procedures with procedure name, specialty picker, surgeon role, and SNOMED CT fields
-- **CaseFormScreen Integration**: Add/remove/reorder procedures with numbered sequence display
-- **CaseDetailScreen Display**: Shows all procedures with sequence numbers, specialty badges, surgeon roles, and SNOMED codes
-- **AI Extraction**: Hand trauma AI prompt updated to identify and extract multiple procedures from operation notes
+- **Procedure-Level Clinical Details**: Each procedure has its own `clinicalDetails` JSON field storing specialty-specific data (moved from case-level)
+  - Free flap procedures store: recipient site, anastomoses, harvest side, indication, ischemia time, flap dimensions
+  - Hand trauma procedures store: fixation material, injury mechanism, nerve status, tendon injuries, fracture site
+  - Body contouring procedures store: resection weight, drain output
+- **ProcedureEntryCard Component**: Reusable card with procedure name, specialty picker, surgeon role, SNOMED CT fields, and dynamically rendered clinical details based on selected specialty
+- **ProcedureClinicalDetails Component**: Renders specialty-specific fields (FreeFlapClinicalFields, HandTraumaClinicalFields, etc.) within each procedure card
+- **CaseFormScreen Integration**: Add/remove/reorder procedures with numbered sequence display; clinical details now entered within each procedure card
+- **CaseDetailScreen Display**: Shows all procedures with sequence numbers, specialty badges, surgeon roles, SNOMED codes, and inline clinical details
+- **AI Extraction**: Updated prompts to attach `clinicalDetails` object to each extracted procedure
 
 ### RACS MALT Audit Integration
 - **Comprehensive RACS MALT Data Model**: Full implementation of Royal Australasian College of Surgeons MALT (Morbidity Audit and Logbook Tool) fields
