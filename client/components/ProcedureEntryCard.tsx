@@ -6,10 +6,12 @@ import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { BorderRadius, Spacing } from "@/constants/theme";
 import { FormField, PickerField } from "@/components/FormField";
+import { ProcedureClinicalDetails } from "@/components/ProcedureClinicalDetails";
 import {
   type CaseProcedure,
   type Role,
   type Specialty,
+  type ClinicalDetails,
   ROLE_LABELS,
   SPECIALTY_LABELS,
   PROCEDURE_TYPES,
@@ -80,6 +82,13 @@ export function ProcedureEntryCard({
     onUpdate({
       ...procedure,
       notes: value,
+    });
+  };
+
+  const handleClinicalDetailsUpdate = (details: ClinicalDetails) => {
+    onUpdate({
+      ...procedure,
+      clinicalDetails: details,
     });
   };
 
@@ -208,6 +217,15 @@ export function ProcedureEntryCard({
         placeholder="Additional procedure notes..."
         multiline
       />
+
+      {procedure.specialty ? (
+        <ProcedureClinicalDetails
+          specialty={procedure.specialty}
+          procedureType={procedure.procedureName}
+          clinicalDetails={procedure.clinicalDetails || {}}
+          onUpdate={handleClinicalDetailsUpdate}
+        />
+      ) : null}
     </View>
   );
 }

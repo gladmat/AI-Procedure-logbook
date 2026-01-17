@@ -488,13 +488,7 @@ export default function CaseFormScreen() {
         mortalityClassification: mortalityClassification || undefined,
         discussedAtMDM: discussedAtMDM || undefined,
         
-        clinicalDetails: specialty === "free_flap" 
-          ? {
-              ...clinicalDetails,
-              recipientSiteRegion,
-              anastomoses,
-            }
-          : clinicalDetails as any,
+        clinicalDetails: {} as any,
         teamMembers: [
           {
             id: uuidv4(),
@@ -1054,119 +1048,6 @@ export default function CaseFormScreen() {
         <ThemedText style={styles.checkboxLabel}>Discussed at MDM</ThemedText>
       </View>
 
-      <SectionHeader title="Clinical Details" subtitle={`${SPECIALTY_LABELS[specialty]} specific fields`} />
-
-      {specialty === "free_flap" ? (
-        <>
-          <RecipientSiteSelector
-            value={recipientSiteRegion}
-            onSelect={setRecipientSiteRegion}
-            required
-          />
-
-          <SectionHeader 
-            title="Anastomoses" 
-            subtitle="Add arterial and venous connections" 
-          />
-
-          {anastomoses.map((entry, index) => {
-            const donorVessels = DEFAULT_DONOR_VESSELS[procedureType];
-            const defaultDonorVessel = donorVessels 
-              ? (entry.vesselType === "artery" ? donorVessels.artery : donorVessels.vein)
-              : undefined;
-            return (
-              <AnastomosisEntryCard
-                key={entry.id}
-                entry={entry}
-                index={index}
-                recipientRegion={recipientSiteRegion}
-                defaultDonorVessel={defaultDonorVessel}
-                onUpdate={updateAnastomosis}
-                onDelete={() => removeAnastomosis(entry.id)}
-              />
-            );
-          })}
-
-          <View style={styles.row}>
-            <View style={styles.halfField}>
-              <Pressable
-                style={[styles.addButton, { backgroundColor: theme.error + "15" }]}
-                onPress={() => addAnastomosis("artery")}
-              >
-                <Feather name="plus" size={18} color={theme.error} />
-                <ThemedText style={[styles.addButtonText, { color: theme.error }]}>
-                  Add Artery
-                </ThemedText>
-              </Pressable>
-            </View>
-            <View style={styles.halfField}>
-              <Pressable
-                style={[styles.addButton, { backgroundColor: theme.link + "15" }]}
-                onPress={() => addAnastomosis("vein")}
-              >
-                <Feather name="plus" size={18} color={theme.link} />
-                <ThemedText style={[styles.addButtonText, { color: theme.link }]}>
-                  Add Vein
-                </ThemedText>
-              </Pressable>
-            </View>
-          </View>
-
-          <View style={{ height: Spacing.lg }} />
-        </>
-      ) : null}
-
-      {config.fields.filter((field) => {
-        if (specialty === "free_flap") {
-          const skipFields = [
-            "recipientArteryName",
-            "recipientVeinName",
-            "anastomosisType",
-            "couplerSizeMm",
-          ];
-          return !skipFields.includes(field.key);
-        }
-        return true;
-      }).map((field) => {
-        if (field.conditionalOn) {
-          const conditionField = field.conditionalOn.field;
-          const conditionValue = field.conditionalOn.value;
-          if (conditionField === "procedureType" && procedureType !== conditionValue) {
-            return null;
-          }
-        }
-
-        if (field.type === "select" && field.options) {
-          return (
-            <SelectField
-              key={field.key}
-              label={field.label}
-              value={clinicalDetails[field.key] || ""}
-              options={field.options}
-              onSelect={(v) => updateClinicalDetail(field.key, v)}
-              required={field.required}
-            />
-          );
-        }
-
-        return (
-          <FormField
-            key={field.key}
-            label={field.label}
-            value={String(clinicalDetails[field.key] || "")}
-            onChangeText={(v) =>
-              updateClinicalDetail(
-                field.key,
-                field.type === "number" ? (v ? parseFloat(v) : undefined) : v
-              )
-            }
-            placeholder={field.placeholder}
-            keyboardType={field.keyboardType}
-            unit={field.unit}
-            required={field.required}
-          />
-        );
-      })}
 
       <View style={styles.buttonContainer}>
         <Button onPress={handleSave} disabled={saving}>
