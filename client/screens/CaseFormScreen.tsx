@@ -62,9 +62,9 @@ import {
 import { FormField, SelectField, PickerField, DatePickerField } from "@/components/FormField";
 import { SectionHeader } from "@/components/SectionHeader";
 import { Button } from "@/components/Button";
-import { saveCase, getSettings } from "@/lib/storage";
+import { saveCase } from "@/lib/storage";
 import { getConfigForSpecialty, getDefaultClinicalDetails } from "@/lib/procedureConfig";
-import { findSnomedProcedure, getProcedureCodeForCountry } from "@/lib/snomedCt";
+import { findSnomedProcedure, getProcedureCodeForCountry, getCountryCodeFromProfile } from "@/lib/snomedCt";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { RecipientSiteSelector } from "@/components/RecipientSiteSelector";
 import { AnastomosisEntryCard } from "@/components/AnastomosisEntryCard";
@@ -174,7 +174,7 @@ export default function CaseFormScreen() {
   const route = useRoute<RouteParams>();
   const insets = useSafeAreaInsets();
   const headerHeight = useHeaderHeight();
-  const { facilities } = useAuth();
+  const { facilities, profile } = useAuth();
 
   const { specialty, extractedData } = route.params;
   const config = getConfigForSpecialty(specialty);
@@ -416,10 +416,10 @@ export default function CaseFormScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     try {
-      const settings = await getSettings();
+      const countryCode = getCountryCodeFromProfile(profile?.countryOfPractice);
       const snomedProcedure = findSnomedProcedure(procedureType, specialty);
       const procedureCode = snomedProcedure 
-        ? getProcedureCodeForCountry(snomedProcedure, settings.countryCode)
+        ? getProcedureCodeForCountry(snomedProcedure, countryCode)
         : undefined;
 
       const surgeryTiming: SurgeryTiming | undefined = 

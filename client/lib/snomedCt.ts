@@ -32,12 +32,12 @@ export const PROFILE_COUNTRY_TO_CODE: Record<string, CountryCode> = {
   switzerland: "CH",
 };
 
-export function getCountryCodeFromProfile(profileCountry: string | undefined): CountryCode {
+export function getCountryCodeFromProfile(profileCountry: string | null | undefined): CountryCode {
   if (!profileCountry) return "NZ";
   return PROFILE_COUNTRY_TO_CODE[profileCountry] || "NZ";
 }
 
-export function getCodingSystemForProfile(profileCountry: string | undefined): string {
+export function getCodingSystemForProfile(profileCountry: string | null | undefined): string {
   const countryCode = getCountryCodeFromProfile(profileCountry);
   return COUNTRY_CODING_SYSTEMS[countryCode];
 }
