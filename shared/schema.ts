@@ -154,3 +154,38 @@ export const insertAnastomosisSchema = createInsertSchema(anastomoses).omit({
 
 export type Anastomosis = typeof anastomoses.$inferSelect;
 export type InsertAnastomosis = z.infer<typeof insertAnastomosisSchema>;
+
+export const caseProcedures = pgTable("case_procedures", {
+  id: varchar("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  caseId: varchar("case_id").notNull().references(() => procedures.id, { onDelete: "cascade" }),
+  sequenceOrder: integer("sequence_order").notNull().default(1),
+  procedureName: text("procedure_name").notNull(),
+  specialty: varchar("specialty", { length: 50 }),
+  snomedCtCode: varchar("snomed_ct_code", { length: 20 }),
+  snomedCtDisplay: text("snomed_ct_display"),
+  localCode: varchar("local_code", { length: 20 }),
+  localCodeSystem: varchar("local_code_system", { length: 20 }),
+  surgeonRole: varchar("surgeon_role", { length: 20 }).notNull().default("primary"),
+  clinicalDetails: text("clinical_details"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
+  updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
+});
+
+export const caseProceduresRelations = relations(caseProcedures, ({ one }) => ({
+  parentCase: one(procedures, {
+    fields: [caseProcedures.caseId],
+    references: [procedures.id],
+  }),
+}));
+
+export const insertCaseProcedureSchema = createInsertSchema(caseProcedures).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type CaseProcedure = typeof caseProcedures.$inferSelect;
+export type InsertCaseProcedure = z.infer<typeof insertCaseProcedureSchema>;

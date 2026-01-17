@@ -212,6 +212,20 @@ export interface ProcedureCode {
   localSystem?: string;
 }
 
+export interface CaseProcedure {
+  id: string;
+  sequenceOrder: number;
+  procedureName: string;
+  specialty?: Specialty;
+  snomedCtCode?: string;
+  snomedCtDisplay?: string;
+  localCode?: string;
+  localCodeSystem?: string;
+  surgeonRole: Role;
+  clinicalDetails?: ClinicalDetails;
+  notes?: string;
+}
+
 export interface Case {
   id: string;
   patientIdentifier: string;
@@ -220,6 +234,7 @@ export interface Case {
   specialty: Specialty;
   procedureType: string;
   procedureCode?: ProcedureCode;
+  procedures?: CaseProcedure[];
   surgeryTiming?: SurgeryTiming;
   operatingTeam?: OperatingTeamMember[];
   
