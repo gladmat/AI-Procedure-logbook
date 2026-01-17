@@ -157,15 +157,28 @@ Hand trauma often involves multiple procedures in a single surgery. Extract ALL 
 - Soft tissue coverage (local flap, skin graft, free flap)
 - Debridement
 
-For each procedure, extract:
+For EACH procedure, extract its own clinical details based on the procedure type:
 - Procedure name/type
 - Specialty category (hand_trauma, free_flap, burns)
 - Brief notes about technique or specifics
+- clinicalDetails object with specialty-specific fields:
 
-CLINICAL DETAILS:
-- Injury mechanism (e.g., saw injury, crush injury, laceration)
-- Nerve status (e.g., digital nerve intact, median nerve repair)
-- Tendon injuries (e.g., FDP zone 2, FDS lacerated)
+For hand_trauma procedures, clinicalDetails should include:
+- fixationMaterial (k_wire, plate_screws, screw_only, external_fixator)
+- injuryMechanism (e.g., saw injury, crush injury, laceration)
+- nerveStatus (e.g., digital nerve intact, median nerve repair)
+- tendonInjuries (e.g., FDP zone 2, FDS lacerated)
+- fractureSite (e.g., distal phalanx, metacarpal)
+
+For free_flap procedures, clinicalDetails should include:
+- recipientSiteRegion (lower_leg, foot, hand, forearm, head_neck, trunk, pelvis, upper_arm, thigh)
+- harvestSide (left, right)
+- indication (trauma, oncologic, congenital)
+- anastomoses array with recipient vessel, vessel type, coupling method
+- ischemiaTimeMinutes
+- flapWidthCm, flapLengthCm
+- perforatorCount (for ALT flaps)
+- elevationPlane (subfascial, suprafascial)
 
 SURGERY TIMING:
 - Surgery start time (in HH:MM 24-hour format)
@@ -186,13 +199,26 @@ Return ONLY a JSON object with these exact keys (use null for missing values):
     {
       "procedureName": string,
       "specialty": "hand_trauma" | "free_flap" | "burns",
-      "notes": string | null
+      "notes": string | null,
+      "clinicalDetails": {
+        // For hand_trauma specialty:
+        "fixationMaterial": "k_wire" | "plate_screws" | "screw_only" | "external_fixator" | null,
+        "injuryMechanism": string | null,
+        "nerveStatus": string | null,
+        "tendonInjuries": string | null,
+        "fractureSite": string | null,
+        // For free_flap specialty:
+        "recipientSiteRegion": "lower_leg" | "foot" | "hand" | "forearm" | "head_neck" | "trunk" | "pelvis" | "upper_arm" | "thigh" | null,
+        "harvestSide": "left" | "right" | null,
+        "indication": "trauma" | "oncologic" | "congenital" | null,
+        "anastomoses": [...] | null,
+        "ischemiaTimeMinutes": number | null,
+        "flapWidthCm": number | null,
+        "flapLengthCm": number | null
+      } | null
     }
   ] | null,
   "procedureType": string | null,
-  "injuryMechanism": string | null,
-  "nerveStatus": string | null,
-  "tendonInjuries": string | null,
   "surgeryStartTime": string | null,
   "surgeryEndTime": string | null,
   "operatingTeam": [

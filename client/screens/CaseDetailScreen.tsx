@@ -297,6 +297,97 @@ export default function CaseDetailScreen() {
                     {proc.notes}
                   </ThemedText>
                 ) : null}
+                {proc.clinicalDetails ? (
+                  <View style={[styles.procedureClinicalDetails, { borderTopColor: theme.border }]}>
+                    {proc.specialty === "free_flap" && (proc.clinicalDetails as FreeFlapDetails) ? (
+                      <>
+                        {(proc.clinicalDetails as FreeFlapDetails).harvestSide ? (
+                          <DetailRow 
+                            label="Harvest Side" 
+                            value={(proc.clinicalDetails as FreeFlapDetails).harvestSide === "left" ? "Left" : "Right"} 
+                          />
+                        ) : null}
+                        {(proc.clinicalDetails as FreeFlapDetails).indication ? (
+                          <DetailRow 
+                            label="Indication" 
+                            value={INDICATION_LABELS[(proc.clinicalDetails as FreeFlapDetails).indication!]} 
+                          />
+                        ) : null}
+                        {(proc.clinicalDetails as FreeFlapDetails).recipientSiteRegion ? (
+                          <DetailRow 
+                            label="Recipient Site" 
+                            value={(proc.clinicalDetails as FreeFlapDetails).recipientSiteRegion?.replace(/_/g, " ")} 
+                          />
+                        ) : null}
+                        {(proc.clinicalDetails as FreeFlapDetails).ischemiaTimeMinutes ? (
+                          <DetailRow 
+                            label="Ischemia Time" 
+                            value={(proc.clinicalDetails as FreeFlapDetails).ischemiaTimeMinutes} 
+                            unit="min"
+                          />
+                        ) : null}
+                        {(proc.clinicalDetails as FreeFlapDetails).flapWidthCm || (proc.clinicalDetails as FreeFlapDetails).flapLengthCm ? (
+                          <DetailRow 
+                            label="Flap Dimensions" 
+                            value={`${(proc.clinicalDetails as FreeFlapDetails).flapWidthCm || "?"} x ${(proc.clinicalDetails as FreeFlapDetails).flapLengthCm || "?"} cm`} 
+                          />
+                        ) : null}
+                        {(proc.clinicalDetails as FreeFlapDetails).anastomoses && (proc.clinicalDetails as FreeFlapDetails).anastomoses!.length > 0 ? (
+                          <View style={styles.anastomosesList}>
+                            <ThemedText style={[styles.anastomosesTitle, { color: theme.textSecondary }]}>
+                              Anastomoses:
+                            </ThemedText>
+                            {(proc.clinicalDetails as FreeFlapDetails).anastomoses!.map((a, aIdx) => (
+                              <ThemedText key={a.id || aIdx} style={styles.anastomosisItem}>
+                                {a.vesselType === "artery" ? "\u2764\uFE0F " : "\uD83D\uDCA7 "}
+                                {a.recipientVesselName || "Unknown vessel"}
+                                {a.couplingMethod ? ` (${ANASTOMOSIS_LABELS[a.couplingMethod as keyof typeof ANASTOMOSIS_LABELS] || a.couplingMethod})` : ""}
+                              </ThemedText>
+                            ))}
+                          </View>
+                        ) : null}
+                      </>
+                    ) : null}
+                    {proc.specialty === "hand_trauma" && proc.clinicalDetails ? (
+                      <>
+                        <DetailRow 
+                          label="Injury Mechanism" 
+                          value={(proc.clinicalDetails as any).injuryMechanism} 
+                        />
+                        <DetailRow 
+                          label="Fixation Material" 
+                          value={(proc.clinicalDetails as any).fixationMaterial?.replace(/_/g, " ")} 
+                        />
+                        <DetailRow 
+                          label="Nerve Status" 
+                          value={(proc.clinicalDetails as any).nerveStatus} 
+                        />
+                        <DetailRow 
+                          label="Tendon Injuries" 
+                          value={(proc.clinicalDetails as any).tendonInjuries} 
+                        />
+                        <DetailRow 
+                          label="Fracture Site" 
+                          value={(proc.clinicalDetails as any).fractureSite} 
+                        />
+                      </>
+                    ) : null}
+                    {proc.specialty === "body_contouring" && proc.clinicalDetails ? (
+                      <>
+                        <DetailRow 
+                          label="Resection Weight" 
+                          value={(proc.clinicalDetails as any).resectionWeightGrams} 
+                          unit="g"
+                        />
+                        <DetailRow 
+                          label="Drain Output" 
+                          value={(proc.clinicalDetails as any).drainOutputMl} 
+                          unit="ml"
+                        />
+                      </>
+                    ) : null}
+                  </View>
+                ) : null}
               </View>
             ))}
           </>
@@ -934,5 +1025,23 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginTop: Spacing.sm,
     fontStyle: "italic",
+  },
+  procedureClinicalDetails: {
+    marginTop: Spacing.sm,
+    paddingTop: Spacing.sm,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  anastomosesList: {
+    marginTop: Spacing.xs,
+  },
+  anastomosesTitle: {
+    fontSize: 13,
+    fontWeight: "500",
+    marginBottom: Spacing.xs,
+  },
+  anastomosisItem: {
+    fontSize: 13,
+    marginLeft: Spacing.sm,
+    marginBottom: 2,
   },
 });
