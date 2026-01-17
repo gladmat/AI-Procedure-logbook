@@ -7,17 +7,151 @@ export const users = pgTable("users", {
   id: varchar("id")
     .primaryKey()
     .default(sql`gen_random_uuid()`),
-  username: text("username").notNull().unique(),
+  email: text("email").notNull().unique(),
   password: text("password").notNull(),
+  createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
-  username: true,
+  email: true,
   password: true,
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
+
+export const countryOfPracticeEnum = ["new_zealand", "australia", "poland", "united_kingdom", "united_states", "other"] as const;
+export type CountryOfPractice = typeof countryOfPracticeEnum[number];
+
+export const careerStageEnum = [
+  "junior_house_officer",
+  "registrar_non_training", 
+  "set_trainee",
+  "fellow",
+  "consultant_specialist",
+  "moss"
+] as const;
+export type CareerStage = typeof careerStageEnum[number];
+
+export const verificationStatusEnum = ["unverified", "pending", "verified"] as const;
+export type VerificationStatus = typeof verificationStatusEnum[number];
+
+export const profiles = pgTable("profiles", {
+  id: varchar("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }).unique(),
+  fullName: text("full_name"),
+  countryOfPractice: varchar("country_of_practice", { length: 50 }),
+  medicalCouncilNumber: varchar("medical_council_number", { length: 50 }),
+  verificationStatus: varchar("verification_status", { length: 20 }).default("unverified").notNull(),
+  careerStage: varchar("career_stage", { length: 50 }),
+  onboardingComplete: boolean("onboarding_complete").default(false).notNull(),
+  createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
+  updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
+});
+
+export const profilesRelations = relations(profiles, ({ one, many }) => ({
+  user: one(users, {
+    fields: [profiles.userId],
+    references: [users.id],
+  }),
+  facilities: many(userFacilities),
+}));
+
+export const insertProfileSchema = createInsertSchema(profiles).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type Profile = typeof profiles.$inferSelect;
+export type InsertProfile = z.infer<typeof insertProfileSchema>;
+
+export const userFacilities = pgTable("user_facilities", {
+  id: varchar("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  facilityName: text("facility_name").notNull(),
+  isPrimary: boolean("is_primary").default(false).notNull(),
+  createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
+});
+
+export const userFacilitiesRelations = relations(userFacilities, ({ one }) => ({
+  user: one(users, {
+    fields: [userFacilities.userId],
+    references: [users.id],
+  }),
+}));
+
+export const insertUserFacilitySchema = createInsertSchema(userFacilities).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type UserFacility = typeof userFacilities.$inferSelect;
+export type InsertUserFacility = z.infer<typeof insertUserFacilitySchema>;
+
+export const teams = pgTable("teams", {
+  id: varchar("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  description: text("description"),
+  ownerId: varchar("owner_id").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
+  updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
+});
+
+export const teamsRelations = relations(teams, ({ one, many }) => ({
+  owner: one(users, {
+    fields: [teams.ownerId],
+    references: [users.id],
+  }),
+  members: many(teamMembers),
+}));
+
+export const insertTeamSchema = createInsertSchema(teams).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type Team = typeof teams.$inferSelect;
+export type InsertTeam = z.infer<typeof insertTeamSchema>;
+
+export const teamMemberRoleEnum = ["owner", "admin", "member", "viewer"] as const;
+export type TeamMemberRole = typeof teamMemberRoleEnum[number];
+
+export const teamMembers = pgTable("team_members", {
+  id: varchar("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  teamId: varchar("team_id").notNull().references(() => teams.id, { onDelete: "cascade" }),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  role: varchar("role", { length: 20 }).default("member").notNull(),
+  joinedAt: timestamp("joined_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
+});
+
+export const teamMembersRelations = relations(teamMembers, ({ one }) => ({
+  team: one(teams, {
+    fields: [teamMembers.teamId],
+    references: [teams.id],
+  }),
+  user: one(users, {
+    fields: [teamMembers.userId],
+    references: [users.id],
+  }),
+}));
+
+export const insertTeamMemberSchema = createInsertSchema(teamMembers).omit({
+  id: true,
+  joinedAt: true,
+});
+
+export type TeamMember = typeof teamMembers.$inferSelect;
+export type InsertTeamMember = z.infer<typeof insertTeamMemberSchema>;
 
 export const snomedRef = pgTable("snomed_ref", {
   id: serial("id").primaryKey(),
