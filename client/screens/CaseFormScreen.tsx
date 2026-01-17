@@ -473,8 +473,19 @@ export default function CaseFormScreen() {
         onSelect={(v) => setAdmissionCategory(v as AdmissionCategory)}
       />
 
-      <View style={styles.checkboxRow}>
-        <Pressable
+      <Pressable
+        style={styles.checkboxRow}
+        testID="checkbox-unplanned-readmission"
+        onPress={() => {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          const newValue = !isUnplannedReadmission;
+          setIsUnplannedReadmission(newValue);
+          if (!newValue) {
+            setUnplannedReadmission("no");
+          }
+        }}
+      >
+        <View
           style={[
             styles.checkbox,
             { 
@@ -482,21 +493,13 @@ export default function CaseFormScreen() {
               borderColor: isUnplannedReadmission ? theme.warning : theme.border,
             },
           ]}
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            const newValue = !isUnplannedReadmission;
-            setIsUnplannedReadmission(newValue);
-            if (!newValue) {
-              setUnplannedReadmission("no");
-            }
-          }}
         >
           {isUnplannedReadmission ? (
             <Feather name="check" size={16} color={theme.warning} />
           ) : null}
-        </Pressable>
+        </View>
         <ThemedText style={styles.checkboxLabel}>Unplanned Readmission (within 28 days)</ThemedText>
-      </View>
+      </Pressable>
 
       {isUnplannedReadmission ? (
         <SelectField
