@@ -57,7 +57,7 @@ export function FormField({
         style={[
           styles.inputContainer,
           {
-            backgroundColor: theme.backgroundDefault,
+            backgroundColor: theme.backgroundRoot,
             borderColor: error ? theme.error : theme.border,
           },
         ]}
@@ -185,16 +185,16 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: BorderRadius.sm,
     paddingHorizontal: Spacing.md,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   input: {
     flex: 1,
     fontSize: 16,
     paddingVertical: Spacing.md,
-    ...Platform.select({
-      web: {
-        outlineStyle: "none",
-      },
-    }),
   },
   unit: {
     fontSize: 14,
@@ -229,6 +229,11 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.sm,
     paddingHorizontal: Spacing.md,
     minHeight: Spacing.inputHeight,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   pickerButtonText: {
     fontSize: 16,
@@ -290,6 +295,11 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.sm,
     paddingHorizontal: Spacing.md,
     minHeight: Spacing.inputHeight,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   dateButtonText: {
     fontSize: 16,
@@ -337,14 +347,14 @@ export function PickerField({
         style={[
           styles.pickerButton,
           {
-            backgroundColor: theme.backgroundDefault,
+            backgroundColor: theme.backgroundRoot,
             borderColor: error ? theme.error : theme.border,
           },
         ]}
         onPress={() => setModalVisible(true)}
       >
         {selectedOption ? (
-          <ThemedText style={[styles.pickerButtonText, { color: theme.text }]}>
+          <ThemedText style={[styles.pickerButtonText, { color: theme.text, fontWeight: "500" }]}>
             {selectedOption.label}
           </ThemedText>
         ) : (
@@ -492,7 +502,7 @@ export function DatePickerField({
         style={[
           styles.dateButton,
           {
-            backgroundColor: theme.backgroundDefault,
+            backgroundColor: theme.backgroundRoot,
             borderColor: error ? theme.error : theme.border,
           },
         ]}
