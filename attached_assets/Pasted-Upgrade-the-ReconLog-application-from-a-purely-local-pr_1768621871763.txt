@@ -1,0 +1,93 @@
+Upgrade the ReconLog application from a purely local prototype to a Hybrid Architecture with User Authentication.
+
+Goal: Allow users to create accounts, define their professional profile (Country, Career Stage, Hospitals), and prepare the database for future Team/Sharing functionality.
+
+Constraint: Maintain "Local-First" performance for clinical logs, but use Supabase (PostgreSQL) for User Identity and Profile Settings.
+
+2. Tech Stack Upgrade
+
+Auth: Supabase Auth (Email/Password + Social Login).
+
+Database: Supabase PostgreSQL (for User Profiles & Team Metadata).
+
+Frontend: React (continue with existing).
+
+3. Database Schema: The "Profile" Layer Create a profiles table in Supabase that automatically links to the auth.users table.
+
+Table: profiles
+
+id: UUID (Primary Key, references auth.users.id).
+
+full_name: String.
+
+country_of_practice: Enum ("New Zealand", "Poland", "Australia", "Other").
+
+Logic: This field determines which validation logic applies later (e.g., NHI vs PESEL validation).
+
+medical_council_number: String (Nullable).
+
+Context: Stores the MCNZ Number (if NZ) or PWZ Number (if PL).
+
+Verification Status: Enum ("Unverified", "Pending", "Verified"). Default to "Unverified".
+
+career_stage: Enum.
+
+Options: "Junior House Officer", "Registrar (Non-Training)", "SET Trainee", "Fellow", "Consultant/Specialist", "MOSS".
+
+created_at: Timestamp.
+
+Table: user_facilities (Many-to-Many)
+
+Context: A surgeon works at multiple hospitals.
+
+id: UUID.
+
+user_id: Foreign Key (profiles.id).
+
+facility_name: String (e.g., "Waikato Hospital").
+
+is_primary: Boolean (Default false).
+
+4. Feature Specification: The "Onboarding Wizard" When a user logs in for the first time, guide them through a 3-step setup (do not let them access the logbook until this is done).
+
+Step 1: Jurisdiction
+
+Select Country: [New Zealand / Poland / Other].
+
+UI Logic: If NZ is selected, change label of ID field to "MCNZ Number". If PL, change to "Numer PWZ".
+
+Step 2: Professional Status
+
+Select Career Stage (Dropdown).
+
+Enter Full Name (for future Team Reports).
+
+Step 3: Workplace
+
+"Where do you operate?"
+
+Input field with "Add" button to build a list of facilities (e.g., "Waikato Hospital", "Braemar Hospital").
+
+Why: These will auto-populate the "Facility" dropdown in the Add Case form later.
+
+5. Future-Proofing (Team Functionality Prep)
+
+Team Schema (Draft Only): Create a teams table and team_members table in the database definition, even if not used in the UI yet.
+
+Shared Logs Logic: Add a team_id column (Nullable UUID) to the local Cases schema.
+
+Comment: This prepares the app so that if team_id is present, the app knows this case belongs to a shared logbook, not just the private one.
+
+6. Implementation Steps for Replit
+
+Install @supabase/supabase-js.
+
+Set up the Auth Provider context in React.
+
+Create the Login/Sign Up Page (Clean, Medical Blue theme).
+
+Create the Settings Page (allows editing the profile data defined above).
+
+Update the "Add Case" Form:
+
+The "Facility" dropdown should now pull from the user's user_facilities list instead of being a blank text box.
