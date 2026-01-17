@@ -62,7 +62,7 @@ import {
 import { FormField, SelectField, PickerField, DatePickerField } from "@/components/FormField";
 import { SectionHeader } from "@/components/SectionHeader";
 import { Button } from "@/components/Button";
-import { saveCase } from "@/lib/storage";
+import { saveCase, getCaseDraft, saveCaseDraft, clearCaseDraft, CaseDraft } from "@/lib/storage";
 import { getConfigForSpecialty, getDefaultClinicalDetails } from "@/lib/procedureConfig";
 import { findSnomedProcedure, getProcedureCodeForCountry, getCountryCodeFromProfile } from "@/lib/snomedCt";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
@@ -175,6 +175,8 @@ export default function CaseFormScreen() {
   const insets = useSafeAreaInsets();
   const headerHeight = useHeaderHeight();
   const { facilities, profile } = useAuth();
+  
+  const draftLoadedRef = useRef(false);
 
   const { specialty, extractedData } = route.params;
   const config = getConfigForSpecialty(specialty);
