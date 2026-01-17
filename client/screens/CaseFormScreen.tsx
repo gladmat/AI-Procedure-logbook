@@ -57,7 +57,7 @@ import {
   COMMON_COMORBIDITIES,
   ETHNICITY_OPTIONS,
 } from "@/types/case";
-import { FormField, SelectField } from "@/components/FormField";
+import { FormField, SelectField, PickerField, DatePickerField } from "@/components/FormField";
 import { SectionHeader } from "@/components/SectionHeader";
 import { Button } from "@/components/Button";
 import { saveCase, getSettings } from "@/lib/storage";
@@ -79,6 +79,90 @@ const TEAM_ROLES: { value: OperatingTeamRole; label: string }[] = [
   { value: "surgical_registrar", label: "Surgical Registrar" },
   { value: "medical_student", label: "Medical Student" },
 ];
+
+// Default donor vessels based on flap type
+const DEFAULT_DONOR_VESSELS: Record<string, { artery: string; vein: string }> = {
+  "Anterolateral thigh free flap": { 
+    artery: "Descending branch of lateral circumflex femoral artery (LCFA)", 
+    vein: "Venae comitantes of LCFA" 
+  },
+  "ALT Flap": { 
+    artery: "Descending branch of lateral circumflex femoral artery (LCFA)", 
+    vein: "Venae comitantes of LCFA" 
+  },
+  "Deep inferior epigastric perforator flap": { 
+    artery: "Deep inferior epigastric artery (DIEA)", 
+    vein: "Deep inferior epigastric vein (DIEV)" 
+  },
+  "DIEP Flap": { 
+    artery: "Deep inferior epigastric artery (DIEA)", 
+    vein: "Deep inferior epigastric vein (DIEV)" 
+  },
+  "Free fibula flap": { 
+    artery: "Peroneal artery", 
+    vein: "Peroneal veins" 
+  },
+  "Fibula Flap": { 
+    artery: "Peroneal artery", 
+    vein: "Peroneal veins" 
+  },
+  "Free radial forearm flap": { 
+    artery: "Radial artery", 
+    vein: "Radial venae comitantes / Cephalic vein" 
+  },
+  "RFFF": { 
+    artery: "Radial artery", 
+    vein: "Radial venae comitantes / Cephalic vein" 
+  },
+  "Free latissimus dorsi flap": { 
+    artery: "Thoracodorsal artery", 
+    vein: "Thoracodorsal vein" 
+  },
+  "LD Flap": { 
+    artery: "Thoracodorsal artery", 
+    vein: "Thoracodorsal vein" 
+  },
+  "Free gracilis flap": { 
+    artery: "Medial circumflex femoral artery (MCFA)", 
+    vein: "Venae comitantes of MCFA" 
+  },
+  "Gracilis": { 
+    artery: "Medial circumflex femoral artery (MCFA)", 
+    vein: "Venae comitantes of MCFA" 
+  },
+  "Free superior gluteal artery perforator flap": {
+    artery: "Superior gluteal artery",
+    vein: "Superior gluteal vein"
+  },
+  "SGAP Flap": {
+    artery: "Superior gluteal artery",
+    vein: "Superior gluteal vein"
+  },
+  "Free inferior gluteal artery perforator flap": {
+    artery: "Inferior gluteal artery",
+    vein: "Inferior gluteal vein"
+  },
+  "IGAP Flap": {
+    artery: "Inferior gluteal artery",
+    vein: "Inferior gluteal vein"
+  },
+  "Free scapular flap": {
+    artery: "Circumflex scapular artery",
+    vein: "Circumflex scapular vein"
+  },
+  "Scapular Flap": {
+    artery: "Circumflex scapular artery",
+    vein: "Circumflex scapular vein"
+  },
+  "Free medial sural artery perforator flap": {
+    artery: "Medial sural artery",
+    vein: "Medial sural veins"
+  },
+  "MSAP Flap": {
+    artery: "Medial sural artery",
+    vein: "Medial sural veins"
+  },
+};
 
 export default function CaseFormScreen() {
   const { theme } = useTheme();
@@ -226,10 +310,18 @@ export default function CaseFormScreen() {
 
   const addAnastomosis = (vesselType: "artery" | "vein") => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    // Auto-populate donor vessel based on flap type
+    const donorVessels = DEFAULT_DONOR_VESSELS[procedureType];
+    const donorVesselName = donorVessels 
+      ? (vesselType === "artery" ? donorVessels.artery : donorVessels.vein)
+      : "";
     const newEntry: AnastomosisEntry = {
       id: uuidv4(),
       vesselType,
       recipientVesselName: "",
+      donorVesselName,
+      // Arteries are always hand-sewn
+      couplingMethod: vesselType === "artery" ? "hand_sewn" : undefined,
     };
     setAnastomoses((prev) => [...prev, newEntry]);
   };
@@ -396,11 +488,11 @@ export default function CaseFormScreen() {
         required
       />
 
-      <FormField
+      <DatePickerField
         label="Procedure Date"
         value={procedureDate}
-        onChangeText={setProcedureDate}
-        placeholder="YYYY-MM-DD"
+        onChange={setProcedureDate}
+        placeholder="Select date..."
         required
       />
 
@@ -412,23 +504,19 @@ export default function CaseFormScreen() {
         required
       />
 
-      <View style={styles.row}>
-        <View style={styles.halfField}>
-          <SelectField
-            label="Procedure Type"
-            value={procedureType}
-            options={procedureOptions}
-            onSelect={setProcedureType}
-            required
-          />
-        </View>
-      </View>
+      <PickerField
+        label="Procedure Type"
+        value={procedureType}
+        options={procedureOptions}
+        onSelect={setProcedureType}
+        required
+      />
 
       <SectionHeader title="Patient Demographics" />
 
       <View style={styles.row}>
         <View style={styles.halfField}>
-          <SelectField
+          <PickerField
             label="Gender"
             value={gender}
             options={Object.entries(GENDER_LABELS).map(([value, label]) => ({ value, label }))}
@@ -436,7 +524,7 @@ export default function CaseFormScreen() {
           />
         </View>
         <View style={styles.halfField}>
-          <SelectField
+          <PickerField
             label="Ethnicity"
             value={ethnicity}
             options={ETHNICITY_OPTIONS}
@@ -449,24 +537,22 @@ export default function CaseFormScreen() {
 
       <View style={styles.row}>
         <View style={styles.halfField}>
-          <FormField
+          <DatePickerField
             label="Admission Date"
             value={admissionDate}
-            onChangeText={setAdmissionDate}
-            placeholder="YYYY-MM-DD"
+            onChange={setAdmissionDate}
           />
         </View>
         <View style={styles.halfField}>
-          <FormField
+          <DatePickerField
             label="Discharge Date"
             value={dischargeDate}
-            onChangeText={setDischargeDate}
-            placeholder="YYYY-MM-DD"
+            onChange={setDischargeDate}
           />
         </View>
       </View>
 
-      <SelectField
+      <PickerField
         label="Admission Category"
         value={admissionCategory}
         options={Object.entries(ADMISSION_CATEGORY_LABELS).map(([value, label]) => ({ value, label }))}
@@ -594,7 +680,7 @@ export default function CaseFormScreen() {
 
       <SectionHeader title="Your Role" />
 
-      <SelectField
+      <PickerField
         label="Role in Procedure"
         value={role}
         options={[
@@ -644,7 +730,7 @@ export default function CaseFormScreen() {
             />
           </View>
           <View style={styles.halfField}>
-            <SelectField
+            <PickerField
               label="Role"
               value={newTeamMemberRole}
               options={TEAM_ROLES}
@@ -665,7 +751,7 @@ export default function CaseFormScreen() {
 
       <SectionHeader title="Risk Factors" subtitle="Optional patient details" />
 
-      <SelectField
+      <PickerField
         label="ASA Score"
         value={asaScore}
         options={Object.entries(ASA_GRADE_LABELS).map(([value, label]) => ({ value, label }))}
@@ -705,7 +791,7 @@ export default function CaseFormScreen() {
         </View>
       </View>
 
-      <SelectField
+      <PickerField
         label="Smoking Status"
         value={smoker}
         options={[
@@ -716,7 +802,7 @@ export default function CaseFormScreen() {
         onSelect={(v) => setSmoker(v as SmokingStatus)}
       />
 
-      <SelectField
+      <PickerField
         label="Diabetes"
         value={diabetes === null ? "" : diabetes ? "yes" : "no"}
         options={[
@@ -728,14 +814,14 @@ export default function CaseFormScreen() {
 
       <SectionHeader title="Operative Factors" />
 
-      <SelectField
+      <PickerField
         label="Wound Infection Risk"
         value={woundInfectionRisk}
         options={Object.entries(WOUND_INFECTION_RISK_LABELS).map(([value, label]) => ({ value, label }))}
         onSelect={(v) => setWoundInfectionRisk(v as WoundInfectionRisk)}
       />
 
-      <SelectField
+      <PickerField
         label="Anaesthetic Type"
         value={anaestheticType}
         options={Object.entries(ANAESTHETIC_TYPE_LABELS).map(([value, label]) => ({ value, label }))}
@@ -786,7 +872,7 @@ export default function CaseFormScreen() {
 
       <SectionHeader title="Outcomes" />
 
-      <SelectField
+      <PickerField
         label="Unplanned ICU Admission"
         value={unplannedICU}
         options={Object.entries(UNPLANNED_ICU_LABELS).map(([value, label]) => ({ value, label }))}
@@ -823,7 +909,7 @@ export default function CaseFormScreen() {
         />
       ) : null}
 
-      <SelectField
+      <PickerField
         label="Discharge Outcome"
         value={outcome}
         options={Object.entries(DISCHARGE_OUTCOME_LABELS).map(([value, label]) => ({ value, label }))}
@@ -831,7 +917,7 @@ export default function CaseFormScreen() {
       />
 
       {outcome === "died" ? (
-        <SelectField
+        <PickerField
           label="Mortality Classification"
           value={mortalityClassification}
           options={Object.entries(MORTALITY_CLASSIFICATION_LABELS).map(([value, label]) => ({ value, label }))}
@@ -875,16 +961,23 @@ export default function CaseFormScreen() {
             subtitle="Add arterial and venous connections" 
           />
 
-          {anastomoses.map((entry, index) => (
-            <AnastomosisEntryCard
-              key={entry.id}
-              entry={entry}
-              index={index}
-              recipientRegion={recipientSiteRegion}
-              onUpdate={updateAnastomosis}
-              onDelete={() => removeAnastomosis(entry.id)}
-            />
-          ))}
+          {anastomoses.map((entry, index) => {
+            const donorVessels = DEFAULT_DONOR_VESSELS[procedureType];
+            const defaultDonorVessel = donorVessels 
+              ? (entry.vesselType === "artery" ? donorVessels.artery : donorVessels.vein)
+              : undefined;
+            return (
+              <AnastomosisEntryCard
+                key={entry.id}
+                entry={entry}
+                index={index}
+                recipientRegion={recipientSiteRegion}
+                defaultDonorVessel={defaultDonorVessel}
+                onUpdate={updateAnastomosis}
+                onDelete={() => removeAnastomosis(entry.id)}
+              />
+            );
+          })}
 
           <View style={styles.row}>
             <View style={styles.halfField}>

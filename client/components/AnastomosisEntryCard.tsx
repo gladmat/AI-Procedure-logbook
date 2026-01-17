@@ -4,7 +4,7 @@ import { Feather } from "@expo/vector-icons";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { BorderRadius, Spacing } from "@/constants/theme";
-import { FormField, SelectField } from "@/components/FormField";
+import { FormField, SelectField, PickerField } from "@/components/FormField";
 import {
   type AnastomosisEntry,
   type AnatomicalRegion,
@@ -19,6 +19,7 @@ interface AnastomosisEntryCardProps {
   entry: AnastomosisEntry;
   index: number;
   recipientRegion?: AnatomicalRegion;
+  defaultDonorVessel?: string;
   onUpdate: (entry: AnastomosisEntry) => void;
   onDelete: () => void;
 }
@@ -29,6 +30,7 @@ export function AnastomosisEntryCard({
   entry,
   index,
   recipientRegion,
+  defaultDonorVessel,
   onUpdate,
   onDelete,
 }: AnastomosisEntryCardProps) {
@@ -108,7 +110,7 @@ export function AnastomosisEntryCard({
         </Pressable>
       </View>
 
-      <SelectField
+      <PickerField
         label="Vessel Type"
         value={entry.vesselType}
         options={Object.entries(VESSEL_TYPE_LABELS).map(([value, label]) => ({
@@ -194,23 +196,35 @@ export function AnastomosisEntryCard({
         label="Donor Vessel"
         value={entry.donorVesselName || ""}
         onChangeText={(text) => onUpdate({ ...entry, donorVesselName: text })}
-        placeholder="e.g., Desc. branch LCFA"
+        placeholder={defaultDonorVessel || "e.g., Desc. branch LCFA"}
       />
 
-      <SelectField
-        label="Coupling Method"
-        value={entry.couplingMethod || ""}
-        options={Object.entries(COUPLING_METHOD_LABELS).map(([value, label]) => ({
-          value,
-          label,
-        }))}
-        onSelect={(value) =>
-          onUpdate({ ...entry, couplingMethod: value as any })
-        }
-      />
+      {/* Arteries are always hand-sewn, veins can use couplers */}
+      {entry.vesselType === "artery" ? (
+        <View style={styles.fixedValue}>
+          <ThemedText style={[styles.label, { color: theme.textSecondary }]}>
+            Coupling Method
+          </ThemedText>
+          <ThemedText style={[styles.fixedValueText, { color: theme.text }]}>
+            Hand-sewn (standard for arteries)
+          </ThemedText>
+        </View>
+      ) : (
+        <PickerField
+          label="Coupling Method"
+          value={entry.couplingMethod || ""}
+          options={Object.entries(COUPLING_METHOD_LABELS).map(([value, label]) => ({
+            value,
+            label,
+          }))}
+          onSelect={(value) =>
+            onUpdate({ ...entry, couplingMethod: value as any })
+          }
+        />
+      )}
 
-      {entry.couplingMethod === "coupler" || entry.couplingMethod === "hybrid" ? (
-        <SelectField
+      {entry.vesselType === "vein" && (entry.couplingMethod === "coupler" || entry.couplingMethod === "hybrid") ? (
+        <PickerField
           label="Coupler Size (mm)"
           value={entry.couplerSizeMm?.toString() || ""}
           options={COUPLER_SIZES.map((size) => ({ value: size, label: size }))}
@@ -220,7 +234,7 @@ export function AnastomosisEntryCard({
         />
       ) : null}
 
-      <SelectField
+      <PickerField
         label="Configuration"
         value={entry.configuration || ""}
         options={Object.entries(ANASTOMOSIS_LABELS).map(([value, label]) => ({
@@ -232,7 +246,7 @@ export function AnastomosisEntryCard({
         }
       />
 
-      <SelectField
+      <PickerField
         label="Patency Confirmed"
         value={entry.patencyConfirmed === true ? "yes" : entry.patencyConfirmed === false ? "no" : ""}
         options={[
@@ -285,5 +299,15 @@ const styles = StyleSheet.create({
   },
   vesselOptionText: {
     fontSize: 13,
+  },
+  fixedValue: {
+    marginBottom: Spacing.lg,
+  },
+  fixedValueText: {
+    fontSize: 16,
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.md,
+    borderRadius: BorderRadius.sm,
+    backgroundColor: "rgba(0,0,0,0.03)",
   },
 });
