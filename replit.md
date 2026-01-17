@@ -53,7 +53,7 @@ Preferred communication style: Simple, everyday language.
 - **SNOMED CT Reference Database**: PostgreSQL `snomed_ref` table stores vessels, co-morbidities, and anaesthetic types organized by category with real SNOMED CT codes
 - **Modular Database Design**: Universal `snomed_ref` pattern supports future expansion to other specialties (hand fractures, burns, etc.)
 - **SNOMED CT Procedure Coding**: Added international procedure coding using SNOMED CT as the canonical standard, with country-specific local code mappings (CHOP for Switzerland, OPCS-4 for UK, ACHI for Australia/NZ, CPT for US, ICD-9-CM-PL for Poland)
-- **Country/Region Settings**: Users can select their country in Settings to see procedure codes in their local coding system
+- **Country-Based Procedure Coding**: Procedure coding system derived from user's profile country of practice (set during onboarding), with automatic mapping to local coding systems (ACHI-NZ for New Zealand, ACHI for Australia, OPCS-4 for UK, CPT for US, CHOP for Switzerland, ICD-9-CM-PL for Poland)
 - **Surgery Timing**: Cases now capture start time, end time, and auto-calculated duration
 - **Operating Team**: Added ability to record operating team members (scrub nurse, anaesthetist, surgical assistant, etc.)
 - **Enhanced AI Extraction**: All specialty prompts now extract surgery times, team members, recipient site region, and multiple anastomoses from operation notes
@@ -89,7 +89,7 @@ Cases use a flexible JSON payload structure for clinical details, allowing futur
 - **clinical_details**: JSON column storing specialty-specific data (flap type, vessels, timing)
 - **TimelineEvents table**: Post-operative tracking linked to cases
 - **snomed_ref table**: SNOMED CT coded reference data for vessels, co-morbidities, anaesthetic types
-- **Settings**: Country code, display preferences stored in AsyncStorage
+- **Settings**: Display preferences stored in AsyncStorage; country for procedure coding derived from user profile
 
 ### Privacy Pipeline
 1. Camera captures operation note image (never uploaded)
