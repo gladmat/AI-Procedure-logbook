@@ -12,7 +12,15 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (January 2026)
 
-### RACS MALT Audit Integration (Latest)
+### Multi-Procedure Support (Latest)
+- **Multiple Procedures Per Case**: Cases now support logging multiple distinct procedures (e.g., hand trauma with K-wire fixation + tendon repair + soft tissue coverage)
+- **Database Table**: `case_procedures` table stores individual procedures with `sequence_order`, `specialty`, `surgeon_role`, SNOMED CT codes, and notes
+- **ProcedureEntryCard Component**: Reusable card for adding/editing procedures with procedure name, specialty picker, surgeon role, and SNOMED CT fields
+- **CaseFormScreen Integration**: Add/remove/reorder procedures with numbered sequence display
+- **CaseDetailScreen Display**: Shows all procedures with sequence numbers, specialty badges, surgeon roles, and SNOMED codes
+- **AI Extraction**: Hand trauma AI prompt updated to identify and extract multiple procedures from operation notes
+
+### RACS MALT Audit Integration
 - **Comprehensive RACS MALT Data Model**: Full implementation of Royal Australasian College of Surgeons MALT (Morbidity Audit and Logbook Tool) fields
 - **Patient Demographics**: Gender (with SNOMED CT mapping), ethnicity tracking
 - **Admission Details**: Admission/discharge dates, admission category (elective/emergency/planned), unplanned readmission tracking with reason codes
@@ -93,6 +101,7 @@ Cases use a flexible JSON payload structure for clinical details, allowing futur
 - `client/screens/SettingsScreen.tsx` - Country selection and data export
 - `client/components/RecipientSiteSelector.tsx` - Anatomical region picker for recipient site
 - `client/components/AnastomosisEntryCard.tsx` - Dynamic vessel selection card with region filtering
+- `client/components/ProcedureEntryCard.tsx` - Multi-procedure entry card with SNOMED CT coding
 - `server/ai-prompts.ts` - AI extraction prompts for each specialty (extracts all RACS MALT fields)
 - `server/seedData.ts` - SNOMED CT seeding for vessels, co-morbidities, anaesthetic types
 - `shared/schema.ts` - Drizzle ORM schema with snomed_ref, flaps, and anastomoses tables
