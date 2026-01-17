@@ -212,6 +212,8 @@ export const anaestheticTypeOptions: InsertSnomedRef[] = [
   { snomedCtCode: "18946005", displayName: "Spinal anaesthesia", commonName: "Spinal", category: "anaesthetic_type", subcategory: null, anatomicalRegion: null, specialty: null, sortOrder: 4 },
   { snomedCtCode: "18946005", displayName: "Epidural anaesthesia", commonName: "Epidural", category: "anaesthetic_type", subcategory: null, anatomicalRegion: null, specialty: null, sortOrder: 5 },
   { snomedCtCode: "72641008", displayName: "Procedural sedation", commonName: "Sedation", category: "anaesthetic_type", subcategory: null, anatomicalRegion: null, specialty: null, sortOrder: 6 },
+  { snomedCtCode: "72641008+386761002", displayName: "Sedation with local anaesthesia", commonName: "Sedation + Local", category: "anaesthetic_type", subcategory: null, anatomicalRegion: null, specialty: null, sortOrder: 7 },
+  { snomedCtCode: "386761002+walant", displayName: "Wide awake local anaesthesia no tourniquet", commonName: "WALANT", category: "anaesthetic_type", subcategory: null, anatomicalRegion: null, specialty: null, sortOrder: 8 },
 ];
 
 export const allSeedData: InsertSnomedRef[] = [

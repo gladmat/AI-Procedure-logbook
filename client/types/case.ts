@@ -48,7 +48,9 @@ export type AnaestheticType =
   | "regional_block" 
   | "spinal" 
   | "epidural" 
-  | "sedation";
+  | "sedation"
+  | "sedation_local"
+  | "walant";
 
 export type UnplannedICUReason = 
   | "no"
@@ -242,6 +244,8 @@ export interface Case {
   
   // Risk Factors
   asaScore?: ASAScore;
+  heightCm?: number;
+  weightKg?: number;
   bmi?: number;
   smoker?: SmokingStatus;
   diabetes?: boolean;
@@ -427,6 +431,8 @@ export const ANAESTHETIC_TYPE_LABELS: Record<AnaestheticType, string> = {
   spinal: "Spinal",
   epidural: "Epidural",
   sedation: "Sedation",
+  sedation_local: "Sedation + Local",
+  walant: "WALANT (Wide Awake Local Anaesthesia No Tourniquet)",
 };
 
 export const UNPLANNED_ICU_LABELS: Record<UnplannedICUReason, string> = {
@@ -455,6 +461,22 @@ export const MORTALITY_CLASSIFICATION_LABELS: Record<MortalityClassification, st
   unexpected: "Unexpected",
   not_applicable: "Not Applicable",
 };
+
+export const ETHNICITY_OPTIONS: { value: string; label: string }[] = [
+  { value: "nz_european", label: "NZ European" },
+  { value: "maori", label: "Maori" },
+  { value: "pacific_islander", label: "Pacific Islander" },
+  { value: "asian", label: "Asian" },
+  { value: "middle_eastern", label: "Middle Eastern" },
+  { value: "african", label: "African" },
+  { value: "latin_american", label: "Latin American" },
+  { value: "european", label: "European" },
+  { value: "south_asian", label: "South Asian" },
+  { value: "southeast_asian", label: "Southeast Asian" },
+  { value: "east_asian", label: "East Asian" },
+  { value: "other", label: "Other" },
+  { value: "not_stated", label: "Not Stated" },
+];
 
 export const ASA_GRADE_LABELS: Record<ASAScore, string> = {
   1: "I - Normal Healthy Patient",

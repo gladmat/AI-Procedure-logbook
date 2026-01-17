@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   View,
   StyleSheet,
   Pressable,
   Alert,
   Platform,
+  Modal,
 } from "react-native";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -54,6 +55,7 @@ import {
   MORTALITY_CLASSIFICATION_LABELS,
   ASA_GRADE_LABELS,
   COMMON_COMORBIDITIES,
+  ETHNICITY_OPTIONS,
 } from "@/types/case";
 import { FormField, SelectField } from "@/components/FormField";
 import { SectionHeader } from "@/components/SectionHeader";
@@ -100,10 +102,16 @@ export default function CaseFormScreen() {
     PROCEDURE_TYPES[specialty][0]
   );
   const [asaScore, setAsaScore] = useState<string>("");
-  const [bmi, setBmi] = useState("");
+  const [heightCm, setHeightCm] = useState("");
+  const [weightKg, setWeightKg] = useState("");
   const [smoker, setSmoker] = useState<SmokingStatus | "">("");
   const [diabetes, setDiabetes] = useState<boolean | null>(null);
   const [role, setRole] = useState<Role>("primary");
+  
+  const [showProcedureDatePicker, setShowProcedureDatePicker] = useState(false);
+  const [showAdmissionDatePicker, setShowAdmissionDatePicker] = useState(false);
+  const [showDischargeDatePicker, setShowDischargeDatePicker] = useState(false);
+  const [isUnplannedReadmission, setIsUnplannedReadmission] = useState(false);
 
   const [surgeryStartTime, setSurgeryStartTime] = useState("");
   const [surgeryEndTime, setSurgeryEndTime] = useState("");
@@ -133,10 +141,8 @@ export default function CaseFormScreen() {
   const [admissionCategory, setAdmissionCategory] = useState<AdmissionCategory | "">("");
   const [unplannedReadmission, setUnplannedReadmission] = useState<UnplannedReadmissionReason>("no");
 
-  // RACS MALT Diagnoses
-  const [preManagementDiagnosis, setPreManagementDiagnosis] = useState("");
-  const [finalDiagnosis, setFinalDiagnosis] = useState("");
-  const [pathologicalDiagnosis, setPathologicalDiagnosis] = useState("");
+  // RACS MALT Diagnosis (single SNOMED diagnosis)
+  const [diagnosis, setDiagnosis] = useState("");
 
   // RACS MALT Co-morbidities
   const [selectedComorbidities, setSelectedComorbidities] = useState<SnomedCodedItem[]>([]);
@@ -154,6 +160,14 @@ export default function CaseFormScreen() {
   const [outcome, setOutcome] = useState<DischargeOutcome | "">("");
   const [mortalityClassification, setMortalityClassification] = useState<MortalityClassification | "">("");
   const [discussedAtMDM, setDiscussedAtMDM] = useState(false);
+
+  const calculatedBmi = useMemo(() => {
+    const h = parseFloat(heightCm);
+    const w = parseFloat(weightKg);
+    if (!h || !w || h <= 0 || w <= 0) return undefined;
+    const heightM = h / 100;
+    return Math.round((w / (heightM * heightM)) * 10) / 10;
+  }, [heightCm, weightKg]);
 
   const calculateDuration = (start: string, end: string): number | undefined => {
     if (!start || !end) return undefined;
@@ -289,15 +303,9 @@ export default function CaseFormScreen() {
         admissionCategory: admissionCategory || undefined,
         unplannedReadmission: unplannedReadmission !== "no" ? unplannedReadmission : undefined,
         
-        // Diagnoses
-        preManagementDiagnosis: preManagementDiagnosis.trim() 
-          ? { displayName: preManagementDiagnosis.trim() } 
-          : undefined,
-        finalDiagnosis: finalDiagnosis.trim() 
-          ? { displayName: finalDiagnosis.trim() } 
-          : undefined,
-        pathologicalDiagnosis: pathologicalDiagnosis.trim() 
-          ? { displayName: pathologicalDiagnosis.trim() } 
+        // Diagnosis (single SNOMED diagnosis)
+        finalDiagnosis: diagnosis.trim() 
+          ? { displayName: diagnosis.trim() } 
           : undefined,
         
         // Co-morbidities
@@ -305,7 +313,9 @@ export default function CaseFormScreen() {
         
         // Risk Factors
         asaScore: asaScore ? (parseInt(asaScore) as ASAScore) : undefined,
-        bmi: bmi ? parseFloat(bmi) : undefined,
+        heightCm: heightCm ? parseFloat(heightCm) : undefined,
+        weightKg: weightKg ? parseFloat(weightKg) : undefined,
+        bmi: calculatedBmi || undefined,
         smoker: smoker || undefined,
         diabetes: diabetes ?? undefined,
         
@@ -426,11 +436,11 @@ export default function CaseFormScreen() {
           />
         </View>
         <View style={styles.halfField}>
-          <FormField
+          <SelectField
             label="Ethnicity"
             value={ethnicity}
-            onChangeText={setEthnicity}
-            placeholder="e.g., NZ European"
+            options={ETHNICITY_OPTIONS}
+            onSelect={setEthnicity}
           />
         </View>
       </View>
@@ -463,34 +473,49 @@ export default function CaseFormScreen() {
         onSelect={(v) => setAdmissionCategory(v as AdmissionCategory)}
       />
 
-      <SelectField
-        label="Unplanned Readmission (< 28 days)"
-        value={unplannedReadmission}
-        options={Object.entries(UNPLANNED_READMISSION_LABELS).map(([value, label]) => ({ value, label }))}
-        onSelect={(v) => setUnplannedReadmission(v as UnplannedReadmissionReason)}
-      />
+      <View style={styles.checkboxRow}>
+        <Pressable
+          style={[
+            styles.checkbox,
+            { 
+              backgroundColor: isUnplannedReadmission ? theme.warning + "20" : theme.backgroundDefault,
+              borderColor: isUnplannedReadmission ? theme.warning : theme.border,
+            },
+          ]}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            const newValue = !isUnplannedReadmission;
+            setIsUnplannedReadmission(newValue);
+            if (!newValue) {
+              setUnplannedReadmission("no");
+            }
+          }}
+        >
+          {isUnplannedReadmission ? (
+            <Feather name="check" size={16} color={theme.warning} />
+          ) : null}
+        </Pressable>
+        <ThemedText style={styles.checkboxLabel}>Unplanned Readmission (within 28 days)</ThemedText>
+      </View>
 
-      <SectionHeader title="Diagnoses" subtitle="SNOMED CT coded diagnoses" />
+      {isUnplannedReadmission ? (
+        <SelectField
+          label="Readmission Reason"
+          value={unplannedReadmission}
+          options={Object.entries(UNPLANNED_READMISSION_LABELS)
+            .filter(([value]) => value !== "no")
+            .map(([value, label]) => ({ value, label: label.replace("Yes - ", "") }))}
+          onSelect={(v) => setUnplannedReadmission(v as UnplannedReadmissionReason)}
+        />
+      ) : null}
+
+      <SectionHeader title="Diagnosis" subtitle="SNOMED CT coded diagnosis" />
 
       <FormField
-        label="Pre-Management Diagnosis"
-        value={preManagementDiagnosis}
-        onChangeText={setPreManagementDiagnosis}
-        placeholder="e.g., Lower limb trauma"
-      />
-
-      <FormField
-        label="Final Diagnosis"
-        value={finalDiagnosis}
-        onChangeText={setFinalDiagnosis}
-        placeholder="e.g., Tibial fracture with soft tissue loss"
-      />
-
-      <FormField
-        label="Pathological Diagnosis"
-        value={pathologicalDiagnosis}
-        onChangeText={setPathologicalDiagnosis}
-        placeholder="e.g., Squamous cell carcinoma"
+        label="Diagnosis"
+        value={diagnosis}
+        onChangeText={setDiagnosis}
+        placeholder="e.g., Lower limb trauma, Tibial fracture"
       />
 
       <SectionHeader title="Co-morbidities" subtitle="Select all that apply" />
@@ -637,29 +662,43 @@ export default function CaseFormScreen() {
 
       <SectionHeader title="Risk Factors" subtitle="Optional patient details" />
 
+      <SelectField
+        label="ASA Score"
+        value={asaScore}
+        options={Object.entries(ASA_GRADE_LABELS).map(([value, label]) => ({ value, label }))}
+        onSelect={setAsaScore}
+      />
+
       <View style={styles.row}>
         <View style={styles.thirdField}>
-          <SelectField
-            label="ASA Score"
-            value={asaScore}
-            options={[
-              { value: "1", label: "1" },
-              { value: "2", label: "2" },
-              { value: "3", label: "3" },
-              { value: "4", label: "4" },
-              { value: "5", label: "5" },
-            ]}
-            onSelect={setAsaScore}
+          <FormField
+            label="Height"
+            value={heightCm}
+            onChangeText={setHeightCm}
+            placeholder="170"
+            keyboardType="decimal-pad"
+            unit="cm"
           />
         </View>
         <View style={styles.thirdField}>
           <FormField
-            label="BMI"
-            value={bmi}
-            onChangeText={setBmi}
-            placeholder="25.0"
+            label="Weight"
+            value={weightKg}
+            onChangeText={setWeightKg}
+            placeholder="70"
             keyboardType="decimal-pad"
+            unit="kg"
           />
+        </View>
+        <View style={styles.thirdField}>
+          <View style={styles.bmiDisplay}>
+            <ThemedText style={[styles.bmiLabel, { color: theme.textSecondary }]}>
+              BMI
+            </ThemedText>
+            <ThemedText style={[styles.bmiValue, { color: calculatedBmi ? theme.text : theme.textTertiary }]}>
+              {calculatedBmi ? calculatedBmi.toFixed(1) : "--"}
+            </ThemedText>
+          </View>
         </View>
       </View>
 
@@ -1037,5 +1076,19 @@ const styles = StyleSheet.create({
   checkboxLabel: {
     fontSize: 15,
     flex: 1,
+  },
+  bmiDisplay: {
+    paddingTop: Spacing.md,
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: 56,
+  },
+  bmiLabel: {
+    fontSize: 12,
+    marginBottom: Spacing.xs,
+  },
+  bmiValue: {
+    fontSize: 20,
+    fontWeight: "600",
   },
 });
