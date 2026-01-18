@@ -11,7 +11,7 @@ import AuthScreen from "@/screens/AuthScreen";
 import OnboardingScreen from "@/screens/OnboardingScreen";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
 import { useAuth } from "@/contexts/AuthContext";
-import { Specialty } from "@/types/case";
+import { Specialty, TimelineEventType } from "@/types/case";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/useColorScheme";
 
@@ -23,7 +23,7 @@ export type RootStackParamList = {
   CaseForm: { specialty: Specialty; extractedData?: Record<string, unknown> };
   AddCase: undefined;
   SmartCapture: { mode?: "op_note" | "discharge_summary" } | undefined;
-  AddTimelineEvent: { caseId: string };
+  AddTimelineEvent: { caseId: string; initialEventType?: TimelineEventType };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
