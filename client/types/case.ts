@@ -76,6 +76,26 @@ export type MortalityClassification =
   | "unexpected"
   | "not_applicable";
 
+export type ClavienDindoGrade = 
+  | "none"
+  | "I"
+  | "II"
+  | "IIIa"
+  | "IIIb"
+  | "IVa"
+  | "IVb"
+  | "V";
+
+export interface ComplicationEntry {
+  id: string;
+  description: string;
+  clavienDindoGrade?: ClavienDindoGrade;
+  dateIdentified?: string;
+  managementNotes?: string;
+  resolved?: boolean;
+  resolvedDate?: string;
+}
+
 export type Indication = "trauma" | "oncologic" | "congenital";
 
 export type AnastomosisType = "end_to_end" | "end_to_side" | "side_to_side";
@@ -279,6 +299,12 @@ export interface Case {
   recurrenceDate?: string;
   discussedAtMDM?: boolean;
   
+  // 30-Day Complication Follow-up
+  complicationsReviewed?: boolean;
+  complicationsReviewedAt?: string;
+  hasComplications?: boolean;
+  complications?: ComplicationEntry[];
+  
   clinicalDetails: ClinicalDetails;
   teamMembers: TeamMember[];
   ownerId: string;
@@ -475,6 +501,17 @@ export const MORTALITY_CLASSIFICATION_LABELS: Record<MortalityClassification, st
   expected: "Expected",
   unexpected: "Unexpected",
   not_applicable: "Not Applicable",
+};
+
+export const CLAVIEN_DINDO_LABELS: Record<ClavienDindoGrade, string> = {
+  none: "No Complication",
+  I: "Grade I - Minor deviation",
+  II: "Grade II - Pharmacological treatment",
+  IIIa: "Grade IIIa - Intervention without GA",
+  IIIb: "Grade IIIb - Intervention under GA",
+  IVa: "Grade IVa - Single organ dysfunction",
+  IVb: "Grade IVb - Multi-organ dysfunction",
+  V: "Grade V - Death",
 };
 
 export const ETHNICITY_OPTIONS: { value: string; label: string }[] = [
