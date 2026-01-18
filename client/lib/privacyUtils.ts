@@ -81,3 +81,17 @@ export function getRedactionSummary(result: RedactionResult): string {
   
   return `Redacted: ${parts.join(", ")}`;
 }
+
+export function extractNHIFromText(text: string): string | null {
+  const matches = text.match(NHI_PATTERN);
+  return matches && matches.length > 0 ? matches[0].toUpperCase() : null;
+}
+
+export function extractDatesFromText(text: string): string[] {
+  const dates: string[] = [];
+  DATE_PATTERNS.forEach((pattern) => {
+    const matches = text.match(pattern) || [];
+    dates.push(...matches);
+  });
+  return dates;
+}

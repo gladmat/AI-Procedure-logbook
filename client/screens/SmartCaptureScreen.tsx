@@ -8,7 +8,7 @@ import {
   Image,
   ActivityIndicator,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { CameraView, useCameraPermissions } from "expo-camera";
@@ -20,15 +20,19 @@ import { ThemedView } from "@/components/ThemedView";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, Shadows } from "@/constants/theme";
 import { Button } from "@/components/Button";
-import { redactSensitiveData, getRedactionSummary } from "@/lib/privacyUtils";
+import { redactSensitiveData, getRedactionSummary, extractNHIFromText } from "@/lib/privacyUtils";
 import { apiRequest } from "@/lib/query-client";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+type RouteParams = RouteProp<RootStackParamList, "SmartCapture">;
+
+type ScanMode = "op_note" | "discharge_summary";
 
 export default function SmartCaptureScreen() {
   const { theme } = useTheme();
   const navigation = useNavigation<NavigationProp>();
+  const route = useRoute<RouteParams>();
   const insets = useSafeAreaInsets();
   const cameraRef = useRef<CameraView>(null);
 
@@ -38,6 +42,8 @@ export default function SmartCaptureScreen() {
   const [processingStep, setProcessingStep] = useState("");
   const [extractedText, setExtractedText] = useState("");
   const [redactionSummary, setRedactionSummary] = useState("");
+  const [scanMode, setScanMode] = useState<ScanMode>(route.params?.mode || "op_note");
+  const [extractedNHI, setExtractedNHI] = useState<string | null>(null);
 
   const handleCapture = async () => {
     if (!cameraRef.current) return;

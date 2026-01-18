@@ -1,7 +1,7 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "node:http";
 import { GoogleGenAI } from "@google/genai";
-import { FREE_FLAP_AI_PROMPT } from "./ai-prompts";
+import { FREE_FLAP_AI_PROMPT, getDischargeComplicationPrompt } from "./ai-prompts";
 import { extractTextFromImage } from "./ocr";
 import { redactSensitiveData } from "./privacyUtils";
 import { storage } from "./storage";
@@ -123,6 +123,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error analyzing operation note:", error);
       res.status(500).json({ error: "Failed to analyze image" });
+    }
+  });
+
+  app.post("/api/analyze-discharge-summary", async (req: Request, res: Response) => {
+    try {
+      const { text } = req.body;
+      
+      if (!text) {
+        return res.status(400).json({ error: "No text provided" });
+      }
+
+      const prompt = getDischargeComplicationPrompt();
+
+      const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: [
+          {
+            role: "user",
+            parts: [
+              { text: prompt },
+              { text: `\n\nDischarge Summary:\n${text}` },
+            ],
+          },
+        ],
+      });
+
+      const responseText = response.text || "";
+      
+      let extractedData = {};
+      try {
+        const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          extractedData = JSON.parse(jsonMatch[0]);
+        }
+      } catch (parseError) {
+        console.error("Error parsing AI response:", parseError);
+      }
+
+      res.json({ extractedData });
+    } catch (error) {
+      console.error("Error analyzing discharge summary:", error);
+      res.status(500).json({ error: "Failed to analyze discharge summary" });
     }
   });
 
