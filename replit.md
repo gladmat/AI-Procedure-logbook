@@ -12,7 +12,20 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (January 2026)
 
-### User Authentication & Profile Management (Latest)
+### 30-Day Complication Follow-up System (Latest)
+- **Automated Follow-up Tracking**: Cases 30+ days post-op automatically appear in "Follow-ups Due" section on Cases screen
+- **Quick "No Complications" Action**: One-tap button to mark cases as reviewed with no complications
+- **Complication Documentation**: Full UI in CaseDetailScreen to record complications with Clavien-Dindo grading (I-V)
+- **ComplicationEntry Interface**: Each complication records description, grade, date identified, management notes, and resolution status
+- **AI-Powered Discharge Summary Scanning**: 
+  - SmartCapture supports "discharge_summary" mode for scanning discharge documents
+  - Local NHI extraction for privacy-preserving case matching
+  - Automatic case matching by patient ID + procedure date
+  - AI extracts complications and Clavien-Dindo grades from anonymized text
+- **Privacy-First Design**: NHI numbers extracted and matched locally; only anonymized text sent to AI
+- **Case Matching Logic**: `findCasesByPatientId()` and `findCaseByPatientIdAndDate()` in storage.ts for local matching
+
+### User Authentication & Profile Management
 - **Complete Auth System**: Email/password authentication with JWT tokens and bcrypt password hashing
 - **3-Step Onboarding Wizard**: New users complete profile setup on first login:
   - Step 1: Country of practice and full name
