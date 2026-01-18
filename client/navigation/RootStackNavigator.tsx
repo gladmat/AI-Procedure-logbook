@@ -19,7 +19,7 @@ export type RootStackParamList = {
   Auth: undefined;
   Onboarding: undefined;
   Main: undefined;
-  CaseDetail: { caseId: string };
+  CaseDetail: { caseId: string; showComplicationForm?: boolean };
   CaseForm: { specialty: Specialty; extractedData?: Record<string, unknown> };
   AddCase: undefined;
   SmartCapture: undefined;
