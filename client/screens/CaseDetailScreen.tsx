@@ -5,7 +5,9 @@ import {
   ScrollView,
   Pressable,
   Alert,
+  TextInput,
 } from "react-native";
+import { v4 as uuidv4 } from "uuid";
 import { useNavigation, useRoute, RouteProp, useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -20,6 +22,8 @@ import {
   Case,
   CaseProcedure,
   TimelineEvent,
+  ComplicationEntry,
+  ClavienDindoGrade,
   SPECIALTY_LABELS,
   ROLE_LABELS,
   INDICATION_LABELS,
@@ -34,8 +38,9 @@ import {
   UNPLANNED_ICU_LABELS,
   DISCHARGE_OUTCOME_LABELS,
   MORTALITY_CLASSIFICATION_LABELS,
+  CLAVIEN_DINDO_LABELS,
 } from "@/types/case";
-import { getCase, getTimelineEvents, deleteCase } from "@/lib/storage";
+import { getCase, getTimelineEvents, deleteCase, updateCase, markNoComplications } from "@/lib/storage";
 import { SpecialtyBadge } from "@/components/SpecialtyBadge";
 import { RoleBadge } from "@/components/RoleBadge";
 import { LoadingState } from "@/components/LoadingState";
@@ -84,6 +89,18 @@ export default function CaseDetailScreen() {
   const [caseData, setCaseData] = useState<Case | null>(null);
   const [timelineEvents, setTimelineEvents] = useState<TimelineEvent[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  const [showComplicationForm, setShowComplicationForm] = useState(false);
+  const [complicationDescription, setComplicationDescription] = useState("");
+  const [complicationGrade, setComplicationGrade] = useState<ClavienDindoGrade>("I");
+  const [complicationNotes, setComplicationNotes] = useState("");
+  const [savingComplication, setSavingComplication] = useState(false);
+
+  useEffect(() => {
+    if (route.params.showComplicationForm) {
+      setShowComplicationForm(true);
+    }
+  }, [route.params.showComplicationForm]);
 
   const loadData = async () => {
     try {
@@ -138,6 +155,63 @@ export default function CaseDetailScreen() {
       navigation.navigate("AddTimelineEvent", { caseId: caseData.id });
     }
   };
+
+  const handleMarkNoComplications = async () => {
+    if (!caseData) return;
+    try {
+      await markNoComplications(caseData.id);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      await loadData();
+    } catch (error) {
+      console.error("Error marking no complications:", error);
+      Alert.alert("Error", "Failed to save. Please try again.");
+    }
+  };
+
+  const handleSaveComplication = async () => {
+    if (!caseData || !complicationDescription.trim()) {
+      Alert.alert("Required", "Please enter a complication description.");
+      return;
+    }
+    
+    setSavingComplication(true);
+    try {
+      const newComplication: ComplicationEntry = {
+        id: uuidv4(),
+        description: complicationDescription.trim(),
+        clavienDindoGrade: complicationGrade,
+        dateIdentified: new Date().toISOString(),
+        managementNotes: complicationNotes.trim() || undefined,
+        resolved: false,
+      };
+      
+      const existingComplications = caseData.complications || [];
+      await updateCase(caseData.id, {
+        complicationsReviewed: true,
+        complicationsReviewedAt: new Date().toISOString(),
+        hasComplications: true,
+        complications: [...existingComplications, newComplication],
+      });
+      
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setShowComplicationForm(false);
+      setComplicationDescription("");
+      setComplicationGrade("I");
+      setComplicationNotes("");
+      await loadData();
+    } catch (error) {
+      console.error("Error saving complication:", error);
+      Alert.alert("Error", "Failed to save complication. Please try again.");
+    } finally {
+      setSavingComplication(false);
+    }
+  };
+
+  const daysSinceProcedure = caseData ? Math.floor(
+    (Date.now() - new Date(caseData.procedureDate).getTime()) / (1000 * 60 * 60 * 24)
+  ) : 0;
+  
+  const isPending30DayReview = caseData && daysSinceProcedure >= 30 && !caseData.complicationsReviewed;
 
   if (loading) {
     return <LoadingState message="Loading case..." />;
@@ -678,6 +752,197 @@ export default function CaseDetailScreen() {
           </>
         ) : null}
 
+        <SectionHeader title="30-Day Complication Review" />
+        {isPending30DayReview ? (
+          <View style={[styles.reviewCard, { backgroundColor: theme.warning + "15", borderColor: theme.warning }]}>
+            <View style={styles.reviewHeader}>
+              <Feather name="clock" size={20} color={theme.warning} />
+              <ThemedText style={[styles.reviewTitle, { color: theme.warning }]}>
+                Review Due ({daysSinceProcedure} days post-op)
+              </ThemedText>
+            </View>
+            <ThemedText style={[styles.reviewSubtext, { color: theme.textSecondary }]}>
+              Document any complications within 30 days of surgery for audit compliance.
+            </ThemedText>
+            
+            {showComplicationForm ? (
+              <View style={styles.complicationForm}>
+                <ThemedText style={styles.formLabel}>Complication Description</ThemedText>
+                <TextInput
+                  style={[styles.textInput, { 
+                    backgroundColor: theme.backgroundDefault,
+                    borderColor: theme.border,
+                    color: theme.text,
+                  }]}
+                  value={complicationDescription}
+                  onChangeText={setComplicationDescription}
+                  placeholder="Describe the complication..."
+                  placeholderTextColor={theme.textTertiary}
+                  multiline
+                  numberOfLines={3}
+                />
+                
+                <ThemedText style={styles.formLabel}>Clavien-Dindo Grade</ThemedText>
+                <ScrollView 
+                  horizontal 
+                  showsHorizontalScrollIndicator={false} 
+                  style={styles.gradeScroll}
+                >
+                  {(Object.keys(CLAVIEN_DINDO_LABELS) as ClavienDindoGrade[])
+                    .filter(g => g !== "none")
+                    .map((grade) => (
+                    <Pressable
+                      key={grade}
+                      onPress={() => setComplicationGrade(grade)}
+                      style={[
+                        styles.gradeChip,
+                        { 
+                          backgroundColor: complicationGrade === grade 
+                            ? theme.link 
+                            : theme.backgroundDefault,
+                          borderColor: complicationGrade === grade 
+                            ? theme.link 
+                            : theme.border,
+                        }
+                      ]}
+                    >
+                      <ThemedText style={[
+                        styles.gradeChipText,
+                        { color: complicationGrade === grade ? theme.buttonText : theme.text }
+                      ]}>
+                        {grade}
+                      </ThemedText>
+                    </Pressable>
+                  ))}
+                </ScrollView>
+                <ThemedText style={[styles.gradeDescription, { color: theme.textSecondary }]}>
+                  {CLAVIEN_DINDO_LABELS[complicationGrade]}
+                </ThemedText>
+                
+                <ThemedText style={styles.formLabel}>Management Notes (optional)</ThemedText>
+                <TextInput
+                  style={[styles.textInput, { 
+                    backgroundColor: theme.backgroundDefault,
+                    borderColor: theme.border,
+                    color: theme.text,
+                  }]}
+                  value={complicationNotes}
+                  onChangeText={setComplicationNotes}
+                  placeholder="How was this managed?"
+                  placeholderTextColor={theme.textTertiary}
+                  multiline
+                  numberOfLines={2}
+                />
+                
+                <View style={styles.formActions}>
+                  <Pressable
+                    onPress={() => setShowComplicationForm(false)}
+                    style={[styles.cancelButton, { borderColor: theme.border }]}
+                  >
+                    <ThemedText>Cancel</ThemedText>
+                  </Pressable>
+                  <Pressable
+                    onPress={handleSaveComplication}
+                    disabled={savingComplication}
+                    style={[styles.saveButton, { backgroundColor: theme.link }]}
+                  >
+                    <ThemedText style={{ color: theme.buttonText }}>
+                      {savingComplication ? "Saving..." : "Save Complication"}
+                    </ThemedText>
+                  </Pressable>
+                </View>
+              </View>
+            ) : (
+              <View style={styles.reviewActions}>
+                <Pressable
+                  onPress={() => setShowComplicationForm(true)}
+                  style={[styles.addComplicationButton, { borderColor: theme.warning }]}
+                >
+                  <Feather name="alert-triangle" size={16} color={theme.warning} />
+                  <ThemedText style={{ color: theme.warning, fontWeight: "600" }}>
+                    Add Complication
+                  </ThemedText>
+                </Pressable>
+                <Pressable
+                  onPress={handleMarkNoComplications}
+                  style={[styles.noComplicationsButton, { backgroundColor: theme.success }]}
+                >
+                  <Feather name="check" size={16} color={theme.buttonText} />
+                  <ThemedText style={{ color: theme.buttonText, fontWeight: "600" }}>
+                    No Complications
+                  </ThemedText>
+                </Pressable>
+              </View>
+            )}
+          </View>
+        ) : caseData.complicationsReviewed ? (
+          <View style={[styles.card, { backgroundColor: theme.backgroundDefault }]}>
+            <View style={styles.reviewedRow}>
+              <Feather 
+                name={caseData.hasComplications ? "alert-circle" : "check-circle"} 
+                size={20} 
+                color={caseData.hasComplications ? theme.warning : theme.success} 
+              />
+              <ThemedText style={styles.reviewedText}>
+                {caseData.hasComplications 
+                  ? `${caseData.complications?.length || 0} complication(s) documented` 
+                  : "No complications"}
+              </ThemedText>
+            </View>
+            {caseData.complicationsReviewedAt ? (
+              <ThemedText style={[styles.reviewedDate, { color: theme.textSecondary }]}>
+                Reviewed {formatDateDisplay(caseData.complicationsReviewedAt)}
+              </ThemedText>
+            ) : null}
+            
+            {caseData.complications && caseData.complications.length > 0 ? (
+              <View style={styles.complicationsList}>
+                {caseData.complications.map((comp) => (
+                  <View key={comp.id} style={[styles.complicationItem, { borderColor: theme.border }]}>
+                    <View style={styles.complicationHeader}>
+                      <ThemedText style={styles.complicationDescription}>
+                        {comp.description}
+                      </ThemedText>
+                      {comp.clavienDindoGrade ? (
+                        <View style={[styles.gradeBadge, { backgroundColor: theme.warning + "20" }]}>
+                          <ThemedText style={[styles.gradeBadgeText, { color: theme.warning }]}>
+                            {comp.clavienDindoGrade}
+                          </ThemedText>
+                        </View>
+                      ) : null}
+                    </View>
+                    {comp.managementNotes ? (
+                      <ThemedText style={[styles.complicationNotes, { color: theme.textSecondary }]}>
+                        {comp.managementNotes}
+                      </ThemedText>
+                    ) : null}
+                  </View>
+                ))}
+              </View>
+            ) : null}
+            
+            {!caseData.hasComplications ? (
+              <Pressable
+                onPress={() => setShowComplicationForm(true)}
+                style={styles.addLaterButton}
+              >
+                <Feather name="plus" size={14} color={theme.link} />
+                <ThemedText style={[styles.addLaterText, { color: theme.link }]}>
+                  Add a complication
+                </ThemedText>
+              </Pressable>
+            ) : null}
+          </View>
+        ) : (
+          <View style={[styles.card, { backgroundColor: theme.backgroundDefault }]}>
+            <ThemedText style={[styles.pendingText, { color: theme.textSecondary }]}>
+              {daysSinceProcedure < 30 
+                ? `Review available in ${30 - daysSinceProcedure} days`
+                : "Review status unknown"}
+            </ThemedText>
+          </View>
+        )}
+
         <SectionHeader title="Clinical Details" />
         <View style={[styles.card, { backgroundColor: theme.backgroundDefault }]}>
           {caseData.specialty === "free_flap" ? (
@@ -1042,5 +1307,164 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginLeft: Spacing.sm,
     marginBottom: 2,
+  },
+  reviewCard: {
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    marginBottom: Spacing.md,
+  },
+  reviewHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+    marginBottom: Spacing.sm,
+  },
+  reviewTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  reviewSubtext: {
+    fontSize: 13,
+    marginBottom: Spacing.lg,
+  },
+  complicationForm: {
+    marginTop: Spacing.md,
+  },
+  formLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+    marginBottom: Spacing.sm,
+    marginTop: Spacing.md,
+  },
+  textInput: {
+    borderWidth: 1,
+    borderRadius: BorderRadius.sm,
+    padding: Spacing.md,
+    fontSize: 15,
+    minHeight: 80,
+    textAlignVertical: "top",
+  },
+  gradeScroll: {
+    marginVertical: Spacing.sm,
+  },
+  gradeChip: {
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+    marginRight: Spacing.sm,
+  },
+  gradeChipText: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  gradeDescription: {
+    fontSize: 12,
+    marginBottom: Spacing.md,
+  },
+  formActions: {
+    flexDirection: "row",
+    gap: Spacing.md,
+    marginTop: Spacing.lg,
+  },
+  cancelButton: {
+    flex: 1,
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.sm,
+    borderWidth: 1,
+    alignItems: "center",
+  },
+  saveButton: {
+    flex: 1,
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.sm,
+    alignItems: "center",
+  },
+  reviewActions: {
+    flexDirection: "row",
+    gap: Spacing.md,
+  },
+  addComplicationButton: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Spacing.sm,
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.sm,
+    borderWidth: 1,
+  },
+  noComplicationsButton: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Spacing.sm,
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.sm,
+  },
+  reviewedRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+  },
+  reviewedText: {
+    fontSize: 15,
+    fontWeight: "500",
+  },
+  reviewedDate: {
+    fontSize: 13,
+    marginTop: Spacing.xs,
+    marginLeft: 28,
+  },
+  complicationsList: {
+    marginTop: Spacing.md,
+  },
+  complicationItem: {
+    paddingTop: Spacing.md,
+    borderTopWidth: 1,
+    marginTop: Spacing.sm,
+  },
+  complicationHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    gap: Spacing.sm,
+  },
+  complicationDescription: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: "500",
+  },
+  gradeBadge: {
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 2,
+    borderRadius: BorderRadius.sm,
+  },
+  gradeBadgeText: {
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  complicationNotes: {
+    fontSize: 13,
+    marginTop: Spacing.xs,
+    fontStyle: "italic",
+  },
+  addLaterButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Spacing.xs,
+    marginTop: Spacing.md,
+    paddingVertical: Spacing.sm,
+  },
+  addLaterText: {
+    fontSize: 13,
+    fontWeight: "500",
+  },
+  pendingText: {
+    fontSize: 14,
+    textAlign: "center",
   },
 });
