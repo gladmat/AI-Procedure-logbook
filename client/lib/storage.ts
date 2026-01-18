@@ -1,5 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Case, TimelineEvent, CountryCode } from "@/types/case";
+import { Case, TimelineEvent, CountryCode, ComplicationEntry } from "@/types/case";
 
 const CASES_KEY = "@surgical_logbook_cases";
 const TIMELINE_KEY = "@surgical_logbook_timeline";
@@ -127,6 +127,54 @@ export async function markNoComplications(caseId: string): Promise<void> {
     complicationsReviewedAt: new Date().toISOString(),
     hasComplications: false,
     complications: [],
+  });
+}
+
+export async function findCasesByPatientId(patientId: string): Promise<Case[]> {
+  const cases = await getCases();
+  const normalizedId = patientId.toUpperCase().replace(/\s/g, "");
+  return cases.filter((c) => {
+    const casePatientId = c.patientIdentifier?.toUpperCase().replace(/\s/g, "") || "";
+    return casePatientId === normalizedId;
+  });
+}
+
+export async function findCaseByPatientIdAndDate(
+  patientId: string,
+  procedureDate: string
+): Promise<Case | null> {
+  const matches = await findCasesByPatientId(patientId);
+  if (matches.length === 0) return null;
+  
+  const targetDate = new Date(procedureDate).toDateString();
+  const exactMatch = matches.find((c) => {
+    const caseDate = new Date(c.procedureDate).toDateString();
+    return caseDate === targetDate;
+  });
+  
+  if (exactMatch) return exactMatch;
+  
+  const withinWeek = matches.filter((c) => {
+    const caseDate = new Date(c.procedureDate);
+    const target = new Date(procedureDate);
+    const diffDays = Math.abs(caseDate.getTime() - target.getTime()) / (1000 * 60 * 60 * 24);
+    return diffDays <= 7;
+  });
+  
+  if (withinWeek.length === 1) return withinWeek[0];
+  
+  return null;
+}
+
+export async function recordComplications(
+  caseId: string,
+  complications: ComplicationEntry[]
+): Promise<void> {
+  await updateCase(caseId, {
+    complicationsReviewed: true,
+    complicationsReviewedAt: new Date().toISOString(),
+    hasComplications: complications.length > 0,
+    complications,
   });
 }
 

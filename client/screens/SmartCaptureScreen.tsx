@@ -20,9 +20,12 @@ import { ThemedView } from "@/components/ThemedView";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, Shadows } from "@/constants/theme";
 import { Button } from "@/components/Button";
-import { redactSensitiveData, getRedactionSummary, extractNHIFromText } from "@/lib/privacyUtils";
+import { redactSensitiveData, getRedactionSummary, extractNHIFromText, extractDatesFromText } from "@/lib/privacyUtils";
 import { apiRequest } from "@/lib/query-client";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
+import { findCaseByPatientIdAndDate, findCasesByPatientId, recordComplications } from "@/lib/storage";
+import { ComplicationEntry } from "@/types/case";
+import { v4 as uuidv4 } from "uuid";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type RouteParams = RouteProp<RootStackParamList, "SmartCapture">;
@@ -94,14 +97,19 @@ export default function SmartCaptureScreen() {
         await worker.terminate();
         
         const rawText = data.text;
-        setProcessingStep("Redacting sensitive information...");
         
-        const redactionResult = redactSensitiveData(rawText);
-        setExtractedText(redactionResult.redactedText);
-        setRedactionSummary(getRedactionSummary(redactionResult));
-        
-        setProcessingStep("Analyzing with AI...");
-        await analyzeWithAI(redactionResult.redactedText);
+        if (scanMode === "discharge_summary") {
+          await processDischargeText(rawText);
+        } else {
+          setProcessingStep("Redacting sensitive information...");
+          
+          const redactionResult = redactSensitiveData(rawText);
+          setExtractedText(redactionResult.redactedText);
+          setRedactionSummary(getRedactionSummary(redactionResult));
+          
+          setProcessingStep("Analyzing with AI...");
+          await analyzeWithAI(redactionResult.redactedText);
+        }
       } else {
         setProcessingStep("Analyzing with AI...");
         
@@ -134,6 +142,117 @@ export default function SmartCaptureScreen() {
     } finally {
       setProcessing(false);
       setProcessingStep("");
+    }
+  };
+
+  const processDischargeText = async (rawText: string) => {
+    setProcessingStep("Extracting patient identifier...");
+    
+    const nhi = extractNHIFromText(rawText);
+    const dates = extractDatesFromText(rawText);
+    setExtractedNHI(nhi);
+    
+    if (!nhi) {
+      Alert.alert(
+        "No Patient ID Found",
+        "Could not find a patient identifier in the discharge summary. Please select the case manually.",
+        [
+          { text: "Cancel", onPress: () => navigation.goBack() },
+          { 
+            text: "Select Case", 
+            onPress: () => navigation.replace("SelectCaseForComplication" as any) 
+          },
+        ]
+      );
+      return;
+    }
+    
+    setProcessingStep("Matching to case...");
+    
+    let matchedCase = null;
+    if (dates.length > 0) {
+      matchedCase = await findCaseByPatientIdAndDate(nhi, dates[0]);
+    }
+    
+    if (!matchedCase) {
+      const patientCases = await findCasesByPatientId(nhi);
+      if (patientCases.length === 1) {
+        matchedCase = patientCases[0];
+      } else if (patientCases.length > 1) {
+        Alert.alert(
+          "Multiple Cases Found",
+          `Found ${patientCases.length} cases for this patient. Please select the correct one.`,
+          [
+            { text: "Cancel", onPress: () => navigation.goBack() },
+            {
+              text: "View Cases",
+              onPress: () => navigation.navigate("Cases"),
+            },
+          ]
+        );
+        return;
+      } else {
+        Alert.alert(
+          "No Case Found",
+          "Could not find a matching case for this patient. The patient ID may not exist in your logbook.",
+          [{ text: "OK", onPress: () => navigation.goBack() }]
+        );
+        return;
+      }
+    }
+    
+    setProcessingStep("Redacting sensitive information...");
+    const redactionResult = redactSensitiveData(rawText);
+    setRedactionSummary(getRedactionSummary(redactionResult));
+    
+    setProcessingStep("Analyzing for complications...");
+    
+    try {
+      const response = await apiRequest("POST", "/api/analyze-discharge-summary", {
+        text: redactionResult.redactedText,
+      });
+      
+      const result = await response.json();
+      const extractedData = result.extractedData || {};
+      
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      
+      if (!extractedData.hasComplications) {
+        await recordComplications(matchedCase.id, []);
+        Alert.alert(
+          "No Complications Found",
+          "The discharge summary indicates no complications. Case has been updated.",
+          [{ text: "OK", onPress: () => navigation.navigate("CaseDetail", { id: matchedCase!.id }) }]
+        );
+      } else {
+        const complications: ComplicationEntry[] = (extractedData.complications || []).map(
+          (c: { description: string; clavienDindoGrade?: string; dateIdentified?: string }) => ({
+            id: uuidv4(),
+            description: c.description,
+            clavienDindoGrade: c.clavienDindoGrade || "I",
+            dateIdentified: c.dateIdentified || new Date().toISOString(),
+            resolved: false,
+          })
+        );
+        
+        await recordComplications(matchedCase.id, complications);
+        
+        Alert.alert(
+          "Complications Recorded",
+          `Found and recorded ${complications.length} complication(s) from the discharge summary.`,
+          [{ text: "View Case", onPress: () => navigation.navigate("CaseDetail", { id: matchedCase!.id }) }]
+        );
+      }
+    } catch (error) {
+      console.error("Error analyzing discharge summary:", error);
+      Alert.alert(
+        "Analysis Error",
+        "Failed to analyze the discharge summary. Please try again or record complications manually.",
+        [
+          { text: "Cancel", onPress: () => navigation.goBack() },
+          { text: "Try Again", onPress: () => processDischargeText(rawText) },
+        ]
+      );
     }
   };
 
@@ -283,7 +402,9 @@ export default function SmartCaptureScreen() {
           </View>
 
           <ThemedText style={styles.guideText}>
-            Position the operation note within the frame
+            {scanMode === "discharge_summary" 
+              ? "Position the discharge summary within the frame"
+              : "Position the operation note within the frame"}
           </ThemedText>
         </View>
       </CameraView>
