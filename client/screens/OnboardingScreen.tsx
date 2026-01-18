@@ -123,6 +123,7 @@ export default function OnboardingScreen() {
 
             <Text style={[styles.label, { color: colors.textSecondary }]}>Full Name</Text>
             <TextInput
+              testID="input-full-name"
               style={[styles.input, { backgroundColor: colors.backgroundSecondary, color: colors.text, borderColor: colors.border }]}
               value={fullName}
               onChangeText={setFullName}
@@ -319,6 +320,7 @@ export default function OnboardingScreen() {
           )}
 
           <Pressable
+            testID="button-continue"
             style={[styles.nextButton, { backgroundColor: colors.link, opacity: isLoading ? 0.7 : 1 }]}
             onPress={handleNext}
             disabled={isLoading}
