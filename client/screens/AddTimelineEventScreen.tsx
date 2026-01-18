@@ -15,7 +15,11 @@ import { ThemedText } from "@/components/ThemedText";
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing } from "@/constants/theme";
-import { TimelineEvent } from "@/types/case";
+import { 
+  TimelineEvent, 
+  TimelineEventType, 
+  TIMELINE_EVENT_TYPE_LABELS 
+} from "@/types/case";
 import { FormField, SelectField } from "@/components/FormField";
 import { SectionHeader } from "@/components/SectionHeader";
 import { Button } from "@/components/Button";
@@ -25,15 +29,12 @@ import { RootStackParamList } from "@/navigation/RootStackNavigator";
 type RouteParams = RouteProp<RootStackParamList, "AddTimelineEvent">;
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
-const EVENT_TYPES = [
-  { value: "follow_up", label: "Follow Up" },
-  { value: "complication", label: "Complication" },
-  { value: "re_exploration", label: "Re-exploration" },
-  { value: "discharge", label: "Discharge" },
-  { value: "flap_check", label: "Flap Check" },
-  { value: "doppler_signal", label: "Doppler Signal" },
-  { value: "other", label: "Other" },
-];
+const EVENT_TYPES: { value: TimelineEventType; label: string }[] = Object.entries(
+  TIMELINE_EVENT_TYPE_LABELS
+).map(([value, label]) => ({
+  value: value as TimelineEventType,
+  label,
+}));
 
 export default function AddTimelineEventScreen() {
   const { theme } = useTheme();
@@ -45,7 +46,7 @@ export default function AddTimelineEventScreen() {
   const { caseId } = route.params;
 
   const [saving, setSaving] = useState(false);
-  const [eventType, setEventType] = useState("");
+  const [eventType, setEventType] = useState<TimelineEventType | "">("");
   const [note, setNote] = useState("");
 
   const handleSave = async () => {
@@ -65,7 +66,7 @@ export default function AddTimelineEventScreen() {
       const event: TimelineEvent = {
         id: uuidv4(),
         caseId,
-        eventType: EVENT_TYPES.find((e) => e.value === eventType)?.label || eventType,
+        eventType: eventType as TimelineEventType,
         note: note.trim(),
         createdAt: new Date().toISOString(),
       };
@@ -101,7 +102,7 @@ export default function AddTimelineEventScreen() {
         label="Event Type"
         value={eventType}
         options={EVENT_TYPES}
-        onSelect={setEventType}
+        onSelect={(value) => setEventType(value as TimelineEventType)}
         required
       />
 

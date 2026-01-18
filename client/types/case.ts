@@ -313,14 +313,85 @@ export interface Case {
   updatedAt: string;
 }
 
+export type TimelineEventType = 
+  | "note"
+  | "photo"
+  | "imaging"
+  | "prom"
+  | "complication"
+  | "follow_up_visit";
+
+export type FollowUpInterval = 
+  | "2_weeks"
+  | "6_weeks"
+  | "3_months"
+  | "6_months"
+  | "1_year"
+  | "custom";
+
+export type PROMQuestionnaire = 
+  | "dash"
+  | "michigan_hand"
+  | "sf36"
+  | "eq5d"
+  | "breast_q"
+  | "custom";
+
+export interface PROMData {
+  questionnaire: PROMQuestionnaire;
+  score?: number;
+  rawScores?: Record<string, number>;
+  responses?: Record<string, string | number>;
+}
+
+export interface MediaAttachment {
+  id: string;
+  localUri: string;
+  thumbnailUri?: string;
+  mimeType: string;
+  caption?: string;
+  createdAt: string;
+}
+
 export interface TimelineEvent {
   id: string;
   caseId: string;
-  eventType: string;
+  eventType: TimelineEventType;
   note: string;
   authorId?: string;
   createdAt: string;
+  followUpInterval?: FollowUpInterval;
+  mediaAttachments?: MediaAttachment[];
+  promData?: PROMData;
+  complicationData?: ComplicationEntry;
 }
+
+export const TIMELINE_EVENT_TYPE_LABELS: Record<TimelineEventType, string> = {
+  note: "Note",
+  photo: "Photo",
+  imaging: "X-ray / Imaging",
+  prom: "PROM Score",
+  complication: "Complication",
+  follow_up_visit: "Follow-up Visit",
+};
+
+export const FOLLOW_UP_INTERVAL_LABELS: Record<FollowUpInterval, string> = {
+  "2_weeks": "2 Weeks",
+  "6_weeks": "6 Weeks",
+  "3_months": "3 Months",
+  "6_months": "6 Months",
+  "1_year": "1 Year",
+  custom: "Custom",
+};
+
+export const PROM_QUESTIONNAIRE_LABELS: Record<PROMQuestionnaire, string> = {
+  dash: "DASH (Disabilities of Arm, Shoulder, Hand)",
+  michigan_hand: "Michigan Hand Questionnaire",
+  sf36: "SF-36 Health Survey",
+  eq5d: "EQ-5D Quality of Life",
+  breast_q: "BREAST-Q",
+  custom: "Custom Questionnaire",
+};
 
 export const SPECIALTY_LABELS: Record<Specialty, string> = {
   free_flap: "Free Flap",
