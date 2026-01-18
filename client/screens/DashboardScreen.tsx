@@ -6,6 +6,7 @@ import {
   RefreshControl,
   Pressable,
   ScrollView,
+  TextInput,
 } from "react-native";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -51,6 +52,7 @@ export default function DashboardScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [filter, setFilter] = useState<Specialty | "all">("all");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const loadCases = async () => {
     try {
@@ -98,10 +100,16 @@ export default function DashboardScreen() {
     setRefreshing(false);
   };
 
-  const filteredCases =
-    filter === "all"
-      ? cases
-      : cases.filter((c) => c.specialty === filter);
+  const filteredCases = cases.filter((c) => {
+    const matchesFilter = filter === "all" || c.specialty === filter;
+    const normalizedQuery = searchQuery.toLowerCase().trim();
+    const matchesSearch =
+      normalizedQuery === "" ||
+      c.patientIdentifier?.toLowerCase().includes(normalizedQuery) ||
+      c.procedureType?.toLowerCase().includes(normalizedQuery) ||
+      c.facility?.toLowerCase().includes(normalizedQuery);
+    return matchesFilter && matchesSearch;
+  });
 
   const handleCasePress = (caseData: Case) => {
     navigation.navigate("CaseDetail", { caseId: caseData.id });
@@ -170,6 +178,25 @@ export default function DashboardScreen() {
         }
         ListHeaderComponent={
           <>
+            <View style={[styles.searchContainer, { backgroundColor: theme.backgroundDefault, borderColor: theme.border }]}>
+              <Feather name="search" size={18} color={theme.textSecondary} />
+              <TextInput
+                testID="input-search"
+                style={[styles.searchInput, { color: theme.text }]}
+                placeholder="Search by NHI, procedure, or facility..."
+                placeholderTextColor={theme.textTertiary}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+              {searchQuery.length > 0 ? (
+                <Pressable onPress={() => setSearchQuery("")} hitSlop={8}>
+                  <Feather name="x-circle" size={18} color={theme.textSecondary} />
+                </Pressable>
+              ) : null}
+            </View>
+
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -320,6 +347,21 @@ const styles = StyleSheet.create({
   },
   separator: {
     height: Spacing.md,
+  },
+  searchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    marginBottom: Spacing.md,
+    gap: Spacing.sm,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 15,
+    paddingVertical: Spacing.xs,
   },
   filterScroll: {
     marginBottom: Spacing.lg,
