@@ -8,6 +8,31 @@ Surgical Logbook is a privacy-first mobile application for surgeons to document 
 
 Preferred communication style: Simple, everyday language.
 
+## Recent Changes (January 2026)
+
+### Dynamic Statistics Dashboard (Latest)
+- **Specialty-Aware Analytics**: Dashboard shows statistics that change based on selected specialty tab
+- **Multi-Filter System**: Filter statistics by:
+  - Specialty (All, Free Flap, Hand Trauma, Body Contouring, Aesthetics, Burns)
+  - Time Period (This Year, Last 6 Months, Last 12 Months, All Time)
+  - Facility (all facilities or specific facility)
+  - Role (All Roles, Primary Surgeon, Teaching/Supervising, Assistant, Trainee)
+- **Base Statistics Cards**: Total cases, average duration, complication rate, follow-up completion rate
+- **Specialty-Specific Metrics**:
+  - Free Flap: Flap survival rate, average ischemia time, take-back rate, cases by flap type
+  - Hand Trauma: Nerve repair count, tendon repair count, cases by procedure type
+  - Body Contouring: Average resection weight
+- **Visual Analytics**: Bar chart showing cases over time, breakdown charts by flap type/procedure type
+- **Role-Aware Duration Stats**: Teaching cases filtered separately from primary surgeon cases for meaningful time comparisons
+- **Recent Cases Section**: Shows last 5 cases matching current filters
+
+### Enhanced Follow-up Timeline System
+- **Patient Search**: Cases screen includes instant search bar filtering by NHI, procedure type, and facility
+- **Extended Timeline Events**: Photo, Imaging, PROM, Note, Complication, Follow-up Visit entry types
+- **Flexible Follow-up Intervals**: 6 weeks, 12 weeks, 6 months, 1 year, custom intervals
+- **MediaCapture Component**: Camera capture and gallery selection for photos/X-rays
+- **PROMEntryForm Component**: DASH, Michigan Hand, SF-36, EQ-5D, BREAST-Q questionnaires
+
 ## System Architecture
 
 ### Frontend Architecture
