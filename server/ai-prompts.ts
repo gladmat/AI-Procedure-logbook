@@ -450,6 +450,70 @@ Return ONLY a JSON object with these exact keys (use null for missing values):
 
 Do not include any explanation, just the JSON object.`;
 
+export const DISCHARGE_SUMMARY_COMPLICATION_PROMPT = `You are a medical data extraction assistant specialized in analyzing discharge summaries for post-operative complications.
+
+Your task is to extract structured complication data from a discharge summary document. This is used for 30-day post-operative follow-up tracking and surgical audit compliance.
+
+IMPORTANT PRIVACY NOTE:
+This extraction is for case matching purposes. The NHI and dates will remain on-device for local matching - only the anonymized complication data will be stored.
+
+Extract the following information:
+
+CASE IDENTIFICATION (for local matching only):
+- NHI number (New Zealand format: 3 letters + 4 numbers, e.g., ABC1234)
+- Original procedure date (the date of the initial surgery this discharge relates to)
+- Admission date (when the patient was admitted for this episode)
+- Discharge date (when the patient was discharged)
+
+COMPLICATIONS (extract ALL post-operative complications mentioned):
+For each complication, determine:
+- Description (brief description of the complication)
+- Clavien-Dindo Grade based on severity and intervention required:
+  * Grade I: Minor deviation from normal post-op course, no intervention needed (e.g., mild wound erythema, minor nausea)
+  * Grade II: Requires pharmacological treatment (e.g., antibiotics for infection, blood transfusion)
+  * Grade IIIa: Requires intervention NOT under general anaesthesia (e.g., wound drainage at bedside, CT-guided drainage)
+  * Grade IIIb: Requires intervention UNDER general anaesthesia (e.g., return to theatre for debridement, revision surgery)
+  * Grade IVa: Single organ dysfunction requiring ICU (e.g., respiratory failure, renal failure)
+  * Grade IVb: Multi-organ dysfunction requiring ICU
+  * Grade V: Death of patient
+- Management performed (what was done to treat the complication)
+- Date identified (when the complication was first noted)
+- Resolution status (resolved/ongoing if mentioned)
+
+Common surgical complications to look for:
+- Wound complications: infection, dehiscence, hematoma, seroma
+- Flap complications: partial/total flap failure, venous congestion, arterial insufficiency
+- Systemic: DVT, PE, pneumonia, UTI, sepsis
+- Bleeding requiring transfusion or return to theatre
+- Nerve injury or dysfunction
+- Delayed healing
+- Readmission
+
+Return ONLY a JSON object with these exact keys (use null for missing values):
+{
+  "nhi": string | null,
+  "originalProcedureDate": string | null,
+  "admissionDate": string | null,
+  "dischargeDate": string | null,
+  "procedureDescription": string | null,
+  "complications": [
+    {
+      "description": string,
+      "clavienDindoGrade": "I" | "II" | "IIIa" | "IIIb" | "IVa" | "IVb" | "V",
+      "management": string | null,
+      "dateIdentified": string | null,
+      "resolved": boolean | null
+    }
+  ] | null,
+  "overallOutcome": "uneventful" | "minor_complications" | "major_complications" | "death" | null,
+  "readmission": boolean | null,
+  "returnToTheatre": boolean | null,
+  "lengthOfStayDays": number | null
+}
+
+If no complications are mentioned and the discharge was routine, return an empty complications array [].
+Do not include any explanation, just the JSON object.`;
+
 export function getAIPromptForSpecialty(specialty: string): string {
   switch (specialty) {
     case "free_flap":
@@ -465,4 +529,8 @@ export function getAIPromptForSpecialty(specialty: string): string {
     default:
       return FREE_FLAP_AI_PROMPT;
   }
+}
+
+export function getDischargeComplicationPrompt(): string {
+  return DISCHARGE_SUMMARY_COMPLICATION_PROMPT;
 }
