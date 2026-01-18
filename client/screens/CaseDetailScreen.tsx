@@ -6,6 +6,7 @@ import {
   Pressable,
   Alert,
   TextInput,
+  Image,
 } from "react-native";
 import { v4 as uuidv4 } from "uuid";
 import { useNavigation, useRoute, RouteProp, useFocusEffect } from "@react-navigation/native";
@@ -22,6 +23,7 @@ import {
   Case,
   CaseProcedure,
   TimelineEvent,
+  TimelineEventType,
   ComplicationEntry,
   ClavienDindoGrade,
   SPECIALTY_LABELS,
@@ -39,6 +41,9 @@ import {
   DISCHARGE_OUTCOME_LABELS,
   MORTALITY_CLASSIFICATION_LABELS,
   CLAVIEN_DINDO_LABELS,
+  TIMELINE_EVENT_TYPE_LABELS,
+  PROM_QUESTIONNAIRE_LABELS,
+  FOLLOW_UP_INTERVAL_LABELS,
 } from "@/types/case";
 import { getCase, getTimelineEvents, deleteCase, updateCase, markNoComplications } from "@/lib/storage";
 import { SpecialtyBadge } from "@/components/SpecialtyBadge";
@@ -74,6 +79,44 @@ function DetailRow({ label, value, unit }: DetailRowProps) {
       </ThemedText>
     </View>
   );
+}
+
+function getEventTypeIcon(eventType: TimelineEventType): keyof typeof Feather.glyphMap {
+  switch (eventType) {
+    case "photo":
+      return "camera";
+    case "imaging":
+      return "image";
+    case "prom":
+      return "clipboard";
+    case "complication":
+      return "alert-triangle";
+    case "follow_up_visit":
+      return "calendar";
+    case "note":
+      return "file-text";
+    default:
+      return "file";
+  }
+}
+
+function getEventTypeColor(eventType: TimelineEventType, theme: Record<string, string>): string {
+  switch (eventType) {
+    case "photo":
+      return theme.link;
+    case "imaging":
+      return theme.info;
+    case "prom":
+      return theme.success;
+    case "complication":
+      return theme.error;
+    case "follow_up_visit":
+      return theme.warning;
+    case "note":
+      return theme.textSecondary;
+    default:
+      return theme.link;
+  }
 }
 
 export default function CaseDetailScreen() {
@@ -977,12 +1020,69 @@ export default function CaseDetailScreen() {
           <View style={[styles.card, { backgroundColor: theme.backgroundDefault }]}>
             {timelineEvents.map((event) => (
               <View key={event.id} style={styles.timelineEvent}>
-                <View style={[styles.timelineDot, { backgroundColor: theme.link }]} />
+                <View style={[styles.timelineDot, { backgroundColor: getEventTypeColor(event.eventType, theme) }]} />
                 <View style={styles.timelineContent}>
-                  <ThemedText style={styles.eventType}>{event.eventType}</ThemedText>
-                  <ThemedText style={[styles.eventNote, { color: theme.textSecondary }]}>
-                    {event.note}
-                  </ThemedText>
+                  <View style={styles.eventHeader}>
+                    <View style={[styles.eventTypeBadge, { backgroundColor: getEventTypeColor(event.eventType, theme) + "20" }]}>
+                      <Feather name={getEventTypeIcon(event.eventType)} size={12} color={getEventTypeColor(event.eventType, theme)} />
+                      <ThemedText style={[styles.eventTypeBadgeText, { color: getEventTypeColor(event.eventType, theme) }]}>
+                        {TIMELINE_EVENT_TYPE_LABELS[event.eventType] || event.eventType}
+                      </ThemedText>
+                    </View>
+                    {event.followUpInterval ? (
+                      <ThemedText style={[styles.intervalBadge, { color: theme.textSecondary }]}>
+                        {FOLLOW_UP_INTERVAL_LABELS[event.followUpInterval]}
+                      </ThemedText>
+                    ) : null}
+                  </View>
+
+                  {(event.mediaAttachments?.length ?? 0) > 0 ? (
+                    <ScrollView 
+                      horizontal 
+                      showsHorizontalScrollIndicator={false} 
+                      style={styles.mediaThumbnails}
+                      contentContainerStyle={styles.mediaThumbnailsContent}
+                    >
+                      {event.mediaAttachments?.map((media) => (
+                        <Image
+                          key={media.id}
+                          source={{ uri: media.localUri }}
+                          style={styles.mediaThumbnail}
+                          resizeMode="cover"
+                        />
+                      ))}
+                    </ScrollView>
+                  ) : null}
+
+                  {event.promData ? (
+                    <View style={[styles.promDataCard, { backgroundColor: theme.backgroundRoot }]}>
+                      <ThemedText style={[styles.promQuestionnaire, { color: theme.textSecondary }]}>
+                        {PROM_QUESTIONNAIRE_LABELS[event.promData.questionnaire]}
+                      </ThemedText>
+                      <ThemedText style={[styles.promScore, { color: theme.link }]}>
+                        Score: {event.promData.score}
+                      </ThemedText>
+                    </View>
+                  ) : null}
+
+                  {event.complicationData ? (
+                    <View style={[styles.complicationDataCard, { backgroundColor: theme.error + "10" }]}>
+                      <ThemedText style={styles.complicationDesc}>
+                        {event.complicationData.description}
+                      </ThemedText>
+                      {event.complicationData.clavienDindoGrade && event.complicationData.clavienDindoGrade !== "none" ? (
+                        <ThemedText style={[styles.complicationGrade, { color: theme.error }]}>
+                          {CLAVIEN_DINDO_LABELS[event.complicationData.clavienDindoGrade]}
+                        </ThemedText>
+                      ) : null}
+                    </View>
+                  ) : null}
+
+                  {event.note ? (
+                    <ThemedText style={[styles.eventNote, { color: theme.textSecondary }]}>
+                      {event.note}
+                    </ThemedText>
+                  ) : null}
                   <ThemedText style={[styles.eventDate, { color: theme.textTertiary }]}>
                     {new Date(event.createdAt).toLocaleDateString()}
                   </ThemedText>
@@ -1466,5 +1566,66 @@ const styles = StyleSheet.create({
   pendingText: {
     fontSize: 14,
     textAlign: "center",
+  },
+  eventHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+    marginBottom: Spacing.xs,
+  },
+  eventTypeBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 3,
+    borderRadius: BorderRadius.sm,
+  },
+  eventTypeBadgeText: {
+    fontSize: 11,
+    fontWeight: "600",
+  },
+  intervalBadge: {
+    fontSize: 11,
+    fontWeight: "500",
+  },
+  mediaThumbnails: {
+    marginVertical: Spacing.sm,
+  },
+  mediaThumbnailsContent: {
+    gap: Spacing.xs,
+  },
+  mediaThumbnail: {
+    width: 60,
+    height: 60,
+    borderRadius: BorderRadius.sm,
+  },
+  promDataCard: {
+    padding: Spacing.sm,
+    borderRadius: BorderRadius.sm,
+    marginVertical: Spacing.xs,
+  },
+  promQuestionnaire: {
+    fontSize: 11,
+    fontWeight: "500",
+  },
+  promScore: {
+    fontSize: 16,
+    fontWeight: "700",
+    marginTop: 2,
+  },
+  complicationDataCard: {
+    padding: Spacing.sm,
+    borderRadius: BorderRadius.sm,
+    marginVertical: Spacing.xs,
+  },
+  complicationDesc: {
+    fontSize: 13,
+    fontWeight: "500",
+  },
+  complicationGrade: {
+    fontSize: 11,
+    fontWeight: "600",
+    marginTop: 4,
   },
 });
