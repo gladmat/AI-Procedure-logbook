@@ -584,7 +584,7 @@ export default function DashboardScreen() {
           <View style={styles.sectionHeader}>
             <ThemedText style={styles.sectionTitle}>Recent Cases</ThemedText>
             {filteredCases.length > 5 ? (
-              <Pressable onPress={() => navigation.navigate("Cases")}>
+              <Pressable onPress={() => navigation.getParent()?.navigate("Cases")}>
                 <ThemedText style={[styles.seeAllLink, { color: theme.link }]}>
                   See All ({filteredCases.length})
                 </ThemedText>
