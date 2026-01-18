@@ -92,6 +92,44 @@ export async function clearCaseDraft(specialty: Case["specialty"]): Promise<void
   }
 }
 
+export async function updateCase(id: string, updates: Partial<Case>): Promise<void> {
+  try {
+    const cases = await getCases();
+    const index = cases.findIndex((c) => c.id === id);
+    if (index >= 0) {
+      cases[index] = { 
+        ...cases[index], 
+        ...updates, 
+        updatedAt: new Date().toISOString() 
+      };
+      await AsyncStorage.setItem(CASES_KEY, JSON.stringify(cases));
+    }
+  } catch (error) {
+    console.error("Error updating case:", error);
+    throw error;
+  }
+}
+
+export function getCasesPendingFollowUp(cases: Case[]): Case[] {
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  
+  return cases.filter((c) => {
+    if (c.complicationsReviewed) return false;
+    const procedureDate = new Date(c.procedureDate);
+    return procedureDate <= thirtyDaysAgo;
+  });
+}
+
+export async function markNoComplications(caseId: string): Promise<void> {
+  await updateCase(caseId, {
+    complicationsReviewed: true,
+    complicationsReviewedAt: new Date().toISOString(),
+    hasComplications: false,
+    complications: [],
+  });
+}
+
 export async function deleteCase(id: string): Promise<void> {
   try {
     const cases = await getCases();
