@@ -27,6 +27,7 @@ import {
   PROCEDURE_TYPES,
   Role,
   ROLE_LABELS,
+  ROLE_DESCRIPTIONS,
   ASAScore,
   SmokingStatus,
   OperatingTeamMember,
@@ -199,12 +200,13 @@ export default function CaseFormScreen() {
   const [weightKg, setWeightKg] = useState("");
   const [smoker, setSmoker] = useState<SmokingStatus | "">("");
   const [diabetes, setDiabetes] = useState<boolean | null>(null);
-  const [role, setRole] = useState<Role>("primary");
+  const [role, setRole] = useState<Role>("PS");
   
   const [showProcedureDatePicker, setShowProcedureDatePicker] = useState(false);
   const [showAdmissionDatePicker, setShowAdmissionDatePicker] = useState(false);
   const [showDischargeDatePicker, setShowDischargeDatePicker] = useState(false);
   const [isUnplannedReadmission, setIsUnplannedReadmission] = useState(false);
+  const [showRoleInfoModal, setShowRoleInfoModal] = useState(false);
 
   const [surgeryStartTime, setSurgeryStartTime] = useState("");
   const [surgeryEndTime, setSurgeryEndTime] = useState("");
@@ -232,7 +234,7 @@ export default function CaseFormScreen() {
         (extractedData as any)?.flapType || 
         PROCEDURE_TYPES[specialty][0],
       specialty: specialty,
-      surgeonRole: "primary",
+      surgeonRole: "PS",
     },
   ]), [extractedData, specialty]);
 
@@ -310,7 +312,7 @@ export default function CaseFormScreen() {
       setWeightKg(draft.weightKg ? String(draft.weightKg) : "");
       setSmoker(draft.smoker ?? "");
       setDiabetes(draft.diabetes ?? null);
-      setRole((draft.teamMembers?.[0]?.role as Role | undefined) ?? "primary");
+      setRole((draft.teamMembers?.[0]?.role as Role | undefined) ?? "PS");
       setSurgeryStartTime(draft.surgeryTiming?.startTime ?? "");
       setSurgeryEndTime(draft.surgeryTiming?.endTime ?? "");
       setOperatingTeam(draft.operatingTeam ?? []);
@@ -526,7 +528,7 @@ export default function CaseFormScreen() {
       sequenceOrder: procedures.length + 1,
       procedureName: "",
       specialty: specialty,
-      surgeonRole: "primary",
+      surgeonRole: "PS",
     };
     setProcedures((prev) => [...prev, newProcedure]);
   };
@@ -938,20 +940,79 @@ export default function CaseFormScreen() {
         </View>
       ) : null}
 
-      <SectionHeader title="Your Role" />
+      <View style={styles.sectionHeaderRow}>
+        <SectionHeader title="Your Role" />
+        <Pressable
+          style={[styles.infoButton, { backgroundColor: theme.link + "15" }]}
+          onPress={() => setShowRoleInfoModal(true)}
+          hitSlop={8}
+        >
+          <Feather name="info" size={16} color={theme.link} />
+        </Pressable>
+      </View>
 
       <PickerField
-        label="Role in Procedure"
+        label="Supervision Level (RACS MALT)"
         value={role}
         options={[
-          { value: "primary", label: "Primary Surgeon" },
-          { value: "supervising", label: "Supervising" },
-          { value: "assistant", label: "Assistant" },
-          { value: "trainee", label: "Trainee" },
+          { value: "PS", label: "PS - Primary Surgeon" },
+          { value: "PP", label: "PP - Performed with Peer" },
+          { value: "AS", label: "AS - Assisting (scrubbed)" },
+          { value: "ONS", label: "ONS - Observing (not scrubbed)" },
+          { value: "SS", label: "SS - Supervising (scrubbed)" },
+          { value: "SNS", label: "SNS - Supervising (not scrubbed)" },
+          { value: "A", label: "A - Available" },
         ]}
         onSelect={(v) => setRole(v as Role)}
         required
       />
+
+      {/* Role Info Modal */}
+      <Modal
+        visible={showRoleInfoModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowRoleInfoModal(false)}
+      >
+        <View style={[styles.modalContainer, { backgroundColor: theme.backgroundRoot }]}>
+          <View style={[styles.modalHeader, { borderBottomColor: theme.border }]}>
+            <ThemedText style={styles.modalTitle}>Supervision Levels</ThemedText>
+            <Pressable
+              style={[styles.modalCloseButton, { backgroundColor: theme.backgroundDefault }]}
+              onPress={() => setShowRoleInfoModal(false)}
+              hitSlop={8}
+            >
+              <Feather name="x" size={20} color={theme.text} />
+            </Pressable>
+          </View>
+          <KeyboardAwareScrollViewCompat
+            style={styles.modalContent}
+            contentContainerStyle={styles.modalScrollContent}
+          >
+            <ThemedText style={[styles.modalSubtitle, { color: theme.textSecondary }]}>
+              RACS MALT role in theatre definitions
+            </ThemedText>
+            {(Object.keys(ROLE_LABELS) as Role[]).map((roleKey) => (
+              <View 
+                key={roleKey} 
+                style={[styles.roleInfoCard, { backgroundColor: theme.backgroundDefault }]}
+              >
+                <View style={styles.roleInfoHeader}>
+                  <View style={[styles.roleCodeBadge, { backgroundColor: theme.link + "20" }]}>
+                    <ThemedText style={[styles.roleCode, { color: theme.link }]}>
+                      {roleKey}
+                    </ThemedText>
+                  </View>
+                  <ThemedText style={styles.roleLabel}>{ROLE_LABELS[roleKey]}</ThemedText>
+                </View>
+                <ThemedText style={[styles.roleDescription, { color: theme.textSecondary }]}>
+                  {ROLE_DESCRIPTIONS[roleKey]}
+                </ThemedText>
+              </View>
+            ))}
+          </KeyboardAwareScrollViewCompat>
+        </View>
+      </Modal>
 
       <SectionHeader title="Operating Team" subtitle="Add team members (optional)" />
 
@@ -1362,5 +1423,81 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginBottom: Spacing.md,
     lineHeight: 18,
+  },
+  sectionHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: Spacing.lg,
+  },
+  infoButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  modalContainer: {
+    flex: 1,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+    borderBottomWidth: 1,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+  },
+  modalCloseButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  modalContent: {
+    flex: 1,
+  },
+  modalScrollContent: {
+    padding: Spacing.lg,
+    gap: Spacing.md,
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    marginBottom: Spacing.sm,
+  },
+  roleInfoCard: {
+    padding: Spacing.md,
+    borderRadius: BorderRadius.md,
+    gap: Spacing.sm,
+  },
+  roleInfoHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+  },
+  roleCodeBadge: {
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.xs,
+    minWidth: 40,
+    alignItems: "center",
+  },
+  roleCode: {
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  roleLabel: {
+    fontSize: 15,
+    fontWeight: "600",
+    flex: 1,
+  },
+  roleDescription: {
+    fontSize: 13,
+    lineHeight: 19,
   },
 });

@@ -50,10 +50,13 @@ export const TIME_PERIOD_LABELS: Record<TimePeriod, string> = {
 
 export const ROLE_FILTER_LABELS: Record<Role | "all", string> = {
   all: "All Roles",
-  primary: "Primary Surgeon",
-  supervising: "Teaching/Supervising",
-  assistant: "Assistant",
-  trainee: "Trainee",
+  PS: "Primary Surgeon",
+  PP: "Performed with Peer",
+  AS: "Assisting (scrubbed)",
+  ONS: "Observing (not scrubbed)",
+  SS: "Supervising (scrubbed)",
+  SNS: "Supervising (not scrubbed)",
+  A: "Available",
 };
 
 function isWithinTimePeriod(dateString: string, timePeriod: TimePeriod, customStart?: string, customEnd?: string): boolean {
@@ -92,12 +95,12 @@ function getPrimaryRole(caseData: Case): Role {
     return caseData.procedures[0].surgeonRole;
   }
   if (caseData.teamMembers && caseData.teamMembers.length > 0) {
-    const primary = caseData.teamMembers.find(m => m.role === "primary");
-    if (primary) return "primary";
-    const supervising = caseData.teamMembers.find(m => m.role === "supervising");
-    if (supervising) return "supervising";
+    const primary = caseData.teamMembers.find(m => m.role === "PS");
+    if (primary) return "PS";
+    const supervising = caseData.teamMembers.find(m => m.role === "SS" || m.role === "SNS");
+    if (supervising) return supervising.role as Role;
   }
-  return "primary";
+  return "PS";
 }
 
 export function filterCases(cases: Case[], filters: StatisticsFilters): Case[] {

@@ -1,4 +1,5 @@
-export type Role = "primary" | "supervising" | "assistant" | "trainee";
+// RACS MALT Supervision Levels (role in theatre)
+export type Role = "PS" | "PP" | "AS" | "ONS" | "SS" | "SNS" | "A";
 
 export type OperatingTeamRole = 
   | "scrub_nurse" 
@@ -402,11 +403,26 @@ export const SPECIALTY_LABELS: Record<Specialty, string> = {
   general: "General",
 };
 
+// RACS MALT Supervision Level Labels
 export const ROLE_LABELS: Record<Role, string> = {
-  primary: "Primary Surgeon",
-  supervising: "Supervising",
-  assistant: "Assistant",
-  trainee: "Trainee",
+  PS: "Primary Surgeon",
+  PP: "Performed with Peer",
+  AS: "Assisting (scrubbed)",
+  ONS: "Observing (not scrubbed)",
+  SS: "Supervising (scrubbed)",
+  SNS: "Supervising (not scrubbed)",
+  A: "Available",
+};
+
+// RACS MALT Supervision Level Descriptions
+export const ROLE_DESCRIPTIONS: Record<Role, string> = {
+  PS: "Primary Surgeon",
+  PP: "Surgeon working with peer or with peer support in a complex or new procedure or in a combined procedure with another specialty.",
+  AS: "Assisting",
+  ONS: "Procedure observed, not scrubbed.",
+  SS: "Supervising - in theatre at the table actively assisting and training.",
+  SNS: "Supervising - not scrubbed but in the operating theatre; actively watching the procedure and able to provide advice or scrub in if required.",
+  A: "Not in the theatre but available by telephone for advice and able to attend if required.",
 };
 
 export const OPERATING_TEAM_ROLE_LABELS: Record<OperatingTeamRole, string> = {
