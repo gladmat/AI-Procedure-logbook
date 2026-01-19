@@ -226,6 +226,13 @@ export const PROCEDURE_CONFIGS: Record<Specialty, ProcedureModuleConfig> = {
     aiPrompt: "Extract burn surgery details...",
     fields: [],
   },
+  general: {
+    id: "general",
+    displayName: "General",
+    icon: "clipboard",
+    aiPrompt: "Extract general plastic surgery details...",
+    fields: [],
+  },
 };
 
 export function getConfigForSpecialty(specialty: Specialty): ProcedureModuleConfig {
