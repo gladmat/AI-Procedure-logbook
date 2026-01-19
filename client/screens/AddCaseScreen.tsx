@@ -27,6 +27,7 @@ const SPECIALTY_ICONS: Record<Specialty, keyof typeof Feather.glyphMap> = {
   body_contouring: "user",
   aesthetics: "star",
   burns: "thermometer",
+  general: "clipboard",
 };
 
 export default function AddCaseScreen() {
