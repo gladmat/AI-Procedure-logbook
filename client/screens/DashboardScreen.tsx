@@ -47,6 +47,7 @@ const SPECIALTY_FILTERS: (Specialty | "all")[] = [
   "body_contouring",
   "aesthetics",
   "burns",
+  "general",
 ];
 
 const TIME_PERIODS: TimePeriod[] = [

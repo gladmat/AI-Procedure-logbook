@@ -9,7 +9,7 @@ export type OperatingTeamRole =
   | "surgical_registrar"
   | "medical_student";
 
-export type Specialty = "free_flap" | "hand_trauma" | "body_contouring" | "aesthetics" | "burns";
+export type Specialty = "free_flap" | "hand_trauma" | "body_contouring" | "aesthetics" | "burns" | "general";
 
 export type ASAScore = 1 | 2 | 3 | 4 | 5 | 6;
 
@@ -399,6 +399,7 @@ export const SPECIALTY_LABELS: Record<Specialty, string> = {
   body_contouring: "Body Contouring",
   aesthetics: "Aesthetics",
   burns: "Burns",
+  general: "General",
 };
 
 export const ROLE_LABELS: Record<Role, string> = {
@@ -499,6 +500,16 @@ export const PROCEDURE_TYPES: Record<Specialty, string[]> = {
     "Escharotomy",
     "Debridement",
     "Reconstruction",
+  ],
+  general: [
+    "Excision of Lipoma",
+    "Skin Lesion Excision",
+    "Scar Revision",
+    "Local Flap",
+    "Skin Graft",
+    "Debridement",
+    "Abscess Incision and Drainage",
+    "Foreign Body Removal",
   ],
 };
 
