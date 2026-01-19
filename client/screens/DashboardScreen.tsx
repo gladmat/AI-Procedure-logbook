@@ -696,7 +696,7 @@ export default function DashboardScreen() {
           <View style={[styles.modalContent, { backgroundColor: theme.backgroundDefault }]}>
             <ThemedText style={styles.modalTitle}>Select Role</ThemedText>
             <ScrollView style={styles.modalScroll}>
-              {(["all", "primary", "supervising", "assistant", "trainee"] as const).map((role) => (
+              {(["all", "PS", "PP", "AS", "ONS", "SS", "SNS", "A"] as const).map((role) => (
                 <Pressable
                   key={role}
                   style={[

@@ -15,13 +15,18 @@ export function RoleBadge({ role, size = "medium" }: RoleBadgeProps) {
 
   const getRoleColor = () => {
     switch (role) {
-      case "primary":
+      case "PS":
         return theme.rolePrimary;
-      case "supervising":
-        return theme.roleSupervising;
-      case "assistant":
+      case "PP":
+        return theme.link;
+      case "AS":
         return theme.roleAssistant;
-      case "trainee":
+      case "ONS":
+        return theme.textSecondary;
+      case "SS":
+      case "SNS":
+        return theme.roleSupervising;
+      case "A":
         return theme.roleTrainee;
       default:
         return theme.textSecondary;

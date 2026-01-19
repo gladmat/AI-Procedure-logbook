@@ -53,7 +53,7 @@ export function CaseCard({ caseData, onPress }: CaseCardProps) {
 
   const userRole = caseData.teamMembers.find(
     (m) => m.id === caseData.ownerId
-  )?.role || "primary";
+  )?.role || "PS";
 
   return (
     <AnimatedPressable
