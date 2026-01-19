@@ -10,13 +10,25 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (January 2026)
 
-### Dynamic Statistics Dashboard (Latest)
+### RACS MALT Supervision Levels (Latest)
+- **Role Alignment**: Updated to use official RACS MALT supervision level codes:
+  - PS: Primary Surgeon
+  - PP: Performed with Peer (complex/combined procedures)
+  - AS: Assisting (scrubbed)
+  - ONS: Observing (not scrubbed)
+  - SS: Supervising (scrubbed) - at table, actively training
+  - SNS: Supervising (not scrubbed) - in theatre, able to advise
+  - A: Available (by telephone)
+- **Info Modal**: Tapping info button next to "Your Role" shows detailed descriptions for each supervision level
+- **Personal Role Tracking**: Simplified approach marks your own role rather than complex team assignments
+
+### Dynamic Statistics Dashboard
 - **Specialty-Aware Analytics**: Dashboard shows statistics that change based on selected specialty tab
 - **Multi-Filter System**: Filter statistics by:
-  - Specialty (All, Free Flap, Hand Trauma, Body Contouring, Aesthetics, Burns)
+  - Specialty (All, Free Flap, Hand Trauma, Body Contouring, Aesthetics, Burns, General)
   - Time Period (This Year, Last 6 Months, Last 12 Months, All Time)
   - Facility (all facilities or specific facility)
-  - Role (All Roles, Primary Surgeon, Teaching/Supervising, Assistant, Trainee)
+  - Role (All Roles, PS, PP, AS, ONS, SS, SNS, A)
 - **Base Statistics Cards**: Total cases, average duration, complication rate, follow-up completion rate
 - **Specialty-Specific Metrics**:
   - Free Flap: Flap survival rate, average ischemia time, take-back rate, cases by flap type
