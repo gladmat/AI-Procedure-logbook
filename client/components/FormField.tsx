@@ -452,6 +452,7 @@ interface DatePickerFieldProps {
   placeholder?: string;
   required?: boolean;
   error?: string;
+  disabled?: boolean;
 }
 
 export function DatePickerField({
@@ -461,6 +462,7 @@ export function DatePickerField({
   placeholder = "Select date...",
   required = false,
   error,
+  disabled = false,
 }: DatePickerFieldProps) {
   const { theme } = useTheme();
   const [showPicker, setShowPicker] = useState(false);
@@ -502,11 +504,13 @@ export function DatePickerField({
         style={[
           styles.dateButton,
           {
-            backgroundColor: theme.backgroundRoot,
+            backgroundColor: disabled ? theme.backgroundDefault : theme.backgroundRoot,
             borderColor: error ? theme.error : theme.border,
+            opacity: disabled ? 0.6 : 1,
           },
         ]}
-        onPress={() => setShowPicker(true)}
+        onPress={() => !disabled && setShowPicker(true)}
+        disabled={disabled}
       >
         {value ? (
           <ThemedText style={[styles.dateButtonText, { color: theme.text }]}>

@@ -292,6 +292,13 @@ export default function CaseFormScreen() {
   };
 
   useEffect(() => {
+    if (admissionCategory === "day_case" && procedureDate) {
+      setAdmissionDate(procedureDate);
+      setDischargeDate(procedureDate);
+    }
+  }, [admissionCategory, procedureDate]);
+
+  useEffect(() => {
     const loadDraft = async () => {
       if (extractedData) {
         draftLoadedRef.current = true;
@@ -797,12 +804,20 @@ export default function CaseFormScreen() {
 
       <SectionHeader title="Admission Details" />
 
+      <PickerField
+        label="Admission Category"
+        value={admissionCategory}
+        options={Object.entries(ADMISSION_CATEGORY_LABELS).map(([value, label]) => ({ value, label }))}
+        onSelect={(v) => setAdmissionCategory(v as AdmissionCategory)}
+      />
+
       <View style={styles.row}>
         <View style={styles.halfField}>
           <DatePickerField
             label="Admission Date"
             value={admissionDate}
             onChange={setAdmissionDate}
+            disabled={admissionCategory === "day_case"}
           />
         </View>
         <View style={styles.halfField}>
@@ -810,16 +825,10 @@ export default function CaseFormScreen() {
             label="Discharge Date"
             value={dischargeDate}
             onChange={setDischargeDate}
+            disabled={admissionCategory === "day_case"}
           />
         </View>
       </View>
-
-      <PickerField
-        label="Admission Category"
-        value={admissionCategory}
-        options={Object.entries(ADMISSION_CATEGORY_LABELS).map(([value, label]) => ({ value, label }))}
-        onSelect={(v) => setAdmissionCategory(v as AdmissionCategory)}
-      />
 
       <Pressable
         style={styles.checkboxRow}
