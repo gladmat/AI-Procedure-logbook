@@ -38,7 +38,8 @@ import {
   AnatomicalRegion,
   FreeFlapDetails,
   Gender,
-  AdmissionCategory,
+  AdmissionUrgency,
+  StayType,
   UnplannedReadmissionReason,
   WoundInfectionRisk,
   AnaestheticType,
@@ -49,7 +50,8 @@ import {
   Diagnosis,
   Prophylaxis,
   GENDER_LABELS,
-  ADMISSION_CATEGORY_LABELS,
+  ADMISSION_URGENCY_LABELS,
+  STAY_TYPE_LABELS,
   UNPLANNED_READMISSION_LABELS,
   WOUND_INFECTION_RISK_LABELS,
   ANAESTHETIC_TYPE_LABELS,
@@ -248,7 +250,8 @@ export default function CaseFormScreen() {
   // RACS MALT Admission Details
   const [admissionDate, setAdmissionDate] = useState("");
   const [dischargeDate, setDischargeDate] = useState("");
-  const [admissionCategory, setAdmissionCategory] = useState<AdmissionCategory | "">("");
+  const [admissionUrgency, setAdmissionUrgency] = useState<AdmissionUrgency | "">("");
+  const [stayType, setStayType] = useState<StayType | "">("");
   const [unplannedReadmission, setUnplannedReadmission] = useState<UnplannedReadmissionReason>("no");
 
   // RACS MALT Diagnosis (single SNOMED diagnosis)
@@ -292,11 +295,11 @@ export default function CaseFormScreen() {
   };
 
   useEffect(() => {
-    if (admissionCategory === "day_case" && procedureDate) {
+    if (stayType === "day_case" && procedureDate) {
       setAdmissionDate(procedureDate);
       setDischargeDate(procedureDate);
     }
-  }, [admissionCategory, procedureDate]);
+  }, [stayType, procedureDate]);
 
   useEffect(() => {
     const loadDraft = async () => {
@@ -331,7 +334,8 @@ export default function CaseFormScreen() {
       setEthnicity(draft.ethnicity ?? "");
       setAdmissionDate(draft.admissionDate ?? "");
       setDischargeDate(draft.dischargeDate ?? "");
-      setAdmissionCategory(draft.admissionCategory ?? "");
+      setAdmissionUrgency(draft.admissionUrgency ?? "");
+      setStayType(draft.stayType ?? "");
       setUnplannedReadmission(draft.unplannedReadmission ?? "no");
       setIsUnplannedReadmission((draft.unplannedReadmission ?? "no") !== "no");
       setDiagnosis(draft.finalDiagnosis?.displayName ?? "");
@@ -389,7 +393,8 @@ export default function CaseFormScreen() {
       ethnicity: ethnicity.trim() || undefined,
       admissionDate: admissionDate || undefined,
       dischargeDate: dischargeDate || undefined,
-      admissionCategory: admissionCategory || undefined,
+      admissionUrgency: admissionUrgency || undefined,
+      stayType: stayType || undefined,
       unplannedReadmission: unplannedReadmission !== "no" ? unplannedReadmission : "no",
       finalDiagnosis: diagnosis.trim() ? { displayName: diagnosis.trim() } : undefined,
       comorbidities: selectedComorbidities.length > 0 ? selectedComorbidities : undefined,
@@ -435,7 +440,8 @@ export default function CaseFormScreen() {
 
     return () => clearTimeout(timeout);
   }, [
-    admissionCategory,
+    admissionUrgency,
+    stayType,
     admissionDate,
     anaestheticType,
     anastomoses,
@@ -632,7 +638,8 @@ export default function CaseFormScreen() {
         // Admission Details
         admissionDate: admissionDate || undefined,
         dischargeDate: dischargeDate || undefined,
-        admissionCategory: admissionCategory || undefined,
+        admissionUrgency: admissionUrgency || undefined,
+        stayType: stayType || undefined,
         unplannedReadmission: unplannedReadmission !== "no" ? unplannedReadmission : undefined,
         
         // Diagnosis (single SNOMED diagnosis)
@@ -804,12 +811,24 @@ export default function CaseFormScreen() {
 
       <SectionHeader title="Admission Details" />
 
-      <PickerField
-        label="Admission Category"
-        value={admissionCategory}
-        options={Object.entries(ADMISSION_CATEGORY_LABELS).map(([value, label]) => ({ value, label }))}
-        onSelect={(v) => setAdmissionCategory(v as AdmissionCategory)}
-      />
+      <View style={styles.row}>
+        <View style={styles.halfField}>
+          <PickerField
+            label="Urgency"
+            value={admissionUrgency}
+            options={Object.entries(ADMISSION_URGENCY_LABELS).map(([value, label]) => ({ value, label }))}
+            onSelect={(v) => setAdmissionUrgency(v as AdmissionUrgency)}
+          />
+        </View>
+        <View style={styles.halfField}>
+          <PickerField
+            label="Stay Type"
+            value={stayType}
+            options={Object.entries(STAY_TYPE_LABELS).map(([value, label]) => ({ value, label }))}
+            onSelect={(v) => setStayType(v as StayType)}
+          />
+        </View>
+      </View>
 
       <View style={styles.row}>
         <View style={styles.halfField}>
@@ -817,7 +836,7 @@ export default function CaseFormScreen() {
             label="Admission Date"
             value={admissionDate}
             onChange={setAdmissionDate}
-            disabled={admissionCategory === "day_case"}
+            disabled={stayType === "day_case"}
           />
         </View>
         <View style={styles.halfField}>
@@ -825,7 +844,7 @@ export default function CaseFormScreen() {
             label="Discharge Date"
             value={dischargeDate}
             onChange={setDischargeDate}
-            disabled={admissionCategory === "day_case"}
+            disabled={stayType === "day_case"}
           />
         </View>
       </View>
