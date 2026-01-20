@@ -2,11 +2,23 @@
  * SNOMED CT Snowstorm API Client
  * Uses the public SNOMED International Terminology Server
  * https://snowstorm.ihtsdotools.org/
+ * 
+ * Falls back to local data when API is unavailable
  */
 
+import { 
+  searchLocalDiagnoses, 
+  searchLocalProcedures, 
+  LocalSnomedConcept 
+} from "./snomedLocalData";
+
 const SNOWSTORM_BASE_URL = "https://snowstorm.ihtsdotools.org/snowstorm/snomed-ct";
-const EDITION = "MAIN"; // International Edition
-const VERSION = "MAIN"; // Latest version
+const BRANCH = "MAIN"; // International Edition (main branch)
+
+// Flag to track if Snowstorm API is available
+let snowstormAvailable = true;
+let lastApiCheck = 0;
+const API_CHECK_INTERVAL = 60000; // Retry every minute
 
 // SNOMED CT Concept IDs for key hierarchies
 const SNOMED_HIERARCHIES = {
@@ -63,7 +75,21 @@ export interface SnomedConceptDetail {
 }
 
 /**
+ * Convert local concept to search result format
+ */
+function localToSearchResult(local: LocalSnomedConcept): SnomedSearchResult {
+  return {
+    conceptId: local.conceptId,
+    term: local.term,
+    fsn: local.fsn,
+    active: true,
+    semanticTag: local.semanticTag,
+  };
+}
+
+/**
  * Search SNOMED CT for procedures
+ * Falls back to local data when Snowstorm API is unavailable
  */
 export async function searchProcedures(
   query: string,
@@ -74,27 +100,28 @@ export async function searchProcedures(
     return [];
   }
 
+  // Check if we should try the API
+  const now = Date.now();
+  if (!snowstormAvailable && now - lastApiCheck < API_CHECK_INTERVAL) {
+    // Use local data
+    return searchLocalProcedures(query, specialty, limit).map(localToSearchResult);
+  }
+
   try {
-    // Build search term with specialty keywords if provided
-    let searchTerm = query;
-    const keywords = specialty && SPECIALTY_KEYWORDS[specialty];
-    
-    // Use ECL to restrict to Procedure hierarchy
     const ecl = `<<${SNOMED_HIERARCHIES.PROCEDURE}`;
-    
     const params = new URLSearchParams({
-      term: searchTerm,
+      term: query,
       ecl: ecl,
       activeFilter: "true",
       limit: String(limit),
       offset: "0",
       conceptActive: "true",
       language: "en",
-      preferredOrAcceptableIn: "900000000000509007", // US English
+      preferredOrAcceptableIn: "900000000000509007",
     });
 
     const response = await fetch(
-      `${SNOWSTORM_BASE_URL}/browser/${EDITION}/${VERSION}/descriptions?${params.toString()}`,
+      `${SNOWSTORM_BASE_URL}/browser/${BRANCH}/descriptions?${params.toString()}`,
       {
         headers: {
           "Accept": "application/json",
@@ -105,12 +132,12 @@ export async function searchProcedures(
 
     if (!response.ok) {
       console.error("SNOMED API error:", response.status, await response.text());
-      return [];
+      throw new Error("API error");
     }
 
     const data = await response.json();
+    snowstormAvailable = true;
     
-    // Map results to our format
     const results: SnomedSearchResult[] = (data.items || []).map((item: any) => ({
       conceptId: item.concept?.conceptId || item.conceptId,
       term: item.term,
@@ -119,7 +146,7 @@ export async function searchProcedures(
       semanticTag: extractSemanticTag(item.concept?.fsn?.term || ""),
     }));
 
-    // Filter by specialty keywords if provided
+    const keywords = specialty && SPECIALTY_KEYWORDS[specialty];
     if (keywords && keywords.length > 0) {
       return results.filter((r) => 
         keywords.some((kw) => 
@@ -131,13 +158,16 @@ export async function searchProcedures(
 
     return results;
   } catch (error) {
-    console.error("Error searching SNOMED procedures:", error);
-    return [];
+    console.error("Error searching SNOMED procedures, using local data:", error);
+    snowstormAvailable = false;
+    lastApiCheck = now;
+    return searchLocalProcedures(query, specialty, limit).map(localToSearchResult);
   }
 }
 
 /**
  * Search SNOMED CT for diagnoses (clinical findings)
+ * Falls back to local data when Snowstorm API is unavailable
  */
 export async function searchDiagnoses(
   query: string,
@@ -148,10 +178,16 @@ export async function searchDiagnoses(
     return [];
   }
 
+  // Check if we should try the API
+  const now = Date.now();
+  if (!snowstormAvailable && now - lastApiCheck < API_CHECK_INTERVAL) {
+    // Use local data
+    console.log("Using local SNOMED data for diagnoses");
+    return searchLocalDiagnoses(query, specialty, limit).map(localToSearchResult);
+  }
+
   try {
-    // Use ECL to restrict to Clinical Finding hierarchy
     const ecl = `<<${SNOMED_HIERARCHIES.CLINICAL_FINDING}`;
-    
     const params = new URLSearchParams({
       term: query,
       ecl: ecl,
@@ -160,11 +196,11 @@ export async function searchDiagnoses(
       offset: "0",
       conceptActive: "true",
       language: "en",
-      preferredOrAcceptableIn: "900000000000509007", // US English
+      preferredOrAcceptableIn: "900000000000509007",
     });
 
     const response = await fetch(
-      `${SNOWSTORM_BASE_URL}/browser/${EDITION}/${VERSION}/descriptions?${params.toString()}`,
+      `${SNOWSTORM_BASE_URL}/browser/${BRANCH}/descriptions?${params.toString()}`,
       {
         headers: {
           "Accept": "application/json",
@@ -175,12 +211,12 @@ export async function searchDiagnoses(
 
     if (!response.ok) {
       console.error("SNOMED API error:", response.status, await response.text());
-      return [];
+      throw new Error("API error");
     }
 
     const data = await response.json();
+    snowstormAvailable = true;
     
-    // Map results to our format
     const results: SnomedSearchResult[] = (data.items || []).map((item: any) => ({
       conceptId: item.concept?.conceptId || item.conceptId,
       term: item.term,
@@ -189,7 +225,6 @@ export async function searchDiagnoses(
       semanticTag: extractSemanticTag(item.concept?.fsn?.term || ""),
     }));
 
-    // Filter by specialty keywords if provided
     const keywords = specialty && DIAGNOSIS_KEYWORDS[specialty];
     if (keywords && keywords.length > 0) {
       const filtered = results.filter((r) => 
@@ -198,7 +233,6 @@ export async function searchDiagnoses(
           r.fsn.toLowerCase().includes(kw.toLowerCase())
         )
       );
-      // Return filtered if we have results, otherwise return all
       if (filtered.length > 0) {
         return filtered.slice(0, limit);
       }
@@ -206,8 +240,10 @@ export async function searchDiagnoses(
 
     return results;
   } catch (error) {
-    console.error("Error searching SNOMED diagnoses:", error);
-    return [];
+    console.error("Error searching SNOMED diagnoses, using local data:", error);
+    snowstormAvailable = false;
+    lastApiCheck = now;
+    return searchLocalDiagnoses(query, specialty, limit).map(localToSearchResult);
   }
 }
 
@@ -217,7 +253,7 @@ export async function searchDiagnoses(
 export async function getConceptDetails(conceptId: string): Promise<SnomedConceptDetail | null> {
   try {
     const response = await fetch(
-      `${SNOWSTORM_BASE_URL}/browser/${EDITION}/${VERSION}/concepts/${conceptId}`,
+      `${SNOWSTORM_BASE_URL}/browser/${BRANCH}/concepts/${conceptId}`,
       {
         headers: {
           "Accept": "application/json",
