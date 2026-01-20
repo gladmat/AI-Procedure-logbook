@@ -1,7 +1,118 @@
 import { getApiUrl } from "./query-client";
-import type { SnomedRefItem, AnatomicalRegion } from "@/types/case";
+import type { SnomedRefItem, AnatomicalRegion, Specialty } from "@/types/case";
 
 const API_BASE = getApiUrl();
+
+// SNOMED CT Search Result from Snowstorm API
+export interface SnomedSearchResult {
+  conceptId: string;
+  term: string;
+  fsn: string;
+  active: boolean;
+  semanticTag?: string;
+}
+
+// Staging system types
+export interface StagingOption {
+  value: string;
+  label: string;
+  description?: string;
+}
+
+export interface StagingSystem {
+  name: string;
+  description?: string;
+  options: StagingOption[];
+}
+
+export interface DiagnosisStagingConfig {
+  snomedCtCodes: string[];
+  keywords: string[];
+  stagingSystems: StagingSystem[];
+}
+
+/**
+ * Search SNOMED CT procedures using Snowstorm API
+ */
+export async function searchSnomedProcedures(
+  query: string,
+  specialty?: Specialty,
+  limit: number = 20
+): Promise<SnomedSearchResult[]> {
+  if (!query || query.length < 2) {
+    return [];
+  }
+
+  const params = new URLSearchParams({
+    q: query,
+    limit: String(limit),
+  });
+  if (specialty) {
+    params.set("specialty", specialty);
+  }
+
+  const url = new URL(`/api/snomed/procedures?${params.toString()}`, API_BASE);
+  const response = await fetch(url.toString());
+  if (!response.ok) {
+    console.error("Failed to search SNOMED procedures");
+    return [];
+  }
+  return response.json();
+}
+
+/**
+ * Search SNOMED CT diagnoses using Snowstorm API
+ */
+export async function searchSnomedDiagnoses(
+  query: string,
+  specialty?: Specialty,
+  limit: number = 20
+): Promise<SnomedSearchResult[]> {
+  if (!query || query.length < 2) {
+    return [];
+  }
+
+  const params = new URLSearchParams({
+    q: query,
+    limit: String(limit),
+  });
+  if (specialty) {
+    params.set("specialty", specialty);
+  }
+
+  const url = new URL(`/api/snomed/diagnoses?${params.toString()}`, API_BASE);
+  const response = await fetch(url.toString());
+  if (!response.ok) {
+    console.error("Failed to search SNOMED diagnoses");
+    return [];
+  }
+  return response.json();
+}
+
+/**
+ * Get staging configuration for a diagnosis
+ */
+export async function getDiagnosisStaging(
+  snomedCode?: string,
+  diagnosisName?: string
+): Promise<DiagnosisStagingConfig | null> {
+  const params = new URLSearchParams();
+  if (snomedCode) {
+    params.set("snomedCode", snomedCode);
+  }
+  if (diagnosisName) {
+    params.set("diagnosisName", diagnosisName);
+  }
+
+  const url = new URL(`/api/staging/diagnosis?${params.toString()}`, API_BASE);
+  const response = await fetch(url.toString());
+  if (!response.ok) {
+    console.error("Failed to fetch staging config");
+    return null;
+  }
+  const data = await response.json();
+  return data.stagingSystems?.length > 0 ? data : null;
+}
 
 export async function fetchSnomedRefs(
   category?: string,

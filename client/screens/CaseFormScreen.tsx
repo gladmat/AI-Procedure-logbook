@@ -72,7 +72,9 @@ import { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { RecipientSiteSelector } from "@/components/RecipientSiteSelector";
 import { AnastomosisEntryCard } from "@/components/AnastomosisEntryCard";
 import { ProcedureEntryCard } from "@/components/ProcedureEntryCard";
+import { SnomedSearchPicker } from "@/components/SnomedSearchPicker";
 import { useAuth } from "@/contexts/AuthContext";
+import { getDiagnosisStaging, DiagnosisStagingConfig } from "@/lib/snomedApi";
 
 type RouteParams = RouteProp<RootStackParamList, "CaseForm">;
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -254,7 +256,12 @@ export default function CaseFormScreen() {
   const [stayType, setStayType] = useState<StayType | "">("");
   const [unplannedReadmission, setUnplannedReadmission] = useState<UnplannedReadmissionReason>("no");
 
-  // RACS MALT Diagnosis (single SNOMED diagnosis)
+  // RACS MALT Primary Diagnosis (SNOMED CT coded)
+  const [primaryDiagnosis, setPrimaryDiagnosis] = useState<{ conceptId: string; term: string } | null>(null);
+  const [diagnosisStaging, setDiagnosisStaging] = useState<DiagnosisStagingConfig | null>(null);
+  const [stagingValues, setStagingValues] = useState<Record<string, string>>({});
+  
+  // Legacy diagnosis field for backwards compatibility
   const [diagnosis, setDiagnosis] = useState("");
 
   // RACS MALT Co-morbidities
@@ -300,6 +307,22 @@ export default function CaseFormScreen() {
       setDischargeDate(procedureDate);
     }
   }, [stayType, procedureDate]);
+
+  // Fetch staging configuration when diagnosis changes
+  useEffect(() => {
+    const fetchStaging = async () => {
+      if (primaryDiagnosis) {
+        const staging = await getDiagnosisStaging(primaryDiagnosis.conceptId, primaryDiagnosis.term);
+        setDiagnosisStaging(staging);
+        // Reset staging values when diagnosis changes
+        setStagingValues({});
+      } else {
+        setDiagnosisStaging(null);
+        setStagingValues({});
+      }
+    };
+    fetchStaging();
+  }, [primaryDiagnosis]);
 
   useEffect(() => {
     const loadDraft = async () => {
@@ -757,6 +780,40 @@ export default function CaseFormScreen() {
         />
       )}
 
+      <SectionHeader title="Primary Diagnosis" subtitle="SNOMED CT coded diagnosis" />
+
+      <SnomedSearchPicker
+        label="Search Diagnosis"
+        value={primaryDiagnosis || undefined}
+        onSelect={setPrimaryDiagnosis}
+        searchType="diagnosis"
+        specialty={specialty}
+        placeholder="Search for diagnosis (e.g., fracture, Dupuytren)..."
+      />
+
+      {diagnosisStaging && diagnosisStaging.stagingSystems.length > 0 ? (
+        <View style={styles.stagingContainer}>
+          <ThemedText style={[styles.stagingTitle, { color: theme.textSecondary }]}>
+            Classification / Staging
+          </ThemedText>
+          {diagnosisStaging.stagingSystems.map((system) => (
+            <PickerField
+              key={system.name}
+              label={system.name}
+              value={stagingValues[system.name] || ""}
+              options={system.options.map((opt) => ({
+                value: opt.value,
+                label: opt.description ? `${opt.label} - ${opt.description}` : opt.label,
+              }))}
+              onSelect={(value) => 
+                setStagingValues((prev) => ({ ...prev, [system.name]: value }))
+              }
+              placeholder={`Select ${system.name.toLowerCase()}...`}
+            />
+          ))}
+        </View>
+      ) : null}
+
       <SectionHeader title="Procedures Performed" />
       
       <ThemedText style={[styles.sectionDescription, { color: theme.textSecondary }]}>
@@ -887,15 +944,6 @@ export default function CaseFormScreen() {
           onSelect={(v) => setUnplannedReadmission(v as UnplannedReadmissionReason)}
         />
       ) : null}
-
-      <SectionHeader title="Diagnosis" subtitle="SNOMED CT coded diagnosis" />
-
-      <FormField
-        label="Diagnosis"
-        value={diagnosis}
-        onChangeText={setDiagnosis}
-        placeholder="e.g., Lower limb trauma, Tibial fracture"
-      />
 
       <SectionHeader title="Co-morbidities" subtitle="Select all that apply" />
 
@@ -1453,5 +1501,14 @@ const styles = StyleSheet.create({
   roleDescription: {
     fontSize: 13,
     lineHeight: 19,
+  },
+  stagingContainer: {
+    marginBottom: Spacing.md,
+    paddingTop: Spacing.sm,
+  },
+  stagingTitle: {
+    fontSize: 13,
+    fontWeight: "500",
+    marginBottom: Spacing.md,
   },
 });
