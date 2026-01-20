@@ -22,19 +22,29 @@ Preferred communication style: Simple, everyday language.
 - **Info Modal**: Tapping info button next to "Your Role" shows detailed descriptions for each supervision level
 - **Personal Role Tracking**: Simplified approach marks your own role rather than complex team assignments
 
+### Anatomical/Clinical Specialty Categories (Latest)
+- **Specialty Restructure**: Categories now reflect anatomical/clinical areas rather than procedure types:
+  - Breast, Body Contouring, Aesthetics, Hand Surgery, Orthoplastic, Burns, General, Head & Neck
+- **Procedure Tags System**: Cross-specialty categorization with 13 tags:
+  - Free Flap, Pedicled Flap, Local Flap, Skin Graft, Microsurgery, Replant
+  - Nerve Repair, Tendon Repair, Oncological, Trauma, Elective, Revision, Complex Wound
+- **Tag Selection UI**: Multi-select chip interface in procedure entry form for tagging
+- **Tag-Based Statistics**: Statistics calculations now use procedure tags for cross-specialty analytics
+
 ### Dynamic Statistics Dashboard
 - **Specialty-Aware Analytics**: Dashboard shows statistics that change based on selected specialty tab
 - **Multi-Filter System**: Filter statistics by:
-  - Specialty (All, Free Flap, Hand Trauma, Body Contouring, Aesthetics, Burns, General)
+  - Specialty (All, Breast, Body Contouring, Aesthetics, Hand Surgery, Orthoplastic, Burns, General, Head & Neck)
   - Time Period (This Year, Last 6 Months, Last 12 Months, All Time)
   - Facility (all facilities or specific facility)
   - Role (All Roles, PS, PP, AS, ONS, SS, SNS, A)
 - **Base Statistics Cards**: Total cases, average duration, complication rate, follow-up completion rate
 - **Specialty-Specific Metrics**:
-  - Free Flap: Flap survival rate, average ischemia time, take-back rate, cases by flap type
-  - Hand Trauma: Nerve repair count, tendon repair count, cases by procedure type
+  - Orthoplastic: Free flap count, average ischemia time, cases by coverage type
+  - Hand Surgery: Nerve repair count, tendon repair count, cases by procedure type
   - Body Contouring: Average resection weight
-- **Visual Analytics**: Bar chart showing cases over time, breakdown charts by flap type/procedure type
+  - Breast: Reconstruction count, cases by procedure type
+- **Visual Analytics**: Bar chart showing cases over time, breakdown charts by procedure type
 - **Role-Aware Duration Stats**: Teaching cases filtered separately from primary surgeon cases for meaningful time comparisons
 - **Recent Cases Section**: Shows last 5 cases matching current filters
 
