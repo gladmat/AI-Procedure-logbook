@@ -183,7 +183,12 @@ export function ProcedureEntryCard({
       ) : null}
 
       <View style={styles.roleHeaderRow}>
-        <ThemedText style={styles.fieldLabel}>Your Role (RACS MALT)</ThemedText>
+        <View style={styles.labelRow}>
+          <ThemedText style={[styles.fieldLabel, { color: theme.textSecondary }]}>
+            Your Role (RACS MALT)
+          </ThemedText>
+          <ThemedText style={[styles.requiredAsterisk, { color: theme.error }]}>*</ThemedText>
+        </View>
         <Pressable
           style={[styles.infoButton, { backgroundColor: theme.link + "15" }]}
           onPress={() => setShowRoleInfoModal(true)}
@@ -206,7 +211,6 @@ export function ProcedureEntryCard({
           { value: "A", label: "A - Available" },
         ]}
         onSelect={handleRoleChange}
-        required
       />
 
       {/* Role Info Modal */}
@@ -362,6 +366,15 @@ const styles = StyleSheet.create({
   fieldLabel: {
     fontSize: 14,
     fontWeight: "500",
+  },
+  labelRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  requiredAsterisk: {
+    marginLeft: 2,
+    fontSize: 14,
+    fontWeight: "600",
   },
   infoButton: {
     padding: 4,
