@@ -46,6 +46,7 @@ export default function OnboardingScreen() {
   const [step, setStep] = useState<Step>("agreement");
   const [isLoading, setIsLoading] = useState(false);
   const [agreementAccepted, setAgreementAccepted] = useState(false);
+  const [agreementError, setAgreementError] = useState(false);
 
   const [countryOfPractice, setCountryOfPractice] = useState<string | null>(null);
   const [fullName, setFullName] = useState("");
@@ -56,9 +57,10 @@ export default function OnboardingScreen() {
   const handleNext = async () => {
     if (step === "agreement") {
       if (!agreementAccepted) {
-        Alert.alert("Required", "Please accept the agreement to continue");
+        setAgreementError(true);
         return;
       }
+      setAgreementError(false);
       setStep("country");
     } else if (step === "country") {
       if (!countryOfPractice) {
@@ -186,21 +188,29 @@ export default function OnboardingScreen() {
 
             <Pressable
               style={styles.checkboxRow}
-              onPress={() => setAgreementAccepted(!agreementAccepted)}
+              onPress={() => {
+                setAgreementAccepted(!agreementAccepted);
+                setAgreementError(false);
+              }}
             >
               <View style={[
                 styles.checkbox,
-                { borderColor: colors.border, backgroundColor: colors.backgroundSecondary },
+                { borderColor: agreementError ? colors.error : colors.border, backgroundColor: colors.backgroundSecondary },
                 agreementAccepted && { backgroundColor: colors.link, borderColor: colors.link },
               ]}>
                 {agreementAccepted ? (
                   <Feather name="check" size={16} color="#FFF" />
                 ) : null}
               </View>
-              <Text style={[styles.checkboxLabel, { color: colors.text }]}>
+              <Text style={[styles.checkboxLabel, { color: agreementError ? colors.error : colors.text }]}>
                 I have read and accept the above agreement
               </Text>
             </Pressable>
+            {agreementError ? (
+              <Text style={[styles.errorText, { color: colors.error }]}>
+                Please accept the agreement to continue
+              </Text>
+            ) : null}
           </View>
         );
 
@@ -662,5 +672,9 @@ const styles = StyleSheet.create({
   checkboxLabel: {
     ...Typography.body,
     flex: 1,
+  },
+  errorText: {
+    ...Typography.caption,
+    marginTop: Spacing.xs,
   },
 });
