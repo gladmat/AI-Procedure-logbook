@@ -6,6 +6,8 @@ import { extractTextFromImage } from "./ocr";
 import { redactSensitiveData } from "./privacyUtils";
 import { storage } from "./storage";
 import { allSeedData } from "./seedData";
+import { searchProcedures, searchDiagnoses, getConceptDetails } from "./snomedApi";
+import { getStagingForDiagnosis, getAllStagingConfigs } from "./diagnosisStagingConfig";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
@@ -519,6 +521,92 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting anastomosis:", error);
       res.status(500).json({ error: "Failed to delete anastomosis" });
+    }
+  });
+
+  // SNOMED CT Search API (using Snowstorm)
+  app.get("/api/snomed/procedures", async (req: Request, res: Response) => {
+    try {
+      const { q, specialty, limit } = req.query;
+      
+      if (!q || typeof q !== "string") {
+        return res.json([]);
+      }
+      
+      const results = await searchProcedures(
+        q,
+        specialty as string | undefined,
+        limit ? parseInt(limit as string, 10) : 20
+      );
+      
+      res.json(results);
+    } catch (error) {
+      console.error("Error searching SNOMED procedures:", error);
+      res.status(500).json({ error: "Failed to search procedures" });
+    }
+  });
+
+  app.get("/api/snomed/diagnoses", async (req: Request, res: Response) => {
+    try {
+      const { q, specialty, limit } = req.query;
+      
+      if (!q || typeof q !== "string") {
+        return res.json([]);
+      }
+      
+      const results = await searchDiagnoses(
+        q,
+        specialty as string | undefined,
+        limit ? parseInt(limit as string, 10) : 20
+      );
+      
+      res.json(results);
+    } catch (error) {
+      console.error("Error searching SNOMED diagnoses:", error);
+      res.status(500).json({ error: "Failed to search diagnoses" });
+    }
+  });
+
+  app.get("/api/snomed/concepts/:conceptId", async (req: Request, res: Response) => {
+    try {
+      const { conceptId } = req.params;
+      const details = await getConceptDetails(conceptId);
+      
+      if (!details) {
+        return res.status(404).json({ error: "Concept not found" });
+      }
+      
+      res.json(details);
+    } catch (error) {
+      console.error("Error fetching concept details:", error);
+      res.status(500).json({ error: "Failed to fetch concept details" });
+    }
+  });
+
+  // Diagnosis Staging Configuration API
+  app.get("/api/staging/diagnosis", async (req: Request, res: Response) => {
+    try {
+      const { snomedCode, diagnosisName } = req.query;
+      
+      const staging = getStagingForDiagnosis(
+        snomedCode as string | undefined,
+        diagnosisName as string | undefined
+      );
+      
+      res.json(staging || { stagingSystems: [] });
+    } catch (error) {
+      console.error("Error fetching staging config:", error);
+      res.status(500).json({ error: "Failed to fetch staging configuration" });
+    }
+  });
+
+  app.get("/api/staging/all", async (req: Request, res: Response) => {
+    try {
+      const configs = getAllStagingConfigs();
+      res.json(configs);
+    } catch (error) {
+      console.error("Error fetching all staging configs:", error);
+      res.status(500).json({ error: "Failed to fetch staging configurations" });
     }
   });
 
