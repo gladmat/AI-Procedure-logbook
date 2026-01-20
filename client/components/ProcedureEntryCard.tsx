@@ -13,10 +13,12 @@ import {
   type Role,
   type Specialty,
   type ClinicalDetails,
+  type ProcedureTag,
   ROLE_LABELS,
   ROLE_DESCRIPTIONS,
   SPECIALTY_LABELS,
   PROCEDURE_TYPES,
+  PROCEDURE_TAG_LABELS,
 } from "@/types/case";
 
 interface ProcedureEntryCardProps {
@@ -92,6 +94,17 @@ export function ProcedureEntryCard({
     onUpdate({
       ...procedure,
       clinicalDetails: details,
+    });
+  };
+
+  const handleTagToggle = (tag: ProcedureTag) => {
+    const currentTags = procedure.tags || [];
+    const newTags = currentTags.includes(tag)
+      ? currentTags.filter(t => t !== tag)
+      : [...currentTags, tag];
+    onUpdate({
+      ...procedure,
+      tags: newTags,
     });
   };
 
@@ -181,6 +194,42 @@ export function ProcedureEntryCard({
           required
         />
       ) : null}
+
+      <View style={styles.tagsSection}>
+        <ThemedText style={[styles.fieldLabel, { color: theme.textSecondary }]}>
+          Procedure Tags
+        </ThemedText>
+        <View style={styles.tagsContainer}>
+          {(Object.keys(PROCEDURE_TAG_LABELS) as ProcedureTag[]).map((tag) => {
+            const isSelected = procedure.tags?.includes(tag) || false;
+            return (
+              <Pressable
+                key={tag}
+                onPress={() => {
+                  Haptics.selectionAsync();
+                  handleTagToggle(tag);
+                }}
+                style={[
+                  styles.tagChip,
+                  {
+                    backgroundColor: isSelected ? theme.link : theme.backgroundDefault,
+                    borderColor: isSelected ? theme.link : theme.border,
+                  },
+                ]}
+              >
+                <ThemedText
+                  style={[
+                    styles.tagText,
+                    { color: isSelected ? theme.buttonText : theme.textSecondary },
+                  ]}
+                >
+                  {PROCEDURE_TAG_LABELS[tag]}
+                </ThemedText>
+              </Pressable>
+            );
+          })}
+        </View>
+      </View>
 
       <View style={styles.roleHeaderRow}>
         <View style={styles.labelRow}>
@@ -438,5 +487,25 @@ const styles = StyleSheet.create({
   roleDescription: {
     fontSize: 14,
     lineHeight: 20,
+  },
+  tagsSection: {
+    marginTop: Spacing.xs,
+    marginBottom: Spacing.md,
+  },
+  tagsContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: Spacing.sm,
+    marginTop: Spacing.sm,
+  },
+  tagChip: {
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+  },
+  tagText: {
+    fontSize: 12,
+    fontWeight: "500",
   },
 });
