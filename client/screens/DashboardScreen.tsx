@@ -37,17 +37,21 @@ import {
   formatMonthLabel,
   BaseStatistics,
   FreeFlapStatistics,
-  HandTraumaStatistics,
+  HandSurgeryStatistics,
+  OrthoplasticStatistics,
+  BreastStatistics,
 } from "@/lib/statistics";
 
 const SPECIALTY_FILTERS: (Specialty | "all")[] = [
   "all",
-  "free_flap",
-  "hand_trauma",
+  "breast",
   "body_contouring",
   "aesthetics",
+  "hand_surgery",
+  "orthoplastic",
   "burns",
   "general",
+  "head_neck",
 ];
 
 const TIME_PERIODS: TimePeriod[] = [
@@ -252,7 +256,7 @@ export default function DashboardScreen() {
     return "flapSurvivalRate" in stats;
   };
 
-  const isHandTraumaStats = (stats: BaseStatistics): stats is HandTraumaStatistics => {
+  const isHandSurgeryStats = (stats: BaseStatistics): stats is HandSurgeryStatistics => {
     return "nerveRepairCount" in stats;
   };
 
@@ -525,21 +529,21 @@ export default function DashboardScreen() {
             </View>
           ) : null}
 
-          {isHandTraumaStats(statistics) ? (
+          {isHandSurgeryStats(statistics) ? (
             <View style={styles.specialtyStats}>
               <ThemedText style={[styles.specialtyStatsTitle, { color: theme.textSecondary }]}>
-                Hand Trauma Specific
+                Hand Surgery Specific
               </ThemedText>
               <View style={styles.statsGrid}>
                 <StatCard
                   title="Nerve Repairs"
-                  value={statistics.nerveRepairCount.toString()}
+                  value={(statistics as HandSurgeryStatistics).nerveRepairCount.toString()}
                   icon="activity"
                   color={theme.info}
                 />
                 <StatCard
                   title="Tendon Repairs"
-                  value={statistics.tendonRepairCount.toString()}
+                  value={(statistics as HandSurgeryStatistics).tendonRepairCount.toString()}
                   icon="link"
                   color={theme.link}
                 />

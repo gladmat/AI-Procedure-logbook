@@ -28,17 +28,28 @@ export interface FreeFlapStatistics extends BaseStatistics {
   takeBackRate: number;
 }
 
-export interface HandTraumaStatistics extends BaseStatistics {
-  casesByInjuryMechanism: { mechanism: string; count: number }[];
+export interface HandSurgeryStatistics extends BaseStatistics {
+  casesByProcedureType: { procedureType: string; count: number }[];
   nerveRepairCount: number;
   tendonRepairCount: number;
+}
+
+export interface OrthoplasticStatistics extends BaseStatistics {
+  freeFlapCount: number;
+  averageIschemiaTimeMinutes: number | null;
+  casesByCoverage: { coverage: string; count: number }[];
 }
 
 export interface BodyContouringStatistics extends BaseStatistics {
   averageResectionWeightGrams: number | null;
 }
 
-export type SpecialtyStatistics = BaseStatistics | FreeFlapStatistics | HandTraumaStatistics | BodyContouringStatistics;
+export interface BreastStatistics extends BaseStatistics {
+  reconstructionCount: number;
+  casesByProcedureType: { procedureType: string; count: number }[];
+}
+
+export type SpecialtyStatistics = BaseStatistics | FreeFlapStatistics | HandSurgeryStatistics | BodyContouringStatistics | OrthoplasticStatistics | BreastStatistics;
 
 export const TIME_PERIOD_LABELS: Record<TimePeriod, string> = {
   all_time: "All Time",
@@ -191,7 +202,12 @@ export function calculateBaseStatistics(cases: Case[]): BaseStatistics {
 export function calculateFreeFlapStatistics(cases: Case[]): FreeFlapStatistics {
   const base = calculateBaseStatistics(cases);
   
-  const freeFlapCases = cases.filter(c => c.specialty === "free_flap");
+  const freeFlapCases = cases.filter(c => 
+    c.procedures?.some(p => p.tags?.includes("free_flap")) ||
+    c.specialty === "orthoplastic" ||
+    c.specialty === "head_neck" ||
+    c.specialty === "breast"
+  );
   
   const casesWithOutcome = freeFlapCases.filter(c => {
     const complications = c.complications || [];
@@ -279,33 +295,99 @@ export function calculateFreeFlapStatistics(cases: Case[]): FreeFlapStatistics {
   };
 }
 
-export function calculateHandTraumaStatistics(cases: Case[]): HandTraumaStatistics {
+export function calculateHandSurgeryStatistics(cases: Case[]): HandSurgeryStatistics {
   const base = calculateBaseStatistics(cases);
   
-  const handTraumaCases = cases.filter(c => c.specialty === "hand_trauma");
+  const handSurgeryCases = cases.filter(c => c.specialty === "hand_surgery");
   
-  const mechanismMap = new Map<string, number>();
-  handTraumaCases.forEach(c => {
+  const procedureTypeMap = new Map<string, number>();
+  handSurgeryCases.forEach(c => {
     const procedureType = c.procedureType || "Unknown";
-    mechanismMap.set(procedureType, (mechanismMap.get(procedureType) || 0) + 1);
+    procedureTypeMap.set(procedureType, (procedureTypeMap.get(procedureType) || 0) + 1);
   });
-  const casesByInjuryMechanism = Array.from(mechanismMap.entries())
+  const casesByProcedureType = Array.from(procedureTypeMap.entries())
     .sort((a, b) => b[1] - a[1])
-    .map(([mechanism, count]) => ({ mechanism, count }));
+    .map(([procedureType, count]) => ({ procedureType, count }));
   
-  const nerveRepairCount = handTraumaCases.filter(c => 
-    c.procedureType?.toLowerCase().includes("nerve")
+  const nerveRepairCount = handSurgeryCases.filter(c => 
+    c.procedureType?.toLowerCase().includes("nerve") ||
+    c.procedures?.some(p => p.tags?.includes("nerve_repair"))
   ).length;
   
-  const tendonRepairCount = handTraumaCases.filter(c => 
-    c.procedureType?.toLowerCase().includes("tendon")
+  const tendonRepairCount = handSurgeryCases.filter(c => 
+    c.procedureType?.toLowerCase().includes("tendon") ||
+    c.procedures?.some(p => p.tags?.includes("tendon_repair"))
   ).length;
   
   return {
     ...base,
-    casesByInjuryMechanism,
+    casesByProcedureType,
     nerveRepairCount,
     tendonRepairCount,
+  };
+}
+
+export function calculateOrthoplasticStatistics(cases: Case[]): OrthoplasticStatistics {
+  const base = calculateBaseStatistics(cases);
+  
+  const orthoplasticCases = cases.filter(c => c.specialty === "orthoplastic");
+  
+  const freeFlapCount = orthoplasticCases.filter(c => 
+    c.procedures?.some(p => p.tags?.includes("free_flap")) ||
+    c.procedureType?.toLowerCase().includes("free flap")
+  ).length;
+  
+  const ischemiaTimesMinutes = orthoplasticCases
+    .flatMap(c => c.procedures || [])
+    .map(p => {
+      const details = p.clinicalDetails as FreeFlapDetails | undefined;
+      return details?.ischemiaTimeMinutes;
+    })
+    .filter((t): t is number => t !== undefined && t !== null && t > 0);
+  
+  const averageIschemiaTimeMinutes = ischemiaTimesMinutes.length > 0
+    ? Math.round(ischemiaTimesMinutes.reduce((a, b) => a + b, 0) / ischemiaTimesMinutes.length)
+    : null;
+  
+  const coverageMap = new Map<string, number>();
+  orthoplasticCases.forEach(c => {
+    const procedureType = c.procedureType || "Unknown";
+    coverageMap.set(procedureType, (coverageMap.get(procedureType) || 0) + 1);
+  });
+  const casesByCoverage = Array.from(coverageMap.entries())
+    .sort((a, b) => b[1] - a[1])
+    .map(([coverage, count]) => ({ coverage, count }));
+  
+  return {
+    ...base,
+    freeFlapCount,
+    averageIschemiaTimeMinutes,
+    casesByCoverage,
+  };
+}
+
+export function calculateBreastStatistics(cases: Case[]): BreastStatistics {
+  const base = calculateBaseStatistics(cases);
+  
+  const breastCases = cases.filter(c => c.specialty === "breast");
+  
+  const reconstructionCount = breastCases.filter(c => 
+    c.procedureType?.toLowerCase().includes("reconstruction")
+  ).length;
+  
+  const procedureTypeMap = new Map<string, number>();
+  breastCases.forEach(c => {
+    const procedureType = c.procedureType || "Unknown";
+    procedureTypeMap.set(procedureType, (procedureTypeMap.get(procedureType) || 0) + 1);
+  });
+  const casesByProcedureType = Array.from(procedureTypeMap.entries())
+    .sort((a, b) => b[1] - a[1])
+    .map(([procedureType, count]) => ({ procedureType, count }));
+  
+  return {
+    ...base,
+    reconstructionCount,
+    casesByProcedureType,
   };
 }
 
@@ -338,12 +420,14 @@ export function calculateBodyContouringStatistics(cases: Case[]): BodyContouring
 
 export function calculateStatistics(cases: Case[], specialty: Specialty | "all"): SpecialtyStatistics {
   switch (specialty) {
-    case "free_flap":
-      return calculateFreeFlapStatistics(cases);
-    case "hand_trauma":
-      return calculateHandTraumaStatistics(cases);
+    case "orthoplastic":
+      return calculateOrthoplasticStatistics(cases);
+    case "hand_surgery":
+      return calculateHandSurgeryStatistics(cases);
     case "body_contouring":
       return calculateBodyContouringStatistics(cases);
+    case "breast":
+      return calculateBreastStatistics(cases);
     default:
       return calculateBaseStatistics(cases);
   }
