@@ -10,7 +10,23 @@ export type OperatingTeamRole =
   | "surgical_registrar"
   | "medical_student";
 
-export type Specialty = "free_flap" | "hand_trauma" | "body_contouring" | "aesthetics" | "burns" | "general";
+export type Specialty = "breast" | "body_contouring" | "aesthetics" | "hand_surgery" | "orthoplastic" | "burns" | "general" | "head_neck";
+
+// Procedure tags for cross-specialty categorization
+export type ProcedureTag = 
+  | "free_flap"
+  | "pedicled_flap"
+  | "local_flap"
+  | "skin_graft"
+  | "microsurgery"
+  | "replant"
+  | "nerve_repair"
+  | "tendon_repair"
+  | "oncological"
+  | "trauma"
+  | "elective"
+  | "revision"
+  | "complex_wound";
 
 export type ASAScore = 1 | 2 | 3 | 4 | 5 | 6;
 
@@ -235,6 +251,7 @@ export interface CaseProcedure {
   sequenceOrder: number;
   procedureName: string;
   specialty?: Specialty;
+  tags?: ProcedureTag[];
   snomedCtCode?: string;
   snomedCtDisplay?: string;
   localCode?: string;
@@ -393,12 +410,30 @@ export const PROM_QUESTIONNAIRE_LABELS: Record<PROMQuestionnaire, string> = {
 };
 
 export const SPECIALTY_LABELS: Record<Specialty, string> = {
-  free_flap: "Free Flap",
-  hand_trauma: "Hand Trauma",
+  breast: "Breast",
   body_contouring: "Body Contouring",
   aesthetics: "Aesthetics",
+  hand_surgery: "Hand Surgery",
+  orthoplastic: "Orthoplastic",
   burns: "Burns",
   general: "General",
+  head_neck: "Head & Neck",
+};
+
+export const PROCEDURE_TAG_LABELS: Record<ProcedureTag, string> = {
+  free_flap: "Free Flap",
+  pedicled_flap: "Pedicled Flap",
+  local_flap: "Local Flap",
+  skin_graft: "Skin Graft",
+  microsurgery: "Microsurgery",
+  replant: "Replant",
+  nerve_repair: "Nerve Repair",
+  tendon_repair: "Tendon Repair",
+  oncological: "Oncological",
+  trauma: "Trauma",
+  elective: "Elective",
+  revision: "Revision",
+  complex_wound: "Complex Wound",
 };
 
 // RACS MALT Supervision Level Labels
@@ -476,24 +511,17 @@ export const COUNTRY_LABELS: Record<CountryCode, string> = {
 };
 
 export const PROCEDURE_TYPES: Record<Specialty, string[]> = {
-  free_flap: [
-    "ALT Flap",
-    "DIEP Flap",
-    "Radial Forearm Flap",
-    "Fibula Flap",
-    "Latissimus Dorsi Flap",
-    "Gracilis Flap",
-    "SCIP Flap",
-    "Anterolateral Thigh Flap",
-    "Other Free Flap",
-  ],
-  hand_trauma: [
-    "Tendon Repair",
-    "Nerve Repair",
-    "Replantation",
-    "Revascularization",
-    "Fracture Fixation",
-    "Soft Tissue Coverage",
+  breast: [
+    "Breast Reconstruction (DIEP)",
+    "Breast Reconstruction (LD Flap)",
+    "Breast Reconstruction (Implant)",
+    "Breast Reconstruction (TRAM)",
+    "Breast Reduction",
+    "Mastopexy",
+    "Nipple Reconstruction",
+    "Fat Grafting to Breast",
+    "Capsulectomy",
+    "Implant Exchange",
   ],
   body_contouring: [
     "Abdominoplasty",
@@ -501,19 +529,49 @@ export const PROCEDURE_TYPES: Record<Specialty, string[]> = {
     "Thigh Lift",
     "Belt Lipectomy",
     "Liposuction",
+    "Panniculectomy",
+    "Lower Body Lift",
+    "Buttock Lift",
   ],
   aesthetics: [
     "Rhinoplasty",
     "Blepharoplasty",
     "Facelift",
     "Breast Augmentation",
-    "Breast Reduction",
+    "Neck Lift",
+    "Brow Lift",
+    "Fat Transfer",
+    "Otoplasty",
+  ],
+  hand_surgery: [
+    "Tendon Repair",
+    "Nerve Repair",
+    "Replantation",
+    "Revascularization",
+    "Carpal Tunnel Release",
+    "Trigger Finger Release",
+    "Dupuytren Fasciectomy",
+    "Ganglion Excision",
+    "TFCC Repair",
+    "Fracture Fixation",
+  ],
+  orthoplastic: [
+    "Free Flap Coverage",
+    "Pedicled Flap Coverage",
+    "Local Flap Coverage",
+    "Skin Grafting",
+    "Debridement",
+    "Negative Pressure Wound Therapy",
+    "Limb Salvage",
+    "Amputation Revision",
   ],
   burns: [
     "Skin Grafting",
     "Escharotomy",
     "Debridement",
-    "Reconstruction",
+    "Burn Reconstruction",
+    "Contracture Release",
+    "Laser Treatment",
   ],
   general: [
     "Excision of Lipoma",
@@ -524,6 +582,17 @@ export const PROCEDURE_TYPES: Record<Specialty, string[]> = {
     "Debridement",
     "Abscess Incision and Drainage",
     "Foreign Body Removal",
+  ],
+  head_neck: [
+    "Free Flap Reconstruction",
+    "Pedicled Flap Reconstruction",
+    "Parotidectomy",
+    "Neck Dissection",
+    "Facial Nerve Repair",
+    "Facial Reanimation",
+    "Mandible Reconstruction",
+    "Lip Reconstruction",
+    "Ear Reconstruction",
   ],
 };
 

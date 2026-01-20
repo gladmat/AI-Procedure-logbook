@@ -22,12 +22,14 @@ import { RootStackParamList } from "@/navigation/RootStackNavigator";
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const SPECIALTY_ICONS: Record<Specialty, keyof typeof Feather.glyphMap> = {
-  free_flap: "activity",
-  hand_trauma: "tool",
+  breast: "heart",
   body_contouring: "user",
   aesthetics: "star",
+  hand_surgery: "edit-3",
+  orthoplastic: "activity",
   burns: "thermometer",
   general: "clipboard",
+  head_neck: "mic",
 };
 
 export default function AddCaseScreen() {
