@@ -334,14 +334,16 @@ export function PickerField({
 
   return (
     <View style={styles.container}>
-      <View style={styles.labelRow}>
-        <ThemedText style={[styles.label, { color: theme.textSecondary }]}>
-          {label}
-        </ThemedText>
-        {required ? (
-          <ThemedText style={[styles.required, { color: theme.error }]}>*</ThemedText>
-        ) : null}
-      </View>
+      {label ? (
+        <View style={styles.labelRow}>
+          <ThemedText style={[styles.label, { color: theme.textSecondary }]}>
+            {label}
+          </ThemedText>
+          {required ? (
+            <ThemedText style={[styles.required, { color: theme.error }]}>*</ThemedText>
+          ) : null}
+        </View>
+      ) : null}
       
       <Pressable
         style={[

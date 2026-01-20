@@ -360,8 +360,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 0,
-    marginTop: Spacing.sm,
+    marginBottom: Spacing.sm,
   },
   fieldLabel: {
     fontSize: 14,
@@ -406,7 +405,7 @@ const styles = StyleSheet.create({
   },
   modalScrollContent: {
     padding: Spacing.lg,
-    paddingBottom: Spacing.xxl,
+    paddingBottom: Spacing["2xl"],
   },
   modalSubtitle: {
     fontSize: 14,
