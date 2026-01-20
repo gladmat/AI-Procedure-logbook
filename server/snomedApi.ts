@@ -1,66 +1,25 @@
 /**
- * SNOMED CT Snowstorm API Client
- * Uses the public SNOMED International Terminology Server
- * https://snowstorm.ihtsdotools.org/
+ * SNOMED CT API Client using CSIRO Ontoserver FHIR API
  * 
- * Falls back to local data when API is unavailable
+ * Uses the Australian National Clinical Terminology Service's public FHIR endpoint
+ * which provides access to SNOMED CT International Edition
+ * 
+ * API Documentation: https://r4.ontoserver.csiro.au/fhir
  */
 
-import { 
-  searchLocalDiagnoses, 
-  searchLocalProcedures, 
-  LocalSnomedConcept 
-} from "./snomedLocalData";
+const ONTOSERVER_BASE_URL = "https://r4.ontoserver.csiro.au/fhir";
 
-const SNOWSTORM_BASE_URL = "https://snowstorm.ihtsdotools.org/snowstorm/snomed-ct";
-const BRANCH = "MAIN"; // International Edition (main branch)
-
-// Flag to track if Snowstorm API is available
-let snowstormAvailable = true;
-let lastApiCheck = 0;
-const API_CHECK_INTERVAL = 60000; // Retry every minute
-
-// SNOMED CT Concept IDs for key hierarchies
+// SNOMED CT Concept IDs for key hierarchies (used in ECL expressions)
 const SNOMED_HIERARCHIES = {
-  PROCEDURE: "71388002", // Procedure (procedure)
+  PROCEDURE: "71388002",        // Procedure (procedure)
   CLINICAL_FINDING: "404684003", // Clinical finding (finding)
-  BODY_STRUCTURE: "123037004", // Body structure (body structure)
-};
-
-// Specialty-related ECL filters for surgical procedures
-const SPECIALTY_ECL_FILTERS: Record<string, string> = {
-  free_flap: `<<71388002 AND (*:{ 260686004 = <<74964007 OR 363704007 = <<91723000 })`, // Procedures involving tissue transfer
-  hand_trauma: `<<71388002 AND (*:{ 363704007 = <<85562004 OR 363704007 = <<53120007 })`, // Hand/finger procedures
-  body_contouring: `<<71388002 AND (*:{ 260686004 = <<129303007 })`, // Excision procedures
-  burns: `<<71388002 AND (*:{ 405813007 = <<48333001 OR 260686004 = <<129303007 })`, // Burn-related procedures
-  aesthetics: `<<71388002 AND (*:{ 363704007 = <<76752008 OR 363704007 = <<181895009 })`, // Face/breast procedures
-  general: `<<71388002`, // All procedures
-};
-
-// Simplified specialty keyword filters (more reliable than complex ECL)
-const SPECIALTY_KEYWORDS: Record<string, string[]> = {
-  free_flap: ["flap", "microsurgery", "anastomosis", "transplant", "graft", "reconstruction", "replant"],
-  hand_trauma: ["hand", "finger", "wrist", "carpal", "tendon", "nerve repair", "digit"],
-  body_contouring: ["liposuction", "abdominoplasty", "lipectomy", "dermolipectomy", "brachioplasty", "thigh lift"],
-  burns: ["burn", "escharotomy", "skin graft", "debridement"],
-  aesthetics: ["rhinoplasty", "blepharoplasty", "facelift", "rhytidectomy", "breast augmentation", "mammoplasty"],
-  general: [], // No filter - search all
-};
-
-// Diagnosis keywords by specialty
-const DIAGNOSIS_KEYWORDS: Record<string, string[]> = {
-  free_flap: ["defect", "wound", "trauma", "cancer", "carcinoma", "sarcoma", "necrosis", "injury"],
-  hand_trauma: ["fracture", "laceration", "amputation", "tendon injury", "nerve injury", "crush", "avulsion", "dupuytren"],
-  body_contouring: ["redundant skin", "lipodystrophy", "ptosis", "laxity"],
-  burns: ["burn", "scald", "thermal injury"],
-  aesthetics: ["asymmetry", "ptosis", "deformity"],
-  general: [],
+  BODY_STRUCTURE: "123037004",  // Body structure (body structure)
 };
 
 export interface SnomedSearchResult {
   conceptId: string;
   term: string;
-  fsn: string; // Fully Specified Name
+  fsn: string;
   active: boolean;
   semanticTag?: string;
 }
@@ -75,21 +34,32 @@ export interface SnomedConceptDetail {
 }
 
 /**
- * Convert local concept to search result format
+ * Extract semantic tag from FSN (e.g., "Diabetes mellitus (disorder)" -> "disorder")
  */
-function localToSearchResult(local: LocalSnomedConcept): SnomedSearchResult {
-  return {
-    conceptId: local.conceptId,
-    term: local.term,
-    fsn: local.fsn,
-    active: true,
-    semanticTag: local.semanticTag,
-  };
+function extractSemanticTag(fsn: string): string | undefined {
+  const match = fsn.match(/\(([^)]+)\)$/);
+  return match ? match[1] : undefined;
 }
 
 /**
- * Search SNOMED CT for procedures
- * Falls back to local data when Snowstorm API is unavailable
+ * Parse FHIR ValueSet expansion response into our format
+ */
+function parseFhirExpansion(data: any): SnomedSearchResult[] {
+  if (!data.expansion?.contains) {
+    return [];
+  }
+
+  return data.expansion.contains.map((item: any) => ({
+    conceptId: item.code,
+    term: item.display,
+    fsn: item.display, // FHIR doesn't always include FSN separately
+    active: true,
+    semanticTag: extractSemanticTag(item.display),
+  }));
+}
+
+/**
+ * Search SNOMED CT for procedures using FHIR ValueSet/$expand
  */
 export async function searchProcedures(
   query: string,
@@ -100,74 +70,42 @@ export async function searchProcedures(
     return [];
   }
 
-  // Check if we should try the API
-  const now = Date.now();
-  if (!snowstormAvailable && now - lastApiCheck < API_CHECK_INTERVAL) {
-    // Use local data
-    return searchLocalProcedures(query, specialty, limit).map(localToSearchResult);
-  }
-
   try {
+    // ECL expression for procedures: <<71388002 (all descendants of Procedure)
     const ecl = `<<${SNOMED_HIERARCHIES.PROCEDURE}`;
-    const params = new URLSearchParams({
-      term: query,
-      ecl: ecl,
-      activeFilter: "true",
-      limit: String(limit),
-      offset: "0",
-      conceptActive: "true",
-      language: "en",
-      preferredOrAcceptableIn: "900000000000509007",
-    });
+    const eclEncoded = encodeURIComponent(ecl);
+    
+    const url = `${ONTOSERVER_BASE_URL}/ValueSet/$expand?` + 
+      `url=http://snomed.info/sct?fhir_vs=ecl/${eclEncoded}` +
+      `&filter=${encodeURIComponent(query)}` +
+      `&count=${limit}`;
 
-    const response = await fetch(
-      `${SNOWSTORM_BASE_URL}/browser/${BRANCH}/descriptions?${params.toString()}`,
-      {
-        headers: {
-          "Accept": "application/json",
-          "Accept-Language": "en",
-        },
-      }
-    );
+    console.log("SNOMED procedure search:", query);
+
+    const response = await fetch(url, {
+      headers: {
+        "Accept": "application/fhir+json",
+      },
+    });
 
     if (!response.ok) {
       console.error("SNOMED API error:", response.status, await response.text());
-      throw new Error("API error");
+      return [];
     }
 
     const data = await response.json();
-    snowstormAvailable = true;
+    const results = parseFhirExpansion(data);
     
-    const results: SnomedSearchResult[] = (data.items || []).map((item: any) => ({
-      conceptId: item.concept?.conceptId || item.conceptId,
-      term: item.term,
-      fsn: item.concept?.fsn?.term || item.term,
-      active: item.active ?? true,
-      semanticTag: extractSemanticTag(item.concept?.fsn?.term || ""),
-    }));
-
-    const keywords = specialty && SPECIALTY_KEYWORDS[specialty];
-    if (keywords && keywords.length > 0) {
-      return results.filter((r) => 
-        keywords.some((kw) => 
-          r.term.toLowerCase().includes(kw.toLowerCase()) ||
-          r.fsn.toLowerCase().includes(kw.toLowerCase())
-        )
-      ).slice(0, limit);
-    }
-
+    console.log(`SNOMED procedures found: ${results.length}`);
     return results;
   } catch (error) {
-    console.error("Error searching SNOMED procedures, using local data:", error);
-    snowstormAvailable = false;
-    lastApiCheck = now;
-    return searchLocalProcedures(query, specialty, limit).map(localToSearchResult);
+    console.error("Error searching SNOMED procedures:", error);
+    return [];
   }
 }
 
 /**
- * Search SNOMED CT for diagnoses (clinical findings)
- * Falls back to local data when Snowstorm API is unavailable
+ * Search SNOMED CT for diagnoses (clinical findings) using FHIR ValueSet/$expand
  */
 export async function searchDiagnoses(
   query: string,
@@ -178,89 +116,54 @@ export async function searchDiagnoses(
     return [];
   }
 
-  // Check if we should try the API
-  const now = Date.now();
-  if (!snowstormAvailable && now - lastApiCheck < API_CHECK_INTERVAL) {
-    // Use local data
-    console.log("Using local SNOMED data for diagnoses");
-    return searchLocalDiagnoses(query, specialty, limit).map(localToSearchResult);
-  }
-
   try {
+    // ECL expression for clinical findings: <<404684003 (all descendants of Clinical finding)
     const ecl = `<<${SNOMED_HIERARCHIES.CLINICAL_FINDING}`;
-    const params = new URLSearchParams({
-      term: query,
-      ecl: ecl,
-      activeFilter: "true",
-      limit: String(limit),
-      offset: "0",
-      conceptActive: "true",
-      language: "en",
-      preferredOrAcceptableIn: "900000000000509007",
-    });
+    const eclEncoded = encodeURIComponent(ecl);
+    
+    const url = `${ONTOSERVER_BASE_URL}/ValueSet/$expand?` + 
+      `url=http://snomed.info/sct?fhir_vs=ecl/${eclEncoded}` +
+      `&filter=${encodeURIComponent(query)}` +
+      `&count=${limit}`;
 
-    const response = await fetch(
-      `${SNOWSTORM_BASE_URL}/browser/${BRANCH}/descriptions?${params.toString()}`,
-      {
-        headers: {
-          "Accept": "application/json",
-          "Accept-Language": "en",
-        },
-      }
-    );
+    console.log("SNOMED diagnosis search:", query);
+
+    const response = await fetch(url, {
+      headers: {
+        "Accept": "application/fhir+json",
+      },
+    });
 
     if (!response.ok) {
       console.error("SNOMED API error:", response.status, await response.text());
-      throw new Error("API error");
+      return [];
     }
 
     const data = await response.json();
-    snowstormAvailable = true;
+    const results = parseFhirExpansion(data);
     
-    const results: SnomedSearchResult[] = (data.items || []).map((item: any) => ({
-      conceptId: item.concept?.conceptId || item.conceptId,
-      term: item.term,
-      fsn: item.concept?.fsn?.term || item.term,
-      active: item.active ?? true,
-      semanticTag: extractSemanticTag(item.concept?.fsn?.term || ""),
-    }));
-
-    const keywords = specialty && DIAGNOSIS_KEYWORDS[specialty];
-    if (keywords && keywords.length > 0) {
-      const filtered = results.filter((r) => 
-        keywords.some((kw) => 
-          r.term.toLowerCase().includes(kw.toLowerCase()) ||
-          r.fsn.toLowerCase().includes(kw.toLowerCase())
-        )
-      );
-      if (filtered.length > 0) {
-        return filtered.slice(0, limit);
-      }
-    }
-
+    console.log(`SNOMED diagnoses found: ${results.length}`);
     return results;
   } catch (error) {
-    console.error("Error searching SNOMED diagnoses, using local data:", error);
-    snowstormAvailable = false;
-    lastApiCheck = now;
-    return searchLocalDiagnoses(query, specialty, limit).map(localToSearchResult);
+    console.error("Error searching SNOMED diagnoses:", error);
+    return [];
   }
 }
 
 /**
- * Get concept details by ID
+ * Get concept details by ID using FHIR CodeSystem/$lookup
  */
 export async function getConceptDetails(conceptId: string): Promise<SnomedConceptDetail | null> {
   try {
-    const response = await fetch(
-      `${SNOWSTORM_BASE_URL}/browser/${BRANCH}/concepts/${conceptId}`,
-      {
-        headers: {
-          "Accept": "application/json",
-          "Accept-Language": "en",
-        },
-      }
-    );
+    const url = `${ONTOSERVER_BASE_URL}/CodeSystem/$lookup?` +
+      `system=http://snomed.info/sct` +
+      `&code=${conceptId}`;
+
+    const response = await fetch(url, {
+      headers: {
+        "Accept": "application/fhir+json",
+      },
+    });
 
     if (!response.ok) {
       console.error("SNOMED API error:", response.status);
@@ -269,26 +172,84 @@ export async function getConceptDetails(conceptId: string): Promise<SnomedConcep
 
     const data = await response.json();
     
+    // Parse FHIR Parameters response
+    let display = "";
+    let fsn = "";
+    const synonyms: string[] = [];
+    const parents: { conceptId: string; term: string }[] = [];
+    const children: { conceptId: string; term: string }[] = [];
+
+    for (const param of data.parameter || []) {
+      if (param.name === "display") {
+        display = param.valueString;
+      }
+      if (param.name === "designation") {
+        const parts = param.part || [];
+        const usePart = parts.find((p: any) => p.name === "use");
+        const valuePart = parts.find((p: any) => p.name === "value");
+        
+        if (valuePart?.valueString) {
+          if (usePart?.valueCoding?.code === "900000000000003001") {
+            fsn = valuePart.valueString;
+          } else {
+            synonyms.push(valuePart.valueString);
+          }
+        }
+      }
+      if (param.name === "property") {
+        const parts = param.part || [];
+        const codePart = parts.find((p: any) => p.name === "code");
+        const valuePart = parts.find((p: any) => p.name === "value");
+        
+        if (codePart?.valueCode === "parent" && valuePart?.valueCode) {
+          parents.push({ conceptId: valuePart.valueCode, term: "" });
+        }
+        if (codePart?.valueCode === "child" && valuePart?.valueCode) {
+          children.push({ conceptId: valuePart.valueCode, term: "" });
+        }
+      }
+    }
+
     return {
-      conceptId: data.conceptId,
-      fsn: data.fsn?.term || "",
-      preferredTerm: data.pt?.term || "",
-      synonyms: (data.descriptions || [])
-        .filter((d: any) => d.type === "SYNONYM" && d.active)
-        .map((d: any) => d.term),
-      parents: [], // Would need separate call
-      children: [], // Would need separate call
+      conceptId,
+      fsn: fsn || display,
+      preferredTerm: display,
+      synonyms: [...new Set(synonyms)],
+      parents,
+      children,
     };
   } catch (error) {
-    console.error("Error fetching concept details:", error);
+    console.error("Error fetching SNOMED concept details:", error);
     return null;
   }
 }
 
 /**
- * Extract semantic tag from FSN (e.g., "(procedure)" from "Repair of tendon (procedure)")
+ * Validate a SNOMED CT code exists
  */
-function extractSemanticTag(fsn: string): string {
-  const match = fsn.match(/\(([^)]+)\)$/);
-  return match ? match[1] : "";
+export async function validateCode(conceptId: string): Promise<boolean> {
+  try {
+    const url = `${ONTOSERVER_BASE_URL}/CodeSystem/$validate-code?` +
+      `system=http://snomed.info/sct` +
+      `&code=${conceptId}`;
+
+    const response = await fetch(url, {
+      headers: {
+        "Accept": "application/fhir+json",
+      },
+    });
+
+    if (!response.ok) {
+      return false;
+    }
+
+    const data = await response.json();
+    
+    // Find the "result" parameter
+    const resultParam = data.parameter?.find((p: any) => p.name === "result");
+    return resultParam?.valueBoolean === true;
+  } catch (error) {
+    console.error("Error validating SNOMED code:", error);
+    return false;
+  }
 }
