@@ -1,5 +1,5 @@
-import React from "react";
-import { View, StyleSheet, Pressable } from "react-native";
+import React, { useState } from "react";
+import { View, StyleSheet, Pressable, Modal } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { ThemedText } from "@/components/ThemedText";
@@ -7,12 +7,14 @@ import { useTheme } from "@/hooks/useTheme";
 import { BorderRadius, Spacing } from "@/constants/theme";
 import { FormField, PickerField } from "@/components/FormField";
 import { ProcedureClinicalDetails } from "@/components/ProcedureClinicalDetails";
+import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 import {
   type CaseProcedure,
   type Role,
   type Specialty,
   type ClinicalDetails,
   ROLE_LABELS,
+  ROLE_DESCRIPTIONS,
   SPECIALTY_LABELS,
   PROCEDURE_TYPES,
 } from "@/types/case";
@@ -41,6 +43,7 @@ export function ProcedureEntryCard({
   canMoveDown,
 }: ProcedureEntryCardProps) {
   const { theme } = useTheme();
+  const [showRoleInfoModal, setShowRoleInfoModal] = useState(false);
 
   const handleSpecialtyChange = (value: string) => {
     onUpdate({
@@ -179,16 +182,79 @@ export function ProcedureEntryCard({
         />
       ) : null}
 
+      <View style={styles.roleHeaderRow}>
+        <ThemedText style={styles.fieldLabel}>Your Role (RACS MALT)</ThemedText>
+        <Pressable
+          style={[styles.infoButton, { backgroundColor: theme.link + "15" }]}
+          onPress={() => setShowRoleInfoModal(true)}
+          hitSlop={8}
+        >
+          <Feather name="info" size={14} color={theme.link} />
+        </Pressable>
+      </View>
+
       <PickerField
-        label="Your Role"
+        label=""
         value={procedure.surgeonRole}
-        options={Object.entries(ROLE_LABELS).map(([value, label]) => ({
-          value,
-          label,
-        }))}
+        options={[
+          { value: "PS", label: "PS - Primary Surgeon" },
+          { value: "PP", label: "PP - Performed with Peer" },
+          { value: "AS", label: "AS - Assisting (scrubbed)" },
+          { value: "ONS", label: "ONS - Observing (not scrubbed)" },
+          { value: "SS", label: "SS - Supervising (scrubbed)" },
+          { value: "SNS", label: "SNS - Supervising (not scrubbed)" },
+          { value: "A", label: "A - Available" },
+        ]}
         onSelect={handleRoleChange}
         required
       />
+
+      {/* Role Info Modal */}
+      <Modal
+        visible={showRoleInfoModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowRoleInfoModal(false)}
+      >
+        <View style={[styles.modalContainer, { backgroundColor: theme.backgroundRoot }]}>
+          <View style={[styles.modalHeader, { borderBottomColor: theme.border }]}>
+            <ThemedText style={styles.modalTitle}>Supervision Levels</ThemedText>
+            <Pressable
+              style={[styles.modalCloseButton, { backgroundColor: theme.backgroundDefault }]}
+              onPress={() => setShowRoleInfoModal(false)}
+              hitSlop={8}
+            >
+              <Feather name="x" size={20} color={theme.text} />
+            </Pressable>
+          </View>
+          <KeyboardAwareScrollViewCompat
+            style={styles.modalContent}
+            contentContainerStyle={styles.modalScrollContent}
+          >
+            <ThemedText style={[styles.modalSubtitle, { color: theme.textSecondary }]}>
+              RACS MALT role in theatre definitions
+            </ThemedText>
+            {(Object.keys(ROLE_LABELS) as Role[]).map((roleKey) => (
+              <View 
+                key={roleKey} 
+                style={[styles.roleInfoCard, { backgroundColor: theme.backgroundDefault }]}
+              >
+                <View style={styles.roleInfoHeader}>
+                  <View style={[styles.roleCodeBadge, { backgroundColor: theme.link + "20" }]}>
+                    <ThemedText style={[styles.roleCode, { color: theme.link }]}>
+                      {roleKey}
+                    </ThemedText>
+                  </View>
+                  <ThemedText style={styles.roleLabel}>{ROLE_LABELS[roleKey]}</ThemedText>
+                </View>
+                <ThemedText style={[styles.roleDescription, { color: theme.textSecondary }]}>
+                  {ROLE_DESCRIPTIONS[roleKey]}
+                </ThemedText>
+              </View>
+            ))}
+          </KeyboardAwareScrollViewCompat>
+        </View>
+      </Modal>
 
       <View style={styles.snomedRow}>
         <View style={styles.snomedCodeField}>
@@ -285,5 +351,80 @@ const styles = StyleSheet.create({
   },
   snomedDisplayField: {
     flex: 2,
+  },
+  roleHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: Spacing.xs,
+    marginTop: Spacing.sm,
+  },
+  fieldLabel: {
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  infoButton: {
+    padding: 4,
+    borderRadius: 12,
+  },
+  modalContainer: {
+    flex: 1,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: Spacing.lg,
+    borderBottomWidth: 1,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+  },
+  modalCloseButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  modalContent: {
+    flex: 1,
+  },
+  modalScrollContent: {
+    padding: Spacing.lg,
+    paddingBottom: Spacing.xxl,
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    marginBottom: Spacing.lg,
+  },
+  roleInfoCard: {
+    padding: Spacing.md,
+    borderRadius: BorderRadius.md,
+    marginBottom: Spacing.md,
+  },
+  roleInfoHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+    marginBottom: Spacing.xs,
+  },
+  roleCodeBadge: {
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 2,
+    borderRadius: BorderRadius.sm,
+  },
+  roleCode: {
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  roleLabel: {
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  roleDescription: {
+    fontSize: 14,
+    lineHeight: 20,
   },
 });
