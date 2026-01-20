@@ -18,12 +18,9 @@ export type SmokingStatus = "yes" | "no" | "ex";
 
 export type Gender = "male" | "female" | "other";
 
-export type AdmissionCategory = 
-  | "elective" 
-  | "emergency" 
-  | "day_case" 
-  | "unplanned_readmission" 
-  | "non_admitted";
+export type AdmissionUrgency = "elective" | "acute";
+
+export type StayType = "day_case" | "inpatient";
 
 export type UnplannedReadmissionReason = 
   | "no"
@@ -266,7 +263,8 @@ export interface Case {
   // Admission Details
   admissionDate?: string;
   dischargeDate?: string;
-  admissionCategory?: AdmissionCategory;
+  admissionUrgency?: AdmissionUrgency;
+  stayType?: StayType;
   unplannedReadmission?: UnplannedReadmissionReason;
   
   // Diagnoses (SNOMED CT coded)
@@ -535,12 +533,14 @@ export const GENDER_LABELS: Record<Gender, string> = {
   other: "Other",
 };
 
-export const ADMISSION_CATEGORY_LABELS: Record<AdmissionCategory, string> = {
+export const ADMISSION_URGENCY_LABELS: Record<AdmissionUrgency, string> = {
   elective: "Elective",
-  emergency: "Emergency",
+  acute: "Acute",
+};
+
+export const STAY_TYPE_LABELS: Record<StayType, string> = {
   day_case: "Day Case",
-  unplanned_readmission: "Unplanned Readmission < 28 Days",
-  non_admitted: "Non-Admitted",
+  inpatient: "Inpatient",
 };
 
 export const UNPLANNED_READMISSION_LABELS: Record<UnplannedReadmissionReason, string> = {
