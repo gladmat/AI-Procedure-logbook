@@ -35,7 +35,7 @@ const CAREER_STAGES = [
   { value: "moss", label: "Medical Officer Special Scale" },
 ];
 
-type Step = "country" | "career" | "facilities";
+type Step = "agreement" | "country" | "career" | "facilities";
 
 export default function OnboardingScreen() {
   const insets = useSafeAreaInsets();
@@ -43,8 +43,9 @@ export default function OnboardingScreen() {
   const colors = Colors[colorScheme ?? "light"];
   const { updateProfile, addFacility, facilities } = useAuth();
 
-  const [step, setStep] = useState<Step>("country");
+  const [step, setStep] = useState<Step>("agreement");
   const [isLoading, setIsLoading] = useState(false);
+  const [agreementAccepted, setAgreementAccepted] = useState(false);
 
   const [countryOfPractice, setCountryOfPractice] = useState<string | null>(null);
   const [fullName, setFullName] = useState("");
@@ -53,7 +54,13 @@ export default function OnboardingScreen() {
   const [newFacility, setNewFacility] = useState("");
 
   const handleNext = async () => {
-    if (step === "country") {
+    if (step === "agreement") {
+      if (!agreementAccepted) {
+        Alert.alert("Required", "Please accept the agreement to continue");
+        return;
+      }
+      setStep("country");
+    } else if (step === "country") {
       if (!countryOfPractice) {
         Alert.alert("Required", "Please select your country of practice");
         return;
@@ -92,7 +99,8 @@ export default function OnboardingScreen() {
   };
 
   const handleBack = () => {
-    if (step === "career") setStep("country");
+    if (step === "country") setStep("agreement");
+    else if (step === "career") setStep("country");
     else if (step === "facilities") setStep("career");
   };
 
@@ -111,11 +119,96 @@ export default function OnboardingScreen() {
 
   const renderStep = () => {
     switch (step) {
-      case "country":
+      case "agreement":
         return (
           <View style={styles.stepContent}>
             <Text style={[styles.stepTitle, { color: colors.text }]}>
               Welcome to Surgical Logbook
+            </Text>
+            <Text style={[styles.stepDescription, { color: colors.textSecondary }]}>
+              Please review and accept the following agreement before continuing.
+            </Text>
+
+            <View style={[styles.agreementContainer, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}>
+              <ScrollView style={styles.agreementScroll} nestedScrollEnabled>
+                <Text style={[styles.agreementSectionTitle, { color: colors.text }]}>
+                  Using Surgical Logbook
+                </Text>
+                <Text style={[styles.agreementText, { color: colors.textSecondary }]}>
+                  Surgical Logbook is designed to facilitate the following:
+                </Text>
+                <View style={styles.agreementList}>
+                  <Text style={[styles.agreementListItem, { color: colors.textSecondary }]}>
+                    {"\u2022"} Support for training, education and assessment
+                  </Text>
+                  <Text style={[styles.agreementListItem, { color: colors.textSecondary }]}>
+                    {"\u2022"} Production of a personal case log
+                  </Text>
+                  <Text style={[styles.agreementListItem, { color: colors.textSecondary }]}>
+                    {"\u2022"} Undertaking self-audit
+                  </Text>
+                  <Text style={[styles.agreementListItem, { color: colors.textSecondary }]}>
+                    {"\u2022"} Undertaking peer-review audit
+                  </Text>
+                </View>
+                <Text style={[styles.agreementText, { color: colors.textSecondary }]}>
+                  This application does not warrant that its use is appropriate in all cases, nor does it determine whether the data you submit is accurate or free from errors.
+                </Text>
+
+                <Text style={[styles.agreementSectionTitle, { color: colors.text, marginTop: Spacing.lg }]}>
+                  Privacy and Consent
+                </Text>
+                <Text style={[styles.agreementText, { color: colors.textSecondary }]}>
+                  Responsibility to comply with Privacy/Health Record laws when collecting and using patient data lies with each individual user. For this reason, de-identified data should be routinely collected.
+                </Text>
+                <Text style={[styles.agreementText, { color: colors.textSecondary }]}>
+                  Certain Training Boards and Societies have nominated the collection of patient identifiers to facilitate logbook approval. Irrespective of this, users should ensure there is prior patient consent obtained for the collection and use of personal, sensitive and health information.
+                </Text>
+                <Text style={[styles.agreementText, { color: colors.textSecondary }]}>
+                  This application is not responsible for patient information collected and used. Please refer to hospital and/or surgical practice privacy statements or patient information collection statement/admission documentation for more information.
+                </Text>
+
+                <Text style={[styles.agreementSectionTitle, { color: colors.text, marginTop: Spacing.lg }]}>
+                  Reports for Training, Assessment and Education
+                </Text>
+                <Text style={[styles.agreementText, { color: colors.textSecondary }]}>
+                  Some Training Boards and Societies mandate the use of logbook applications, whilst others accept reports from such applications (while not mandating) or do not accept reports. If reports are accepted by a Training Board or Society, the logbook data (summary of procedure counts only) may be viewed on an ongoing basis.
+                </Text>
+
+                <Text style={[styles.agreementSectionTitle, { color: colors.text, marginTop: Spacing.lg }]}>
+                  Data Security
+                </Text>
+                <Text style={[styles.agreementText, { color: colors.textSecondary }]}>
+                  Patient data is stored locally on your device and is not transmitted to external servers. However, no warranty is made as to the inherent risk of data being subject to unauthorised access.
+                </Text>
+              </ScrollView>
+            </View>
+
+            <Pressable
+              style={styles.checkboxRow}
+              onPress={() => setAgreementAccepted(!agreementAccepted)}
+            >
+              <View style={[
+                styles.checkbox,
+                { borderColor: colors.border, backgroundColor: colors.backgroundSecondary },
+                agreementAccepted && { backgroundColor: colors.link, borderColor: colors.link },
+              ]}>
+                {agreementAccepted ? (
+                  <Feather name="check" size={16} color="#FFF" />
+                ) : null}
+              </View>
+              <Text style={[styles.checkboxLabel, { color: colors.text }]}>
+                I have read and accept the above agreement
+              </Text>
+            </Pressable>
+          </View>
+        );
+
+      case "country":
+        return (
+          <View style={styles.stepContent}>
+            <Text style={[styles.stepTitle, { color: colors.text }]}>
+              Your Profile
             </Text>
             <Text style={[styles.stepDescription, { color: colors.textSecondary }]}>
               Let's set up your profile. First, tell us where you practice.
@@ -276,9 +369,20 @@ export default function OnboardingScreen() {
     }
   };
 
-  const getStepIndex = () => (step === "country" ? 0 : step === "career" ? 1 : 2);
-  const canGoBack = step !== "country";
-  const buttonLabel = step === "facilities" ? "Complete Setup" : "Continue";
+  const getStepIndex = () => {
+    switch (step) {
+      case "agreement": return 0;
+      case "country": return 1;
+      case "career": return 2;
+      case "facilities": return 3;
+    }
+  };
+  const canGoBack = step !== "agreement";
+  const buttonLabel = step === "agreement" 
+    ? "I Accept" 
+    : step === "facilities" 
+      ? "Complete Setup" 
+      : "Continue";
 
   return (
     <KeyboardAvoidingView
@@ -290,7 +394,7 @@ export default function OnboardingScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.progressContainer}>
-          {[0, 1, 2].map((i) => (
+          {[0, 1, 2, 3].map((i) => (
             <View
               key={i}
               style={[
@@ -512,5 +616,51 @@ const styles = StyleSheet.create({
   nextButtonText: {
     ...Typography.bodySemibold,
     color: "#FFF",
+  },
+  agreementContainer: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: BorderRadius.md,
+    marginBottom: Spacing.lg,
+    maxHeight: 380,
+  },
+  agreementScroll: {
+    padding: Spacing.lg,
+  },
+  agreementSectionTitle: {
+    ...Typography.h3,
+    marginBottom: Spacing.sm,
+  },
+  agreementText: {
+    ...Typography.body,
+    lineHeight: 22,
+    marginBottom: Spacing.md,
+  },
+  agreementList: {
+    marginBottom: Spacing.md,
+    paddingLeft: Spacing.sm,
+  },
+  agreementListItem: {
+    ...Typography.body,
+    lineHeight: 24,
+    marginBottom: Spacing.xs,
+  },
+  checkboxRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.md,
+    paddingVertical: Spacing.sm,
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderRadius: BorderRadius.xs,
+    borderWidth: 2,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  checkboxLabel: {
+    ...Typography.body,
+    flex: 1,
   },
 });
