@@ -165,7 +165,6 @@ export const localProcedures: LocalSnomedConcept[] = [
 
 /**
  * Search local diagnoses
- * Returns specialty-matched results first, then all other matches if needed
  */
 export function searchLocalDiagnoses(
   query: string,
@@ -174,24 +173,20 @@ export function searchLocalDiagnoses(
 ): LocalSnomedConcept[] {
   const searchTerms = query.toLowerCase().split(/\s+/);
   
-  // Find all query matches
-  const allMatches = localDiagnoses.filter((diagnosis) => {
-    const text = `${diagnosis.term} ${diagnosis.fsn}`.toLowerCase();
-    return searchTerms.every(term => text.includes(term));
-  });
-  
-  // If specialty provided, try to prioritize specialty matches
-  if (specialty && specialty !== "general") {
-    const specialtyMatches = allMatches.filter(d => d.specialty?.includes(specialty));
-    if (specialtyMatches.length > 0) {
-      // Return specialty matches first, then others
-      const otherMatches = allMatches.filter(d => !d.specialty?.includes(specialty));
-      return [...specialtyMatches, ...otherMatches].slice(0, limit);
-    }
-  }
-  
-  // Return all matches if no specialty filtering or no specialty matches
-  return allMatches.slice(0, limit);
+  return localDiagnoses
+    .filter((diagnosis) => {
+      // Check if all search terms match
+      const text = `${diagnosis.term} ${diagnosis.fsn}`.toLowerCase();
+      const matchesQuery = searchTerms.every(term => text.includes(term));
+      
+      // Filter by specialty if provided
+      const matchesSpecialty = !specialty || 
+        specialty === "general" || 
+        diagnosis.specialty?.includes(specialty);
+      
+      return matchesQuery && matchesSpecialty;
+    })
+    .slice(0, limit);
 }
 
 /**
