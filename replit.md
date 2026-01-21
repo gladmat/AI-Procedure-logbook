@@ -16,18 +16,21 @@ Preferred communication style: Simple, everyday language.
 ## Recent Changes (January 2026)
 
 ### AO/OTA Fracture Classification System (Latest)
-- **Interactive Hand Diagram**: Visual bone selector based on Gray's Anatomy illustrations (public domain) showing carpals, metacarpals, and phalanges
+- **Dynamic Cascading Form**: Replaced graphical bone picker with a clean table-based form that reveals fields as you make selections
 - **AO Region 7 Coverage**: Complete AO/OTA 2018 Hand & Carpus classification:
   - Carpal bones (71-76): Lunate, Scaphoid, Capitate, Hamate, Trapezium, Pisiform, Triquetrum, Trapezoid
   - Metacarpals (77): All 5 metacarpals with segment-based typing (base/shaft/head)
   - Phalanges (78): Proximal, middle, and distal phalanges for all fingers
   - Crush/Multiple (79): Single code for complex hand injuries
-- **Dynamic Wizard Flow**: Multi-step classification that adapts to bone type:
-  - Simple carpals: Bone selection → Type (A/B/C)
-  - Long bones: Bone → Segment (1/2/3) → Type (A/B/C)
-  - Scaphoid: Bone → Type → Qualification (proximal pole/waist/distal pole)
-- **AO Code Generation**: Real-time code display with validation (e.g., 77.2.3B = Index metacarpal head partial articular fracture)
-- **Multi-Fracture Support**: Add multiple fractures per case, stored as FractureEntry array
+- **Cascading Selection Flow**: Dynamic form that adapts based on bone type:
+  - Step 1: Bone category (Carpal/Metacarpal/Phalanx/Crush)
+  - Step 2: Specific bone selection (based on category)
+  - Step 3: Finger/phalanx selection (for metacarpals/phalanges)
+  - Step 4: Fracture location (Base/Shaft/Head for long bones)
+  - Step 5: Fracture type (A/B/C with descriptive labels)
+  - Step 6: Scaphoid qualification (proximal pole/waist/distal pole) when applicable
+- **Real-time AO Code Preview**: Code builds dynamically at top of form as selections are made, with validation indicator
+- **Multi-Fracture Support**: Add multiple fractures per case, view/manage list, stored as FractureEntry array
 - **Hand Surgery Clinical Fields**: Affected hand, dominant hand, injury mechanism, nerve status, tendon injuries
 
 ### 100% Offline Smart Capture (Privacy-First Architecture)

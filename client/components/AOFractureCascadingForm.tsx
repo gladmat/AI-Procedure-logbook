@@ -325,17 +325,34 @@ export function AOFractureCascadingForm({ onComplete, onCancel }: AOFractureCasc
         <ThemedText style={[styles.sectionTitle, { color: theme.text }]}>
           Bone Category
         </ThemedText>
-        {renderOptions<"carpal" | "metacarpal" | "phalanx" | "crush">(
-          [
+        <View style={[styles.optionsGrid, { gap: Spacing.sm }]}>
+          {[
             { key: "carpal", label: "Carpal (71-76)" },
             { key: "metacarpal", label: "Metacarpal (77)" },
             { key: "phalanx", label: "Phalanx (78)" },
             { key: "crush", label: "Crush/Multiple (79)" },
-          ],
-          boneCategory as "carpal" | "metacarpal" | "phalanx" | "crush" | null,
-          handleCategorySelect as (key: "carpal" | "metacarpal" | "phalanx" | "crush") => void,
-          2
-        )}
+          ].map(opt => (
+            <Pressable
+              key={opt.key}
+              style={[
+                styles.optionButton,
+                { 
+                  width: "48%",
+                  backgroundColor: boneCategory === opt.key ? theme.link : theme.backgroundTertiary,
+                  borderColor: boneCategory === opt.key ? theme.link : theme.border
+                }
+              ]}
+              onPress={() => handleCategorySelect(opt.key as BoneCategory)}
+            >
+              <ThemedText style={[
+                styles.optionText,
+                { color: boneCategory === opt.key ? "#FFF" : theme.text }
+              ]}>
+                {opt.label}
+              </ThemedText>
+            </Pressable>
+          ))}
+        </View>
       </View>
 
       {showCarpalSelector ? (
