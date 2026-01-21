@@ -10,7 +10,16 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (January 2026)
 
-### RACS MALT Supervision Levels (Latest)
+### Smart Capture Enhancements (Latest)
+- **Pre-Redaction Extraction**: Patient ID (NHI) and procedure date are extracted BEFORE redaction, then passed to client for auto-population
+- **Auto-SNOMED Lookup**: Diagnosis and procedure names trigger automatic SNOMED CT search, populating codes without manual intervention
+- **Primary Surgeon Detection**: AI identifies primary surgeon from "Consultant" designation and context clues in op notes
+- **Full Team Extraction**: All team members captured from op note, even those without clear roles (assigned "unassigned" role for manual assignment)
+- **Procedure Category**: High-level classification (Trauma, Degenerative, Peripheral Nerve, etc.) separate from detailed SNOMED coding
+- **Patient Age Field**: Added patient age field with auto-population from extracted data
+- **Universal Endpoint**: Web platform now uses unified `/api/analyze-op-note` endpoint for consistent extraction
+
+### RACS MALT Supervision Levels
 - **Role Alignment**: Updated to use official RACS MALT supervision level codes:
   - PS: Primary Surgeon
   - PP: Performed with Peer (complex/combined procedures)
