@@ -2,7 +2,12 @@
 
 ## Overview
 
-Surgical Logbook is a **100% privacy-first** mobile application for surgeons to document surgical procedures, particularly focusing on microsurgery and free flap reconstruction. Its core purpose is to enable efficient case logging through **intelligent local document parsing** from operation notes while ensuring **complete patient confidentiality**. All OCR and data extraction is performed entirely on-device using Tesseract.js and modular regex-based parsers - **no patient data ever leaves the device**. The application also integrates comprehensive RACS MALT (Royal Australasian College of Surgeons Morbidity Audit and Logbook Tool) fields for detailed audit and logging.
+Surgical Logbook is a **privacy-first** mobile application for surgeons to document surgical procedures, particularly focusing on microsurgery and free flap reconstruction. Its core purpose is to enable efficient case logging through **intelligent local document parsing** from operation notes while ensuring **complete patient confidentiality**. The application integrates comprehensive RACS MALT (Royal Australasian College of Surgeons Morbidity Audit and Logbook Tool) fields for detailed audit and logging.
+
+**Privacy Architecture:**
+- **Web platform**: 100% on-device OCR using Tesseract.js - no patient data leaves the device
+- **Mobile (Expo Go)**: Images sent to app server for OCR processing only (Tesseract.js doesn't run natively on React Native), then immediately discarded - parsed text processed locally with no external cloud AI
+- **No external cloud AI services**: All document parsing uses local regex patterns, never Gemini/OpenAI
 
 ## User Preferences
 
@@ -101,7 +106,7 @@ Preferred communication style: Simple, everyday language.
 - **Document Router**: Local regex-based parsers for surgical document extraction (no cloud AI required)
 
 ### Data Model
-- **Local-first Architecture**: Patient data processed on-device; only anonymized text sent to cloud AI.
+- **Local-first Architecture**: Patient data stored locally with encryption. No external cloud AI services used.
 - **Flexible JSON Payload**: Cases use a flexible JSON structure for `clinical_details` to support various surgical specialties without schema changes.
 - **Core Case Fields**: Includes patient demographics, admission details, diagnoses, co-morbidities, risk factors, operative factors, surgery timing, operating team, procedure codes (SNOMED CT + local system), and outcomes.
 - **TimelineEvents**: Post-operative tracking linked to cases.

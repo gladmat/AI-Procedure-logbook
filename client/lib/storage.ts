@@ -1,13 +1,15 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Case, TimelineEvent, CountryCode, ComplicationEntry } from "@/types/case";
-import { encryptData, decryptData, isEncrypted } from "./encryption";
+import { encryptData, decryptData } from "./encryption";
 
-const CASES_KEY = "@surgical_logbook_cases";
+const CASE_INDEX_KEY = "@surgical_logbook_case_index";
+const CASE_PREFIX = "@surgical_logbook_case_";
 const TIMELINE_KEY = "@surgical_logbook_timeline";
 const USER_KEY = "@surgical_logbook_user";
 const SETTINGS_KEY = "@surgical_logbook_settings";
 const CASE_DRAFT_KEY_PREFIX = "@surgical_logbook_case_draft_";
-const ENCRYPTED_CASES_KEY = "@surgical_logbook_cases_encrypted";
+const LEGACY_ENCRYPTED_CASES_KEY = "@surgical_logbook_cases_encrypted";
+const LEGACY_CASES_KEY = "@surgical_logbook_cases";
 
 export interface LocalUser {
   id: string;
@@ -24,24 +26,107 @@ export interface AppSettings {
 
 export type CaseDraft = Partial<Case>;
 
+interface CaseIndexEntry {
+  id: string;
+  procedureDate: string;
+  patientIdentifier?: string;
+  updatedAt: string;
+}
+
+async function getCaseIndex(): Promise<CaseIndexEntry[]> {
+  try {
+    const data = await AsyncStorage.getItem(CASE_INDEX_KEY);
+    if (data) {
+      return JSON.parse(data);
+    }
+    return [];
+  } catch (error) {
+    console.error("Error reading case index:", error);
+    return [];
+  }
+}
+
+async function saveCaseIndex(index: CaseIndexEntry[]): Promise<void> {
+  await AsyncStorage.setItem(CASE_INDEX_KEY, JSON.stringify(index));
+}
+
+async function migrateLegacyData(): Promise<boolean> {
+  try {
+    const legacyEncrypted = await AsyncStorage.getItem(LEGACY_ENCRYPTED_CASES_KEY);
+    if (legacyEncrypted) {
+      const decrypted = await decryptData(legacyEncrypted);
+      const cases: Case[] = JSON.parse(decrypted);
+      
+      const index: CaseIndexEntry[] = [];
+      for (const caseData of cases) {
+        const encrypted = await encryptData(JSON.stringify(caseData));
+        await AsyncStorage.setItem(`${CASE_PREFIX}${caseData.id}`, encrypted);
+        index.push({
+          id: caseData.id,
+          procedureDate: caseData.procedureDate,
+          patientIdentifier: caseData.patientIdentifier,
+          updatedAt: caseData.updatedAt || caseData.createdAt || new Date().toISOString(),
+        });
+      }
+      
+      index.sort((a, b) => new Date(b.procedureDate).getTime() - new Date(a.procedureDate).getTime());
+      await saveCaseIndex(index);
+      await AsyncStorage.removeItem(LEGACY_ENCRYPTED_CASES_KEY);
+      console.log(`Migrated ${cases.length} cases to per-case storage`);
+      return true;
+    }
+    
+    const legacyPlain = await AsyncStorage.getItem(LEGACY_CASES_KEY);
+    if (legacyPlain) {
+      const cases: Case[] = JSON.parse(legacyPlain);
+      
+      const index: CaseIndexEntry[] = [];
+      for (const caseData of cases) {
+        const encrypted = await encryptData(JSON.stringify(caseData));
+        await AsyncStorage.setItem(`${CASE_PREFIX}${caseData.id}`, encrypted);
+        index.push({
+          id: caseData.id,
+          procedureDate: caseData.procedureDate,
+          patientIdentifier: caseData.patientIdentifier,
+          updatedAt: caseData.updatedAt || caseData.createdAt || new Date().toISOString(),
+        });
+      }
+      
+      index.sort((a, b) => new Date(b.procedureDate).getTime() - new Date(a.procedureDate).getTime());
+      await saveCaseIndex(index);
+      await AsyncStorage.removeItem(LEGACY_CASES_KEY);
+      console.log(`Migrated ${cases.length} legacy cases to per-case storage`);
+      return true;
+    }
+    
+    return false;
+  } catch (error) {
+    console.error("Error migrating legacy data:", error);
+    return false;
+  }
+}
+
+let migrationChecked = false;
+
 export async function getCases(): Promise<Case[]> {
   try {
-    const encryptedData = await AsyncStorage.getItem(ENCRYPTED_CASES_KEY);
-    if (encryptedData) {
-      const decrypted = await decryptData(encryptedData);
-      return JSON.parse(decrypted);
+    if (!migrationChecked) {
+      await migrateLegacyData();
+      migrationChecked = true;
     }
     
-    const legacyData = await AsyncStorage.getItem(CASES_KEY);
-    if (legacyData) {
-      const cases = JSON.parse(legacyData);
-      const encrypted = await encryptData(JSON.stringify(cases));
-      await AsyncStorage.setItem(ENCRYPTED_CASES_KEY, encrypted);
-      await AsyncStorage.removeItem(CASES_KEY);
-      return cases;
+    const index = await getCaseIndex();
+    if (index.length === 0) return [];
+    
+    const cases: Case[] = [];
+    for (const entry of index) {
+      const caseData = await getCase(entry.id);
+      if (caseData) {
+        cases.push(caseData);
+      }
     }
     
-    return [];
+    return cases;
   } catch (error) {
     console.error("Error reading cases:", error);
     return [];
@@ -49,23 +134,44 @@ export async function getCases(): Promise<Case[]> {
 }
 
 export async function getCase(id: string): Promise<Case | null> {
-  const cases = await getCases();
-  return cases.find((c) => c.id === id) || null;
+  try {
+    const encrypted = await AsyncStorage.getItem(`${CASE_PREFIX}${id}`);
+    if (!encrypted) return null;
+    
+    const decrypted = await decryptData(encrypted);
+    return JSON.parse(decrypted);
+  } catch (error) {
+    console.error("Error reading case:", error);
+    return null;
+  }
 }
 
 export async function saveCase(caseData: Case): Promise<void> {
   try {
-    const cases = await getCases();
-    const existingIndex = cases.findIndex((c) => c.id === caseData.id);
+    const now = new Date().toISOString();
+    const updatedCase = { ...caseData, updatedAt: now };
     
-    if (existingIndex >= 0) {
-      cases[existingIndex] = { ...caseData, updatedAt: new Date().toISOString() };
+    const encrypted = await encryptData(JSON.stringify(updatedCase));
+    await AsyncStorage.setItem(`${CASE_PREFIX}${caseData.id}`, encrypted);
+    
+    const index = await getCaseIndex();
+    const existingIdx = index.findIndex((e) => e.id === caseData.id);
+    
+    const indexEntry: CaseIndexEntry = {
+      id: caseData.id,
+      procedureDate: caseData.procedureDate,
+      patientIdentifier: caseData.patientIdentifier,
+      updatedAt: now,
+    };
+    
+    if (existingIdx >= 0) {
+      index[existingIdx] = indexEntry;
     } else {
-      cases.unshift(caseData);
+      index.unshift(indexEntry);
     }
     
-    const encrypted = await encryptData(JSON.stringify(cases));
-    await AsyncStorage.setItem(ENCRYPTED_CASES_KEY, encrypted);
+    index.sort((a, b) => new Date(b.procedureDate).getTime() - new Date(a.procedureDate).getTime());
+    await saveCaseIndex(index);
   } catch (error) {
     console.error("Error saving case:", error);
     throw error;
@@ -110,17 +216,11 @@ export async function clearCaseDraft(specialty: Case["specialty"]): Promise<void
 
 export async function updateCase(id: string, updates: Partial<Case>): Promise<void> {
   try {
-    const cases = await getCases();
-    const index = cases.findIndex((c) => c.id === id);
-    if (index >= 0) {
-      cases[index] = { 
-        ...cases[index], 
-        ...updates, 
-        updatedAt: new Date().toISOString() 
-      };
-      const encrypted = await encryptData(JSON.stringify(cases));
-      await AsyncStorage.setItem(ENCRYPTED_CASES_KEY, encrypted);
-    }
+    const existing = await getCase(id);
+    if (!existing) return;
+    
+    const updatedCase = { ...existing, ...updates, updatedAt: new Date().toISOString() };
+    await saveCase(updatedCase);
   } catch (error) {
     console.error("Error updating case:", error);
     throw error;
@@ -148,12 +248,23 @@ export async function markNoComplications(caseId: string): Promise<void> {
 }
 
 export async function findCasesByPatientId(patientId: string): Promise<Case[]> {
-  const cases = await getCases();
+  const index = await getCaseIndex();
   const normalizedId = patientId.toUpperCase().replace(/\s/g, "");
-  return cases.filter((c) => {
-    const casePatientId = c.patientIdentifier?.toUpperCase().replace(/\s/g, "") || "";
-    return casePatientId === normalizedId;
+  
+  const matchingEntries = index.filter((e) => {
+    const entryPatientId = e.patientIdentifier?.toUpperCase().replace(/\s/g, "") || "";
+    return entryPatientId === normalizedId;
   });
+  
+  const cases: Case[] = [];
+  for (const entry of matchingEntries) {
+    const caseData = await getCase(entry.id);
+    if (caseData) {
+      cases.push(caseData);
+    }
+  }
+  
+  return cases;
 }
 
 export async function findCaseByPatientIdAndDate(
@@ -197,10 +308,11 @@ export async function recordComplications(
 
 export async function deleteCase(id: string): Promise<void> {
   try {
-    const cases = await getCases();
-    const filtered = cases.filter((c) => c.id !== id);
-    const encrypted = await encryptData(JSON.stringify(filtered));
-    await AsyncStorage.setItem(ENCRYPTED_CASES_KEY, encrypted);
+    await AsyncStorage.removeItem(`${CASE_PREFIX}${id}`);
+    
+    const index = await getCaseIndex();
+    const filtered = index.filter((e) => e.id !== id);
+    await saveCaseIndex(filtered);
     
     const events = await getTimelineEvents(id);
     for (const event of events) {
@@ -271,49 +383,49 @@ export async function saveLocalUser(user: LocalUser): Promise<void> {
   }
 }
 
-export async function clearAllData(): Promise<void> {
+export async function clearLocalUser(): Promise<void> {
   try {
-    await AsyncStorage.multiRemove([CASES_KEY, TIMELINE_KEY, USER_KEY, SETTINGS_KEY]);
+    await AsyncStorage.removeItem(USER_KEY);
   } catch (error) {
-    console.error("Error clearing data:", error);
+    console.error("Error clearing user:", error);
     throw error;
   }
 }
 
-export async function exportCasesAsJSON(): Promise<string> {
-  const cases = await getCases();
-  return JSON.stringify(cases, null, 2);
-}
-
-const DEFAULT_SETTINGS: AppSettings = {
-  countryCode: "GB",
-  showLocalCodes: true,
-  exportFormat: "json",
-};
-
-export async function getSettings(): Promise<AppSettings> {
+export async function getSettings(): Promise<AppSettings | null> {
   try {
     const data = await AsyncStorage.getItem(SETTINGS_KEY);
-    if (!data) return DEFAULT_SETTINGS;
-    return { ...DEFAULT_SETTINGS, ...JSON.parse(data) };
+    if (!data) return null;
+    return JSON.parse(data);
   } catch (error) {
     console.error("Error reading settings:", error);
-    return DEFAULT_SETTINGS;
+    return null;
   }
 }
 
-export async function saveSettings(settings: Partial<AppSettings>): Promise<void> {
+export async function saveSettings(settings: AppSettings): Promise<void> {
   try {
-    const current = await getSettings();
-    const updated = { ...current, ...settings };
-    await AsyncStorage.setItem(SETTINGS_KEY, JSON.stringify(updated));
+    await AsyncStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
   } catch (error) {
     console.error("Error saving settings:", error);
     throw error;
   }
 }
 
-export async function getCountryCode(): Promise<CountryCode> {
-  const settings = await getSettings();
-  return settings.countryCode;
+export async function clearAllData(): Promise<void> {
+  try {
+    const index = await getCaseIndex();
+    for (const entry of index) {
+      await AsyncStorage.removeItem(`${CASE_PREFIX}${entry.id}`);
+    }
+    await AsyncStorage.removeItem(CASE_INDEX_KEY);
+    await AsyncStorage.removeItem(TIMELINE_KEY);
+    await AsyncStorage.removeItem(USER_KEY);
+    await AsyncStorage.removeItem(SETTINGS_KEY);
+    await AsyncStorage.removeItem(LEGACY_ENCRYPTED_CASES_KEY);
+    await AsyncStorage.removeItem(LEGACY_CASES_KEY);
+  } catch (error) {
+    console.error("Error clearing all data:", error);
+    throw error;
+  }
 }

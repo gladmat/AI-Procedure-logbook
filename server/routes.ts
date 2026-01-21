@@ -18,6 +18,27 @@ const flapUpdateSchema = insertFlapSchema.partial().omit({ procedureId: true });
 const anastomosisCreateSchema = insertAnastomosisSchema;
 const anastomosisUpdateSchema = insertAnastomosisSchema.partial().omit({ flapId: true });
 
+const authRateLimiter = new Map<string, { count: number; resetTime: number }>();
+const AUTH_RATE_LIMIT = 10;
+const AUTH_RATE_WINDOW_MS = 60 * 1000;
+
+function checkAuthRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const entry = authRateLimiter.get(ip);
+  
+  if (!entry || now > entry.resetTime) {
+    authRateLimiter.set(ip, { count: 1, resetTime: now + AUTH_RATE_WINDOW_MS });
+    return true;
+  }
+  
+  if (entry.count >= AUTH_RATE_LIMIT) {
+    return false;
+  }
+  
+  entry.count++;
+  return true;
+}
+
 // JWT_SECRET must be set in environment - fail hard if missing for security
 if (!process.env.JWT_SECRET) {
   throw new Error("JWT_SECRET environment variable must be set for secure token signing");
@@ -158,6 +179,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth Routes
   app.post("/api/auth/signup", async (req: Request, res: Response) => {
     try {
+      const clientIp = req.ip || req.socket.remoteAddress || "unknown";
+      if (!checkAuthRateLimit(clientIp)) {
+        return res.status(429).json({ error: "Too many requests. Please try again later." });
+      }
+      
       const { email, password } = req.body;
       
       if (!email || !password) {
@@ -185,6 +211,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/auth/login", async (req: Request, res: Response) => {
     try {
+      const clientIp = req.ip || req.socket.remoteAddress || "unknown";
+      if (!checkAuthRateLimit(clientIp)) {
+        return res.status(429).json({ error: "Too many requests. Please try again later." });
+      }
+      
       const { email, password } = req.body;
       
       if (!email || !password) {
