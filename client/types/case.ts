@@ -430,6 +430,9 @@ export interface Case {
   hasComplications?: boolean;
   complications?: ComplicationEntry[];
   
+  // Operative Media (photos/files attached during case documentation)
+  operativeMedia?: OperativeMediaItem[];
+  
   clinicalDetails: ClinicalDetails;
   teamMembers: TeamMember[];
   ownerId: string;
@@ -477,6 +480,30 @@ export interface MediaAttachment {
   caption?: string;
   createdAt: string;
 }
+
+// Operative media for photos/files attached directly to case record
+export type OperativeMediaType = "intraoperative_photo" | "xray" | "ct_scan" | "mri" | "diagram" | "document" | "other";
+
+export interface OperativeMediaItem {
+  id: string;
+  localUri: string;
+  thumbnailUri?: string;
+  mimeType: string;
+  mediaType: OperativeMediaType;
+  caption?: string;
+  timestamp?: string;
+  createdAt: string;
+}
+
+export const OPERATIVE_MEDIA_TYPE_LABELS: Record<OperativeMediaType, string> = {
+  intraoperative_photo: "Intraop Photo",
+  xray: "X-ray",
+  ct_scan: "CT Scan",
+  mri: "MRI",
+  diagram: "Diagram",
+  document: "Document",
+  other: "Other",
+};
 
 export interface TimelineEvent {
   id: string;
