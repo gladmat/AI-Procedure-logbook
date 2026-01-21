@@ -395,6 +395,9 @@ export interface Case {
   // Co-morbidities (SNOMED CT coded)
   comorbidities?: SnomedCodedItem[];
   
+  // AO/OTA Fracture Classifications (for fracture diagnoses)
+  fractures?: FractureEntry[];
+  
   // Risk Factors
   asaScore?: ASAScore;
   heightCm?: number;

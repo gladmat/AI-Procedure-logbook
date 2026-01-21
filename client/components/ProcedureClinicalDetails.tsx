@@ -9,7 +9,6 @@ import { FormField, PickerField } from "@/components/FormField";
 import { AnastomosisEntryCard } from "@/components/AnastomosisEntryCard";
 import { RecipientSiteSelector } from "@/components/RecipientSiteSelector";
 import { SectionHeader } from "@/components/SectionHeader";
-import { FractureClassificationWizard, type FractureEntry } from "@/components/FractureClassificationWizard";
 import { v4 as uuidv4 } from "uuid";
 import {
   type Specialty,
@@ -364,26 +363,6 @@ export function HandSurgeryClinicalFields({
   clinicalDetails,
   onUpdate,
 }: HandSurgeryClinicalFieldsProps) {
-  const { theme } = useTheme();
-  const [showFractureWizard, setShowFractureWizard] = useState(false);
-  
-  const fractures = clinicalDetails.fractures || [];
-  
-  const handleFractureSave = (newFractures: FractureEntry[]) => {
-    onUpdate({
-      ...clinicalDetails,
-      fractures: newFractures,
-    });
-  };
-  
-  const removeFracture = (id: string) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    onUpdate({
-      ...clinicalDetails,
-      fractures: fractures.filter(f => f.id !== id),
-    });
-  };
-  
   return (
     <View style={styles.container}>
       {/* Hand laterality */}
@@ -408,67 +387,7 @@ export function HandSurgeryClinicalFields({
         </View>
       </View>
       
-      {/* Fracture Classification */}
-      <View style={styles.fractureSection}>
-        <View style={styles.fractureTitleRow}>
-          <ThemedText style={[styles.subsectionTitle, { color: theme.text }]}>
-            AO Fracture Classification
-          </ThemedText>
-          <Pressable
-            style={[styles.fractureAddBtn, { backgroundColor: theme.link }]}
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              setShowFractureWizard(true);
-            }}
-          >
-            <Feather name="plus" size={16} color="#FFF" />
-            <ThemedText style={styles.fractureAddBtnText}>Add</ThemedText>
-          </Pressable>
-        </View>
-        
-        {fractures.length > 0 ? (
-          <View style={styles.fractureList}>
-            {fractures.map((fracture) => (
-              <View
-                key={fracture.id}
-                style={[styles.fractureCard, { backgroundColor: theme.backgroundTertiary }]}
-              >
-                <View style={styles.fractureCardContent}>
-                  <ThemedText style={[styles.fractureBoneName, { color: theme.text }]}>
-                    {fracture.boneName}
-                  </ThemedText>
-                  <View style={[styles.aoCodeBadge, { backgroundColor: theme.link }]}>
-                    <ThemedText style={styles.aoCodeBadgeText}>
-                      {fracture.aoCode}
-                    </ThemedText>
-                  </View>
-                </View>
-                <Pressable
-                  onPress={() => removeFracture(fracture.id)}
-                  hitSlop={8}
-                >
-                  <Feather name="x-circle" size={20} color={theme.error} />
-                </Pressable>
-              </View>
-            ))}
-          </View>
-        ) : (
-          <Pressable
-            style={[styles.emptyFractureCard, { borderColor: theme.border }]}
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              setShowFractureWizard(true);
-            }}
-          >
-            <Feather name="activity" size={24} color={theme.textTertiary} />
-            <ThemedText style={[styles.emptyFractureText, { color: theme.textSecondary }]}>
-              Tap to add fracture classification
-            </ThemedText>
-          </Pressable>
-        )}
-      </View>
-      
-      {/* Other clinical details */}
+      {/* Clinical details */}
       <FormField
         label="Injury Mechanism"
         value={clinicalDetails.injuryMechanism || ""}
@@ -486,13 +405,6 @@ export function HandSurgeryClinicalFields({
         value={clinicalDetails.tendonInjuries || ""}
         onChangeText={(v) => onUpdate({ ...clinicalDetails, tendonInjuries: v })}
         placeholder="e.g., FDP zone 2"
-      />
-      
-      <FractureClassificationWizard
-        visible={showFractureWizard}
-        onClose={() => setShowFractureWizard(false)}
-        onSave={handleFractureSave}
-        initialFractures={fractures}
       />
     </View>
   );

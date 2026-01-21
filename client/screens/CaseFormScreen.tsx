@@ -76,6 +76,8 @@ import { ProcedureEntryCard } from "@/components/ProcedureEntryCard";
 import { SnomedSearchPicker } from "@/components/SnomedSearchPicker";
 import { useAuth } from "@/contexts/AuthContext";
 import { getDiagnosisStaging, DiagnosisStagingConfig, searchSnomedDiagnoses, searchSnomedProcedures, SnomedSearchResult } from "@/lib/snomedApi";
+import { DiagnosisFractureClassifier } from "@/components/DiagnosisFractureClassifier";
+import { FractureEntry } from "@/types/case";
 
 type RouteParams = RouteProp<RootStackParamList, "CaseForm">;
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -265,9 +267,16 @@ export default function CaseFormScreen() {
   const [primaryDiagnosis, setPrimaryDiagnosis] = useState<{ conceptId: string; term: string } | null>(null);
   const [diagnosisStaging, setDiagnosisStaging] = useState<DiagnosisStagingConfig | null>(null);
   const [stagingValues, setStagingValues] = useState<Record<string, string>>({});
+  const [fractures, setFractures] = useState<FractureEntry[]>([]);
   
   // Legacy diagnosis field for backwards compatibility
   const [diagnosis, setDiagnosis] = useState("");
+  
+  // Check if diagnosis contains fracture
+  const isFractureDiagnosis = useMemo(() => {
+    const diagnosisTerm = primaryDiagnosis?.term?.toLowerCase() || diagnosis.toLowerCase();
+    return diagnosisTerm.includes("fracture");
+  }, [primaryDiagnosis, diagnosis]);
 
   // RACS MALT Co-morbidities
   const [selectedComorbidities, setSelectedComorbidities] = useState<SnomedCodedItem[]>([]);
@@ -821,6 +830,9 @@ export default function CaseFormScreen() {
         // Co-morbidities
         comorbidities: selectedComorbidities.length > 0 ? selectedComorbidities : undefined,
         
+        // AO/OTA Fracture Classifications (for fracture diagnoses)
+        fractures: fractures.length > 0 ? fractures : undefined,
+        
         // Risk Factors
         asaScore: asaScore ? (parseInt(asaScore) as ASAScore) : undefined,
         heightCm: heightCm ? parseFloat(heightCm) : undefined,
@@ -960,6 +972,13 @@ export default function CaseFormScreen() {
             />
           ))}
         </View>
+      ) : null}
+
+      {isFractureDiagnosis ? (
+        <DiagnosisFractureClassifier
+          fractures={fractures}
+          onFracturesChange={setFractures}
+        />
       ) : null}
 
       <SectionHeader title="Procedures Performed" />
