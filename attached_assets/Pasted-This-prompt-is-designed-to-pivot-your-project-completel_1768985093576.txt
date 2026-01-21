@@ -1,0 +1,77 @@
+This prompt is designed to pivot your project completely to a "Privacy-Absolute" architecture. It explicitly instructs Replit to strip out any "Cloud AI" placeholders and replace them with the "Document Router" engine we designed.
+
+Copy and paste the text below into the Replit Agent.
+
+Project Specification: ReconLog V11 - Local Intelligence Engine
+
+1. Critical Architecture Change: Privacy Lockdown
+
+Strict Constraint: We are removing all "Cloud AI" features. The app must function 100% offline.
+
+Action: Delete any existing API calls to OpenAI/Gemini/Azure. Remove any code that sends images or text to an external server.
+
+New Strategy: All "Smart Capture" features will now rely on On-Device OCR (Tesseract.js) followed by a local Regex Logic Engine.
+
+2. Feature: The "Document Router" Engine Create a modular system to classify and parse different hospital documents.
+
+A. Core Component: DocumentClassifier.ts
+
+Input: Raw text string from OCR.
+
+Logic: Scan for "Trigger Keywords" to determine the document type.
+
+Type 1: WAIKATO_DISCHARGE
+
+Triggers: Contains "Discharge Summary" AND ("Waikato" OR "DHB").
+
+Type 2: ANAESTHESIA_RECORD
+
+Triggers: Contains "Anaesthesia Report" OR "Te Whatu Ora" OR "Propofol".
+
+Type 3: GENERIC
+
+Fallback: If no specific match is found.
+
+B. The Parsers (Modular Regex Files) Create separate typescript files for each strategy so we can add more hospitals later.
+
+parsers/waikatoDischarge.ts
+
+NHI: Extract pattern [A-Z]{3}\d{4} (Look for labels "Patient ID" or "NHI").
+
+Funding Status:
+
+If text contains "ACC Claim : Yes" or "ACC Number" → Set funding = 'ACC'.
+
+Else if text contains "DHB" or "Public" → Set funding = 'Public'.
+
+Dates: Extract patterns \d{2} [A-Z][a-z]{2} \d{4} (e.g., "01 Dec 2025") for Admission/Discharge.
+
+Procedure Notes: Extract the full block of text occurring between the keywords "Procedure" and "Plan". This handles the long narrative description.
+
+Surgeon: Capture text following "Consultant:".
+
+parsers/anaesthesiaRecord.ts
+
+ASA Score: Regex /ASA:\s*ASA\s*(\d)/ or /ASA\s*(\d)/.
+
+Weight: Regex /Weight:\s*(\d+(\.\d+)?)\s*kg/i.
+
+Tourniquet: Regex /Tourniquet\s*\((\d+)\s*min/i (Extract just the number).
+
+3. UI/UX: The "Verification" Workflow
+
+Scanner: Add a "Scan Document" button to the Add Case form.
+
+Feedback: After scanning, show a distinct badge: "Detected: Waikato Discharge Summary".
+
+Confidence UI:
+
+Fields auto-filled by this engine (e.g., NHI, Weight) should have a Yellow Border or "Magic Wand" icon.
+
+Add a simple "Clear/Undo" button next to auto-filled fields in case the OCR makes a mistake.
+
+4. Code Structure & Scalability
+
+Ensure the OCRService is extensible. I want to be able to add a parsers/starshipHospital.ts file in the future without rewriting the main logic.
+
+Use Tesseract.js for the OCR engine. Configure it to load the worker locally (if possible) or cache the language data to support offline usage.
