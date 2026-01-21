@@ -61,6 +61,7 @@ import {
   ASA_GRADE_LABELS,
   COMMON_COMORBIDITIES,
   ETHNICITY_OPTIONS,
+  PROCEDURE_CATEGORY_OPTIONS,
 } from "@/types/case";
 import { FormField, SelectField, PickerField, DatePickerField } from "@/components/FormField";
 import { SectionHeader } from "@/components/SectionHeader";
@@ -247,7 +248,11 @@ export default function CaseFormScreen() {
 
   // RACS MALT Patient Demographics
   const [gender, setGender] = useState<Gender | "">("");
+  const [age, setAge] = useState<string>("");
   const [ethnicity, setEthnicity] = useState("");
+  
+  // Procedure Category (high-level classification)
+  const [procedureCategory, setProcedureCategory] = useState<string>("");
 
   // RACS MALT Admission Details
   const [admissionDate, setAdmissionDate] = useState("");
@@ -331,11 +336,18 @@ export default function CaseFormScreen() {
     const data = extractedData as any;
     console.log("Populating form from extracted data:", Object.keys(data).filter(k => data[k] !== null));
     
+    // Patient Identifier (extracted before redaction)
+    if (data.patientIdentifier) setPatientIdentifier(data.patientIdentifier);
+    
+    // Procedure Date (extracted before redaction)
+    if (data.procedureDate) setProcedureDate(data.procedureDate);
+    
     // Patient Demographics
     if (data.gender) setGender(data.gender);
-    if (data.age) {
-      // Age is extracted but we don't have an age field - could be used for notes
-    }
+    if (data.age) setAge(String(data.age));
+    
+    // Procedure Category
+    if (data.procedureCategory) setProcedureCategory(data.procedureCategory);
     
     // Admission Details
     if (data.admissionUrgency) setAdmissionUrgency(data.admissionUrgency);
@@ -348,12 +360,12 @@ export default function CaseFormScreen() {
     if (data.surgeryStartTime) setSurgeryStartTime(data.surgeryStartTime);
     if (data.surgeryEndTime) setSurgeryEndTime(data.surgeryEndTime);
     
-    // Operating Team
+    // Operating Team - include ALL team members, use "unassigned" for those without roles
     if (data.operatingTeam && Array.isArray(data.operatingTeam)) {
-      const team: OperatingTeamMember[] = data.operatingTeam.map((member: any, index: number) => ({
+      const team: OperatingTeamMember[] = data.operatingTeam.map((member: any) => ({
         id: uuidv4(),
         name: member.name,
-        role: member.role,
+        role: member.role || "unassigned",
       }));
       setOperatingTeam(team);
     }
@@ -966,6 +978,18 @@ export default function CaseFormScreen() {
           />
         </View>
         <View style={styles.halfField}>
+          <FormField
+            label="Age (years)"
+            value={age}
+            onChangeText={setAge}
+            placeholder="e.g. 51"
+            keyboardType="numeric"
+          />
+        </View>
+      </View>
+
+      <View style={styles.row}>
+        <View style={styles.halfField}>
           <PickerField
             label="Ethnicity"
             value={ethnicity}
@@ -986,6 +1010,17 @@ export default function CaseFormScreen() {
             onSelect={(v) => setAdmissionUrgency(v as AdmissionUrgency)}
           />
         </View>
+        <View style={styles.halfField}>
+          <PickerField
+            label="Procedure Category"
+            value={procedureCategory}
+            options={PROCEDURE_CATEGORY_OPTIONS[specialty] || [{ value: "other", label: "Other" }]}
+            onSelect={setProcedureCategory}
+          />
+        </View>
+      </View>
+
+      <View style={styles.row}>
         <View style={styles.halfField}>
           <PickerField
             label="Stay Type"

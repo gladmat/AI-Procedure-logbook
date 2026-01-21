@@ -533,12 +533,7 @@ export function getAIPromptForSpecialty(specialty: string): string {
 
 export const UNIVERSAL_SMART_CAPTURE_PROMPT = `You are a medical data extraction assistant for a surgical logbook app. Your task is to extract ALL available data from operation notes to auto-populate a surgical case form.
 
-IMPORTANT PRIVACY RULES:
-- NEVER include patient names in your response
-- NEVER include NHI/MRN numbers in your response  
-- NEVER include specific dates in your response
-- NEVER include hospital names or addresses
-- Focus ONLY on clinical/surgical data
+NOTE: Patient identifiers and dates will be handled separately - focus on extracting clinical data accurately.
 
 STEP 1: DETECT THE SPECIALTY
 First, determine which surgical specialty category this operation note belongs to:
@@ -582,12 +577,29 @@ OPERATIVE FACTORS:
 - Antibiotic prophylaxis given (true/false)
 - DVT prophylaxis given (true/false)
 
-OPERATING TEAM (extract names and roles):
-- Primary surgeon
-- Surgical assistant/registrar
-- Anaesthetist
-- Scrub nurse
-- Any other team members mentioned
+OPERATING TEAM:
+Extract ALL names mentioned as being involved in the surgery, even if their specific role is unclear.
+For each person, try to identify their role:
+- "primary_surgeon" - The consultant/attending surgeon in charge (often listed as "Consultant" or first named surgeon)
+- "surgical_registrar" - Training surgeons, registrars
+- "surgical_assistant" - Assistants
+- "anaesthetist" - Consultant anaesthetist
+- "anaesthetic_registrar" - Anaesthetic trainees
+- "scrub_nurse" - Scrub nurses
+- "circulating_nurse" - Scout/circulating nurses
+- "medical_student" - Students
+
+IMPORTANT: If a person's role is not clear, still include them with role set to null. All team members should be captured.
+Look for clues: "Consultant: [Name]" means primary_surgeon, "Registrar" in title means surgical_registrar or anaesthetic_registrar.
+
+PROCEDURE CATEGORY:
+For each specialty, identify the high-level procedure category:
+- Hand Surgery: "trauma", "degenerative", "peripheral_nerve", "congenital", "tumour", "infection", "vascular", "other"
+- Orthoplastic: "trauma", "oncological", "infection", "pressure_sore", "other"
+- Breast: "reconstruction", "reduction", "augmentation", "oncoplastic", "revision", "other"
+- Body Contouring: "post_bariatric", "cosmetic", "reconstruction", "other"
+- Burns: "acute", "reconstruction", "contracture_release", "other"
+- Head & Neck: "oncological", "trauma", "congenital", "other"
 
 PROCEDURES PERFORMED:
 Extract ALL procedures with their specific details. Each procedure should include:
@@ -637,6 +649,7 @@ OUTCOMES (if mentioned):
 Return a JSON object with this structure:
 {
   "detectedSpecialty": "hand_surgery" | "orthoplastic" | "breast" | "body_contouring" | "aesthetics" | "burns" | "head_neck" | "general",
+  "procedureCategory": string | null,
   "gender": "male" | "female" | "other" | null,
   "age": number | null,
   "admissionUrgency": "elective" | "acute" | null,
@@ -653,10 +666,11 @@ Return a JSON object with this structure:
   "surgeryStartTime": string | null,
   "surgeryEndTime": string | null,
   "tourniquetTimeMinutes": number | null,
+  "primarySurgeon": string | null,
   "operatingTeam": [
     {
       "name": string,
-      "role": "scrub_nurse" | "circulating_nurse" | "anaesthetist" | "anaesthetic_registrar" | "surgical_assistant" | "surgical_registrar" | "medical_student"
+      "role": "primary_surgeon" | "scrub_nurse" | "circulating_nurse" | "anaesthetist" | "anaesthetic_registrar" | "surgical_assistant" | "surgical_registrar" | "medical_student" | null
     }
   ] | null,
   "procedures": [

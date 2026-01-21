@@ -3,7 +3,7 @@ import { createServer, type Server } from "node:http";
 import { GoogleGenAI } from "@google/genai";
 import { FREE_FLAP_AI_PROMPT, UNIVERSAL_SMART_CAPTURE_PROMPT, getDischargeComplicationPrompt } from "./ai-prompts";
 import { extractTextFromImage } from "./ocr";
-import { redactSensitiveData } from "./privacyUtils";
+import { redactSensitiveData, extractNHI, extractSurgeryDate } from "./privacyUtils";
 import { storage } from "./storage";
 import { allSeedData } from "./seedData";
 import { searchProcedures, searchDiagnoses, getConceptDetails } from "./snomedApi";
@@ -88,13 +88,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { image, images, text } = req.body;
       
+      let originalText: string;
       let textToAnalyze: string;
       
       // If text is provided directly (from web OCR), use it
       if (text) {
         console.log("Using pre-extracted text from client OCR");
-        const redactionResult = redactSensitiveData(text);
-        textToAnalyze = redactionResult.redactedText;
+        originalText = text;
       } else {
         // Otherwise extract from images
         const imageArray: string[] = images || (image ? [image] : []);
@@ -109,10 +109,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
           extractedTexts.push(extractedText);
         }
         
-        const combinedText = extractedTexts.join("\n\n---\n\n");
-        const redactionResult = redactSensitiveData(combinedText);
-        textToAnalyze = redactionResult.redactedText;
+        originalText = extractedTexts.join("\n\n---\n\n");
       }
+      
+      // Extract patient ID and surgery date BEFORE redacting
+      const patientIdentifier = extractNHI(originalText);
+      const procedureDate = extractSurgeryDate(originalText);
+      
+      console.log("Extracted patient ID:", patientIdentifier);
+      console.log("Extracted procedure date:", procedureDate);
+      
+      // Now redact for AI processing
+      const redactionResult = redactSensitiveData(originalText);
+      textToAnalyze = redactionResult.redactedText;
 
       console.log("Analyzing operation note with Universal Smart Capture prompt...");
       console.log("Redacted text length:", textToAnalyze.length);
@@ -148,9 +157,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const detectedSpecialty = extractedData.detectedSpecialty || "general";
 
+      // Add the pre-extracted sensitive data to the response
+      // (not sent to AI but needed for the form)
+      extractedData.patientIdentifier = patientIdentifier;
+      extractedData.procedureDate = procedureDate;
+
       res.json({ 
         extractedData,
-        detectedSpecialty
+        detectedSpecialty,
+        patientIdentifier,
+        procedureDate
       });
     } catch (error) {
       console.error("Error analyzing operation note:", error);

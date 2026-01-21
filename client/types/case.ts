@@ -2,13 +2,89 @@
 export type Role = "PS" | "PP" | "AS" | "ONS" | "SS" | "SNS" | "A";
 
 export type OperatingTeamRole = 
+  | "primary_surgeon"
   | "scrub_nurse" 
   | "circulating_nurse" 
   | "anaesthetist" 
   | "anaesthetic_registrar"
   | "surgical_assistant"
   | "surgical_registrar"
-  | "medical_student";
+  | "medical_student"
+  | "unassigned";
+
+// Procedure categories by specialty (high-level classification)
+export type HandSurgeryCategory = "trauma" | "degenerative" | "peripheral_nerve" | "congenital" | "tumour" | "infection" | "vascular" | "other";
+export type OrthoplasticCategory = "trauma" | "oncological" | "infection" | "pressure_sore" | "other";
+export type BreastCategory = "reconstruction" | "reduction" | "augmentation" | "oncoplastic" | "revision" | "other";
+export type BodyContouringCategory = "post_bariatric" | "cosmetic" | "reconstruction" | "other";
+export type BurnsCategory = "acute" | "reconstruction" | "contracture_release" | "other";
+export type HeadNeckCategory = "oncological" | "trauma" | "congenital" | "other";
+export type GeneralCategory = "other";
+
+export type ProcedureCategory = 
+  | HandSurgeryCategory 
+  | OrthoplasticCategory 
+  | BreastCategory 
+  | BodyContouringCategory 
+  | BurnsCategory 
+  | HeadNeckCategory 
+  | GeneralCategory;
+
+// Procedure category options by specialty
+export const PROCEDURE_CATEGORY_OPTIONS: Record<Specialty, { value: string; label: string }[]> = {
+  hand_surgery: [
+    { value: "trauma", label: "Trauma" },
+    { value: "degenerative", label: "Degenerative" },
+    { value: "peripheral_nerve", label: "Peripheral Nerve" },
+    { value: "congenital", label: "Congenital" },
+    { value: "tumour", label: "Tumour" },
+    { value: "infection", label: "Infection" },
+    { value: "vascular", label: "Vascular" },
+    { value: "other", label: "Other" },
+  ],
+  orthoplastic: [
+    { value: "trauma", label: "Trauma" },
+    { value: "oncological", label: "Oncological" },
+    { value: "infection", label: "Infection" },
+    { value: "pressure_sore", label: "Pressure Sore" },
+    { value: "other", label: "Other" },
+  ],
+  breast: [
+    { value: "reconstruction", label: "Reconstruction" },
+    { value: "reduction", label: "Reduction" },
+    { value: "augmentation", label: "Augmentation" },
+    { value: "oncoplastic", label: "Oncoplastic" },
+    { value: "revision", label: "Revision" },
+    { value: "other", label: "Other" },
+  ],
+  body_contouring: [
+    { value: "post_bariatric", label: "Post-Bariatric" },
+    { value: "cosmetic", label: "Cosmetic" },
+    { value: "reconstruction", label: "Reconstruction" },
+    { value: "other", label: "Other" },
+  ],
+  burns: [
+    { value: "acute", label: "Acute Burns" },
+    { value: "reconstruction", label: "Reconstruction" },
+    { value: "contracture_release", label: "Contracture Release" },
+    { value: "other", label: "Other" },
+  ],
+  head_neck: [
+    { value: "oncological", label: "Oncological" },
+    { value: "trauma", label: "Trauma" },
+    { value: "congenital", label: "Congenital" },
+    { value: "other", label: "Other" },
+  ],
+  aesthetics: [
+    { value: "face", label: "Face" },
+    { value: "body", label: "Body" },
+    { value: "breast", label: "Breast" },
+    { value: "other", label: "Other" },
+  ],
+  general: [
+    { value: "other", label: "Other" },
+  ],
+};
 
 export type Specialty = "breast" | "body_contouring" | "aesthetics" | "hand_surgery" | "orthoplastic" | "burns" | "general" | "head_neck";
 
@@ -459,6 +535,7 @@ export const ROLE_DESCRIPTIONS: Record<Role, string> = {
 };
 
 export const OPERATING_TEAM_ROLE_LABELS: Record<OperatingTeamRole, string> = {
+  primary_surgeon: "Primary Surgeon",
   scrub_nurse: "Scrub Nurse",
   circulating_nurse: "Circulating Nurse",
   anaesthetist: "Anaesthetist",
@@ -466,6 +543,7 @@ export const OPERATING_TEAM_ROLE_LABELS: Record<OperatingTeamRole, string> = {
   surgical_assistant: "Surgical Assistant",
   surgical_registrar: "Surgical Registrar",
   medical_student: "Medical Student",
+  unassigned: "Select Role...",
 };
 
 export const INDICATION_LABELS: Record<Indication, string> = {
