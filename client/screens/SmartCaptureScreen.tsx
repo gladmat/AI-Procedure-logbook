@@ -148,7 +148,10 @@ export default function SmartCaptureScreen() {
           await analyzeWithAI(redactionResult.redactedText);
         }
       } else {
-        setProcessingStep(`Analyzing ${capturedPhotos.length} image(s) with AI...`);
+        // Native mobile: Send images to server for OCR only (no cloud AI)
+        // Images are processed with Tesseract.js server-side, then immediately discarded
+        // All document parsing uses local regex patterns - no external cloud services
+        setProcessingStep(`Extracting text from ${capturedPhotos.length} image(s)...`);
         
         const images = capturedPhotos.map(p => p.base64);
         

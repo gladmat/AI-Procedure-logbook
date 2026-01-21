@@ -110,14 +110,16 @@ Preferred communication style: Simple, everyday language.
     - Procedure coding uses international SNOMED CT as the canonical standard with country-specific local code mappings (e.g., CHOP, OPCS-4, ACHI, CPT).
 - **RACS MALT Data Model**: Comprehensive implementation including patient demographics, admission details, three-level diagnosis system, 36 SNOMED-coded co-morbidities, 6 anaesthetic types, operative factors, and comprehensive outcomes.
 
-### Privacy Pipeline (100% Offline)
+### Privacy Pipeline
 1. On-device camera capture of operation note image.
-2. **On-device OCR** using Tesseract.js (runs entirely in browser/mobile).
+2. **OCR text extraction**:
+   - **Web platform**: 100% on-device OCR using Tesseract.js (runs entirely in browser)
+   - **Mobile (Expo Go)**: Server-side OCR using Tesseract.js (images sent to app server, immediately discarded after text extraction)
 3. **Local document classification** detects document type (discharge summary, anaesthesia record, op note).
-4. **Local regex extraction** using modular hospital-specific parsers.
-5. Patient ID and dates extracted locally, then auto-populate form fields.
+4. **Local regex extraction** using modular hospital-specific parsers - **no cloud AI services used**.
+5. Patient ID and dates extracted, then auto-populate form fields.
 6. Extracted surgical data is stored locally on the device.
-7. **No data ever sent to cloud** - complete patient privacy guaranteed.
+7. **No external cloud AI services** - all document parsing uses local regex patterns, not Gemini/OpenAI.
 
 ### Key Design Patterns
 - **Modular Procedure Configuration**: Configuration files define specialty-specific fields.
