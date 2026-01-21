@@ -315,24 +315,50 @@ export default function SmartCaptureScreen() {
 
   const analyzeWithAI = async (redactedText: string) => {
     try {
-      const response = await apiRequest("POST", "/api/extract-flap-data", {
+      // Use the same endpoint as native, but with text instead of images
+      const response = await apiRequest("POST", "/api/analyze-op-note", {
         text: redactedText,
       });
       
       const result = await response.json();
       
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      
-      navigation.replace("CaseForm", {
-        specialty: "orthoplastic",
-        extractedData: result.extractedData || {},
-      });
+      if (result.extractedData) {
+        const specialty = result.detectedSpecialty || result.extractedData.detectedSpecialty || "general";
+        console.log("Smart Capture detected specialty:", specialty);
+        console.log("Extracted data keys:", Object.keys(result.extractedData));
+        
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        
+        navigation.replace("CaseForm", {
+          specialty: specialty as any,
+          extractedData: result.extractedData,
+        });
+      } else {
+        Alert.alert(
+          "No Data Extracted",
+          "Could not extract surgical data from the images. Would you like to enter the details manually?",
+          [
+            { text: "Cancel", style: "cancel" },
+            {
+              text: "Enter Manually",
+              onPress: () => navigation.replace("CaseForm", { specialty: "general" }),
+            },
+          ]
+        );
+      }
     } catch (error) {
       console.error("AI analysis error:", error);
-      navigation.replace("CaseForm", {
-        specialty: "orthoplastic",
-        extractedData: {},
-      });
+      Alert.alert(
+        "Processing Error",
+        "Failed to analyze operation note. Would you like to enter the details manually?",
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Enter Manually",
+            onPress: () => navigation.replace("CaseForm", { specialty: "general" }),
+          },
+        ]
+      );
     }
   };
 
@@ -343,7 +369,7 @@ export default function SmartCaptureScreen() {
   };
 
   const handleManualEntry = () => {
-    navigation.replace("CaseForm", { specialty: "orthoplastic" });
+    navigation.replace("CaseForm", { specialty: "general" });
   };
 
   if (!permission) {

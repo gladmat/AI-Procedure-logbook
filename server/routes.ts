@@ -86,25 +86,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/analyze-op-note", async (req: Request, res: Response) => {
     try {
-      const { image, images } = req.body;
+      const { image, images, text } = req.body;
       
-      const imageArray: string[] = images || (image ? [image] : []);
+      let textToAnalyze: string;
       
-      if (imageArray.length === 0) {
-        return res.status(400).json({ error: "No images provided" });
-      }
+      // If text is provided directly (from web OCR), use it
+      if (text) {
+        console.log("Using pre-extracted text from client OCR");
+        const redactionResult = redactSensitiveData(text);
+        textToAnalyze = redactionResult.redactedText;
+      } else {
+        // Otherwise extract from images
+        const imageArray: string[] = images || (image ? [image] : []);
+        
+        if (imageArray.length === 0) {
+          return res.status(400).json({ error: "No images or text provided" });
+        }
 
-      const extractedTexts: string[] = [];
-      for (const img of imageArray) {
-        const text = await extractTextFromImage(img);
-        extractedTexts.push(text);
+        const extractedTexts: string[] = [];
+        for (const img of imageArray) {
+          const extractedText = await extractTextFromImage(img);
+          extractedTexts.push(extractedText);
+        }
+        
+        const combinedText = extractedTexts.join("\n\n---\n\n");
+        const redactionResult = redactSensitiveData(combinedText);
+        textToAnalyze = redactionResult.redactedText;
       }
-      
-      const combinedText = extractedTexts.join("\n\n---\n\n");
-      const redactionResult = redactSensitiveData(combinedText);
 
       console.log("Analyzing operation note with Universal Smart Capture prompt...");
-      console.log("Redacted text length:", redactionResult.redactedText.length);
+      console.log("Redacted text length:", textToAnalyze.length);
 
       const response = await ai.models.generateContent({
         model: "gemini-2.5-flash",
@@ -113,7 +124,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             role: "user",
             parts: [
               { text: UNIVERSAL_SMART_CAPTURE_PROMPT },
-              { text: `\n\nExtract ALL surgical data from the following operation note(s). There may be multiple pages - combine all relevant information:\n\nOperation Notes (${imageArray.length} page(s)):\n${redactionResult.redactedText}` },
+              { text: `\n\nExtract ALL surgical data from the following operation note(s). There may be multiple pages - combine all relevant information:\n\nOperation Notes:\n${textToAnalyze}` },
             ],
           },
         ],
