@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, StyleSheet, Pressable, TextInput } from "react-native";
+import { View, StyleSheet, Pressable } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { ThemedText } from "@/components/ThemedText";
@@ -17,8 +17,18 @@ import {
 const LATERALITY_OPTIONS: { value: Laterality; label: string }[] = [
   { value: "left", label: "Left" },
   { value: "right", label: "Right" },
-  { value: "bilateral", label: "Bilateral" },
-  { value: "na", label: "N/A" },
+];
+
+const INJURY_MECHANISM_OPTIONS = [
+  { value: "", label: "Select mechanism..." },
+  { value: "fall", label: "Fall" },
+  { value: "crush", label: "Crush injury" },
+  { value: "saw_blade", label: "Saw/blade injury" },
+  { value: "punch_assault", label: "Punch/assault" },
+  { value: "sports", label: "Sports injury" },
+  { value: "mva", label: "Motor vehicle accident" },
+  { value: "work_related", label: "Work-related" },
+  { value: "other", label: "Other" },
 ];
 
 interface DiagnosisClinicalFieldsProps {
@@ -99,67 +109,41 @@ export function DiagnosisClinicalFields({
       </View>
 
       {isHandSurgery && (
-        <>
-          <View style={styles.fieldContainer}>
-            <ThemedText style={[styles.fieldLabel, { color: theme.text }]}>
-              Injury Mechanism
-            </ThemedText>
-            <TextInput
-              style={[
-                styles.textInput,
-                { 
-                  backgroundColor: theme.backgroundSecondary,
-                  color: theme.text,
-                  borderColor: theme.border,
-                },
-              ]}
-              value={clinicalDetails.injuryMechanism || ""}
-              onChangeText={(text) => updateClinicalDetails({ injuryMechanism: text })}
-              placeholder="e.g., Fall, crush, saw injury"
-              placeholderTextColor={theme.textTertiary}
-            />
+        <View style={styles.fieldContainer}>
+          <ThemedText style={[styles.fieldLabel, { color: theme.text }]}>
+            Injury Mechanism
+          </ThemedText>
+          <View style={styles.pickerOptions}>
+            {INJURY_MECHANISM_OPTIONS.filter(o => o.value !== "").map((option) => {
+              const isSelected = clinicalDetails.injuryMechanism === option.value;
+              return (
+                <Pressable
+                  key={option.value}
+                  style={[
+                    styles.pickerOption,
+                    {
+                      backgroundColor: isSelected ? theme.link : theme.backgroundSecondary,
+                      borderColor: isSelected ? theme.link : theme.border,
+                    },
+                  ]}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    updateClinicalDetails({ injuryMechanism: option.value });
+                  }}
+                >
+                  <ThemedText
+                    style={[
+                      styles.pickerOptionText,
+                      { color: isSelected ? "#FFF" : theme.text },
+                    ]}
+                  >
+                    {option.label}
+                  </ThemedText>
+                </Pressable>
+              );
+            })}
           </View>
-
-          <View style={styles.fieldContainer}>
-            <ThemedText style={[styles.fieldLabel, { color: theme.text }]}>
-              Nerve Status
-            </ThemedText>
-            <TextInput
-              style={[
-                styles.textInput,
-                { 
-                  backgroundColor: theme.backgroundSecondary,
-                  color: theme.text,
-                  borderColor: theme.border,
-                },
-              ]}
-              value={clinicalDetails.nerveStatus || ""}
-              onChangeText={(text) => updateClinicalDetails({ nerveStatus: text })}
-              placeholder="e.g., Digital nerves intact"
-              placeholderTextColor={theme.textTertiary}
-            />
-          </View>
-
-          <View style={styles.fieldContainer}>
-            <ThemedText style={[styles.fieldLabel, { color: theme.text }]}>
-              Tendon Injuries
-            </ThemedText>
-            <TextInput
-              style={[
-                styles.textInput,
-                { 
-                  backgroundColor: theme.backgroundSecondary,
-                  color: theme.text,
-                  borderColor: theme.border,
-                },
-              ]}
-              value={clinicalDetails.tendonInjuries || ""}
-              onChangeText={(text) => updateClinicalDetails({ tendonInjuries: text })}
-              placeholder="e.g., FDP zone 2"
-              placeholderTextColor={theme.textTertiary}
-            />
-          </View>
-        </>
+        </View>
       )}
 
       {hasFractureDiagnosis && onFracturesChange && (
@@ -274,6 +258,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
     fontSize: 16,
+  },
+  pickerOptions: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: Spacing.sm,
+  },
+  pickerOption: {
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.sm,
+    borderWidth: 1,
+  },
+  pickerOptionText: {
+    fontSize: 14,
+    fontWeight: "500",
   },
   fractureSection: {
     marginTop: Spacing.md,
