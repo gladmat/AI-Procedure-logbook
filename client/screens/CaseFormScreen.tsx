@@ -77,6 +77,7 @@ import { SnomedSearchPicker } from "@/components/SnomedSearchPicker";
 import { useAuth } from "@/contexts/AuthContext";
 import { getDiagnosisStaging, DiagnosisStagingConfig, searchSnomedDiagnoses, searchSnomedProcedures, SnomedSearchResult } from "@/lib/snomedApi";
 import { DiagnosisClinicalFields } from "@/components/DiagnosisClinicalFields";
+import { DocumentTypeBadge } from "@/components/AutoFilledField";
 import { FractureEntry, DiagnosisClinicalDetails } from "@/types/case";
 
 type RouteParams = RouteProp<RootStackParamList, "CaseForm">;
@@ -187,6 +188,11 @@ export default function CaseFormScreen() {
   const draftLoadedRef = useRef(false);
 
   const { specialty, extractedData } = route.params;
+  
+  const documentType = (extractedData as any)?._documentType;
+  const confidence = (extractedData as any)?._confidence;
+  const detectedTriggers = (extractedData as any)?._detectedTriggers;
+  const autoFilledFields: string[] = (extractedData as any)?._autoFilledFields || [];
   const config = getConfigForSpecialty(specialty);
 
   const primaryFacility = facilities.find(f => f.isPrimary)?.facilityName || facilities[0]?.facilityName || "";
@@ -921,6 +927,14 @@ export default function CaseFormScreen() {
         },
       ]}
     >
+      {documentType ? (
+        <DocumentTypeBadge
+          documentType={documentType}
+          confidence={confidence}
+          detectedTriggers={detectedTriggers}
+        />
+      ) : null}
+      
       <SectionHeader title="Patient Information" />
 
       <FormField

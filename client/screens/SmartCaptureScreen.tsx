@@ -161,13 +161,22 @@ export default function SmartCaptureScreen() {
         if (result.extractedData) {
           const specialty = result.detectedSpecialty || result.extractedData.detectedSpecialty || "general";
           console.log("Smart Capture detected specialty:", specialty);
+          console.log("Document type:", result.documentTypeName);
+          console.log("Confidence:", result.confidence);
+          console.log("Auto-filled fields:", result.autoFilledFields);
           console.log("Extracted data keys:", Object.keys(result.extractedData));
           
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
           
           navigation.replace("CaseForm", {
             specialty: specialty as any,
-            extractedData: result.extractedData,
+            extractedData: {
+              ...result.extractedData,
+              _documentType: result.documentTypeName,
+              _confidence: result.confidence,
+              _autoFilledFields: result.autoFilledFields || [],
+              _detectedTriggers: result.detectedTriggers || [],
+            },
           });
         } else {
           Alert.alert(
@@ -315,7 +324,6 @@ export default function SmartCaptureScreen() {
 
   const analyzeWithAI = async (redactedText: string) => {
     try {
-      // Use the same endpoint as native, but with text instead of images
       const response = await apiRequest("POST", "/api/analyze-op-note", {
         text: redactedText,
       });
@@ -325,13 +333,22 @@ export default function SmartCaptureScreen() {
       if (result.extractedData) {
         const specialty = result.detectedSpecialty || result.extractedData.detectedSpecialty || "general";
         console.log("Smart Capture detected specialty:", specialty);
+        console.log("Document type:", result.documentTypeName);
+        console.log("Confidence:", result.confidence);
+        console.log("Auto-filled fields:", result.autoFilledFields);
         console.log("Extracted data keys:", Object.keys(result.extractedData));
         
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         
         navigation.replace("CaseForm", {
           specialty: specialty as any,
-          extractedData: result.extractedData,
+          extractedData: {
+            ...result.extractedData,
+            _documentType: result.documentTypeName,
+            _confidence: result.confidence,
+            _autoFilledFields: result.autoFilledFields || [],
+            _detectedTriggers: result.detectedTriggers || [],
+          },
         });
       } else {
         Alert.alert(
@@ -347,7 +364,7 @@ export default function SmartCaptureScreen() {
         );
       }
     } catch (error) {
-      console.error("AI analysis error:", error);
+      console.error("Processing error:", error);
       Alert.alert(
         "Processing Error",
         "Failed to analyze operation note. Would you like to enter the details manually?",
