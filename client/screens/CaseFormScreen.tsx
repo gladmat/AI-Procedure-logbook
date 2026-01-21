@@ -372,6 +372,7 @@ export default function CaseFormScreen() {
     
     // Diagnoses - auto-search SNOMED for best match
     const diagnosisText = data.finalDiagnosis || data.preManagementDiagnosis;
+    const detectedSpecialty = data.detectedSpecialty || specialty;
     if (diagnosisText) {
       setDiagnosis(diagnosisText);
       // Auto-search SNOMED for diagnosis
