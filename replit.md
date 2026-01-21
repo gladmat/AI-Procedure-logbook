@@ -15,7 +15,17 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (January 2026)
 
-### AO/OTA Fracture Classification System (Latest)
+### Fracture Case Workflow (Latest)
+- **Streamlined Documentation**: New "Fracture Case" checkbox in Hand Surgery triggers the AO picker automatically
+- **Auto-SNOMED Suggestion**: After AO code selection, automatically suggests SNOMED CT diagnosis based on fracture type
+- **AO-to-SNOMED Mapping**: Intelligent mapping covers all carpal bones, metacarpals, phalanges with special handling for:
+  - Bennett's/Rolando fractures (thumb metacarpal base)
+  - Boxer's fracture (5th metacarpal)
+  - Mallet finger (distal phalanx avulsion)
+  - Scaphoid fractures with waist/pole qualifications
+- **Workflow Flow**: Check "Fracture Case" → AO picker opens → Select fracture → SNOMED auto-populates → Continue documenting
+
+### AO/OTA Fracture Classification System
 - **Dynamic Cascading Form**: Replaced graphical bone picker with a clean table-based form that reveals fields as you make selections
 - **AO Region 7 Coverage**: Complete AO/OTA 2018 Hand & Carpus classification:
   - Carpal bones (71-76): Lunate, Scaphoid, Capitate, Hamate, Trapezium, Pisiform, Triquetrum, Trapezoid
