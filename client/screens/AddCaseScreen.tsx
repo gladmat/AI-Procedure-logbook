@@ -122,7 +122,7 @@ export default function AddCaseScreen() {
               {SPECIALTY_LABELS[specialty]}
             </ThemedText>
             <ThemedText style={[styles.specialtyCount, { color: theme.textTertiary }]}>
-              {PROCEDURE_TYPES[specialty].length} procedures
+              {PROCEDURE_TYPES[specialty]?.length || 0} procedures
             </ThemedText>
           </Pressable>
         ))}

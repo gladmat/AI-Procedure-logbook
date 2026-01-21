@@ -197,7 +197,7 @@ export default function CaseFormScreen() {
   const [procedureType, setProcedureType] = useState<string>(
     (extractedData as FreeFlapDetails | undefined)?.flapDisplayName || 
     (extractedData as any)?.flapType || 
-    PROCEDURE_TYPES[specialty][0]
+    PROCEDURE_TYPES[specialty]?.[0] || ""
   );
   const [asaScore, setAsaScore] = useState<string>("");
   const [heightCm, setHeightCm] = useState("");
@@ -236,7 +236,7 @@ export default function CaseFormScreen() {
       sequenceOrder: 1,
       procedureName: (extractedData as FreeFlapDetails | undefined)?.flapDisplayName || 
         (extractedData as any)?.flapType || 
-        PROCEDURE_TYPES[specialty][0],
+        PROCEDURE_TYPES[specialty]?.[0] || "",
       specialty: specialty,
       surgeonRole: "PS",
     },
@@ -339,7 +339,7 @@ export default function CaseFormScreen() {
       setPatientIdentifier(draft.patientIdentifier ?? "");
       setProcedureDate(draft.procedureDate ?? new Date().toISOString().split("T")[0]);
       setFacility(draft.facility ?? primaryFacility);
-      setProcedureType(draft.procedureType ?? PROCEDURE_TYPES[specialty][0]);
+      setProcedureType(draft.procedureType ?? PROCEDURE_TYPES[specialty]?.[0] ?? "");
       setAsaScore(draft.asaScore ? String(draft.asaScore) : "");
       setHeightCm(draft.heightCm ? String(draft.heightCm) : "");
       setWeightKg(draft.weightKg ? String(draft.weightKg) : "");
@@ -722,7 +722,7 @@ export default function CaseFormScreen() {
     }
   };
 
-  const procedureOptions = PROCEDURE_TYPES[specialty].map((p) => ({
+  const procedureOptions = (PROCEDURE_TYPES[specialty] || []).map((p) => ({
     value: p,
     label: p,
   }));
