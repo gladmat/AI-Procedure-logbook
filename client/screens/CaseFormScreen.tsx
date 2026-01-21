@@ -75,7 +75,7 @@ import { AnastomosisEntryCard } from "@/components/AnastomosisEntryCard";
 import { ProcedureEntryCard } from "@/components/ProcedureEntryCard";
 import { SnomedSearchPicker } from "@/components/SnomedSearchPicker";
 import { useAuth } from "@/contexts/AuthContext";
-import { getDiagnosisStaging, DiagnosisStagingConfig } from "@/lib/snomedApi";
+import { getDiagnosisStaging, DiagnosisStagingConfig, searchSnomedDiagnoses, searchSnomedProcedures, SnomedSearchResult } from "@/lib/snomedApi";
 
 type RouteParams = RouteProp<RootStackParamList, "CaseForm">;
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -370,11 +370,19 @@ export default function CaseFormScreen() {
       setOperatingTeam(team);
     }
     
-    // Diagnoses - set as text for now, user can search SNOMED
-    if (data.finalDiagnosis) {
-      setDiagnosis(data.finalDiagnosis);
-    } else if (data.preManagementDiagnosis) {
-      setDiagnosis(data.preManagementDiagnosis);
+    // Diagnoses - auto-search SNOMED for best match
+    const diagnosisText = data.finalDiagnosis || data.preManagementDiagnosis;
+    if (diagnosisText) {
+      setDiagnosis(diagnosisText);
+      // Auto-search SNOMED for diagnosis
+      searchSnomedDiagnoses(diagnosisText, detectedSpecialty, 5)
+        .then(results => {
+          if (results.length > 0) {
+            const bestMatch = results[0];
+            setPrimaryDiagnosis({ conceptId: bestMatch.conceptId, term: bestMatch.term });
+          }
+        })
+        .catch(err => console.warn("Auto-SNOMED diagnosis search failed:", err));
     }
     
     // Comorbidities - match to SNOMED coded items
@@ -422,13 +430,13 @@ export default function CaseFormScreen() {
     if (data.recipientSiteRegion) setRecipientSiteRegion(data.recipientSiteRegion);
     if (data.anastomoses && Array.isArray(data.anastomoses)) setAnastomoses(data.anastomoses);
     
-    // Procedures
+    // Procedures - extract and auto-search SNOMED for each
     if (data.procedures && Array.isArray(data.procedures) && data.procedures.length > 0) {
       const extractedProcedures: CaseProcedure[] = data.procedures.map((proc: any, index: number) => ({
         id: uuidv4(),
         sequenceOrder: index + 1,
         procedureName: proc.procedureName || "",
-        specialty: specialty,
+        specialty: detectedSpecialty || specialty,
         surgeonRole: "PS",
         laterality: proc.laterality,
         procedureTags: proc.procedureTags || [],
@@ -440,6 +448,24 @@ export default function CaseFormScreen() {
       if (extractedProcedures[0]?.procedureName) {
         setProcedureType(extractedProcedures[0].procedureName);
       }
+      
+      // Auto-search SNOMED for each procedure (runs in parallel)
+      extractedProcedures.forEach((proc, index) => {
+        if (proc.procedureName) {
+          searchSnomedProcedures(proc.procedureName, detectedSpecialty || specialty, 3)
+            .then(results => {
+              if (results.length > 0) {
+                const bestMatch = results[0];
+                setProcedures(prev => prev.map((p, i) => 
+                  i === index 
+                    ? { ...p, snomedCode: bestMatch.conceptId, snomedTerm: bestMatch.term }
+                    : p
+                ));
+              }
+            })
+            .catch(err => console.warn("Auto-SNOMED procedure search failed:", err));
+        }
+      });
     }
     
     draftLoadedRef.current = true;
