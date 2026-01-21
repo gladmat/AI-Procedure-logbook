@@ -12,7 +12,7 @@ import { v4 as uuidv4 } from "uuid";
 import { useNavigation, useRoute, RouteProp, useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useHeaderHeight } from "@react-navigation/elements";
+import { useHeaderHeight, HeaderButton } from "@react-navigation/elements";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { ThemedText } from "@/components/ThemedText";
@@ -169,8 +169,15 @@ export default function CaseDetailScreen() {
   useEffect(() => {
     navigation.setOptions({
       headerTitle: caseData?.patientIdentifier || "Case Details",
+      headerRight: () => caseData ? (
+        <HeaderButton
+          onPress={() => navigation.navigate("CaseForm", { caseId: caseData.id })}
+        >
+          <Feather name="edit-2" size={20} color={theme.link} />
+        </HeaderButton>
+      ) : null,
     });
-  }, [caseData]);
+  }, [caseData, theme]);
 
   const handleDelete = () => {
     Alert.alert(
@@ -330,7 +337,7 @@ export default function CaseDetailScreen() {
             {userMember ? <RoleBadge role={userMember.role} /> : null}
           </View>
           <ThemedText type="h2" style={styles.procedureType}>
-            {caseData.procedureType}
+            {caseData.preManagementDiagnosis?.displayName || caseData.procedureType}
           </ThemedText>
           
           {caseData.procedureCode ? (
