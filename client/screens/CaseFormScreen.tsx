@@ -79,6 +79,8 @@ import { getDiagnosisStaging, DiagnosisStagingConfig, searchSnomedDiagnoses, sea
 import { DiagnosisClinicalFields } from "@/components/DiagnosisClinicalFields";
 import { DocumentTypeBadge } from "@/components/AutoFilledField";
 import { FractureEntry, DiagnosisClinicalDetails } from "@/types/case";
+import { FractureClassificationWizard } from "@/components/FractureClassificationWizard";
+import { getAoToSnomedSuggestion } from "@/data/aoToSnomedMapping";
 
 type RouteParams = RouteProp<RootStackParamList, "CaseForm">;
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -275,6 +277,9 @@ export default function CaseFormScreen() {
   const [stagingValues, setStagingValues] = useState<Record<string, string>>({});
   const [fractures, setFractures] = useState<FractureEntry[]>([]);
   const [diagnosisClinicalDetails, setDiagnosisClinicalDetails] = useState<DiagnosisClinicalDetails>({});
+  const [isFractureCase, setIsFractureCase] = useState(false);
+  const [showFractureWizardFromCheckbox, setShowFractureWizardFromCheckbox] = useState(false);
+  const [snomedSuggestion, setSnomedSuggestion] = useState<{ searchTerm: string; displayName: string } | null>(null);
   
   // Legacy diagnosis field for backwards compatibility
   const [diagnosis, setDiagnosis] = useState("");
@@ -780,6 +785,46 @@ export default function CaseFormScreen() {
     });
   };
 
+  const handleFractureCheckboxToggle = (checked: boolean) => {
+    setIsFractureCase(checked);
+    if (checked) {
+      setShowFractureWizardFromCheckbox(true);
+    } else {
+      setFractures([]);
+      setSnomedSuggestion(null);
+    }
+  };
+
+  const handleFractureWizardSave = async (newFractures: FractureEntry[]) => {
+    setFractures(newFractures);
+    setShowFractureWizardFromCheckbox(false);
+    
+    if (newFractures.length > 0) {
+      const firstFracture = newFractures[0];
+      const suggestion = getAoToSnomedSuggestion(firstFracture.aoCode);
+      setSnomedSuggestion(suggestion);
+      
+      try {
+        const results = await searchSnomedDiagnoses(suggestion.searchTerm, specialty);
+        if (results.length > 0) {
+          setPrimaryDiagnosis({
+            conceptId: results[0].conceptId,
+            term: results[0].term
+          });
+        }
+      } catch (error) {
+        console.log("SNOMED lookup failed, using suggestion:", suggestion.displayName);
+      }
+    }
+  };
+
+  const handleFractureWizardClose = () => {
+    setShowFractureWizardFromCheckbox(false);
+    if (fractures.length === 0) {
+      setIsFractureCase(false);
+    }
+  };
+
   const handleSave = async () => {
     if (!patientIdentifier.trim()) {
       Alert.alert("Required Field", "Please enter a patient identifier");
@@ -973,6 +1018,70 @@ export default function CaseFormScreen() {
       )}
 
       <SectionHeader title="Primary Diagnosis" subtitle="SNOMED CT coded diagnosis" />
+
+      {specialty === "hand_surgery" ? (
+        <View style={styles.fractureCheckboxContainer}>
+          <Pressable
+            style={styles.fractureCheckboxRow}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              handleFractureCheckboxToggle(!isFractureCase);
+            }}
+          >
+            <View style={[
+              styles.checkbox,
+              { 
+                borderColor: isFractureCase ? theme.link : theme.border,
+                backgroundColor: isFractureCase ? theme.link : "transparent"
+              }
+            ]}>
+              {isFractureCase ? (
+                <Feather name="check" size={14} color="#FFF" />
+              ) : null}
+            </View>
+            <ThemedText style={[styles.fractureCheckboxLabel, { color: theme.text }]}>
+              Fracture Case
+            </ThemedText>
+          </Pressable>
+          {isFractureCase && fractures.length > 0 ? (
+            <View style={styles.fractureSummary}>
+              {fractures.map((f) => (
+                <View 
+                  key={f.id} 
+                  style={[styles.fractureSummaryChip, { backgroundColor: theme.backgroundTertiary }]}
+                >
+                  <ThemedText style={[styles.fractureSummaryText, { color: theme.text }]}>
+                    {f.boneName}
+                  </ThemedText>
+                  <View style={[styles.aoCodeChip, { backgroundColor: theme.link }]}>
+                    <ThemedText style={styles.aoCodeChipText}>{f.aoCode}</ThemedText>
+                  </View>
+                </View>
+              ))}
+              <Pressable
+                style={[styles.editFracturesButton, { borderColor: theme.link }]}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  setShowFractureWizardFromCheckbox(true);
+                }}
+              >
+                <Feather name="edit-2" size={14} color={theme.link} />
+                <ThemedText style={[styles.editFracturesText, { color: theme.link }]}>
+                  Edit
+                </ThemedText>
+              </Pressable>
+            </View>
+          ) : null}
+          {isFractureCase && snomedSuggestion && primaryDiagnosis ? (
+            <View style={[styles.suggestionBanner, { backgroundColor: theme.backgroundSecondary }]}>
+              <Feather name="zap" size={16} color={theme.link} />
+              <ThemedText style={[styles.suggestionText, { color: theme.textSecondary }]}>
+                Auto-suggested from AO code
+              </ThemedText>
+            </View>
+          ) : null}
+        </View>
+      ) : null}
 
       <SnomedSearchPicker
         label="Search Diagnosis"
@@ -1527,6 +1636,13 @@ export default function CaseFormScreen() {
           {saving ? "Saving Case..." : "Save Case"}
         </Button>
       </View>
+
+      <FractureClassificationWizard
+        visible={showFractureWizardFromCheckbox}
+        onClose={handleFractureWizardClose}
+        onSave={handleFractureWizardSave}
+        initialFractures={fractures}
+      />
     </KeyboardAwareScrollViewCompat>
   );
 }
@@ -1741,5 +1857,73 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "500",
     marginBottom: Spacing.md,
+  },
+  fractureCheckboxContainer: {
+    marginBottom: Spacing.md,
+  },
+  fractureCheckboxRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.md,
+    paddingVertical: Spacing.sm,
+  },
+  fractureCheckboxLabel: {
+    fontSize: 15,
+    fontWeight: "500",
+  },
+  fractureSummary: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: Spacing.sm,
+    marginTop: Spacing.sm,
+    alignItems: "center",
+  },
+  fractureSummaryChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.xs,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.sm,
+  },
+  fractureSummaryText: {
+    fontSize: 13,
+    fontWeight: "500",
+  },
+  aoCodeChip: {
+    paddingHorizontal: Spacing.xs,
+    paddingVertical: 2,
+    borderRadius: BorderRadius.xs,
+  },
+  aoCodeChipText: {
+    color: "#FFF",
+    fontSize: 11,
+    fontWeight: "700",
+    fontFamily: "monospace",
+  },
+  editFracturesButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.sm,
+    borderWidth: 1,
+  },
+  editFracturesText: {
+    fontSize: 12,
+    fontWeight: "500",
+  },
+  suggestionBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+    marginTop: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.sm,
+  },
+  suggestionText: {
+    fontSize: 13,
   },
 });
