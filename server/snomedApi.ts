@@ -8,6 +8,22 @@
  */
 
 const ONTOSERVER_BASE_URL = "https://r4.ontoserver.csiro.au/fhir";
+const FETCH_TIMEOUT_MS = 8000;
+
+async function fetchWithTimeout(url: string, options: RequestInit = {}): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+    return response;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
 
 // SNOMED CT Concept IDs for key hierarchies (used in ECL expressions)
 const SNOMED_HIERARCHIES = {
@@ -82,7 +98,7 @@ export async function searchProcedures(
 
     console.log("SNOMED procedure search:", query);
 
-    const response = await fetch(url, {
+    const response = await fetchWithTimeout(url, {
       headers: {
         "Accept": "application/fhir+json",
       },
@@ -99,7 +115,11 @@ export async function searchProcedures(
     console.log(`SNOMED procedures found: ${results.length}`);
     return results;
   } catch (error) {
-    console.error("Error searching SNOMED procedures:", error);
+    if (error instanceof Error && error.name === "AbortError") {
+      console.error("SNOMED procedure search timed out");
+    } else {
+      console.error("Error searching SNOMED procedures:", error);
+    }
     return [];
   }
 }
@@ -128,7 +148,7 @@ export async function searchDiagnoses(
 
     console.log("SNOMED diagnosis search:", query);
 
-    const response = await fetch(url, {
+    const response = await fetchWithTimeout(url, {
       headers: {
         "Accept": "application/fhir+json",
       },
@@ -145,7 +165,11 @@ export async function searchDiagnoses(
     console.log(`SNOMED diagnoses found: ${results.length}`);
     return results;
   } catch (error) {
-    console.error("Error searching SNOMED diagnoses:", error);
+    if (error instanceof Error && error.name === "AbortError") {
+      console.error("SNOMED diagnosis search timed out");
+    } else {
+      console.error("Error searching SNOMED diagnoses:", error);
+    }
     return [];
   }
 }
@@ -159,7 +183,7 @@ export async function getConceptDetails(conceptId: string): Promise<SnomedConcep
       `system=http://snomed.info/sct` +
       `&code=${conceptId}`;
 
-    const response = await fetch(url, {
+    const response = await fetchWithTimeout(url, {
       headers: {
         "Accept": "application/fhir+json",
       },

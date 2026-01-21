@@ -9,6 +9,14 @@ import { getStagingForDiagnosis, getAllStagingConfigs } from "./diagnosisStaging
 import { processDocument } from "./documentRouter";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { z } from "zod";
+import { insertProfileSchema, insertFlapSchema, insertAnastomosisSchema } from "@shared/schema";
+
+const profileUpdateSchema = insertProfileSchema.partial().omit({ userId: true });
+const flapCreateSchema = insertFlapSchema;
+const flapUpdateSchema = insertFlapSchema.partial().omit({ procedureId: true });
+const anastomosisCreateSchema = insertAnastomosisSchema;
+const anastomosisUpdateSchema = insertAnastomosisSchema.partial().omit({ flapId: true });
 
 // JWT_SECRET must be set in environment - fail hard if missing for security
 if (!process.env.JWT_SECRET) {
@@ -243,7 +251,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/profile", authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const profile = await storage.updateProfile(req.userId!, req.body);
+      const parseResult = profileUpdateSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        return res.status(400).json({ error: "Invalid profile data", details: parseResult.error.flatten() });
+      }
+      
+      const profile = await storage.updateProfile(req.userId!, parseResult.data);
       res.json(profile);
     } catch (error) {
       console.error("Profile update error:", error);
@@ -425,8 +438,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/flaps", authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
+      const parseResult = flapCreateSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        return res.status(400).json({ error: "Invalid flap data", details: parseResult.error.flatten() });
+      }
+      
       const userId = req.userId!;
-      const { procedureId } = req.body;
+      const { procedureId } = parseResult.data;
       
       // Verify user owns the parent procedure
       const hasAccess = await storage.verifyProcedureOwnership(procedureId, userId);
@@ -434,7 +452,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: "Access denied" });
       }
       
-      const flap = await storage.createFlap(req.body);
+      const flap = await storage.createFlap(parseResult.data);
       res.json(flap);
     } catch (error) {
       console.error("Error creating flap:", error);
@@ -444,6 +462,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/flaps/:id", authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
+      const parseResult = flapUpdateSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        return res.status(400).json({ error: "Invalid flap data", details: parseResult.error.flatten() });
+      }
+      
       const { id } = req.params;
       const userId = req.userId!;
       
@@ -453,7 +476,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: "Access denied" });
       }
       
-      const flap = await storage.updateFlap(id, req.body);
+      const flap = await storage.updateFlap(id, parseResult.data);
       if (!flap) {
         return res.status(404).json({ error: "Flap not found" });
       }
@@ -505,8 +528,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/anastomoses", authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
+      const parseResult = anastomosisCreateSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        return res.status(400).json({ error: "Invalid anastomosis data", details: parseResult.error.flatten() });
+      }
+      
       const userId = req.userId!;
-      const { flapId } = req.body;
+      const { flapId } = parseResult.data;
       
       // Verify user owns the parent flap
       const hasAccess = await storage.verifyFlapOwnership(flapId, userId);
@@ -514,7 +542,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: "Access denied" });
       }
       
-      const anastomosis = await storage.createAnastomosis(req.body);
+      const anastomosis = await storage.createAnastomosis(parseResult.data);
       res.json(anastomosis);
     } catch (error) {
       console.error("Error creating anastomosis:", error);
@@ -524,6 +552,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/anastomoses/:id", authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
+      const parseResult = anastomosisUpdateSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        return res.status(400).json({ error: "Invalid anastomosis data", details: parseResult.error.flatten() });
+      }
+      
       const { id } = req.params;
       const userId = req.userId!;
       
@@ -533,7 +566,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: "Access denied" });
       }
       
-      const anastomosis = await storage.updateAnastomosis(id, req.body);
+      const anastomosis = await storage.updateAnastomosis(id, parseResult.data);
       if (!anastomosis) {
         return res.status(404).json({ error: "Anastomosis not found" });
       }
