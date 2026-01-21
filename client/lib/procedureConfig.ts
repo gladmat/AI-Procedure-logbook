@@ -76,20 +76,17 @@ export const HAND_SURGERY_CONFIG: ProcedureModuleConfig = {
     {
       key: "injuryMechanism",
       label: "Injury Mechanism",
-      type: "text",
-      placeholder: "e.g., Saw injury",
-    },
-    {
-      key: "nerveStatus",
-      label: "Nerve Status",
-      type: "text",
-      placeholder: "e.g., Digital nerve intact",
-    },
-    {
-      key: "tendonInjuries",
-      label: "Tendon Injuries",
-      type: "text",
-      placeholder: "e.g., FDP zone 2",
+      type: "select",
+      options: [
+        { value: "fall", label: "Fall" },
+        { value: "crush", label: "Crush injury" },
+        { value: "saw_blade", label: "Saw/blade injury" },
+        { value: "punch_assault", label: "Punch/assault" },
+        { value: "sports", label: "Sports injury" },
+        { value: "mva", label: "Motor vehicle accident" },
+        { value: "work_related", label: "Work-related" },
+        { value: "other", label: "Other" },
+      ],
     },
   ],
 };

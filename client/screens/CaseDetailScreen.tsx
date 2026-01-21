@@ -475,14 +475,6 @@ export default function CaseDetailScreen() {
                           value={(proc.clinicalDetails as any).fixationMaterial?.replace(/_/g, " ")} 
                         />
                         <DetailRow 
-                          label="Nerve Status" 
-                          value={(proc.clinicalDetails as any).nerveStatus} 
-                        />
-                        <DetailRow 
-                          label="Tendon Injuries" 
-                          value={(proc.clinicalDetails as any).tendonInjuries} 
-                        />
-                        <DetailRow 
                           label="Fracture Site" 
                           value={(proc.clinicalDetails as any).fractureSite} 
                         />

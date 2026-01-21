@@ -328,17 +328,13 @@ export interface FractureEntry {
 
 export interface HandTraumaDetails {
   injuryMechanism?: string;
-  nerveStatus?: string;
-  tendonInjuries?: string;
 }
 
 export interface HandSurgeryDetails {
   injuryMechanism?: string;
-  nerveStatus?: string;
-  tendonInjuries?: string;
   fractures?: FractureEntry[];
   dominantHand?: "left" | "right" | "ambidextrous";
-  affectedHand?: "left" | "right" | "bilateral";
+  affectedHand?: "left" | "right";
 }
 
 export interface BodyContouringDetails {

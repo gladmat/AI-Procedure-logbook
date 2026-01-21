@@ -326,18 +326,6 @@ export function HandTraumaClinicalFields({
         onChangeText={(v) => onUpdate({ ...clinicalDetails, fixationMaterial: v })}
         placeholder="e.g., K-wire 1.2mm, plate/screws"
       />
-      <FormField
-        label="Nerve Status"
-        value={String(clinicalDetails.nerveStatus || "")}
-        onChangeText={(v) => onUpdate({ ...clinicalDetails, nerveStatus: v })}
-        placeholder="e.g., Digital nerve intact"
-      />
-      <FormField
-        label="Tendon Injuries"
-        value={String(clinicalDetails.tendonInjuries || "")}
-        onChangeText={(v) => onUpdate({ ...clinicalDetails, tendonInjuries: v })}
-        placeholder="e.g., FDP zone 2"
-      />
     </View>
   );
 }
@@ -350,7 +338,6 @@ interface HandSurgeryClinicalFieldsProps {
 const HAND_OPTIONS = [
   { value: "left", label: "Left" },
   { value: "right", label: "Right" },
-  { value: "bilateral", label: "Bilateral" },
 ];
 
 const DOMINANT_HAND_OPTIONS = [
@@ -443,8 +430,6 @@ export function ProcedureClinicalDetails({
   if (specialty === "hand_surgery") {
     const handDetails: HandSurgeryDetails = {
       injuryMechanism: (clinicalDetails as HandSurgeryDetails)?.injuryMechanism,
-      nerveStatus: (clinicalDetails as HandSurgeryDetails)?.nerveStatus,
-      tendonInjuries: (clinicalDetails as HandSurgeryDetails)?.tendonInjuries,
       fractures: (clinicalDetails as HandSurgeryDetails)?.fractures,
       dominantHand: (clinicalDetails as HandSurgeryDetails)?.dominantHand,
       affectedHand: (clinicalDetails as HandSurgeryDetails)?.affectedHand,
