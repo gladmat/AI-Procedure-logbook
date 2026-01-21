@@ -121,7 +121,7 @@ export default function SmartCaptureScreen() {
         
         if (result.extractedData) {
           navigation.replace("CaseForm", {
-            specialty: "free_flap",
+            specialty: "orthoplastic",
             extractedData: result.extractedData,
           });
         }
@@ -135,7 +135,7 @@ export default function SmartCaptureScreen() {
           { text: "Cancel", style: "cancel" },
           {
             text: "Enter Manually",
-            onPress: () => navigation.replace("CaseForm", { specialty: "free_flap" }),
+            onPress: () => navigation.replace("CaseForm", { specialty: "orthoplastic" }),
           },
         ]
       );
@@ -186,7 +186,7 @@ export default function SmartCaptureScreen() {
             { text: "Cancel", onPress: () => navigation.goBack() },
             {
               text: "View Cases",
-              onPress: () => navigation.navigate("Cases"),
+              onPress: () => navigation.navigate("Main"),
             },
           ]
         );
@@ -222,7 +222,7 @@ export default function SmartCaptureScreen() {
         Alert.alert(
           "No Complications Found",
           "The discharge summary indicates no complications. Case has been updated.",
-          [{ text: "OK", onPress: () => navigation.navigate("CaseDetail", { id: matchedCase!.id }) }]
+          [{ text: "OK", onPress: () => navigation.navigate("CaseDetail", { caseId: matchedCase!.id }) }]
         );
       } else {
         const complications: ComplicationEntry[] = (extractedData.complications || []).map(
@@ -240,7 +240,7 @@ export default function SmartCaptureScreen() {
         Alert.alert(
           "Complications Recorded",
           `Found and recorded ${complications.length} complication(s) from the discharge summary.`,
-          [{ text: "View Case", onPress: () => navigation.navigate("CaseDetail", { id: matchedCase!.id }) }]
+          [{ text: "View Case", onPress: () => navigation.navigate("CaseDetail", { caseId: matchedCase!.id }) }]
         );
       }
     } catch (error) {
@@ -267,13 +267,13 @@ export default function SmartCaptureScreen() {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       
       navigation.replace("CaseForm", {
-        specialty: "free_flap",
+        specialty: "orthoplastic",
         extractedData: result.extractedData || {},
       });
     } catch (error) {
       console.error("AI analysis error:", error);
       navigation.replace("CaseForm", {
-        specialty: "free_flap",
+        specialty: "orthoplastic",
         extractedData: {},
       });
     }
@@ -286,7 +286,7 @@ export default function SmartCaptureScreen() {
   };
 
   const handleManualEntry = () => {
-    navigation.replace("CaseForm", { specialty: "free_flap" });
+    navigation.replace("CaseForm", { specialty: "orthoplastic" });
   };
 
   if (!permission) {
