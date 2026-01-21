@@ -10,7 +10,11 @@ import { processDocument } from "./documentRouter";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
-const JWT_SECRET = process.env.JWT_SECRET || "surgical-logbook-secret-key-2026";
+// JWT_SECRET must be set in environment - fail hard if missing for security
+if (!process.env.JWT_SECRET) {
+  throw new Error("JWT_SECRET environment variable must be set for secure token signing");
+}
+const JWT_SECRET = process.env.JWT_SECRET;
 
 interface AuthenticatedRequest extends Request {
   userId?: string;
