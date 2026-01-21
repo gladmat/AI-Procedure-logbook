@@ -86,14 +86,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/analyze-op-note", async (req: Request, res: Response) => {
     try {
-      const { image } = req.body;
+      const { image, images } = req.body;
       
-      if (!image) {
-        return res.status(400).json({ error: "No image provided" });
+      const imageArray: string[] = images || (image ? [image] : []);
+      
+      if (imageArray.length === 0) {
+        return res.status(400).json({ error: "No images provided" });
       }
 
-      const extractedText = await extractTextFromImage(image);
-      const redactionResult = redactSensitiveData(extractedText);
+      const extractedTexts: string[] = [];
+      for (const img of imageArray) {
+        const text = await extractTextFromImage(img);
+        extractedTexts.push(text);
+      }
+      
+      const combinedText = extractedTexts.join("\n\n---\n\n");
+      const redactionResult = redactSensitiveData(combinedText);
 
       const response = await ai.models.generateContent({
         model: "gemini-2.5-flash",
@@ -102,8 +110,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             role: "user",
             parts: [
               { text: FREE_FLAP_AI_PROMPT },
-              { text: "\n\nExtract the surgical details from this operation note text:" },
-              { text: `\n\nOperation Note:\n${redactionResult.redactedText}` },
+              { text: `\n\nExtract the surgical details from the following operation note(s). There may be multiple pages or documents - combine all relevant information:\n\nOperation Notes (${imageArray.length} page(s)):\n${redactionResult.redactedText}` },
             ],
           },
         ],
@@ -124,7 +131,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ extractedData });
     } catch (error) {
       console.error("Error analyzing operation note:", error);
-      res.status(500).json({ error: "Failed to analyze image" });
+      res.status(500).json({ error: "Failed to analyze images" });
     }
   });
 

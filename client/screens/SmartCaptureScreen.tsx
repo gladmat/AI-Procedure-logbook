@@ -7,6 +7,7 @@ import {
   Platform,
   Image,
   ActivityIndicator,
+  ScrollView,
 } from "react-native";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -18,7 +19,7 @@ import * as Haptics from "expo-haptics";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { useTheme } from "@/hooks/useTheme";
-import { Spacing, BorderRadius, Shadows } from "@/constants/theme";
+import { Spacing, BorderRadius } from "@/constants/theme";
 import { Button } from "@/components/Button";
 import { redactSensitiveData, getRedactionSummary, extractNHIFromText, extractDatesFromText } from "@/lib/privacyUtils";
 import { apiRequest } from "@/lib/query-client";
@@ -32,6 +33,12 @@ type RouteParams = RouteProp<RootStackParamList, "SmartCapture">;
 
 type ScanMode = "op_note" | "discharge_summary";
 
+interface CapturedPhoto {
+  id: string;
+  uri: string;
+  base64: string;
+}
+
 export default function SmartCaptureScreen() {
   const { theme } = useTheme();
   const navigation = useNavigation<NavigationProp>();
@@ -40,13 +47,13 @@ export default function SmartCaptureScreen() {
   const cameraRef = useRef<CameraView>(null);
 
   const [permission, requestPermission] = useCameraPermissions();
-  const [capturedImage, setCapturedImage] = useState<string | null>(null);
+  const [capturedPhotos, setCapturedPhotos] = useState<CapturedPhoto[]>([]);
   const [processing, setProcessing] = useState(false);
   const [processingStep, setProcessingStep] = useState("");
-  const [extractedText, setExtractedText] = useState("");
   const [redactionSummary, setRedactionSummary] = useState("");
   const [scanMode, setScanMode] = useState<ScanMode>(route.params?.mode || "op_note");
   const [extractedNHI, setExtractedNHI] = useState<string | null>(null);
+  const [showCamera, setShowCamera] = useState(true);
 
   const handleCapture = async () => {
     if (!cameraRef.current) return;
@@ -59,9 +66,14 @@ export default function SmartCaptureScreen() {
         base64: true,
       });
 
-      if (photo?.uri) {
-        setCapturedImage(photo.uri);
-        await processImage(photo.base64 || "");
+      if (photo?.uri && photo.base64) {
+        const newPhoto: CapturedPhoto = {
+          id: uuidv4(),
+          uri: photo.uri,
+          base64: photo.base64,
+        };
+        setCapturedPhotos(prev => [...prev, newPhoto]);
+        setShowCamera(false);
       }
     } catch (error) {
       console.error("Error capturing photo:", error);
@@ -76,45 +88,72 @@ export default function SmartCaptureScreen() {
       mediaTypes: ["images"],
       quality: 0.8,
       base64: true,
+      allowsMultipleSelection: true,
     });
 
-    if (!result.canceled && result.assets[0]) {
-      setCapturedImage(result.assets[0].uri);
-      await processImage(result.assets[0].base64 || "");
+    if (!result.canceled && result.assets.length > 0) {
+      const newPhotos: CapturedPhoto[] = result.assets
+        .filter(asset => asset.base64)
+        .map(asset => ({
+          id: uuidv4(),
+          uri: asset.uri,
+          base64: asset.base64 || "",
+        }));
+      
+      setCapturedPhotos(prev => [...prev, ...newPhotos]);
+      setShowCamera(false);
     }
   };
 
-  const processImage = async (base64Image: string) => {
+  const handleRemovePhoto = (photoId: string) => {
+    Haptics.selectionAsync();
+    setCapturedPhotos(prev => prev.filter(p => p.id !== photoId));
+  };
+
+  const handleAddMore = () => {
+    setShowCamera(true);
+  };
+
+  const handleProcessAll = async () => {
+    if (capturedPhotos.length === 0) return;
+    
     setProcessing(true);
     
     try {
-      setProcessingStep("Extracting text from image...");
-
       if (Platform.OS === "web") {
+        setProcessingStep(`Extracting text from ${capturedPhotos.length} image(s)...`);
+        
         const Tesseract = await import("tesseract.js");
         const worker = await Tesseract.createWorker("eng");
-        const { data } = await worker.recognize(`data:image/jpeg;base64,${base64Image}`);
+        
+        const extractedTexts: string[] = [];
+        for (let i = 0; i < capturedPhotos.length; i++) {
+          setProcessingStep(`Extracting text from image ${i + 1}/${capturedPhotos.length}...`);
+          const { data } = await worker.recognize(`data:image/jpeg;base64,${capturedPhotos[i].base64}`);
+          extractedTexts.push(data.text);
+        }
         await worker.terminate();
         
-        const rawText = data.text;
+        const combinedText = extractedTexts.join("\n\n---\n\n");
         
         if (scanMode === "discharge_summary") {
-          await processDischargeText(rawText);
+          await processDischargeText(combinedText);
         } else {
           setProcessingStep("Redacting sensitive information...");
           
-          const redactionResult = redactSensitiveData(rawText);
-          setExtractedText(redactionResult.redactedText);
+          const redactionResult = redactSensitiveData(combinedText);
           setRedactionSummary(getRedactionSummary(redactionResult));
           
           setProcessingStep("Analyzing with AI...");
           await analyzeWithAI(redactionResult.redactedText);
         }
       } else {
-        setProcessingStep("Analyzing with AI...");
+        setProcessingStep(`Analyzing ${capturedPhotos.length} image(s) with AI...`);
+        
+        const images = capturedPhotos.map(p => p.base64);
         
         const response = await apiRequest("POST", "/api/analyze-op-note", {
-          image: base64Image,
+          images: images,
         });
         
         const result = await response.json();
@@ -127,10 +166,10 @@ export default function SmartCaptureScreen() {
         }
       }
     } catch (error) {
-      console.error("Error processing image:", error);
+      console.error("Error processing images:", error);
       Alert.alert(
         "Processing Error",
-        "Failed to extract data from the image. Would you like to enter the details manually?",
+        "Failed to extract data from the images. Would you like to enter the details manually?",
         [
           { text: "Cancel", style: "cancel" },
           {
@@ -279,10 +318,10 @@ export default function SmartCaptureScreen() {
     }
   };
 
-  const handleRetake = () => {
-    setCapturedImage(null);
-    setExtractedText("");
+  const handleClearAll = () => {
+    setCapturedPhotos([]);
     setRedactionSummary("");
+    setShowCamera(true);
   };
 
   const handleManualEntry = () => {
@@ -321,8 +360,26 @@ export default function SmartCaptureScreen() {
     return (
       <ThemedView style={[styles.container, styles.processingContainer]}>
         <View style={styles.processingContent}>
-          {capturedImage ? (
-            <Image source={{ uri: capturedImage }} style={styles.previewImage} />
+          {capturedPhotos.length > 0 ? (
+            <View style={styles.processingThumbnails}>
+              {capturedPhotos.slice(0, 3).map((photo, index) => (
+                <Image
+                  key={photo.id}
+                  source={{ uri: photo.uri }}
+                  style={[
+                    styles.processingThumb,
+                    index > 0 && { marginLeft: -20 },
+                  ]}
+                />
+              ))}
+              {capturedPhotos.length > 3 ? (
+                <View style={[styles.moreIndicator, { backgroundColor: theme.link }]}>
+                  <ThemedText style={{ color: "#fff", fontWeight: "600", fontSize: 12 }}>
+                    +{capturedPhotos.length - 3}
+                  </ThemedText>
+                </View>
+              ) : null}
+            </View>
           ) : null}
           <View style={[styles.processingCard, { backgroundColor: theme.backgroundDefault }]}>
             <ActivityIndicator size="large" color={theme.link} />
@@ -343,27 +400,71 @@ export default function SmartCaptureScreen() {
     );
   }
 
-  if (capturedImage) {
+  if (capturedPhotos.length > 0 && !showCamera) {
     return (
       <ThemedView style={styles.container}>
-        <Image source={{ uri: capturedImage }} style={styles.fullImage} />
-        <View style={[styles.reviewControls, { paddingBottom: insets.bottom + Spacing.lg }]}>
+        <View style={[styles.galleryHeader, { paddingTop: insets.top + Spacing.md }]}>
           <Pressable
-            onPress={handleRetake}
-            style={[styles.retakeButton, { backgroundColor: theme.backgroundDefault }]}
+            onPress={() => navigation.goBack()}
+            style={[styles.galleryHeaderButton, { backgroundColor: theme.backgroundDefault }]}
           >
-            <Feather name="refresh-cw" size={20} color={theme.text} />
-            <ThemedText>Retake</ThemedText>
+            <Feather name="x" size={20} color={theme.text} />
           </Pressable>
+          <ThemedText type="h4">
+            {capturedPhotos.length} Photo{capturedPhotos.length > 1 ? "s" : ""}
+          </ThemedText>
           <Pressable
-            onPress={() => processImage("")}
-            style={[styles.useButton, { backgroundColor: theme.link }]}
+            onPress={handleClearAll}
+            style={[styles.galleryHeaderButton, { backgroundColor: theme.backgroundDefault }]}
           >
-            <Feather name="check" size={20} color={theme.buttonText} />
-            <ThemedText style={{ color: theme.buttonText, fontWeight: "600" }}>
-              Use Photo
+            <Feather name="trash-2" size={20} color={theme.error} />
+          </Pressable>
+        </View>
+
+        <ScrollView 
+          style={styles.galleryScroll}
+          contentContainerStyle={styles.galleryContent}
+        >
+          <View style={styles.thumbnailGrid}>
+            {capturedPhotos.map((photo) => (
+              <View key={photo.id} style={styles.thumbnailWrapper}>
+                <Image source={{ uri: photo.uri }} style={styles.thumbnail} />
+                <Pressable
+                  onPress={() => handleRemovePhoto(photo.id)}
+                  style={[styles.removeButton, { backgroundColor: theme.error }]}
+                >
+                  <Feather name="x" size={14} color="#fff" />
+                </Pressable>
+              </View>
+            ))}
+            <Pressable
+              onPress={handleAddMore}
+              style={[styles.addMoreButton, { borderColor: theme.border }]}
+            >
+              <Feather name="plus" size={32} color={theme.textSecondary} />
+              <ThemedText style={{ color: theme.textSecondary, fontSize: 12 }}>
+                Add More
+              </ThemedText>
+            </Pressable>
+          </View>
+        </ScrollView>
+
+        <View style={[styles.galleryControls, { paddingBottom: insets.bottom + Spacing.lg }]}>
+          <View style={[styles.privacyBadge, { backgroundColor: theme.success + "15" }]}>
+            <Feather name="shield" size={16} color={theme.success} />
+            <ThemedText style={[styles.privacyText, { color: theme.success }]}>
+              Photos processed locally. Privacy protected.
             </ThemedText>
-          </Pressable>
+          </View>
+          
+          <Button onPress={handleProcessAll} style={styles.processButton}>
+            <View style={styles.processButtonContent}>
+              <Feather name="cpu" size={20} color={theme.buttonText} />
+              <ThemedText style={{ color: theme.buttonText, fontWeight: "600" }}>
+                Process {capturedPhotos.length} Photo{capturedPhotos.length > 1 ? "s" : ""}
+              </ThemedText>
+            </View>
+          </Button>
         </View>
       </ThemedView>
     );
@@ -384,14 +485,26 @@ export default function SmartCaptureScreen() {
             >
               <Feather name="x" size={24} color="#fff" />
             </Pressable>
-            <Pressable
-              onPress={handleManualEntry}
-              style={[styles.headerButton, { backgroundColor: "rgba(0,0,0,0.4)" }]}
-            >
-              <ThemedText style={{ color: "#fff", fontSize: 14 }}>
-                Manual Entry
-              </ThemedText>
-            </Pressable>
+            <View style={styles.headerRight}>
+              {capturedPhotos.length > 0 ? (
+                <Pressable
+                  onPress={() => setShowCamera(false)}
+                  style={[styles.headerButton, { backgroundColor: theme.link }]}
+                >
+                  <ThemedText style={{ color: "#fff", fontSize: 14, fontWeight: "600" }}>
+                    View {capturedPhotos.length}
+                  </ThemedText>
+                </Pressable>
+              ) : null}
+              <Pressable
+                onPress={handleManualEntry}
+                style={[styles.headerButton, { backgroundColor: "rgba(0,0,0,0.4)" }]}
+              >
+                <ThemedText style={{ color: "#fff", fontSize: 14 }}>
+                  Manual
+                </ThemedText>
+              </Pressable>
+            </View>
           </View>
 
           <View style={styles.guideFrame}>
@@ -404,7 +517,9 @@ export default function SmartCaptureScreen() {
           <ThemedText style={styles.guideText}>
             {scanMode === "discharge_summary" 
               ? "Position the discharge summary within the frame"
-              : "Position the operation note within the frame"}
+              : capturedPhotos.length > 0
+                ? `${capturedPhotos.length} captured. Add more or tap "View" to process.`
+                : "Position the operation note within the frame"}
           </ThemedText>
         </View>
       </CameraView>
@@ -440,7 +555,18 @@ export default function SmartCaptureScreen() {
             <View style={[styles.captureInner, { backgroundColor: theme.link }]} />
           </Pressable>
 
-          <View style={styles.secondaryButton} />
+          {capturedPhotos.length > 0 ? (
+            <Pressable
+              onPress={() => setShowCamera(false)}
+              style={[styles.secondaryButton, { backgroundColor: theme.link }]}
+            >
+              <ThemedText style={{ color: "#fff", fontWeight: "600" }}>
+                {capturedPhotos.length}
+              </ThemedText>
+            </Pressable>
+          ) : (
+            <View style={styles.secondaryButton} />
+          )}
         </View>
       </View>
     </View>
@@ -462,6 +588,10 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
+  },
+  headerRight: {
+    flexDirection: "row",
+    gap: Spacing.sm,
   },
   headerButton: {
     paddingHorizontal: Spacing.lg,
@@ -590,10 +720,24 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: Spacing.xl,
   },
-  previewImage: {
-    width: 200,
-    height: 280,
-    borderRadius: BorderRadius.md,
+  processingThumbnails: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  processingThumb: {
+    width: 60,
+    height: 80,
+    borderRadius: BorderRadius.sm,
+    borderWidth: 2,
+    borderColor: "#fff",
+  },
+  moreIndicator: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: "center",
+    alignItems: "center",
+    marginLeft: -10,
   },
   processingCard: {
     padding: Spacing.xl,
@@ -617,34 +761,69 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "500",
   },
-  fullImage: {
+  galleryHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: Spacing.lg,
+    paddingBottom: Spacing.md,
+  },
+  galleryHeaderButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  galleryScroll: {
     flex: 1,
+  },
+  galleryContent: {
+    padding: Spacing.lg,
+  },
+  thumbnailGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: Spacing.md,
+  },
+  thumbnailWrapper: {
+    position: "relative",
+  },
+  thumbnail: {
+    width: 100,
+    height: 140,
+    borderRadius: BorderRadius.md,
+  },
+  removeButton: {
+    position: "absolute",
+    top: -8,
+    right: -8,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  addMoreButton: {
+    width: 100,
+    height: 140,
+    borderRadius: BorderRadius.md,
+    borderWidth: 2,
+    borderStyle: "dashed",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: Spacing.xs,
+  },
+  galleryControls: {
+    padding: Spacing.xl,
+    gap: Spacing.lg,
+  },
+  processButton: {
     width: "100%",
   },
-  reviewControls: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    flexDirection: "row",
-    justifyContent: "center",
-    gap: Spacing.lg,
-    padding: Spacing.xl,
-  },
-  retakeButton: {
+  processButtonContent: {
     flexDirection: "row",
     alignItems: "center",
     gap: Spacing.sm,
-    paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.md,
-    borderRadius: BorderRadius.full,
-  },
-  useButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.sm,
-    paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.md,
-    borderRadius: BorderRadius.full,
   },
 });
