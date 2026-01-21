@@ -55,7 +55,9 @@ function extractProcedureName(text: string): string | undefined {
     const match = text.match(pattern);
     if (match && match[1]) {
       const name = match[1].trim();
-      if (name.length > 3 && name.length < 200) {
+      if (name.length > 5 && name.length < 200 && 
+          !name.toUpperCase().includes("NOTE") &&
+          !name.toUpperCase().includes("REPORT")) {
         return name;
       }
     }
@@ -65,14 +67,14 @@ function extractProcedureName(text: string): string | undefined {
 
 function extractSurgeon(text: string): string | undefined {
   const patterns = [
-    /(?:Surgeon|Primary Surgeon|Consultant|Operating Surgeon)[:\s]*(?:Dr\.?\s*)?([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)/i,
-    /(?:Operated by)[:\s]*(?:Dr\.?\s*)?([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)/i,
+    /(?:Surgeon|Primary Surgeon|Consultant|Operating Surgeon)[:\s]*(?:Dr\.?\s*)?([A-Z][a-z]+\s+[A-Z][a-z]+)/i,
+    /(?:Operated by)[:\s]*(?:Dr\.?\s*)?([A-Z][a-z]+\s+[A-Z][a-z]+)/i,
   ];
 
   for (const pattern of patterns) {
     const match = text.match(pattern);
     if (match && match[1]) {
-      return match[1].trim();
+      return match[1].trim().split("\n")[0];
     }
   }
   return undefined;
@@ -80,13 +82,13 @@ function extractSurgeon(text: string): string | undefined {
 
 function extractAssistant(text: string): string | undefined {
   const patterns = [
-    /(?:Assistant|First Assistant|Surgical Assistant)[:\s]*(?:Dr\.?\s*)?([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)/i,
+    /(?:Assistant|First Assistant|Surgical Assistant)[:\s]*(?:Dr\.?\s*)?([A-Z][a-z]+\s+[A-Z][a-z]+)/i,
   ];
 
   for (const pattern of patterns) {
     const match = text.match(pattern);
     if (match && match[1]) {
-      return match[1].trim();
+      return match[1].trim().split("\n")[0];
     }
   }
   return undefined;
@@ -94,13 +96,13 @@ function extractAssistant(text: string): string | undefined {
 
 function extractAnaesthetist(text: string): string | undefined {
   const patterns = [
-    /(?:Anaesthetist|Anesthetist|Anaesthesiologist)[:\s]*(?:Dr\.?\s*)?([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)/i,
+    /(?:Anaesthetist|Anesthetist|Anaesthesiologist)[:\s]*(?:Dr\.?\s*)?([A-Z][a-z]+\s+[A-Z][a-z]+)/i,
   ];
 
   for (const pattern of patterns) {
     const match = text.match(pattern);
     if (match && match[1]) {
-      return match[1].trim();
+      return match[1].trim().split("\n")[0];
     }
   }
   return undefined;

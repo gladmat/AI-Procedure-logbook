@@ -2,7 +2,7 @@
 
 ## Overview
 
-Surgical Logbook is a privacy-first mobile application for surgeons to document surgical procedures, particularly focusing on microsurgery and free flap reconstruction. Its core purpose is to enable efficient case logging through AI-powered data extraction from operation notes while ensuring patient confidentiality. This is achieved by processing patient data locally on-device and automatically redacting sensitive information before any anonymized text is sent to cloud AI services. The application also integrates comprehensive RACS MALT (Royal Australasian College of Surgeons Morbidity Audit and Logbook Tool) fields for detailed audit and logging.
+Surgical Logbook is a **100% privacy-first** mobile application for surgeons to document surgical procedures, particularly focusing on microsurgery and free flap reconstruction. Its core purpose is to enable efficient case logging through **intelligent local document parsing** from operation notes while ensuring **complete patient confidentiality**. All OCR and data extraction is performed entirely on-device using Tesseract.js and modular regex-based parsers - **no patient data ever leaves the device**. The application also integrates comprehensive RACS MALT (Royal Australasian College of Surgeons Morbidity Audit and Logbook Tool) fields for detailed audit and logging.
 
 ## User Preferences
 
@@ -25,14 +25,20 @@ Preferred communication style: Simple, everyday language.
 - **Multi-Fracture Support**: Add multiple fractures per case, stored as FractureEntry array
 - **Hand Surgery Clinical Fields**: Affected hand, dominant hand, injury mechanism, nerve status, tendon injuries
 
-### Smart Capture Enhancements
-- **Pre-Redaction Extraction**: Patient ID (NHI) and procedure date are extracted BEFORE redaction, then passed to client for auto-population
-- **Auto-SNOMED Lookup**: Diagnosis and procedure names trigger automatic SNOMED CT search, populating codes without manual intervention
-- **Primary Surgeon Detection**: AI identifies primary surgeon from "Consultant" designation and context clues in op notes
-- **Full Team Extraction**: All team members captured from op note, even those without clear roles (assigned "unassigned" role for manual assignment)
-- **Procedure Category**: High-level classification (Trauma, Degenerative, Peripheral Nerve, etc.) separate from detailed SNOMED coding
-- **Patient Age Field**: Added patient age field with auto-population from extracted data
-- **Universal Endpoint**: Web platform now uses unified `/api/analyze-op-note` endpoint for consistent extraction
+### 100% Offline Smart Capture (Privacy-First Architecture)
+- **Complete Offline Processing**: Replaced all cloud AI (Gemini/OpenAI) with local regex-based document parsers
+- **Tesseract.js OCR**: On-device text extraction runs entirely in browser/mobile app, no server required
+- **Document Router System**: Intelligent classification and parsing based on document type:
+  - `DocumentClassifier.ts`: Detects document type using trigger keywords (e.g., "DISCHARGE SUMMARY" + "WAIKATO")
+  - `waikatoDischarge.ts`: Extracts NHI, ACC/funding status, admission/discharge dates, surgeon, diagnosis
+  - `anaesthesiaRecord.ts`: Extracts ASA score, weight, height, tourniquet time, anaesthetic type, blood loss
+  - `operationNote.ts`: Extracts procedure name, surgeon, team, diagnosis, findings, closure, times
+  - `genericParser.ts`: Fallback for unrecognized document formats
+- **Document Type Badge**: UI displays detected document type with confidence indicator (high/medium/low)
+- **Auto-Filled Field Indicators**: Yellow border styling on auto-filled fields with undo buttons
+- **Pre-Redaction Extraction**: Patient ID (NHI) and procedure date are extracted locally
+- **Auto-SNOMED Lookup**: Diagnosis and procedure names trigger automatic SNOMED CT search
+- **No Cloud Dependencies**: Patient data never leaves the device - 100% privacy guaranteed
 
 ### RACS MALT Supervision Levels
 - **Role Alignment**: Updated to use official RACS MALT supervision level codes:
@@ -91,8 +97,8 @@ Preferred communication style: Simple, everyday language.
 
 ### Backend Architecture
 - **Runtime**: Express.js server with TypeScript
-- **API Design**: RESTful endpoints for AI data extraction and SNOMED CT lookups
-- **AI Integration**: Google Gemini via Replit AI Integrations for surgical data extraction
+- **API Design**: RESTful endpoints for SNOMED CT lookups and document processing
+- **Document Router**: Local regex-based parsers for surgical document extraction (no cloud AI required)
 
 ### Data Model
 - **Local-first Architecture**: Patient data processed on-device; only anonymized text sent to cloud AI.
@@ -104,12 +110,14 @@ Preferred communication style: Simple, everyday language.
     - Procedure coding uses international SNOMED CT as the canonical standard with country-specific local code mappings (e.g., CHOP, OPCS-4, ACHI, CPT).
 - **RACS MALT Data Model**: Comprehensive implementation including patient demographics, admission details, three-level diagnosis system, 36 SNOMED-coded co-morbidities, 6 anaesthetic types, operative factors, and comprehensive outcomes.
 
-### Privacy Pipeline
+### Privacy Pipeline (100% Offline)
 1. On-device camera capture of operation note image.
-2. Local text extraction from the image.
-3. Automatic redaction of sensitive patient identifiers (NHI, dates, names, addresses).
-4. Only redacted text is sent to AI for structured extraction.
-5. Extracted surgical data is stored locally on the device.
+2. **On-device OCR** using Tesseract.js (runs entirely in browser/mobile).
+3. **Local document classification** detects document type (discharge summary, anaesthesia record, op note).
+4. **Local regex extraction** using modular hospital-specific parsers.
+5. Patient ID and dates extracted locally, then auto-populate form fields.
+6. Extracted surgical data is stored locally on the device.
+7. **No data ever sent to cloud** - complete patient privacy guaranteed.
 
 ### Key Design Patterns
 - **Modular Procedure Configuration**: Configuration files define specialty-specific fields.
@@ -119,8 +127,9 @@ Preferred communication style: Simple, everyday language.
 
 ## External Dependencies
 
-### AI Services
-- **Google Gemini** (via Replit AI Integrations): Used for extracting structured surgical data from anonymized operation note text.
+### Local Processing (No Cloud AI)
+- **Tesseract.js**: On-device OCR for text extraction from operation note images
+- **Document Router**: Modular regex-based parsers for hospital-specific document formats
 
 ### Database
 - **PostgreSQL**: Used for SNOMED CT reference data, configured via Drizzle ORM.
@@ -129,6 +138,15 @@ Preferred communication style: Simple, everyday language.
 ### Key Libraries
 - **expo-camera**: For operation note photography.
 - **expo-image-picker**: For gallery image selection.
+- **tesseract.js**: On-device OCR for text extraction.
 - **react-native-reanimated**: For animations.
 - **drizzle-orm/drizzle-zod**: For database schema and validation.
 - **uuid**: For generating unique IDs.
+
+### Document Router Files
+- `server/documentRouter/index.ts`: Main document processing entry point
+- `server/documentRouter/DocumentClassifier.ts`: Document type detection
+- `server/documentRouter/parsers/waikatoDischarge.ts`: Waikato DHB discharge summaries
+- `server/documentRouter/parsers/anaesthesiaRecord.ts`: Anaesthesia records
+- `server/documentRouter/parsers/operationNote.ts`: Operation notes
+- `server/documentRouter/parsers/genericParser.ts`: Generic document fallback
