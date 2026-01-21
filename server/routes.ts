@@ -1,13 +1,12 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "node:http";
-import { GoogleGenAI } from "@google/genai";
-import { FREE_FLAP_AI_PROMPT, UNIVERSAL_SMART_CAPTURE_PROMPT, getDischargeComplicationPrompt } from "./ai-prompts";
 import { extractTextFromImage } from "./ocr";
 import { redactSensitiveData, extractNHI, extractSurgeryDate } from "./privacyUtils";
 import { storage } from "./storage";
 import { allSeedData } from "./seedData";
 import { searchProcedures, searchDiagnoses, getConceptDetails } from "./snomedApi";
 import { getStagingForDiagnosis, getAllStagingConfigs } from "./diagnosisStagingConfig";
+import { processDocument } from "./documentRouter";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
@@ -34,14 +33,6 @@ const authenticateToken = (req: AuthenticatedRequest, res: Response, next: Funct
   }
 };
 
-const ai = new GoogleGenAI({
-  apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY,
-  httpOptions: {
-    apiVersion: "",
-    baseUrl: process.env.AI_INTEGRATIONS_GEMINI_BASE_URL,
-  },
-});
-
 export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/extract-flap-data", async (req: Request, res: Response) => {
     try {
@@ -50,34 +41,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!text) {
         return res.status(400).json({ error: "No text provided" });
       }
-      const redactionResult = redactSensitiveData(text);
 
-      const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
-        contents: [
-          {
-            role: "user",
-            parts: [
-              { text: FREE_FLAP_AI_PROMPT },
-              { text: `\n\nOperation Note:\n${redactionResult.redactedText}` },
-            ],
-          },
-        ],
-      });
-
-      const responseText = response.text || "";
+      console.log("Processing flap data with local document router...");
+      const result = processDocument(text);
       
-      let extractedData = {};
-      try {
-        const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          extractedData = JSON.parse(jsonMatch[0]);
-        }
-      } catch (parseError) {
-        console.error("Error parsing AI response:", parseError);
-      }
-
-      res.json({ extractedData });
+      res.json({ 
+        extractedData: result.extractedData,
+        documentType: result.documentTypeName,
+        autoFilledFields: result.autoFilledFields,
+      });
     } catch (error) {
       console.error("Error extracting flap data:", error);
       res.status(500).json({ error: "Failed to extract data" });
@@ -89,14 +61,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { image, images, text } = req.body;
       
       let originalText: string;
-      let textToAnalyze: string;
       
-      // If text is provided directly (from web OCR), use it
       if (text) {
         console.log("Using pre-extracted text from client OCR");
         originalText = text;
       } else {
-        // Otherwise extract from images
         const imageArray: string[] = images || (image ? [image] : []);
         
         if (imageArray.length === 0) {
@@ -112,61 +81,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         originalText = extractedTexts.join("\n\n---\n\n");
       }
       
-      // Extract patient ID and surgery date BEFORE redacting
-      const patientIdentifier = extractNHI(originalText);
-      const procedureDate = extractSurgeryDate(originalText);
+      console.log("Processing document with local privacy-first document router...");
+      console.log("Text length:", originalText.length);
+
+      const result = processDocument(originalText);
       
-      console.log("Extracted patient ID:", patientIdentifier);
-      console.log("Extracted procedure date:", procedureDate);
-      
-      // Now redact for AI processing
-      const redactionResult = redactSensitiveData(originalText);
-      textToAnalyze = redactionResult.redactedText;
+      console.log("Document type detected:", result.documentTypeName);
+      console.log("Confidence:", result.confidence);
+      console.log("Auto-filled fields:", result.autoFilledFields.join(", "));
 
-      console.log("Analyzing operation note with Universal Smart Capture prompt...");
-      console.log("Redacted text length:", textToAnalyze.length);
-
-      const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
-        contents: [
-          {
-            role: "user",
-            parts: [
-              { text: UNIVERSAL_SMART_CAPTURE_PROMPT },
-              { text: `\n\nExtract ALL surgical data from the following operation note(s). There may be multiple pages - combine all relevant information:\n\nOperation Notes:\n${textToAnalyze}` },
-            ],
-          },
-        ],
-      });
-
-      const responseText = response.text || "";
-      console.log("AI Response length:", responseText.length);
-      
-      let extractedData: any = {};
-      try {
-        const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          extractedData = JSON.parse(jsonMatch[0]);
-          console.log("Detected specialty:", extractedData.detectedSpecialty);
-          console.log("Extracted fields:", Object.keys(extractedData).filter(k => extractedData[k] !== null).join(", "));
-        }
-      } catch (parseError) {
-        console.error("Error parsing AI response:", parseError);
-        console.log("Raw response:", responseText.substring(0, 500));
-      }
-
-      const detectedSpecialty = extractedData.detectedSpecialty || "general";
-
-      // Add the pre-extracted sensitive data to the response
-      // (not sent to AI but needed for the form)
-      extractedData.patientIdentifier = patientIdentifier;
-      extractedData.procedureDate = procedureDate;
+      const extractedData = {
+        ...result.extractedData,
+        detectedSpecialty: "general",
+      };
 
       res.json({ 
         extractedData,
-        detectedSpecialty,
-        patientIdentifier,
-        procedureDate
+        detectedSpecialty: "general",
+        patientIdentifier: result.extractedData.patientIdentifier,
+        procedureDate: result.extractedData.procedureDate,
+        documentType: result.documentType,
+        documentTypeName: result.documentTypeName,
+        confidence: result.confidence,
+        detectedTriggers: result.detectedTriggers,
+        autoFilledFields: result.autoFilledFields,
       });
     } catch (error) {
       console.error("Error analyzing operation note:", error);
@@ -182,34 +120,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "No text provided" });
       }
 
-      const prompt = getDischargeComplicationPrompt();
-
-      const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
-        contents: [
-          {
-            role: "user",
-            parts: [
-              { text: prompt },
-              { text: `\n\nDischarge Summary:\n${text}` },
-            ],
-          },
-        ],
-      });
-
-      const responseText = response.text || "";
+      console.log("Processing discharge summary with local document router...");
+      const result = processDocument(text);
       
-      let extractedData = {};
-      try {
-        const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          extractedData = JSON.parse(jsonMatch[0]);
-        }
-      } catch (parseError) {
-        console.error("Error parsing AI response:", parseError);
-      }
+      const extractedData = {
+        hasComplications: (result.extractedData.complications?.length ?? 0) > 0,
+        complications: result.extractedData.complications || [],
+        documentType: result.documentTypeName,
+      };
 
-      res.json({ extractedData });
+      res.json({ 
+        extractedData,
+        autoFilledFields: result.autoFilledFields,
+      });
     } catch (error) {
       console.error("Error analyzing discharge summary:", error);
       res.status(500).json({ error: "Failed to analyze discharge summary" });
