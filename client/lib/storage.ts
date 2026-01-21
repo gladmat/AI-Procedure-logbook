@@ -1,11 +1,13 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Case, TimelineEvent, CountryCode, ComplicationEntry } from "@/types/case";
+import { encryptData, decryptData, isEncrypted } from "./encryption";
 
 const CASES_KEY = "@surgical_logbook_cases";
 const TIMELINE_KEY = "@surgical_logbook_timeline";
 const USER_KEY = "@surgical_logbook_user";
 const SETTINGS_KEY = "@surgical_logbook_settings";
 const CASE_DRAFT_KEY_PREFIX = "@surgical_logbook_case_draft_";
+const ENCRYPTED_CASES_KEY = "@surgical_logbook_cases_encrypted";
 
 export interface LocalUser {
   id: string;
@@ -24,9 +26,22 @@ export type CaseDraft = Partial<Case>;
 
 export async function getCases(): Promise<Case[]> {
   try {
-    const data = await AsyncStorage.getItem(CASES_KEY);
-    if (!data) return [];
-    return JSON.parse(data);
+    const encryptedData = await AsyncStorage.getItem(ENCRYPTED_CASES_KEY);
+    if (encryptedData) {
+      const decrypted = await decryptData(encryptedData);
+      return JSON.parse(decrypted);
+    }
+    
+    const legacyData = await AsyncStorage.getItem(CASES_KEY);
+    if (legacyData) {
+      const cases = JSON.parse(legacyData);
+      const encrypted = await encryptData(JSON.stringify(cases));
+      await AsyncStorage.setItem(ENCRYPTED_CASES_KEY, encrypted);
+      await AsyncStorage.removeItem(CASES_KEY);
+      return cases;
+    }
+    
+    return [];
   } catch (error) {
     console.error("Error reading cases:", error);
     return [];
@@ -49,7 +64,8 @@ export async function saveCase(caseData: Case): Promise<void> {
       cases.unshift(caseData);
     }
     
-    await AsyncStorage.setItem(CASES_KEY, JSON.stringify(cases));
+    const encrypted = await encryptData(JSON.stringify(cases));
+    await AsyncStorage.setItem(ENCRYPTED_CASES_KEY, encrypted);
   } catch (error) {
     console.error("Error saving case:", error);
     throw error;
@@ -102,7 +118,8 @@ export async function updateCase(id: string, updates: Partial<Case>): Promise<vo
         ...updates, 
         updatedAt: new Date().toISOString() 
       };
-      await AsyncStorage.setItem(CASES_KEY, JSON.stringify(cases));
+      const encrypted = await encryptData(JSON.stringify(cases));
+      await AsyncStorage.setItem(ENCRYPTED_CASES_KEY, encrypted);
     }
   } catch (error) {
     console.error("Error updating case:", error);
@@ -182,7 +199,8 @@ export async function deleteCase(id: string): Promise<void> {
   try {
     const cases = await getCases();
     const filtered = cases.filter((c) => c.id !== id);
-    await AsyncStorage.setItem(CASES_KEY, JSON.stringify(filtered));
+    const encrypted = await encryptData(JSON.stringify(filtered));
+    await AsyncStorage.setItem(ENCRYPTED_CASES_KEY, encrypted);
     
     const events = await getTimelineEvents(id);
     for (const event of events) {
