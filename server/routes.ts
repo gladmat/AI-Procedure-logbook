@@ -403,10 +403,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Flaps CRUD API
-  app.get("/api/procedures/:procedureId/flaps", async (req: Request, res: Response) => {
+  // Flaps CRUD API - all routes require authentication and ownership verification
+  app.get("/api/procedures/:procedureId/flaps", authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { procedureId } = req.params;
+      const userId = req.userId!;
+      
+      // Verify user owns this procedure
+      const hasAccess = await storage.verifyProcedureOwnership(procedureId, userId);
+      if (!hasAccess) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
       const flaps = await storage.getFlapsByProcedure(procedureId);
       res.json(flaps);
     } catch (error) {
@@ -415,8 +423,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/flaps", async (req: Request, res: Response) => {
+  app.post("/api/flaps", authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
+      const userId = req.userId!;
+      const { procedureId } = req.body;
+      
+      // Verify user owns the parent procedure
+      const hasAccess = await storage.verifyProcedureOwnership(procedureId, userId);
+      if (!hasAccess) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
       const flap = await storage.createFlap(req.body);
       res.json(flap);
     } catch (error) {
@@ -425,9 +442,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/flaps/:id", async (req: Request, res: Response) => {
+  app.put("/api/flaps/:id", authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { id } = req.params;
+      const userId = req.userId!;
+      
+      // Verify user owns this flap via its procedure
+      const hasAccess = await storage.verifyFlapOwnership(id, userId);
+      if (!hasAccess) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
       const flap = await storage.updateFlap(id, req.body);
       if (!flap) {
         return res.status(404).json({ error: "Flap not found" });
@@ -439,9 +464,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/flaps/:id", async (req: Request, res: Response) => {
+  app.delete("/api/flaps/:id", authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { id } = req.params;
+      const userId = req.userId!;
+      
+      // Verify user owns this flap via its procedure
+      const hasAccess = await storage.verifyFlapOwnership(id, userId);
+      if (!hasAccess) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
       await storage.deleteFlap(id);
       res.json({ success: true });
     } catch (error) {
@@ -450,10 +483,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Anastomoses CRUD API
-  app.get("/api/flaps/:flapId/anastomoses", async (req: Request, res: Response) => {
+  // Anastomoses CRUD API - all routes require authentication and ownership verification
+  app.get("/api/flaps/:flapId/anastomoses", authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { flapId } = req.params;
+      const userId = req.userId!;
+      
+      // Verify user owns this flap via its procedure
+      const hasAccess = await storage.verifyFlapOwnership(flapId, userId);
+      if (!hasAccess) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
       const anastomoses = await storage.getAnastomosesByFlap(flapId);
       res.json(anastomoses);
     } catch (error) {
@@ -462,8 +503,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/anastomoses", async (req: Request, res: Response) => {
+  app.post("/api/anastomoses", authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
+      const userId = req.userId!;
+      const { flapId } = req.body;
+      
+      // Verify user owns the parent flap
+      const hasAccess = await storage.verifyFlapOwnership(flapId, userId);
+      if (!hasAccess) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
       const anastomosis = await storage.createAnastomosis(req.body);
       res.json(anastomosis);
     } catch (error) {
@@ -472,9 +522,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/anastomoses/:id", async (req: Request, res: Response) => {
+  app.put("/api/anastomoses/:id", authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { id } = req.params;
+      const userId = req.userId!;
+      
+      // Verify user owns this anastomosis via flap -> procedure chain
+      const hasAccess = await storage.verifyAnastomosisOwnership(id, userId);
+      if (!hasAccess) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
       const anastomosis = await storage.updateAnastomosis(id, req.body);
       if (!anastomosis) {
         return res.status(404).json({ error: "Anastomosis not found" });
@@ -486,9 +544,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/anastomoses/:id", async (req: Request, res: Response) => {
+  app.delete("/api/anastomoses/:id", authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { id } = req.params;
+      const userId = req.userId!;
+      
+      // Verify user owns this anastomosis via flap -> procedure chain
+      const hasAccess = await storage.verifyAnastomosisOwnership(id, userId);
+      if (!hasAccess) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
       await storage.deleteAnastomosis(id);
       res.json({ success: true });
     } catch (error) {

@@ -215,6 +215,24 @@ export class DatabaseStorage implements IStorage {
     await db.delete(anastomoses).where(eq(anastomoses.id, id));
     return true;
   }
+
+  // Ownership verification helpers
+  async verifyProcedureOwnership(procedureId: string, userId: string): Promise<boolean> {
+    const procedure = await this.getProcedure(procedureId);
+    return procedure?.userId === userId;
+  }
+
+  async verifyFlapOwnership(flapId: string, userId: string): Promise<boolean> {
+    const flap = await this.getFlap(flapId);
+    if (!flap) return false;
+    return this.verifyProcedureOwnership(flap.procedureId, userId);
+  }
+
+  async verifyAnastomosisOwnership(anastomosisId: string, userId: string): Promise<boolean> {
+    const anastomosis = await this.getAnastomosis(anastomosisId);
+    if (!anastomosis) return false;
+    return this.verifyFlapOwnership(anastomosis.flapId, userId);
+  }
 }
 
 export const storage = new DatabaseStorage();
