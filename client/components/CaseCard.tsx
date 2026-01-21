@@ -55,6 +55,12 @@ export function CaseCard({ caseData, onPress }: CaseCardProps) {
     (m) => m.id === caseData.ownerId
   )?.role || "PS";
 
+  // Use diagnosis as title, fall back to procedure type
+  const caseTitle = 
+    caseData.preManagementDiagnosis?.displayName || 
+    caseData.finalDiagnosis?.displayName || 
+    caseData.procedureType;
+
   return (
     <AnimatedPressable
       onPress={handlePress}
@@ -83,7 +89,7 @@ export function CaseCard({ caseData, onPress }: CaseCardProps) {
         <ThemedText
           style={[styles.procedureType, { color: theme.textSecondary }]}
         >
-          {caseData.procedureType}
+          {caseTitle}
         </ThemedText>
       </View>
 
