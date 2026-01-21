@@ -9,6 +9,7 @@ import { FormField, PickerField } from "@/components/FormField";
 import { AnastomosisEntryCard } from "@/components/AnastomosisEntryCard";
 import { RecipientSiteSelector } from "@/components/RecipientSiteSelector";
 import { SectionHeader } from "@/components/SectionHeader";
+import { FractureClassificationWizard, type FractureEntry } from "@/components/FractureClassificationWizard";
 import { v4 as uuidv4 } from "uuid";
 import {
   type Specialty,
@@ -16,6 +17,7 @@ import {
   type AnastomosisEntry,
   type ClinicalDetails,
   type FreeFlapDetails,
+  type HandSurgeryDetails,
   type VesselType,
   type HarvestSide,
   type Indication,
@@ -341,6 +343,161 @@ export function HandTraumaClinicalFields({
   );
 }
 
+interface HandSurgeryClinicalFieldsProps {
+  clinicalDetails: HandSurgeryDetails;
+  onUpdate: (details: HandSurgeryDetails) => void;
+}
+
+const HAND_OPTIONS = [
+  { value: "left", label: "Left" },
+  { value: "right", label: "Right" },
+  { value: "bilateral", label: "Bilateral" },
+];
+
+const DOMINANT_HAND_OPTIONS = [
+  { value: "left", label: "Left" },
+  { value: "right", label: "Right" },
+  { value: "ambidextrous", label: "Ambidextrous" },
+];
+
+export function HandSurgeryClinicalFields({
+  clinicalDetails,
+  onUpdate,
+}: HandSurgeryClinicalFieldsProps) {
+  const { theme } = useTheme();
+  const [showFractureWizard, setShowFractureWizard] = useState(false);
+  
+  const fractures = clinicalDetails.fractures || [];
+  
+  const handleFractureSave = (newFractures: FractureEntry[]) => {
+    onUpdate({
+      ...clinicalDetails,
+      fractures: newFractures,
+    });
+  };
+  
+  const removeFracture = (id: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    onUpdate({
+      ...clinicalDetails,
+      fractures: fractures.filter(f => f.id !== id),
+    });
+  };
+  
+  return (
+    <View style={styles.container}>
+      {/* Hand laterality */}
+      <View style={styles.row}>
+        <View style={styles.halfField}>
+          <PickerField
+            label="Affected Hand"
+            options={HAND_OPTIONS}
+            value={clinicalDetails.affectedHand || ""}
+            onSelect={(v: string) => onUpdate({ ...clinicalDetails, affectedHand: v as HandSurgeryDetails["affectedHand"] })}
+            placeholder="Select hand"
+          />
+        </View>
+        <View style={styles.halfField}>
+          <PickerField
+            label="Dominant Hand"
+            options={DOMINANT_HAND_OPTIONS}
+            value={clinicalDetails.dominantHand || ""}
+            onSelect={(v: string) => onUpdate({ ...clinicalDetails, dominantHand: v as HandSurgeryDetails["dominantHand"] })}
+            placeholder="Select"
+          />
+        </View>
+      </View>
+      
+      {/* Fracture Classification */}
+      <View style={styles.fractureSection}>
+        <View style={styles.fractureTitleRow}>
+          <ThemedText style={[styles.subsectionTitle, { color: theme.text }]}>
+            AO Fracture Classification
+          </ThemedText>
+          <Pressable
+            style={[styles.fractureAddBtn, { backgroundColor: theme.link }]}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setShowFractureWizard(true);
+            }}
+          >
+            <Feather name="plus" size={16} color="#FFF" />
+            <ThemedText style={styles.fractureAddBtnText}>Add</ThemedText>
+          </Pressable>
+        </View>
+        
+        {fractures.length > 0 ? (
+          <View style={styles.fractureList}>
+            {fractures.map((fracture) => (
+              <View
+                key={fracture.id}
+                style={[styles.fractureCard, { backgroundColor: theme.backgroundTertiary }]}
+              >
+                <View style={styles.fractureCardContent}>
+                  <ThemedText style={[styles.fractureBoneName, { color: theme.text }]}>
+                    {fracture.boneName}
+                  </ThemedText>
+                  <View style={[styles.aoCodeBadge, { backgroundColor: theme.link }]}>
+                    <ThemedText style={styles.aoCodeBadgeText}>
+                      {fracture.aoCode}
+                    </ThemedText>
+                  </View>
+                </View>
+                <Pressable
+                  onPress={() => removeFracture(fracture.id)}
+                  hitSlop={8}
+                >
+                  <Feather name="x-circle" size={20} color={theme.error} />
+                </Pressable>
+              </View>
+            ))}
+          </View>
+        ) : (
+          <Pressable
+            style={[styles.emptyFractureCard, { borderColor: theme.border }]}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setShowFractureWizard(true);
+            }}
+          >
+            <Feather name="activity" size={24} color={theme.textTertiary} />
+            <ThemedText style={[styles.emptyFractureText, { color: theme.textSecondary }]}>
+              Tap to add fracture classification
+            </ThemedText>
+          </Pressable>
+        )}
+      </View>
+      
+      {/* Other clinical details */}
+      <FormField
+        label="Injury Mechanism"
+        value={clinicalDetails.injuryMechanism || ""}
+        onChangeText={(v) => onUpdate({ ...clinicalDetails, injuryMechanism: v })}
+        placeholder="e.g., Fall, crush, saw injury"
+      />
+      <FormField
+        label="Nerve Status"
+        value={clinicalDetails.nerveStatus || ""}
+        onChangeText={(v) => onUpdate({ ...clinicalDetails, nerveStatus: v })}
+        placeholder="e.g., Digital nerves intact"
+      />
+      <FormField
+        label="Tendon Injuries"
+        value={clinicalDetails.tendonInjuries || ""}
+        onChangeText={(v) => onUpdate({ ...clinicalDetails, tendonInjuries: v })}
+        placeholder="e.g., FDP zone 2"
+      />
+      
+      <FractureClassificationWizard
+        visible={showFractureWizard}
+        onClose={() => setShowFractureWizard(false)}
+        onSave={handleFractureSave}
+        initialFractures={fractures}
+      />
+    </View>
+  );
+}
+
 interface BodyContouringClinicalFieldsProps {
   clinicalDetails: Record<string, unknown>;
   onUpdate: (details: Record<string, unknown>) => void;
@@ -393,7 +550,12 @@ export function ProcedureClinicalDetails({
 }: ProcedureClinicalDetailsProps) {
   const { theme } = useTheme();
   
-  if (specialty === "free_flap") {
+  // Check if procedure type involves free flaps (orthoplastic, head & neck, or specific procedure types)
+  const isFreeFlapProcedure = procedureType.toLowerCase().includes("free flap") || 
+    procedureType.toLowerCase().includes("free tissue") ||
+    ["orthoplastic", "head_neck"].includes(specialty);
+  
+  if (isFreeFlapProcedure) {
     const existingDetails = clinicalDetails as FreeFlapDetails || {};
     const freeFlapDetails: FreeFlapDetails = {
       ...existingDetails,
@@ -410,10 +572,18 @@ export function ProcedureClinicalDetails({
     );
   }
 
-  if (specialty === "hand_trauma") {
+  if (specialty === "hand_surgery") {
+    const handDetails: HandSurgeryDetails = {
+      injuryMechanism: (clinicalDetails as HandSurgeryDetails)?.injuryMechanism,
+      nerveStatus: (clinicalDetails as HandSurgeryDetails)?.nerveStatus,
+      tendonInjuries: (clinicalDetails as HandSurgeryDetails)?.tendonInjuries,
+      fractures: (clinicalDetails as HandSurgeryDetails)?.fractures,
+      dominantHand: (clinicalDetails as HandSurgeryDetails)?.dominantHand,
+      affectedHand: (clinicalDetails as HandSurgeryDetails)?.affectedHand,
+    };
     return (
-      <HandTraumaClinicalFields
-        clinicalDetails={clinicalDetails as Record<string, unknown>}
+      <HandSurgeryClinicalFields
+        clinicalDetails={handDetails}
         onUpdate={onUpdate}
       />
     );
@@ -497,5 +667,73 @@ const styles = StyleSheet.create({
   selectOptionText: {
     fontSize: 14,
     fontWeight: "500",
+  },
+  fractureSection: {
+    marginTop: Spacing.md,
+    marginBottom: Spacing.md,
+  },
+  fractureTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: Spacing.sm,
+  },
+  fractureAddBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.sm,
+  },
+  fractureAddBtnText: {
+    color: "#FFF",
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  fractureList: {
+    gap: Spacing.sm,
+  },
+  fractureCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: Spacing.md,
+    borderRadius: BorderRadius.md,
+  },
+  fractureCardContent: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+  },
+  fractureBoneName: {
+    fontSize: 15,
+    fontWeight: "500",
+    flex: 1,
+  },
+  aoCodeBadge: {
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.xs,
+  },
+  aoCodeBadgeText: {
+    color: "#FFF",
+    fontSize: 13,
+    fontWeight: "700",
+    fontFamily: "monospace",
+  },
+  emptyFractureCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Spacing.sm,
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    borderStyle: "dashed",
+  },
+  emptyFractureText: {
+    fontSize: 14,
   },
 });

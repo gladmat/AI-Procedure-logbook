@@ -301,10 +301,36 @@ export interface FreeFlapDetails {
   couplerSizeMm?: number;
 }
 
+// AO/OTA fracture classification entry
+export interface FractureEntry {
+  id: string;
+  boneId: string;
+  boneName: string;
+  aoCode: string;
+  details: {
+    familyCode: string;
+    type?: string;
+    subBoneId?: string;
+    finger?: string;
+    phalanx?: string;
+    segment?: string;
+    qualifications?: string[];
+  };
+}
+
 export interface HandTraumaDetails {
   injuryMechanism?: string;
   nerveStatus?: string;
   tendonInjuries?: string;
+}
+
+export interface HandSurgeryDetails {
+  injuryMechanism?: string;
+  nerveStatus?: string;
+  tendonInjuries?: string;
+  fractures?: FractureEntry[];
+  dominantHand?: "left" | "right" | "ambidextrous";
+  affectedHand?: "left" | "right" | "bilateral";
 }
 
 export interface BodyContouringDetails {
@@ -312,7 +338,7 @@ export interface BodyContouringDetails {
   drainOutputMl?: number;
 }
 
-export type ClinicalDetails = FreeFlapDetails | HandTraumaDetails | BodyContouringDetails | Record<string, unknown>;
+export type ClinicalDetails = FreeFlapDetails | HandTraumaDetails | HandSurgeryDetails | BodyContouringDetails | Record<string, unknown>;
 
 export interface ProcedureCode {
   snomedCtCode: string;
