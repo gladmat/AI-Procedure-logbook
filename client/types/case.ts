@@ -238,10 +238,20 @@ export interface SnomedCodedItem {
   commonName?: string;
 }
 
+export type Laterality = "left" | "right" | "bilateral" | "na";
+
+export interface DiagnosisClinicalDetails {
+  laterality?: Laterality;
+  injuryMechanism?: string;
+  nerveStatus?: string;
+  tendonInjuries?: string;
+}
+
 export interface Diagnosis {
   snomedCtCode?: string;
   displayName: string;
   date?: string;
+  clinicalDetails?: DiagnosisClinicalDetails;
 }
 
 export interface Prophylaxis {

@@ -363,51 +363,7 @@ export function HandSurgeryClinicalFields({
   clinicalDetails,
   onUpdate,
 }: HandSurgeryClinicalFieldsProps) {
-  return (
-    <View style={styles.container}>
-      {/* Hand laterality */}
-      <View style={styles.row}>
-        <View style={styles.halfField}>
-          <PickerField
-            label="Affected Hand"
-            options={HAND_OPTIONS}
-            value={clinicalDetails.affectedHand || ""}
-            onSelect={(v: string) => onUpdate({ ...clinicalDetails, affectedHand: v as HandSurgeryDetails["affectedHand"] })}
-            placeholder="Select hand"
-          />
-        </View>
-        <View style={styles.halfField}>
-          <PickerField
-            label="Dominant Hand"
-            options={DOMINANT_HAND_OPTIONS}
-            value={clinicalDetails.dominantHand || ""}
-            onSelect={(v: string) => onUpdate({ ...clinicalDetails, dominantHand: v as HandSurgeryDetails["dominantHand"] })}
-            placeholder="Select"
-          />
-        </View>
-      </View>
-      
-      {/* Clinical details */}
-      <FormField
-        label="Injury Mechanism"
-        value={clinicalDetails.injuryMechanism || ""}
-        onChangeText={(v) => onUpdate({ ...clinicalDetails, injuryMechanism: v })}
-        placeholder="e.g., Fall, crush, saw injury"
-      />
-      <FormField
-        label="Nerve Status"
-        value={clinicalDetails.nerveStatus || ""}
-        onChangeText={(v) => onUpdate({ ...clinicalDetails, nerveStatus: v })}
-        placeholder="e.g., Digital nerves intact"
-      />
-      <FormField
-        label="Tendon Injuries"
-        value={clinicalDetails.tendonInjuries || ""}
-        onChangeText={(v) => onUpdate({ ...clinicalDetails, tendonInjuries: v })}
-        placeholder="e.g., FDP zone 2"
-      />
-    </View>
-  );
+  return null;
 }
 
 interface BodyContouringClinicalFieldsProps {

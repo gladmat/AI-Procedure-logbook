@@ -76,8 +76,8 @@ import { ProcedureEntryCard } from "@/components/ProcedureEntryCard";
 import { SnomedSearchPicker } from "@/components/SnomedSearchPicker";
 import { useAuth } from "@/contexts/AuthContext";
 import { getDiagnosisStaging, DiagnosisStagingConfig, searchSnomedDiagnoses, searchSnomedProcedures, SnomedSearchResult } from "@/lib/snomedApi";
-import { DiagnosisFractureClassifier } from "@/components/DiagnosisFractureClassifier";
-import { FractureEntry } from "@/types/case";
+import { DiagnosisClinicalFields } from "@/components/DiagnosisClinicalFields";
+import { FractureEntry, DiagnosisClinicalDetails } from "@/types/case";
 
 type RouteParams = RouteProp<RootStackParamList, "CaseForm">;
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -268,6 +268,7 @@ export default function CaseFormScreen() {
   const [diagnosisStaging, setDiagnosisStaging] = useState<DiagnosisStagingConfig | null>(null);
   const [stagingValues, setStagingValues] = useState<Record<string, string>>({});
   const [fractures, setFractures] = useState<FractureEntry[]>([]);
+  const [diagnosisClinicalDetails, setDiagnosisClinicalDetails] = useState<DiagnosisClinicalDetails>({});
   
   // Legacy diagnosis field for backwards compatibility
   const [diagnosis, setDiagnosis] = useState("");
@@ -519,6 +520,13 @@ export default function CaseFormScreen() {
       setUnplannedReadmission(draft.unplannedReadmission ?? "no");
       setIsUnplannedReadmission((draft.unplannedReadmission ?? "no") !== "no");
       setDiagnosis(draft.finalDiagnosis?.displayName ?? "");
+      if (draft.finalDiagnosis?.snomedCtCode) {
+        setPrimaryDiagnosis({
+          conceptId: draft.finalDiagnosis.snomedCtCode,
+          term: draft.finalDiagnosis.displayName,
+        });
+      }
+      setDiagnosisClinicalDetails(draft.finalDiagnosis?.clinicalDetails ?? {});
       setSelectedComorbidities(draft.comorbidities ?? []);
       setWoundInfectionRisk(draft.woundInfectionRisk ?? "");
       setAnaestheticType(draft.anaestheticType ?? "");
@@ -576,7 +584,13 @@ export default function CaseFormScreen() {
       admissionUrgency: admissionUrgency || undefined,
       stayType: stayType || undefined,
       unplannedReadmission: unplannedReadmission !== "no" ? unplannedReadmission : "no",
-      finalDiagnosis: diagnosis.trim() ? { displayName: diagnosis.trim() } : undefined,
+      finalDiagnosis: primaryDiagnosis 
+        ? { 
+            snomedCtCode: primaryDiagnosis.conceptId,
+            displayName: primaryDiagnosis.term,
+            clinicalDetails: diagnosisClinicalDetails,
+          } 
+        : (diagnosis.trim() ? { displayName: diagnosis.trim() } : undefined),
       comorbidities: selectedComorbidities.length > 0 ? selectedComorbidities : undefined,
       asaScore: asaScore ? (parseInt(asaScore) as ASAScore) : undefined,
       heightCm: heightCm ? parseFloat(heightCm) : undefined,
@@ -823,9 +837,13 @@ export default function CaseFormScreen() {
         unplannedReadmission: unplannedReadmission !== "no" ? unplannedReadmission : undefined,
         
         // Diagnosis (single SNOMED diagnosis)
-        finalDiagnosis: diagnosis.trim() 
-          ? { displayName: diagnosis.trim() } 
-          : undefined,
+        finalDiagnosis: primaryDiagnosis 
+          ? { 
+              snomedCtCode: primaryDiagnosis.conceptId,
+              displayName: primaryDiagnosis.term,
+              clinicalDetails: diagnosisClinicalDetails,
+            } 
+          : (diagnosis.trim() ? { displayName: diagnosis.trim() } : undefined),
         
         // Co-morbidities
         comorbidities: selectedComorbidities.length > 0 ? selectedComorbidities : undefined,
@@ -974,8 +992,17 @@ export default function CaseFormScreen() {
         </View>
       ) : null}
 
-      {isFractureDiagnosis ? (
-        <DiagnosisFractureClassifier
+      {primaryDiagnosis ? (
+        <DiagnosisClinicalFields
+          diagnosis={{
+            snomedCtCode: primaryDiagnosis.conceptId,
+            displayName: primaryDiagnosis.term,
+            clinicalDetails: diagnosisClinicalDetails,
+          }}
+          onDiagnosisChange={(updatedDiagnosis) => {
+            setDiagnosisClinicalDetails(updatedDiagnosis.clinicalDetails || {});
+          }}
+          specialty={specialty}
           fractures={fractures}
           onFracturesChange={setFractures}
         />
