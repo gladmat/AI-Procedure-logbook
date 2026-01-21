@@ -8,6 +8,7 @@ import { BorderRadius, Spacing } from "@/constants/theme";
 import { FormField, PickerField } from "@/components/FormField";
 import { ProcedureClinicalDetails } from "@/components/ProcedureClinicalDetails";
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
+import { SnomedSearchPicker } from "@/components/SnomedSearchPicker";
 import {
   type CaseProcedure,
   type Role,
@@ -69,17 +70,11 @@ export function ProcedureEntryCard({
     });
   };
 
-  const handleSnomedCodeChange = (value: string) => {
+  const handleSnomedProcedureSelect = (result: { conceptId: string; term: string } | null) => {
     onUpdate({
       ...procedure,
-      snomedCtCode: value,
-    });
-  };
-
-  const handleSnomedDisplayChange = (value: string) => {
-    onUpdate({
-      ...procedure,
-      snomedCtDisplay: value,
+      snomedCtCode: result?.conceptId || "",
+      snomedCtDisplay: result?.term || "",
     });
   };
 
@@ -309,25 +304,18 @@ export function ProcedureEntryCard({
         </View>
       </Modal>
 
-      <View style={styles.snomedRow}>
-        <View style={styles.snomedCodeField}>
-          <FormField
-            label="SNOMED CT Code"
-            value={procedure.snomedCtCode || ""}
-            onChangeText={handleSnomedCodeChange}
-            placeholder="e.g., 234567890"
-            keyboardType="numeric"
-          />
-        </View>
-        <View style={styles.snomedDisplayField}>
-          <FormField
-            label="SNOMED Display"
-            value={procedure.snomedCtDisplay || ""}
-            onChangeText={handleSnomedDisplayChange}
-            placeholder="Procedure description"
-          />
-        </View>
-      </View>
+      <SnomedSearchPicker
+        label="SNOMED CT Procedure"
+        value={
+          procedure.snomedCtCode && procedure.snomedCtDisplay
+            ? { conceptId: procedure.snomedCtCode, term: procedure.snomedCtDisplay }
+            : undefined
+        }
+        onSelect={handleSnomedProcedureSelect}
+        searchType="procedure"
+        specialty={procedure.specialty}
+        placeholder="Search SNOMED CT procedures..."
+      />
 
       <FormField
         label="Notes"
@@ -394,16 +382,6 @@ const styles = StyleSheet.create({
   },
   iconButton: {
     padding: Spacing.xs,
-  },
-  snomedRow: {
-    flexDirection: "row",
-    gap: Spacing.md,
-  },
-  snomedCodeField: {
-    flex: 1,
-  },
-  snomedDisplayField: {
-    flex: 2,
   },
   roleHeaderRow: {
     flexDirection: "row",
