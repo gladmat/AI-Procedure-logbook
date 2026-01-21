@@ -20,7 +20,7 @@ export type RootStackParamList = {
   Onboarding: undefined;
   Main: undefined;
   CaseDetail: { caseId: string; showComplicationForm?: boolean };
-  CaseForm: { specialty: Specialty; extractedData?: Record<string, unknown> };
+  CaseForm: { specialty?: Specialty; extractedData?: Record<string, unknown>; caseId?: string };
   AddCase: undefined;
   SmartCapture: { mode?: "op_note" | "discharge_summary" } | undefined;
   AddTimelineEvent: { caseId: string; initialEventType?: TimelineEventType };

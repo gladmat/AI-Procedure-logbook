@@ -66,7 +66,7 @@ import {
 import { FormField, SelectField, PickerField, DatePickerField } from "@/components/FormField";
 import { SectionHeader } from "@/components/SectionHeader";
 import { Button } from "@/components/Button";
-import { saveCase, getCaseDraft, saveCaseDraft, clearCaseDraft, CaseDraft } from "@/lib/storage";
+import { saveCase, getCase, updateCase, getCaseDraft, saveCaseDraft, clearCaseDraft, CaseDraft } from "@/lib/storage";
 import { getConfigForSpecialty, getDefaultClinicalDetails } from "@/lib/procedureConfig";
 import { findSnomedProcedure, getProcedureCodeForCountry, getCountryCodeFromProfile } from "@/lib/snomedCt";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
@@ -188,8 +188,12 @@ export default function CaseFormScreen() {
   const { facilities, profile } = useAuth();
   
   const draftLoadedRef = useRef(false);
+  const editModeLoadedRef = useRef(false);
 
-  const { specialty, extractedData } = route.params;
+  const { specialty: routeSpecialty, extractedData, caseId } = route.params;
+  const isEditMode = !!caseId;
+  const [existingCase, setExistingCase] = useState<Case | null>(null);
+  const specialty = routeSpecialty || existingCase?.specialty || "general";
   
   const documentType = (extractedData as any)?._documentType;
   const confidence = (extractedData as any)?._confidence;
@@ -556,9 +560,79 @@ export default function CaseFormScreen() {
     loadDraft();
   }, [buildDefaultProcedures, extractedData, primaryFacility, specialty]);
 
+  // Load existing case for edit mode
+  useEffect(() => {
+    if (!isEditMode || !caseId || editModeLoadedRef.current) return;
+
+    const loadExistingCase = async () => {
+      try {
+        const caseData = await getCase(caseId);
+        if (!caseData) return;
+
+        setExistingCase(caseData);
+        editModeLoadedRef.current = true;
+
+        // Populate form fields from existing case
+        setPatientIdentifier(caseData.patientIdentifier);
+        setProcedureDate(caseData.procedureDate);
+        setFacility(caseData.facility);
+        setProcedureType(caseData.procedureType);
+        if (caseData.procedures) setProcedures(caseData.procedures);
+        if (caseData.surgeryTiming?.startTime) setSurgeryStartTime(caseData.surgeryTiming.startTime);
+        if (caseData.surgeryTiming?.endTime) setSurgeryEndTime(caseData.surgeryTiming.endTime);
+        if (caseData.operatingTeam) setOperatingTeam(caseData.operatingTeam);
+        if (caseData.gender) setGender(caseData.gender);
+        if (caseData.ethnicity) setEthnicity(caseData.ethnicity);
+        if (caseData.admissionDate) setAdmissionDate(caseData.admissionDate);
+        if (caseData.dischargeDate) setDischargeDate(caseData.dischargeDate);
+        if (caseData.admissionUrgency) setAdmissionUrgency(caseData.admissionUrgency);
+        if (caseData.stayType) setStayType(caseData.stayType);
+        if (caseData.unplannedReadmission) setUnplannedReadmission(caseData.unplannedReadmission);
+        if (caseData.asaScore) setAsaScore(String(caseData.asaScore));
+        if (caseData.heightCm) setHeightCm(String(caseData.heightCm));
+        if (caseData.weightKg) setWeightKg(String(caseData.weightKg));
+        if (caseData.smoker) setSmoker(caseData.smoker);
+        if (caseData.diabetes !== undefined) setDiabetes(caseData.diabetes);
+        if (caseData.woundInfectionRisk) setWoundInfectionRisk(caseData.woundInfectionRisk);
+        if (caseData.anaestheticType) setAnaestheticType(caseData.anaestheticType);
+        if (caseData.prophylaxis?.antibiotics) setAntibioticProphylaxis(caseData.prophylaxis.antibiotics);
+        if (caseData.prophylaxis?.dvtPrevention) setDvtProphylaxis(caseData.prophylaxis.dvtPrevention);
+        if (caseData.unplannedICU) setUnplannedICU(caseData.unplannedICU);
+        if (caseData.returnToTheatre) setReturnToTheatre(caseData.returnToTheatre);
+        if (caseData.returnToTheatreReason) setReturnToTheatreReason(caseData.returnToTheatreReason);
+        if (caseData.outcome) setOutcome(caseData.outcome);
+        if (caseData.mortalityClassification) setMortalityClassification(caseData.mortalityClassification);
+        if (caseData.discussedAtMDM) setDiscussedAtMDM(caseData.discussedAtMDM);
+        if (caseData.comorbidities) setSelectedComorbidities(caseData.comorbidities);
+        if (caseData.fractures) setFractures(caseData.fractures);
+        
+        // Load diagnosis
+        if (caseData.preManagementDiagnosis || caseData.finalDiagnosis) {
+          const diag = caseData.preManagementDiagnosis || caseData.finalDiagnosis;
+          if (diag?.snomedCtCode) {
+            setPrimaryDiagnosis({ conceptId: diag.snomedCtCode, term: diag.displayName });
+          } else if (diag?.displayName) {
+            setDiagnosis(diag.displayName);
+          }
+          if (diag?.clinicalDetails) {
+            setDiagnosisClinicalDetails(diag.clinicalDetails);
+          }
+        }
+
+        // Load team member role
+        const userMember = caseData.teamMembers?.find(m => m.name === "You");
+        if (userMember?.role) setRole(userMember.role);
+      } catch (error) {
+        console.error("Error loading case for edit:", error);
+      }
+    };
+
+    loadExistingCase();
+  }, [isEditMode, caseId]);
+
   useEffect(() => {
     navigation.setOptions({
-      headerTitle: `${SPECIALTY_LABELS[specialty]} Case`,
+      headerTitle: isEditMode ? "Edit Case" : `${SPECIALTY_LABELS[specialty]} Case`,
       headerRight: () => (
         <HeaderButton
           onPress={handleSave}
@@ -571,7 +645,7 @@ export default function CaseFormScreen() {
         </HeaderButton>
       ),
     });
-  }, [saving, patientIdentifier, facility, clinicalDetails]);
+  }, [saving, patientIdentifier, facility, clinicalDetails, isEditMode, specialty]);
 
   useEffect(() => {
     if (!draftLoadedRef.current) return;
@@ -864,8 +938,8 @@ export default function CaseFormScreen() {
             }
           : undefined;
 
-      const newCase: Case = {
-        id: uuidv4(),
+      const casePayload: Case = {
+        id: isEditMode && existingCase ? existingCase.id : uuidv4(),
         patientIdentifier: patientIdentifier.trim(),
         procedureDate,
         facility: facility.trim(),
@@ -887,7 +961,14 @@ export default function CaseFormScreen() {
         stayType: stayType || undefined,
         unplannedReadmission: unplannedReadmission !== "no" ? unplannedReadmission : undefined,
         
-        // Diagnosis (single SNOMED diagnosis)
+        // Diagnosis (single SNOMED diagnosis) - also set as preManagementDiagnosis for case title
+        preManagementDiagnosis: primaryDiagnosis 
+          ? { 
+              snomedCtCode: primaryDiagnosis.conceptId,
+              displayName: primaryDiagnosis.term,
+              clinicalDetails: diagnosisClinicalDetails,
+            } 
+          : (diagnosis.trim() ? { displayName: diagnosis.trim() } : undefined),
         finalDiagnosis: primaryDiagnosis 
           ? { 
               snomedCtCode: primaryDiagnosis.conceptId,
@@ -924,25 +1005,31 @@ export default function CaseFormScreen() {
         discussedAtMDM: discussedAtMDM || undefined,
         
         clinicalDetails: {} as any,
-        teamMembers: [
-          {
-            id: uuidv4(),
-            userId,
-            name: "You",
-            role,
-            confirmed: true,
-            addedAt: new Date().toISOString(),
-          },
-        ],
-        ownerId: userId,
-        createdAt: new Date().toISOString(),
+        teamMembers: isEditMode && existingCase?.teamMembers 
+          ? existingCase.teamMembers 
+          : [
+              {
+                id: uuidv4(),
+                userId,
+                name: "You",
+                role,
+                confirmed: true,
+                addedAt: new Date().toISOString(),
+              },
+            ],
+        ownerId: isEditMode && existingCase ? existingCase.ownerId : userId,
+        createdAt: isEditMode && existingCase ? existingCase.createdAt : new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
 
-      await saveCase(newCase);
-      await clearCaseDraft(specialty);
+      if (isEditMode && existingCase) {
+        await updateCase(existingCase.id, casePayload);
+      } else {
+        await saveCase(casePayload);
+        await clearCaseDraft(specialty);
+      }
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      navigation.popToTop();
+      navigation.goBack();
     } catch (error) {
       console.error("Error saving case:", error);
       Alert.alert("Error", "Failed to save case. Please try again.");
