@@ -1,7 +1,7 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "node:http";
 import { GoogleGenAI } from "@google/genai";
-import { FREE_FLAP_AI_PROMPT, getDischargeComplicationPrompt } from "./ai-prompts";
+import { FREE_FLAP_AI_PROMPT, UNIVERSAL_SMART_CAPTURE_PROMPT, getDischargeComplicationPrompt } from "./ai-prompts";
 import { extractTextFromImage } from "./ocr";
 import { redactSensitiveData } from "./privacyUtils";
 import { storage } from "./storage";
@@ -103,32 +103,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const combinedText = extractedTexts.join("\n\n---\n\n");
       const redactionResult = redactSensitiveData(combinedText);
 
+      console.log("Analyzing operation note with Universal Smart Capture prompt...");
+      console.log("Redacted text length:", redactionResult.redactedText.length);
+
       const response = await ai.models.generateContent({
         model: "gemini-2.5-flash",
         contents: [
           {
             role: "user",
             parts: [
-              { text: FREE_FLAP_AI_PROMPT },
-              { text: `\n\nExtract the surgical details from the following operation note(s). There may be multiple pages or documents - combine all relevant information:\n\nOperation Notes (${imageArray.length} page(s)):\n${redactionResult.redactedText}` },
+              { text: UNIVERSAL_SMART_CAPTURE_PROMPT },
+              { text: `\n\nExtract ALL surgical data from the following operation note(s). There may be multiple pages - combine all relevant information:\n\nOperation Notes (${imageArray.length} page(s)):\n${redactionResult.redactedText}` },
             ],
           },
         ],
       });
 
       const responseText = response.text || "";
+      console.log("AI Response length:", responseText.length);
       
-      let extractedData = {};
+      let extractedData: any = {};
       try {
         const jsonMatch = responseText.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
           extractedData = JSON.parse(jsonMatch[0]);
+          console.log("Detected specialty:", extractedData.detectedSpecialty);
+          console.log("Extracted fields:", Object.keys(extractedData).filter(k => extractedData[k] !== null).join(", "));
         }
       } catch (parseError) {
         console.error("Error parsing AI response:", parseError);
+        console.log("Raw response:", responseText.substring(0, 500));
       }
 
-      res.json({ extractedData });
+      const detectedSpecialty = extractedData.detectedSpecialty || "general";
+
+      res.json({ 
+        extractedData,
+        detectedSpecialty
+      });
     } catch (error) {
       console.error("Error analyzing operation note:", error);
       res.status(500).json({ error: "Failed to analyze images" });

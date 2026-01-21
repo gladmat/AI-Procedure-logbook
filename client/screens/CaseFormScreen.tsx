@@ -324,10 +324,119 @@ export default function CaseFormScreen() {
     fetchStaging();
   }, [primaryDiagnosis]);
 
+  // Populate ALL form fields from extractedData (Smart Capture)
+  useEffect(() => {
+    if (!extractedData) return;
+    
+    const data = extractedData as any;
+    console.log("Populating form from extracted data:", Object.keys(data).filter(k => data[k] !== null));
+    
+    // Patient Demographics
+    if (data.gender) setGender(data.gender);
+    if (data.age) {
+      // Age is extracted but we don't have an age field - could be used for notes
+    }
+    
+    // Admission Details
+    if (data.admissionUrgency) setAdmissionUrgency(data.admissionUrgency);
+    if (data.stayType) setStayType(data.stayType);
+    
+    // ASA Score
+    if (data.asaScore) setAsaScore(String(data.asaScore));
+    
+    // Surgery Timing
+    if (data.surgeryStartTime) setSurgeryStartTime(data.surgeryStartTime);
+    if (data.surgeryEndTime) setSurgeryEndTime(data.surgeryEndTime);
+    
+    // Operating Team
+    if (data.operatingTeam && Array.isArray(data.operatingTeam)) {
+      const team: OperatingTeamMember[] = data.operatingTeam.map((member: any, index: number) => ({
+        id: uuidv4(),
+        name: member.name,
+        role: member.role,
+      }));
+      setOperatingTeam(team);
+    }
+    
+    // Diagnoses - set as text for now, user can search SNOMED
+    if (data.finalDiagnosis) {
+      setDiagnosis(data.finalDiagnosis);
+    } else if (data.preManagementDiagnosis) {
+      setDiagnosis(data.preManagementDiagnosis);
+    }
+    
+    // Comorbidities - match to SNOMED coded items
+    if (data.comorbidities && Array.isArray(data.comorbidities)) {
+      const matchedComorbidities: SnomedCodedItem[] = [];
+      for (const comorb of data.comorbidities) {
+        const match = COMMON_COMORBIDITIES.find(cc => 
+          cc.displayName.toLowerCase().includes(comorb.toLowerCase()) ||
+          comorb.toLowerCase().includes(cc.displayName.toLowerCase())
+        );
+        if (match) {
+          matchedComorbidities.push(match);
+        }
+      }
+      if (matchedComorbidities.length > 0) {
+        setSelectedComorbidities(matchedComorbidities);
+      }
+    }
+    
+    // Operative Factors
+    if (data.anaestheticType) setAnaestheticType(data.anaestheticType);
+    if (data.woundInfectionRisk) setWoundInfectionRisk(data.woundInfectionRisk);
+    if (typeof data.antibioticProphylaxis === "boolean") setAntibioticProphylaxis(data.antibioticProphylaxis);
+    if (typeof data.dvtProphylaxis === "boolean") setDvtProphylaxis(data.dvtProphylaxis);
+    
+    // Outcomes
+    if (typeof data.returnToTheatre === "boolean") setReturnToTheatre(data.returnToTheatre);
+    if (data.returnToTheatreReason) setReturnToTheatreReason(data.returnToTheatreReason);
+    if (data.unplannedICU === true) setUnplannedICU(data.unplannedICUReason || "other");
+    
+    // Clinical Details (specialty-specific)
+    if (data.clinicalDetails) {
+      setClinicalDetails(prev => ({ ...prev, ...data.clinicalDetails }));
+      
+      // Free flap specific
+      if (data.clinicalDetails.recipientSiteRegion) {
+        setRecipientSiteRegion(data.clinicalDetails.recipientSiteRegion);
+      }
+      if (data.clinicalDetails.anastomoses) {
+        setAnastomoses(data.clinicalDetails.anastomoses);
+      }
+    }
+    
+    // Also check for top-level flap details (older format)
+    if (data.recipientSiteRegion) setRecipientSiteRegion(data.recipientSiteRegion);
+    if (data.anastomoses && Array.isArray(data.anastomoses)) setAnastomoses(data.anastomoses);
+    
+    // Procedures
+    if (data.procedures && Array.isArray(data.procedures) && data.procedures.length > 0) {
+      const extractedProcedures: CaseProcedure[] = data.procedures.map((proc: any, index: number) => ({
+        id: uuidv4(),
+        sequenceOrder: index + 1,
+        procedureName: proc.procedureName || "",
+        specialty: specialty,
+        surgeonRole: "PS",
+        laterality: proc.laterality,
+        procedureTags: proc.procedureTags || [],
+        notes: proc.notes,
+      }));
+      setProcedures(extractedProcedures);
+      
+      // Also set the primary procedure type
+      if (extractedProcedures[0]?.procedureName) {
+        setProcedureType(extractedProcedures[0].procedureName);
+      }
+    }
+    
+    draftLoadedRef.current = true;
+  }, [extractedData, specialty]);
+
   useEffect(() => {
     const loadDraft = async () => {
       if (extractedData) {
-        draftLoadedRef.current = true;
+        // Already handled by the extractedData effect above
         return;
       }
       const draft = await getCaseDraft(specialty);

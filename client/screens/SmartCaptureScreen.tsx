@@ -159,10 +159,28 @@ export default function SmartCaptureScreen() {
         const result = await response.json();
         
         if (result.extractedData) {
+          const specialty = result.detectedSpecialty || result.extractedData.detectedSpecialty || "general";
+          console.log("Smart Capture detected specialty:", specialty);
+          console.log("Extracted data keys:", Object.keys(result.extractedData));
+          
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          
           navigation.replace("CaseForm", {
-            specialty: "orthoplastic",
+            specialty: specialty as any,
             extractedData: result.extractedData,
           });
+        } else {
+          Alert.alert(
+            "No Data Extracted",
+            "Could not extract surgical data from the images. Would you like to enter the details manually?",
+            [
+              { text: "Cancel", style: "cancel" },
+              {
+                text: "Enter Manually",
+                onPress: () => navigation.replace("CaseForm", { specialty: "general" }),
+              },
+            ]
+          );
         }
       }
     } catch (error) {
@@ -174,7 +192,7 @@ export default function SmartCaptureScreen() {
           { text: "Cancel", style: "cancel" },
           {
             text: "Enter Manually",
-            onPress: () => navigation.replace("CaseForm", { specialty: "orthoplastic" }),
+            onPress: () => navigation.replace("CaseForm", { specialty: "general" }),
           },
         ]
       );
