@@ -119,15 +119,21 @@ export function HandBoneDiagram({
 }: HandBoneDiagramProps) {
   const { theme } = useTheme();
   const screenWidth = Dimensions.get("window").width;
-  const imageDisplaySize = Math.min(screenWidth - 48, 340);
+  // Larger display size for easier bone selection
+  const containerWidth = Math.min(screenWidth - 32, 400);
+  // Crop to show just the hand region (remove forearm) - we'll scale up and offset
+  const cropScale = 1.4; // Zoom in on hand region
+  const cropOffsetY = 8; // Shift up to cut off some wrist/forearm percentage
+  const imageDisplaySize = containerWidth * cropScale;
+  const containerHeight = containerWidth * 1.1; // Slightly taller to show more fingers
   
   const getOverlayStyle = (bone: BoneData): ViewStyle => {
     const isSelected = selectedBone?.id === bone.id;
     const isFractured = fracturedBones.includes(bone.id);
     
-    // Calculate pixel values from percentages
+    // Calculate pixel values from percentages, adjusted for crop/scale
     const left = (bone.hitbox.x / 100) * imageDisplaySize;
-    const top = (bone.hitbox.y / 100) * imageDisplaySize;
+    const top = ((bone.hitbox.y - cropOffsetY) / 100) * imageDisplaySize;
     const width = (bone.hitbox.width / 100) * imageDisplaySize;
     const height = (bone.hitbox.height / 100) * imageDisplaySize;
     
@@ -159,23 +165,31 @@ export function HandBoneDiagram({
       
       <View style={[styles.imageContainer, { 
         backgroundColor: theme.backgroundSecondary,
-        width: imageDisplaySize,
-        height: imageDisplaySize
+        width: containerWidth,
+        height: containerHeight
       }]}>
-        <Image
-          source={handBonesImage}
-          style={{ width: "100%", height: "100%" }}
-          resizeMode="contain"
-        />
-        
-        {/* Clickable overlay regions */}
-        {ALL_BONES.map((bone) => (
-          <Pressable
-            key={bone.id}
-            style={getOverlayStyle(bone)}
-            onPress={() => onBoneSelect(bone)}
+        {/* Scaled and offset image for cropping effect */}
+        <View style={{ 
+          width: imageDisplaySize, 
+          height: imageDisplaySize,
+          marginTop: -(cropOffsetY / 100) * imageDisplaySize,
+          marginLeft: -(imageDisplaySize - containerWidth) / 2,
+        }}>
+          <Image
+            source={handBonesImage}
+            style={{ width: "100%", height: "100%" }}
+            resizeMode="contain"
           />
-        ))}
+          
+          {/* Clickable overlay regions */}
+          {ALL_BONES.map((bone) => (
+            <Pressable
+              key={bone.id}
+              style={getOverlayStyle(bone)}
+              onPress={() => onBoneSelect(bone)}
+            />
+          ))}
+        </View>
       </View>
       
       {selectedBone ? (
