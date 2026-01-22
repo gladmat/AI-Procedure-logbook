@@ -8,6 +8,7 @@ import {
   Modal,
   FlatList,
   TouchableOpacity,
+  InteractionManager,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Feather } from "@expo/vector-icons";
@@ -418,8 +419,10 @@ export function PickerField({
                     { borderBottomColor: theme.border },
                   ]}
                   onPress={() => {
-                    onSelect(item.value);
                     setModalVisible(false);
+                    InteractionManager.runAfterInteractions(() => {
+                      onSelect(item.value);
+                    });
                   }}
                 >
                   <ThemedText

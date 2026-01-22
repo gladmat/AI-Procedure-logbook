@@ -191,6 +191,8 @@ export default function CaseFormScreen() {
   
   const draftLoadedRef = useRef(false);
   const editModeLoadedRef = useRef(false);
+  const scrollViewRef = useRef<any>(null);
+  const scrollPositionRef = useRef(0);
 
   const { specialty: routeSpecialty, extractedData, caseId } = route.params;
   const isEditMode = !!caseId;
@@ -1055,8 +1057,13 @@ export default function CaseFormScreen() {
     ? `${Math.floor(durationMinutes / 60)}h ${durationMinutes % 60}m`
     : null;
 
+  const handleScroll = useCallback((event: any) => {
+    scrollPositionRef.current = event.nativeEvent.contentOffset.y;
+  }, []);
+
   return (
     <KeyboardAwareScrollViewCompat
+      ref={scrollViewRef}
       style={[styles.container, { backgroundColor: theme.backgroundRoot }]}
       contentContainerStyle={[
         styles.content,
@@ -1065,6 +1072,8 @@ export default function CaseFormScreen() {
           paddingBottom: insets.bottom + Spacing["3xl"],
         },
       ]}
+      onScroll={handleScroll}
+      scrollEventThrottle={16}
     >
       {documentType ? (
         <DocumentTypeBadge

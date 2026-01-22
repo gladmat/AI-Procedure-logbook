@@ -1,3 +1,4 @@
+import React, { forwardRef } from "react";
 import { Platform, ScrollView, ScrollViewProps } from "react-native";
 import {
   KeyboardAwareScrollView,
@@ -9,29 +10,34 @@ type Props = KeyboardAwareScrollViewProps & ScrollViewProps;
 /**
  * KeyboardAwareScrollView that falls back to ScrollView on web.
  * Use this for any screen containing text inputs.
+ * Includes scroll position maintenance to prevent jumping on state updates.
  */
-export function KeyboardAwareScrollViewCompat({
-  children,
-  keyboardShouldPersistTaps = "handled",
-  ...props
-}: Props) {
-  if (Platform.OS === "web") {
+export const KeyboardAwareScrollViewCompat = forwardRef<ScrollView, Props>(
+  function KeyboardAwareScrollViewCompat(
+    { children, keyboardShouldPersistTaps = "handled", ...props },
+    ref
+  ) {
+    const scrollViewProps = {
+      keyboardShouldPersistTaps,
+      // Prevent scroll jumping when content changes (iOS)
+      maintainVisibleContentPosition: Platform.OS === "ios" 
+        ? { minIndexForVisible: 0, autoscrollToTopThreshold: 10 } 
+        : undefined,
+      ...props,
+    };
+
+    if (Platform.OS === "web") {
+      return (
+        <ScrollView ref={ref} {...scrollViewProps}>
+          {children}
+        </ScrollView>
+      );
+    }
+
     return (
-      <ScrollView
-        keyboardShouldPersistTaps={keyboardShouldPersistTaps}
-        {...props}
-      >
+      <KeyboardAwareScrollView ref={ref as any} {...scrollViewProps}>
         {children}
-      </ScrollView>
+      </KeyboardAwareScrollView>
     );
   }
-
-  return (
-    <KeyboardAwareScrollView
-      keyboardShouldPersistTaps={keyboardShouldPersistTaps}
-      {...props}
-    >
-      {children}
-    </KeyboardAwareScrollView>
-  );
-}
+);
