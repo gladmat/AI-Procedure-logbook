@@ -33,8 +33,10 @@ import {
   FreeFlapDetails,
   OPERATING_TEAM_ROLE_LABELS,
   GENDER_LABELS,
-  ADMISSION_CATEGORY_LABELS,
+  ADMISSION_URGENCY_LABELS,
   UNPLANNED_READMISSION_LABELS,
+  OPERATIVE_MEDIA_TYPE_LABELS,
+  OperativeMediaItem,
   WOUND_INFECTION_RISK_LABELS,
   ANAESTHETIC_TYPE_LABELS,
   UNPLANNED_ICU_LABELS,
@@ -314,7 +316,7 @@ export default function CaseDetailScreen() {
 
   const hasProcedures = caseData.procedures && caseData.procedures.length > 0;
   const hasPatientDemographics = caseData.gender || caseData.ethnicity;
-  const hasAdmissionDetails = caseData.admissionDate || caseData.dischargeDate || caseData.admissionCategory || (caseData.unplannedReadmission && caseData.unplannedReadmission !== "no");
+  const hasAdmissionDetails = caseData.admissionDate || caseData.dischargeDate || caseData.admissionUrgency || (caseData.unplannedReadmission && caseData.unplannedReadmission !== "no");
   const hasDiagnoses = caseData.preManagementDiagnosis || caseData.finalDiagnosis || caseData.pathologicalDiagnosis;
   const hasComorbidities = caseData.comorbidities && caseData.comorbidities.length > 0;
   const hasOperativeFactors = caseData.woundInfectionRisk || caseData.anaestheticType || caseData.prophylaxis;
@@ -422,7 +424,7 @@ export default function CaseDetailScreen() {
                 ) : null}
                 {proc.clinicalDetails ? (
                   <View style={[styles.procedureClinicalDetails, { borderTopColor: theme.border }]}>
-                    {proc.specialty === "free_flap" && (proc.clinicalDetails as FreeFlapDetails) ? (
+                    {proc.tags?.includes("free_flap") && (proc.clinicalDetails as FreeFlapDetails) ? (
                       <>
                         {(proc.clinicalDetails as FreeFlapDetails).harvestSide ? (
                           <DetailRow 
@@ -471,7 +473,7 @@ export default function CaseDetailScreen() {
                         ) : null}
                       </>
                     ) : null}
-                    {proc.specialty === "hand_trauma" && proc.clinicalDetails ? (
+                    {proc.specialty === "hand_surgery" && proc.clinicalDetails ? (
                       <>
                         <DetailRow 
                           label="Injury Mechanism" 
@@ -508,6 +510,42 @@ export default function CaseDetailScreen() {
           </>
         ) : null}
 
+        {caseData.operativeMedia && caseData.operativeMedia.length > 0 ? (
+          <>
+            <SectionHeader title="Operative Media" />
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.mediaGalleryContainer}
+            >
+              {caseData.operativeMedia.map((media) => (
+                <View
+                  key={media.id}
+                  style={[styles.mediaItem, { backgroundColor: theme.backgroundDefault }]}
+                >
+                  <Image
+                    source={{ uri: media.localUri }}
+                    style={styles.mediaImage}
+                    resizeMode="cover"
+                  />
+                  <View style={[styles.mediaTypeBadge, { backgroundColor: theme.link }]}>
+                    <ThemedText style={styles.mediaTypeBadgeText}>
+                      {OPERATIVE_MEDIA_TYPE_LABELS[media.mediaType]}
+                    </ThemedText>
+                  </View>
+                  {media.caption ? (
+                    <View style={[styles.mediaCaptionOverlay, { backgroundColor: "rgba(0,0,0,0.6)" }]}>
+                      <ThemedText style={styles.mediaCaptionText} numberOfLines={2}>
+                        {media.caption}
+                      </ThemedText>
+                    </View>
+                  ) : null}
+                </View>
+              ))}
+            </ScrollView>
+          </>
+        ) : null}
+
         {hasPatientDemographics ? (
           <>
             <SectionHeader title="Patient Demographics" />
@@ -534,8 +572,8 @@ export default function CaseDetailScreen() {
                 value={formatDateDisplay(caseData.dischargeDate)} 
               />
               <DetailRow 
-                label="Admission Category" 
-                value={caseData.admissionCategory ? ADMISSION_CATEGORY_LABELS[caseData.admissionCategory] : undefined} 
+                label="Admission Urgency" 
+                value={caseData.admissionUrgency ? ADMISSION_URGENCY_LABELS[caseData.admissionUrgency] : undefined} 
               />
               {caseData.unplannedReadmission && caseData.unplannedReadmission !== "no" ? (
                 <DetailRow 
@@ -985,10 +1023,10 @@ export default function CaseDetailScreen() {
           </View>
         )}
 
-        <SectionHeader title="Clinical Details" />
-        <View style={[styles.card, { backgroundColor: theme.backgroundDefault }]}>
-          {caseData.specialty === "free_flap" ? (
-            <>
+        {flapDetails?.harvestSide || flapDetails?.indication || flapDetails?.ischemiaTimeMinutes ? (
+          <>
+            <SectionHeader title="Clinical Details" />
+            <View style={[styles.card, { backgroundColor: theme.backgroundDefault }]}>
               <DetailRow label="Harvest Side" value={flapDetails.harvestSide === "left" ? "Left" : "Right"} />
               <DetailRow label="Indication" value={flapDetails.indication ? INDICATION_LABELS[flapDetails.indication] : undefined} />
               <DetailRow label="Recipient Artery" value={flapDetails.recipientArteryName} />
@@ -999,13 +1037,9 @@ export default function CaseDetailScreen() {
               <DetailRow label="Flap Dimensions" value={flapDetails.flapWidthCm && flapDetails.flapLengthCm ? `${flapDetails.flapWidthCm} x ${flapDetails.flapLengthCm}` : undefined} unit="cm" />
               <DetailRow label="Perforator Count" value={flapDetails.perforatorCount} />
               <DetailRow label="Elevation Plane" value={flapDetails.elevationPlane === "subfascial" ? "Subfascial" : flapDetails.elevationPlane === "suprafascial" ? "Suprafascial" : undefined} />
-            </>
-          ) : (
-            <ThemedText style={{ color: theme.textSecondary }}>
-              Clinical details not available for this specialty
-            </ThemedText>
-          )}
-        </View>
+            </View>
+          </>
+        ) : null}
 
         <SectionHeader title="Timeline" />
         {timelineEvents.length === 0 ? (
@@ -1626,5 +1660,45 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: "600",
     marginTop: 4,
+  },
+  mediaGalleryContainer: {
+    gap: Spacing.sm,
+    paddingVertical: Spacing.xs,
+  },
+  mediaItem: {
+    width: 140,
+    height: 140,
+    borderRadius: BorderRadius.md,
+    overflow: "hidden",
+    position: "relative",
+  },
+  mediaImage: {
+    width: "100%",
+    height: "100%",
+  },
+  mediaTypeBadge: {
+    position: "absolute",
+    top: 6,
+    left: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 4,
+  },
+  mediaTypeBadgeText: {
+    fontSize: 10,
+    fontWeight: "600",
+    color: "#fff",
+  },
+  mediaCaptionOverlay: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+  },
+  mediaCaptionText: {
+    fontSize: 11,
+    color: "#fff",
   },
 });
