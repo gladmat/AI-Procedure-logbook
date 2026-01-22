@@ -25,6 +25,7 @@ export interface UserFacility {
   id: string;
   userId: string;
   facilityName: string;
+  facilityId?: string; // Reference to master facility list (optional for backwards compatibility)
   isPrimary: boolean;
 }
 
