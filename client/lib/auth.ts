@@ -152,10 +152,10 @@ export async function getUserFacilities(): Promise<UserFacility[]> {
   return res.json();
 }
 
-export async function createFacility(facilityName: string, isPrimary: boolean = false): Promise<UserFacility> {
+export async function createFacility(facilityName: string, isPrimary: boolean = false, facilityId?: string): Promise<UserFacility> {
   const res = await authFetch("/api/facilities", {
     method: "POST",
-    body: JSON.stringify({ facilityName, isPrimary }),
+    body: JSON.stringify({ facilityName, isPrimary, facilityId }),
   });
   
   if (!res.ok) {

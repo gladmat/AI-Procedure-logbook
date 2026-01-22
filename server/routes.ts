@@ -308,7 +308,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/facilities", authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { facilityName, isPrimary } = req.body;
+      const { facilityName, isPrimary, facilityId } = req.body;
       if (!facilityName) {
         return res.status(400).json({ error: "Facility name required" });
       }
@@ -316,6 +316,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const facility = await storage.createUserFacility({ 
         userId: req.userId!, 
         facilityName, 
+        facilityId: facilityId || null,
         isPrimary: isPrimary ?? false 
       });
       res.json(facility);

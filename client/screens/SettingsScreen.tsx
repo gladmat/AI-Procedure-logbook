@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   View,
   StyleSheet,
@@ -6,7 +6,6 @@ import {
   Alert,
   Share,
   Modal,
-  TextInput,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
@@ -15,11 +14,13 @@ import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { ThemedText } from "@/components/ThemedText";
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
+import { FacilitySelector } from "@/components/FacilitySelector";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, Shadows } from "@/constants/theme";
 import { clearAllData, exportCasesAsJSON, getCases, getSettings, AppSettings } from "@/lib/storage";
 import { getCodingSystemForProfile } from "@/lib/snomedCt";
 import { useAuth } from "@/contexts/AuthContext";
+import { MasterFacility, getFacilityById, SUPPORTED_COUNTRIES } from "@/data/facilities";
 
 interface SettingsItemProps {
   icon: keyof typeof Feather.glyphMap;
@@ -117,7 +118,23 @@ export default function SettingsScreen() {
   const [caseCount, setCaseCount] = useState<number | null>(null);
   const [settings, setSettings] = useState<AppSettings | null>(null);
   const [showFacilitiesModal, setShowFacilitiesModal] = useState(false);
-  const [newFacilityName, setNewFacilityName] = useState("");
+  const [showFacilitySelector, setShowFacilitySelector] = useState(false);
+
+  const countryCode = useMemo(() => {
+    if (!profile?.countryOfPractice) return "NZ";
+    const countryMap: Record<string, string> = {
+      new_zealand: "NZ",
+      australia: "AU",
+      united_kingdom: "UK",
+      united_states: "US",
+      poland: "PL",
+    };
+    return countryMap[profile.countryOfPractice] || "NZ";
+  }, [profile?.countryOfPractice]);
+
+  const selectedFacilityIds = useMemo(() => {
+    return facilities.map(f => f.facilityId).filter(Boolean) as string[];
+  }, [facilities]);
 
   useEffect(() => {
     getCases().then((cases) => setCaseCount(cases.length));
@@ -177,11 +194,17 @@ export default function SettingsScreen() {
     );
   };
 
-  const handleAddFacility = async () => {
-    if (!newFacilityName.trim()) return;
+  const handleSelectFacility = async (facility: MasterFacility) => {
+    if (selectedFacilityIds.includes(facility.id)) {
+      const existingFacility = facilities.find(f => f.facilityId === facility.id);
+      if (existingFacility) {
+        await removeFacility(existingFacility.id);
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      }
+      return;
+    }
     try {
-      await addFacility(newFacilityName.trim(), facilities.length === 0);
-      setNewFacilityName("");
+      await addFacility(facility.name, facilities.length === 0, facility.id);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     } catch (error: any) {
       Alert.alert("Error", error.message || "Failed to add facility");
@@ -387,30 +410,30 @@ export default function SettingsScreen() {
           style={styles.modalOverlay}
           onPress={() => setShowFacilitiesModal(false)}
         >
-          <View style={[styles.facilitiesModalContent, { backgroundColor: theme.backgroundDefault }]}>
-            <ThemedText style={styles.modalTitle}>My Facilities</ThemedText>
-            <ThemedText style={[styles.modalSubtitle, { color: theme.textSecondary }]}>
-              Hospitals and clinics where you operate
-            </ThemedText>
-            
-            <View style={styles.addFacilityRow}>
-              <TextInput
-                style={[styles.facilityInput, { backgroundColor: theme.backgroundSecondary, color: theme.text, borderColor: theme.border }]}
-                value={newFacilityName}
-                onChangeText={setNewFacilityName}
-                placeholder="Add new facility"
-                placeholderTextColor={theme.textTertiary}
-                onSubmitEditing={handleAddFacility}
-                returnKeyType="done"
-              />
-              <Pressable
-                style={[styles.addFacilityButton, { backgroundColor: theme.link, opacity: newFacilityName.trim() ? 1 : 0.5 }]}
-                onPress={handleAddFacility}
-                disabled={!newFacilityName.trim()}
-              >
-                <Feather name="plus" size={20} color="#FFF" />
+          <View 
+            style={[styles.facilitiesModalContent, { backgroundColor: theme.backgroundDefault }]}
+            onStartShouldSetResponder={() => true}
+          >
+            <View style={styles.facilitiesModalHeader}>
+              <ThemedText style={styles.modalTitle}>My Hospitals</ThemedText>
+              <Pressable onPress={() => setShowFacilitiesModal(false)}>
+                <Feather name="x" size={24} color={theme.textSecondary} />
               </Pressable>
             </View>
+            <ThemedText style={[styles.modalSubtitle, { color: theme.textSecondary }]}>
+              Select the hospitals where you operate. Only these will appear when logging cases.
+            </ThemedText>
+            
+            <Pressable
+              style={[styles.addFromListButton, { backgroundColor: theme.link }]}
+              onPress={() => {
+                setShowFacilitiesModal(false);
+                setShowFacilitySelector(true);
+              }}
+            >
+              <Feather name="plus" size={18} color="#FFF" />
+              <ThemedText style={styles.addFromListButtonText}>Add from Hospital List</ThemedText>
+            </Pressable>
 
             {facilities.length > 0 ? (
               facilities.map((facility) => (
@@ -420,7 +443,14 @@ export default function SettingsScreen() {
                 >
                   <View style={styles.facilityItemInfo}>
                     <Feather name="home" size={16} color={theme.textSecondary} />
-                    <ThemedText style={styles.facilityItemName}>{facility.facilityName}</ThemedText>
+                    <View style={styles.facilityItemTextContainer}>
+                      <ThemedText style={styles.facilityItemName}>{facility.facilityName}</ThemedText>
+                      {facility.facilityId ? (
+                        <ThemedText style={[styles.facilityItemId, { color: theme.textTertiary }]}>
+                          Verified facility
+                        </ThemedText>
+                      ) : null}
+                    </View>
                     {facility.isPrimary ? (
                       <View style={[styles.primaryBadge, { backgroundColor: theme.link + "20" }]}>
                         <ThemedText style={[styles.primaryBadgeText, { color: theme.link }]}>Primary</ThemedText>
@@ -436,13 +466,25 @@ export default function SettingsScreen() {
               <View style={styles.emptyFacilities}>
                 <Feather name="home" size={32} color={theme.textTertiary} />
                 <ThemedText style={[styles.emptyFacilitiesText, { color: theme.textSecondary }]}>
-                  No facilities added
+                  No hospitals selected yet
+                </ThemedText>
+                <ThemedText style={[styles.emptyFacilitiesHint, { color: theme.textTertiary }]}>
+                  Tap "Add from Hospital List" to get started
                 </ThemedText>
               </View>
             )}
           </View>
         </Pressable>
       </Modal>
+
+      <FacilitySelector
+        visible={showFacilitySelector}
+        onClose={() => setShowFacilitySelector(false)}
+        onSelect={handleSelectFacility}
+        countryCode={countryCode}
+        selectedFacilityIds={selectedFacilityIds}
+        title="Add Hospital"
+      />
 
     </>
   );
@@ -695,5 +737,37 @@ const styles = StyleSheet.create({
   emptyFacilitiesText: {
     fontSize: 14,
     marginTop: Spacing.sm,
+  },
+  emptyFacilitiesHint: {
+    fontSize: 12,
+    marginTop: Spacing.xs,
+    textAlign: "center",
+  },
+  facilitiesModalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: Spacing.xs,
+  },
+  addFromListButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Spacing.sm,
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.md,
+    marginBottom: Spacing.lg,
+  },
+  addFromListButtonText: {
+    color: "#FFF",
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  facilityItemTextContainer: {
+    flex: 1,
+  },
+  facilityItemId: {
+    fontSize: 11,
+    marginTop: 2,
   },
 });

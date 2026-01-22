@@ -24,7 +24,7 @@ interface AuthContextType {
   signup: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   updateProfile: (profile: Partial<UserProfile>) => Promise<void>;
-  addFacility: (name: string, isPrimary?: boolean) => Promise<void>;
+  addFacility: (name: string, isPrimary?: boolean, facilityId?: string) => Promise<void>;
   removeFacility: (id: string) => Promise<void>;
   refreshUser: () => Promise<void>;
 }
@@ -90,8 +90,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setProfile(updated);
   };
 
-  const addFacility = async (name: string, isPrimary: boolean = false) => {
-    const facility = await authCreateFacility(name, isPrimary);
+  const addFacility = async (name: string, isPrimary: boolean = false, facilityId?: string) => {
+    const facility = await authCreateFacility(name, isPrimary, facilityId);
     setFacilities(prev => [...prev, facility]);
   };
 

@@ -74,6 +74,7 @@ export const userFacilities = pgTable("user_facilities", {
     .default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   facilityName: text("facility_name").notNull(),
+  facilityId: text("facility_id"), // Reference to master facility list (optional for backwards compatibility)
   isPrimary: boolean("is_primary").default(false).notNull(),
   createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
 });
