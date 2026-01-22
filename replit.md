@@ -15,7 +15,17 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (January 2026)
 
-### Fracture Case Workflow (Latest)
+### Standardized Facility Selection (Latest)
+- **Master Hospital List**: Curated database of verified hospitals organized by country (currently New Zealand with 80+ hospitals)
+- **Regional Organization**: Hospitals grouped by region (Auckland, Waikato, Bay of Plenty, Wellington, Canterbury, etc.)
+- **Hospital Types**: Public and private facilities distinguished with filtering capability
+- **FacilitySelector Component**: Full-screen modal with search, region filter, and type filter
+- **My Hospitals Management**: Users select their operating facilities in Settings from the verified list
+- **Case Form Integration**: Only user's selected hospitals appear in the case form dropdown
+- **Data Consistency**: Prevents free-text facility name variations across users
+- **Backwards Compatible**: Legacy free-text facilities still supported via optional facilityId field
+
+### Fracture Case Workflow
 - **Streamlined Documentation**: New "Fracture Case" checkbox in Hand Surgery triggers the AO picker automatically
 - **Auto-SNOMED Suggestion**: After AO code selection, automatically suggests SNOMED CT diagnosis based on fracture type
 - **AO-to-SNOMED Mapping**: Intelligent mapping covers all carpal bones, metacarpals, phalanges with special handling for:
