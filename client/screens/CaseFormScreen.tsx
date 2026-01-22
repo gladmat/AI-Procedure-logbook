@@ -80,7 +80,9 @@ import { DiagnosisClinicalFields } from "@/components/DiagnosisClinicalFields";
 import { DocumentTypeBadge } from "@/components/AutoFilledField";
 import { FractureEntry, DiagnosisClinicalDetails } from "@/types/case";
 import { FractureClassificationWizard } from "@/components/FractureClassificationWizard";
+import { OperativeMediaSection } from "@/components/OperativeMediaSection";
 import { getAoToSnomedSuggestion } from "@/data/aoToSnomedMapping";
+import { OperativeMediaItem } from "@/types/case";
 
 type RouteParams = RouteProp<RootStackParamList, "CaseForm">;
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -282,6 +284,7 @@ export default function CaseFormScreen() {
   const [fractures, setFractures] = useState<FractureEntry[]>([]);
   const [diagnosisClinicalDetails, setDiagnosisClinicalDetails] = useState<DiagnosisClinicalDetails>({});
   const [isFractureCase, setIsFractureCase] = useState(false);
+  const [operativeMedia, setOperativeMedia] = useState<OperativeMediaItem[]>([]);
   const [showFractureWizardFromCheckbox, setShowFractureWizardFromCheckbox] = useState(false);
   const [snomedSuggestion, setSnomedSuggestion] = useState<{ searchTerm: string; displayName: string } | null>(null);
   
@@ -605,6 +608,7 @@ export default function CaseFormScreen() {
         if (caseData.discussedAtMDM) setDiscussedAtMDM(caseData.discussedAtMDM);
         if (caseData.comorbidities) setSelectedComorbidities(caseData.comorbidities);
         if (caseData.fractures) setFractures(caseData.fractures);
+        if (caseData.operativeMedia) setOperativeMedia(caseData.operativeMedia);
         
         // Load diagnosis
         if (caseData.preManagementDiagnosis || caseData.finalDiagnosis) {
@@ -982,6 +986,9 @@ export default function CaseFormScreen() {
         
         // AO/OTA Fracture Classifications (for fracture diagnoses)
         fractures: fractures.length > 0 ? fractures : undefined,
+        
+        // Operative Media
+        operativeMedia: operativeMedia.length > 0 ? operativeMedia : undefined,
         
         // Risk Factors
         asaScore: asaScore ? (parseInt(asaScore) as ASAScore) : undefined,
@@ -1498,6 +1505,13 @@ export default function CaseFormScreen() {
           </ThemedText>
         </Pressable>
       </View>
+
+      <SectionHeader title="Operative Media" subtitle="Photos, X-rays, and imaging" />
+      <OperativeMediaSection
+        media={operativeMedia}
+        onMediaChange={setOperativeMedia}
+        maxItems={20}
+      />
 
       <SectionHeader title="Risk Factors" subtitle="Optional patient details" />
 
