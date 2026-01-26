@@ -337,13 +337,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Password Reset Request Route
   app.post("/api/auth/request-password-reset", async (req: Request, res: Response) => {
+    console.log("Password reset request received");
     try {
       const clientIp = req.ip || req.socket.remoteAddress || "unknown";
       if (!checkAuthRateLimit(clientIp)) {
+        console.log("Password reset rate limited for IP:", clientIp);
         return res.status(429).json({ error: "Too many requests. Please try again later." });
       }
 
       const { email } = req.body;
+      console.log("Password reset requested for email:", email ? "provided" : "missing");
       
       if (!email) {
         return res.status(400).json({ error: "Email is required" });

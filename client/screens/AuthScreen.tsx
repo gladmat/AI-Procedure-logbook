@@ -92,7 +92,15 @@ export default function AuthScreen() {
         body: JSON.stringify({ email: resetEmail.trim() }),
       });
 
-      const data = await response.json();
+      const responseText = await response.text();
+      let data: any;
+      
+      try {
+        data = JSON.parse(responseText);
+      } catch {
+        console.error("Password reset response was not JSON:", responseText.substring(0, 200));
+        throw new Error("Server returned an unexpected response. Please try again.");
+      }
 
       if (!response.ok) {
         throw new Error(data.error || "Failed to request password reset");
