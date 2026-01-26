@@ -5,16 +5,22 @@ import {
   snomedRef, type SnomedRef, type InsertSnomedRef,
   procedures, type Procedure, type InsertProcedure,
   flaps, type Flap, type InsertFlap,
-  anastomoses, type Anastomosis, type InsertAnastomosis
+  anastomoses, type Anastomosis, type InsertAnastomosis,
+  passwordResetTokens, type PasswordResetToken
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, ilike, sql } from "drizzle-orm";
+import { eq, and, ilike, sql, lt } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUserPassword(userId: string, hashedPassword: string): Promise<boolean>;
+  
+  createPasswordResetToken(userId: string, token: string, expiresAt: Date): Promise<PasswordResetToken>;
+  getPasswordResetToken(token: string): Promise<PasswordResetToken | undefined>;
+  markPasswordResetTokenUsed(id: string): Promise<boolean>;
+  deleteExpiredPasswordResetTokens(): Promise<void>;
   
   getProfile(userId: string): Promise<Profile | undefined>;
   createProfile(profile: InsertProfile): Promise<Profile>;
@@ -70,6 +76,29 @@ export class DatabaseStorage implements IStorage {
       .set({ password: hashedPassword })
       .where(eq(users.id, userId));
     return true;
+  }
+
+  async createPasswordResetToken(userId: string, token: string, expiresAt: Date): Promise<PasswordResetToken> {
+    const [created] = await db.insert(passwordResetTokens).values({
+      userId,
+      token,
+      expiresAt,
+    }).returning();
+    return created;
+  }
+
+  async getPasswordResetToken(token: string): Promise<PasswordResetToken | undefined> {
+    const [resetToken] = await db.select().from(passwordResetTokens).where(eq(passwordResetTokens.token, token));
+    return resetToken || undefined;
+  }
+
+  async markPasswordResetTokenUsed(id: string): Promise<boolean> {
+    await db.update(passwordResetTokens).set({ used: true }).where(eq(passwordResetTokens.id, id));
+    return true;
+  }
+
+  async deleteExpiredPasswordResetTokens(): Promise<void> {
+    await db.delete(passwordResetTokens).where(lt(passwordResetTokens.expiresAt, new Date()));
   }
 
   async getProfile(userId: string): Promise<Profile | undefined> {

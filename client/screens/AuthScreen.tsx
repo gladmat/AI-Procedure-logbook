@@ -9,12 +9,14 @@ import {
   Platform,
   ActivityIndicator,
   Alert,
+  Modal,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { useAuth } from "@/contexts/AuthContext";
-import { Colors, Spacing, BorderRadius, Typography } from "@/constants/theme";
+import { Colors, Spacing, BorderRadius, Typography, Shadows } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/useColorScheme";
+import { getApiUrl } from "@/lib/query-client";
 
 type Mode = "login" | "signup";
 
@@ -30,6 +32,9 @@ export default function AuthScreen() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
+  const [isRequestingReset, setIsRequestingReset] = useState(false);
 
   const handleSubmit = async () => {
     if (!email.trim()) {
@@ -69,6 +74,41 @@ export default function AuthScreen() {
     setMode(mode === "login" ? "signup" : "login");
     setPassword("");
     setConfirmPassword("");
+  };
+
+  const handleForgotPassword = async () => {
+    if (!resetEmail.trim()) {
+      Alert.alert("Required", "Please enter your email address");
+      return;
+    }
+
+    setIsRequestingReset(true);
+    try {
+      const response = await fetch(`${getApiUrl()}/api/auth/request-password-reset`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email: resetEmail.trim() }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to request password reset");
+      }
+
+      Alert.alert(
+        "Check Your Email",
+        "If an account exists with that email, you will receive password reset instructions shortly.",
+        [{ text: "OK", onPress: () => setShowForgotPasswordModal(false) }]
+      );
+      setResetEmail("");
+    } catch (error: any) {
+      Alert.alert("Error", error.message || "Failed to request password reset");
+    } finally {
+      setIsRequestingReset(false);
+    }
   };
 
   return (
@@ -140,6 +180,20 @@ export default function AuthScreen() {
             </View>
           )}
 
+          {mode === "login" && (
+            <Pressable 
+              onPress={() => {
+                setResetEmail(email);
+                setShowForgotPasswordModal(true);
+              }}
+              style={styles.forgotPasswordLink}
+            >
+              <Text style={[styles.forgotPasswordText, { color: colors.link }]}>
+                Forgot password?
+              </Text>
+            </Pressable>
+          )}
+
           <Pressable
             style={[styles.submitButton, { backgroundColor: colors.link, opacity: isLoading ? 0.7 : 1 }]}
             onPress={handleSubmit}
@@ -166,6 +220,61 @@ export default function AuthScreen() {
           </Pressable>
         </View>
       </View>
+
+      <Modal
+        visible={showForgotPasswordModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowForgotPasswordModal(false)}
+      >
+        <Pressable
+          style={styles.modalOverlay}
+          onPress={() => setShowForgotPasswordModal(false)}
+        >
+          <View 
+            style={[styles.modalContent, { backgroundColor: colors.backgroundDefault }]}
+            onStartShouldSetResponder={() => true}
+          >
+            <View style={styles.modalHeader}>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>Reset Password</Text>
+              <Pressable onPress={() => setShowForgotPasswordModal(false)}>
+                <Feather name="x" size={24} color={colors.textSecondary} />
+              </Pressable>
+            </View>
+            <Text style={[styles.modalDescription, { color: colors.textSecondary }]}>
+              Enter your email address and we'll send you instructions to reset your password.
+            </Text>
+
+            <View style={styles.inputGroup}>
+              <Text style={[styles.label, { color: colors.textSecondary }]}>Email</Text>
+              <TextInput
+                style={[styles.input, { backgroundColor: colors.backgroundSecondary, color: colors.text, borderColor: colors.border }]}
+                value={resetEmail}
+                onChangeText={setResetEmail}
+                placeholder="you@hospital.org"
+                placeholderTextColor={colors.textTertiary}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+                testID="input-reset-email"
+              />
+            </View>
+
+            <Pressable
+              style={[styles.submitButton, { backgroundColor: colors.link, opacity: isRequestingReset ? 0.7 : 1 }]}
+              onPress={handleForgotPassword}
+              disabled={isRequestingReset}
+              testID="button-request-reset"
+            >
+              {isRequestingReset ? (
+                <ActivityIndicator color="#FFF" size="small" />
+              ) : (
+                <Text style={styles.submitButtonText}>Send Reset Instructions</Text>
+              )}
+            </Pressable>
+          </View>
+        </Pressable>
+      </Modal>
     </KeyboardAvoidingView>
   );
 }
@@ -259,5 +368,39 @@ const styles = StyleSheet.create({
   },
   footerLink: {
     ...Typography.bodySemibold,
+  },
+  forgotPasswordLink: {
+    alignSelf: "flex-end",
+    marginTop: -Spacing.sm,
+  },
+  forgotPasswordText: {
+    ...Typography.caption,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: Spacing.lg,
+  },
+  modalContent: {
+    width: "100%",
+    maxWidth: 400,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.lg,
+    ...Shadows.modal,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: Spacing.md,
+  },
+  modalTitle: {
+    ...Typography.h1,
+  },
+  modalDescription: {
+    ...Typography.body,
+    marginBottom: Spacing.lg,
   },
 });
