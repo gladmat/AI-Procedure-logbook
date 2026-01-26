@@ -41,6 +41,15 @@ const EVENT_TYPES: { value: TimelineEventType; label: string }[] = Object.entrie
   label,
 }));
 
+const SKIN_LESION_PROCEDURE_NAMES = [
+  "skin lesion excision",
+  "lesion excision",
+  "excision of skin lesion",
+  "excision biopsy",
+  "excisional biopsy",
+  "wide local excision",
+];
+
 const FOLLOW_UP_INTERVALS: { value: FollowUpInterval; label: string }[] =
   Object.entries(FOLLOW_UP_INTERVAL_LABELS).map(([value, label]) => ({
     value: value as FollowUpInterval,
@@ -60,7 +69,7 @@ export default function AddTimelineEventScreen() {
   const insets = useSafeAreaInsets();
   const headerHeight = useHeaderHeight();
 
-  const { caseId, initialEventType } = route.params;
+  const { caseId, initialEventType, isSkinLesion } = route.params;
 
   const [saving, setSaving] = useState(false);
   const [eventType, setEventType] = useState<TimelineEventType | "">(
@@ -337,6 +346,31 @@ export default function AddTimelineEventScreen() {
             onSelect={(value) => setFollowUpInterval(value as FollowUpInterval)}
             required
           />
+          {isSkinLesion ? (
+            <Pressable
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                navigation.navigate("HistologyCapture", { caseId });
+              }}
+              style={[
+                styles.histologyButton,
+                { backgroundColor: theme.link + "15", borderColor: theme.link },
+              ]}
+            >
+              <View style={styles.histologyButtonContent}>
+                <Feather name="file-text" size={24} color={theme.link} />
+                <View style={styles.histologyButtonText}>
+                  <ThemedText style={[styles.histologyButtonTitle, { color: theme.link }]}>
+                    Capture Histology Report
+                  </ThemedText>
+                  <ThemedText style={[styles.histologyButtonSubtitle, { color: theme.textSecondary }]}>
+                    Scan report to add diagnosis and margins
+                  </ThemedText>
+                </View>
+              </View>
+              <Feather name="chevron-right" size={20} color={theme.link} />
+            </Pressable>
+          ) : null}
           <MediaCapture
             attachments={mediaAttachments}
             onAttachmentsChange={setMediaAttachments}
@@ -415,5 +449,30 @@ const styles = StyleSheet.create({
   },
   buttonContainer: {
     marginTop: Spacing.xl,
+  },
+  histologyButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: Spacing.md,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+  },
+  histologyButtonContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.md,
+    flex: 1,
+  },
+  histologyButtonText: {
+    flex: 1,
+  },
+  histologyButtonTitle: {
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  histologyButtonSubtitle: {
+    fontSize: 12,
+    marginTop: 2,
   },
 });

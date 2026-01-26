@@ -7,6 +7,7 @@ import CaseFormScreen from "@/screens/CaseFormScreen";
 import AddCaseScreen from "@/screens/AddCaseScreen";
 import SmartCaptureScreen from "@/screens/SmartCaptureScreen";
 import AddTimelineEventScreen from "@/screens/AddTimelineEventScreen";
+import HistologyCaptureScreen from "@/screens/HistologyCaptureScreen";
 import AuthScreen from "@/screens/AuthScreen";
 import OnboardingScreen from "@/screens/OnboardingScreen";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
@@ -23,7 +24,8 @@ export type RootStackParamList = {
   CaseForm: { specialty?: Specialty; extractedData?: Record<string, unknown>; caseId?: string };
   AddCase: undefined;
   SmartCapture: { mode?: "op_note" | "discharge_summary" } | undefined;
-  AddTimelineEvent: { caseId: string; initialEventType?: TimelineEventType };
+  AddTimelineEvent: { caseId: string; initialEventType?: TimelineEventType; isSkinLesion?: boolean };
+  HistologyCapture: { caseId: string; procedureIndex?: number };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -98,6 +100,14 @@ export default function RootStackNavigator() {
             options={{
               headerTitle: "Add Event",
               presentation: "modal",
+            }}
+          />
+          <Stack.Screen
+            name="HistologyCapture"
+            component={HistologyCaptureScreen}
+            options={{
+              headerTitle: "Capture Histology",
+              presentation: "fullScreenModal",
             }}
           />
         </>

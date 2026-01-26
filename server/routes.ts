@@ -1,6 +1,7 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "node:http";
 import { extractTextFromImage } from "./ocr";
+import { parseHistologyReport } from "./histologyParser";
 import { redactSensitiveData, extractNHI, extractSurgeryDate } from "./privacyUtils";
 import { storage } from "./storage";
 import { allSeedData } from "./seedData";
@@ -174,6 +175,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/health", (req: Request, res: Response) => {
     res.json({ status: "ok", timestamp: new Date().toISOString() });
+  });
+
+  app.post("/api/analyze-histology", async (req: Request, res: Response) => {
+    try {
+      const { image, text } = req.body;
+      
+      let reportText: string;
+      
+      if (text) {
+        reportText = text;
+      } else if (image) {
+        reportText = await extractTextFromImage(image);
+      } else {
+        return res.status(400).json({ error: "No image or text provided" });
+      }
+      
+      console.log("Processing histology report...");
+      console.log("Text length:", reportText.length);
+      
+      const extractedData = parseHistologyReport(reportText);
+      
+      res.json({
+        extractedData,
+        rawText: reportText.substring(0, 500),
+      });
+    } catch (error) {
+      console.error("Error analyzing histology report:", error);
+      res.status(500).json({ error: "Failed to analyze histology report" });
+    }
   });
 
   // Auth Routes
