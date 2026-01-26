@@ -220,8 +220,8 @@ export default function CaseDetailScreen() {
       "squamous cell",
     ];
     
-    const procedureName = caseData.procedures?.[0]?.name?.toLowerCase() || "";
-    const diagnosisName = caseData.clinicalDiagnosis?.displayName?.toLowerCase() || "";
+    const procedureName = caseData.procedures?.[0]?.procedureName?.toLowerCase() || "";
+    const diagnosisName = caseData.finalDiagnosis?.displayName?.toLowerCase() || "";
     
     return skinLesionKeywords.some(
       keyword => procedureName.includes(keyword) || diagnosisName.includes(keyword)
