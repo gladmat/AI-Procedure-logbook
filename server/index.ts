@@ -186,6 +186,10 @@ function configureExpoAndLanding(app: express.Application) {
     serveLegalPage("open-source-licenses.html", res);
   });
 
+  app.get("/reset-password", (_req: Request, res: Response) => {
+    serveLegalPage("reset-password.html", res);
+  });
+
   app.use((req: Request, res: Response, next: NextFunction) => {
     if (req.path.startsWith("/api")) {
       return next();
