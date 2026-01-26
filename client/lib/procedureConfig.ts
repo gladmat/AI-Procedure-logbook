@@ -228,7 +228,38 @@ export const PROCEDURE_CONFIGS: Record<Specialty, ProcedureModuleConfig> = {
     displayName: "General",
     icon: "clipboard",
     aiPrompt: "Extract general plastic surgery details...",
-    fields: [],
+    fields: [
+      {
+        key: "histologyDiagnosis",
+        label: "Histology Diagnosis",
+        type: "text",
+        placeholder: "e.g., Basal cell carcinoma, nodular type",
+      },
+      {
+        key: "peripheralMarginMm",
+        label: "Peripheral Margin",
+        type: "number",
+        unit: "mm",
+        keyboardType: "decimal-pad",
+      },
+      {
+        key: "deepMarginMm",
+        label: "Deep Margin",
+        type: "number",
+        unit: "mm",
+        keyboardType: "decimal-pad",
+      },
+      {
+        key: "excisionCompleteness",
+        label: "Excision Completeness",
+        type: "select",
+        options: [
+          { value: "complete", label: "Complete" },
+          { value: "incomplete", label: "Incomplete" },
+          { value: "uncertain", label: "Uncertain" },
+        ],
+      },
+    ],
   },
   head_neck: HEAD_NECK_CONFIG,
 };

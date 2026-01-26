@@ -342,7 +342,23 @@ export interface BodyContouringDetails {
   drainOutputMl?: number;
 }
 
-export type ClinicalDetails = FreeFlapDetails | HandTraumaDetails | HandSurgeryDetails | BodyContouringDetails | Record<string, unknown>;
+export type ExcisionCompleteness = "complete" | "incomplete" | "uncertain";
+
+export const EXCISION_COMPLETENESS_LABELS: Record<ExcisionCompleteness, string> = {
+  complete: "Complete",
+  incomplete: "Incomplete",
+  uncertain: "Uncertain",
+};
+
+export interface SkinLesionExcisionDetails {
+  histologyDiagnosis?: string;
+  peripheralMarginMm?: number;
+  deepMarginMm?: number;
+  excisionCompleteness?: ExcisionCompleteness;
+  histologyReportCapturedAt?: string;
+}
+
+export type ClinicalDetails = FreeFlapDetails | HandTraumaDetails | HandSurgeryDetails | BodyContouringDetails | SkinLesionExcisionDetails | Record<string, unknown>;
 
 export interface ProcedureCode {
   snomedCtCode: string;
