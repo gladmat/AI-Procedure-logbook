@@ -16,6 +16,8 @@ import { Feather } from "@expo/vector-icons";
 import { useAuth } from "@/contexts/AuthContext";
 import { Colors, Spacing, BorderRadius, Typography } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/useColorScheme";
+import { FacilitySelector } from "@/components/FacilitySelector";
+import { MasterFacility } from "@/data/facilities";
 
 const COUNTRIES = [
   { value: "new_zealand", label: "New Zealand" },
@@ -53,6 +55,18 @@ export default function OnboardingScreen() {
   const [medicalCouncilNumber, setMedicalCouncilNumber] = useState("");
   const [careerStage, setCareerStage] = useState<string | null>(null);
   const [newFacility, setNewFacility] = useState("");
+  const [facilitySelectorVisible, setFacilitySelectorVisible] = useState(false);
+
+  const getCountryCode = (country: string | null): string => {
+    const mapping: Record<string, string> = {
+      new_zealand: "NZ",
+      australia: "AU",
+      united_kingdom: "UK",
+      united_states: "US",
+      poland: "PL",
+    };
+    return country ? mapping[country] || "" : "";
+  };
 
   const handleNext = async () => {
     if (step === "agreement") {
@@ -112,6 +126,18 @@ export default function OnboardingScreen() {
     try {
       await addFacility(newFacility.trim(), facilities.length === 0);
       setNewFacility("");
+    } catch (error: any) {
+      Alert.alert("Error", error.message || "Failed to add facility");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSelectVerifiedFacility = async (facility: MasterFacility) => {
+    setFacilitySelectorVisible(false);
+    setIsLoading(true);
+    try {
+      await addFacility(facility.name, facilities.length === 0, facility.id);
     } catch (error: any) {
       Alert.alert("Error", error.message || "Failed to add facility");
     } finally {
@@ -316,6 +342,9 @@ export default function OnboardingScreen() {
         );
 
       case "facilities":
+        const countryCode = getCountryCode(countryOfPractice);
+        const hasVerifiedList = countryCode === "NZ";
+        
         return (
           <View style={styles.stepContent}>
             <Text style={[styles.stepTitle, { color: colors.text }]}>
@@ -325,24 +354,62 @@ export default function OnboardingScreen() {
               Add the hospitals or clinics where you perform surgery.
             </Text>
 
-            <View style={styles.addFacilityRow}>
-              <TextInput
-                style={[styles.facilityInput, { backgroundColor: colors.backgroundSecondary, color: colors.text, borderColor: colors.border }]}
-                value={newFacility}
-                onChangeText={setNewFacility}
-                placeholder="Hospital or clinic name"
-                placeholderTextColor={colors.textTertiary}
-                onSubmitEditing={handleAddFacility}
-                returnKeyType="done"
-              />
-              <Pressable
-                style={[styles.addButton, { backgroundColor: colors.link, opacity: newFacility.trim() ? 1 : 0.5 }]}
-                onPress={handleAddFacility}
-                disabled={!newFacility.trim() || isLoading}
-              >
-                <Feather name="plus" size={22} color="#FFF" />
-              </Pressable>
-            </View>
+            {hasVerifiedList ? (
+              <View style={styles.facilityOptions}>
+                <Pressable
+                  style={[styles.selectFacilityButton, { backgroundColor: colors.link }]}
+                  onPress={() => setFacilitySelectorVisible(true)}
+                  disabled={isLoading}
+                >
+                  <Feather name="search" size={18} color="#FFF" />
+                  <Text style={styles.selectFacilityButtonText}>
+                    Search NZ Hospitals
+                  </Text>
+                </Pressable>
+                
+                <Text style={[styles.orDivider, { color: colors.textTertiary }]}>
+                  or enter manually
+                </Text>
+                
+                <View style={styles.addFacilityRow}>
+                  <TextInput
+                    style={[styles.facilityInput, { backgroundColor: colors.backgroundSecondary, color: colors.text, borderColor: colors.border }]}
+                    value={newFacility}
+                    onChangeText={setNewFacility}
+                    placeholder="Other hospital or clinic"
+                    placeholderTextColor={colors.textTertiary}
+                    onSubmitEditing={handleAddFacility}
+                    returnKeyType="done"
+                  />
+                  <Pressable
+                    style={[styles.addButton, { backgroundColor: colors.link, opacity: newFacility.trim() ? 1 : 0.5 }]}
+                    onPress={handleAddFacility}
+                    disabled={!newFacility.trim() || isLoading}
+                  >
+                    <Feather name="plus" size={22} color="#FFF" />
+                  </Pressable>
+                </View>
+              </View>
+            ) : (
+              <View style={styles.addFacilityRow}>
+                <TextInput
+                  style={[styles.facilityInput, { backgroundColor: colors.backgroundSecondary, color: colors.text, borderColor: colors.border }]}
+                  value={newFacility}
+                  onChangeText={setNewFacility}
+                  placeholder="Hospital or clinic name"
+                  placeholderTextColor={colors.textTertiary}
+                  onSubmitEditing={handleAddFacility}
+                  returnKeyType="done"
+                />
+                <Pressable
+                  style={[styles.addButton, { backgroundColor: colors.link, opacity: newFacility.trim() ? 1 : 0.5 }]}
+                  onPress={handleAddFacility}
+                  disabled={!newFacility.trim() || isLoading}
+                >
+                  <Feather name="plus" size={22} color="#FFF" />
+                </Pressable>
+              </View>
+            )}
 
             {facilities.length > 0 ? (
               <View style={styles.facilitiesList}>
@@ -450,6 +517,15 @@ export default function OnboardingScreen() {
           </Pressable>
         </View>
       </View>
+      
+      <FacilitySelector
+        visible={facilitySelectorVisible}
+        onClose={() => setFacilitySelectorVisible(false)}
+        onSelect={handleSelectVerifiedFacility}
+        countryCode={getCountryCode(countryOfPractice)}
+        selectedFacilityIds={facilities.filter(f => f.facilityId).map(f => f.facilityId!)}
+        title="Add Hospital"
+      />
     </KeyboardAvoidingView>
   );
 }
@@ -530,6 +606,27 @@ const styles = StyleSheet.create({
   },
   optionRowText: {
     ...Typography.bodySemibold,
+  },
+  facilityOptions: {
+    gap: Spacing.md,
+  },
+  selectFacilityButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Spacing.sm,
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+    borderRadius: BorderRadius.sm,
+  },
+  selectFacilityButtonText: {
+    ...Typography.bodySemibold,
+    color: "#FFF",
+  },
+  orDivider: {
+    ...Typography.caption,
+    textAlign: "center",
+    marginVertical: Spacing.sm,
   },
   addFacilityRow: {
     flexDirection: "row",
