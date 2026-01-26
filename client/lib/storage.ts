@@ -412,6 +412,16 @@ export async function saveSettings(settings: AppSettings): Promise<void> {
   }
 }
 
+export async function exportCasesAsJSON(): Promise<string> {
+  try {
+    const cases = await getCases();
+    return JSON.stringify(cases, null, 2);
+  } catch (error) {
+    console.error("Error exporting cases:", error);
+    throw error;
+  }
+}
+
 export async function clearAllData(): Promise<void> {
   try {
     const index = await getCaseIndex();

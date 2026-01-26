@@ -24,7 +24,7 @@ import { clearAllData, exportCasesAsJSON, getCases, getSettings, AppSettings } f
 import { getCodingSystemForProfile } from "@/lib/snomedCt";
 import { useAuth } from "@/contexts/AuthContext";
 import { MasterFacility, getFacilityById, SUPPORTED_COUNTRIES } from "@/data/facilities";
-import { getApiUrl } from "@/lib/queryClient";
+import { getApiUrl } from "@/lib/query-client";
 
 const APP_VERSION = Constants.expoConfig?.version || "1.0.0";
 const BUILD_NUMBER = Constants.expoConfig?.ios?.buildNumber || Constants.expoConfig?.android?.versionCode || "1";
