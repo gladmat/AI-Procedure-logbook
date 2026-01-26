@@ -264,12 +264,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const profile = await storage.getProfile(user.id);
+      const facilities = await storage.getUserFacilities(user.id);
       const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: "30d" });
       
       res.json({ 
         token, 
         user: { id: user.id, email: user.email },
         profile,
+        facilities,
         onboardingComplete: profile?.onboardingComplete ?? false
       });
     } catch (error) {
@@ -459,6 +461,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/facilities", authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { facilityName, isPrimary, facilityId } = req.body;
+      console.log("Creating facility - received:", { facilityName, isPrimary, facilityId });
       if (!facilityName) {
         return res.status(400).json({ error: "Facility name required" });
       }
@@ -469,6 +472,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         facilityId: facilityId || null,
         isPrimary: isPrimary ?? false 
       });
+      console.log("Created facility - returning:", facility);
       res.json(facility);
     } catch (error) {
       console.error("Facility create error:", error);
