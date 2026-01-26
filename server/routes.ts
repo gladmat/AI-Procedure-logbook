@@ -367,8 +367,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Send password reset email via Resend
       const emailResult = await sendPasswordResetEmail(
         email, 
-        token, 
-        user.fullName || undefined
+        token
       );
       
       if (!emailResult.success) {

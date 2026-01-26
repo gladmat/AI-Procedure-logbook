@@ -65,6 +65,12 @@ The privacy pipeline ensures all patient data remains on the device or is proces
 - **Rate Limiting**: Auth endpoints protected against brute force attacks.
 - **Database Tables**: `passwordResetTokens` table tracks reset token state with expiry and usage timestamps.
 
+### Email Configuration
+- **Email Provider**: Resend integration for transactional emails.
+- **Sender Domain**: drgladysz.com (verified in Resend portal).
+- **From Address**: noreply@drgladysz.com for all administrative emails.
+- **Email Types**: Password reset emails with branded HTML templates, welcome emails for new users.
+
 ## External Dependencies
 
 The application leverages specific libraries and a local database for its functionality, prioritizing on-device processing and data privacy.
