@@ -6,12 +6,15 @@ import {
   Alert,
   Share,
   Modal,
+  Linking,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
+import * as MailComposer from "expo-mail-composer";
+import Constants from "expo-constants";
 import { ThemedText } from "@/components/ThemedText";
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 import { FacilitySelector } from "@/components/FacilitySelector";
@@ -21,6 +24,17 @@ import { clearAllData, exportCasesAsJSON, getCases, getSettings, AppSettings } f
 import { getCodingSystemForProfile } from "@/lib/snomedCt";
 import { useAuth } from "@/contexts/AuthContext";
 import { MasterFacility, getFacilityById, SUPPORTED_COUNTRIES } from "@/data/facilities";
+
+const APP_VERSION = Constants.expoConfig?.version || "1.0.0";
+const BUILD_NUMBER = Constants.expoConfig?.ios?.buildNumber || Constants.expoConfig?.android?.versionCode || "1";
+
+const LEGAL_URLS = {
+  privacyPolicy: "https://reconlog.app/privacy",
+  termsOfService: "https://reconlog.app/terms",
+  openSourceLicenses: "https://reconlog.app/licenses",
+};
+
+const SUPPORT_EMAIL = "support@reconlog.app";
 
 interface SettingsItemProps {
   icon: keyof typeof Feather.glyphMap;
@@ -229,6 +243,38 @@ export default function SettingsScreen() {
     );
   };
 
+  const handleOpenUrl = async (url: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    try {
+      await Linking.openURL(url);
+    } catch (error) {
+      Alert.alert("Error", "Could not open the link");
+    }
+  };
+
+  const handleSendFeedback = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const isAvailable = await MailComposer.isAvailableAsync();
+    if (isAvailable) {
+      await MailComposer.composeAsync({
+        recipients: [SUPPORT_EMAIL],
+        subject: `ReconLog Feedback - v${APP_VERSION} (${BUILD_NUMBER})`,
+        body: `\n\n---\nApp Version: ${APP_VERSION}\nBuild: ${BUILD_NUMBER}\nDevice: ${Constants.deviceName || "Unknown"}`,
+      });
+    } else {
+      Alert.alert(
+        "Email Not Available",
+        `Please send feedback to ${SUPPORT_EMAIL}`,
+        [
+          { text: "Copy Email", onPress: () => {
+            // Can't use Clipboard directly, but user can manually copy
+          }},
+          { text: "OK" },
+        ]
+      );
+    }
+  };
+
   return (
     <>
       <KeyboardAwareScrollViewCompat
@@ -353,13 +399,19 @@ export default function SettingsScreen() {
             <View style={styles.aboutItem}>
               <ThemedText style={styles.aboutLabel}>Version</ThemedText>
               <ThemedText style={[styles.aboutValue, { color: theme.textSecondary }]}>
-                1.0.0
+                v{APP_VERSION} (Build {BUILD_NUMBER})
               </ThemedText>
             </View>
             <View style={styles.aboutItem}>
-              <ThemedText style={styles.aboutLabel}>Built for</ThemedText>
+              <ThemedText style={styles.aboutLabel}>Developed by</ThemedText>
               <ThemedText style={[styles.aboutValue, { color: theme.textSecondary }]}>
-                Microsurgery & Reconstruction
+                Dr. Mateusz Gladysz
+              </ThemedText>
+            </View>
+            <View style={styles.aboutItem}>
+              <ThemedText style={styles.aboutLabel}>Location</ThemedText>
+              <ThemedText style={[styles.aboutValue, { color: theme.textSecondary }]}>
+                New Zealand
               </ThemedText>
             </View>
             <View style={[styles.aboutItem, { borderBottomWidth: 0 }]}>
@@ -368,6 +420,48 @@ export default function SettingsScreen() {
                 SNOMED CT
               </ThemedText>
             </View>
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <ThemedText style={[styles.sectionTitle, { color: theme.textSecondary }]}>
+            LEGAL
+          </ThemedText>
+          <View style={[styles.sectionCard, { backgroundColor: theme.backgroundDefault }]}>
+            <SettingsItem
+              icon="shield"
+              label="Privacy Policy"
+              subtitle="How we protect your data"
+              onPress={() => handleOpenUrl(LEGAL_URLS.privacyPolicy)}
+            />
+            <View style={[styles.divider, { backgroundColor: theme.border }]} />
+            <SettingsItem
+              icon="file-text"
+              label="Terms of Service"
+              subtitle="Usage terms and conditions"
+              onPress={() => handleOpenUrl(LEGAL_URLS.termsOfService)}
+            />
+            <View style={[styles.divider, { backgroundColor: theme.border }]} />
+            <SettingsItem
+              icon="code"
+              label="Open Source Licenses"
+              subtitle="Third-party libraries"
+              onPress={() => handleOpenUrl(LEGAL_URLS.openSourceLicenses)}
+            />
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <ThemedText style={[styles.sectionTitle, { color: theme.textSecondary }]}>
+            SUPPORT
+          </ThemedText>
+          <View style={[styles.sectionCard, { backgroundColor: theme.backgroundDefault }]}>
+            <SettingsItem
+              icon="mail"
+              label="Send Feedback"
+              subtitle="Report bugs or suggest features"
+              onPress={handleSendFeedback}
+            />
           </View>
         </View>
 
@@ -397,6 +491,12 @@ export default function SettingsScreen() {
               destructive
             />
           </View>
+        </View>
+
+        <View style={styles.disclaimerContainer}>
+          <ThemedText style={[styles.disclaimerText, { color: theme.textTertiary }]}>
+            ReconLog is a documentation tool. The treating surgeon remains solely responsible for patient care and clinical records. This app does not provide medical advice.
+          </ThemedText>
         </View>
       </KeyboardAwareScrollViewCompat>
 
@@ -769,5 +869,19 @@ const styles = StyleSheet.create({
   facilityItemId: {
     fontSize: 11,
     marginTop: 2,
+  },
+  divider: {
+    height: 1,
+    marginHorizontal: Spacing.lg,
+  },
+  disclaimerContainer: {
+    paddingHorizontal: Spacing.lg,
+    paddingBottom: Spacing.xl,
+    marginTop: -Spacing.md,
+  },
+  disclaimerText: {
+    fontSize: 12,
+    lineHeight: 18,
+    textAlign: "center",
   },
 });
