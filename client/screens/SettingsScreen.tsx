@@ -7,6 +7,8 @@ import {
   Share,
   Modal,
   Linking,
+  TextInput,
+  ActivityIndicator,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
@@ -137,6 +139,11 @@ export default function SettingsScreen() {
   const [settings, setSettings] = useState<AppSettings | null>(null);
   const [showFacilitiesModal, setShowFacilitiesModal] = useState(false);
   const [showFacilitySelector, setShowFacilitySelector] = useState(false);
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   const countryCode = useMemo(() => {
     if (!profile?.countryOfPractice) return "NZ";
@@ -277,6 +284,60 @@ export default function SettingsScreen() {
         ]
       );
     }
+  };
+
+  const handleChangePassword = async () => {
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      Alert.alert("Missing Fields", "Please fill in all password fields");
+      return;
+    }
+
+    if (newPassword.length < 8) {
+      Alert.alert("Weak Password", "New password must be at least 8 characters");
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      Alert.alert("Passwords Don't Match", "New password and confirmation must match");
+      return;
+    }
+
+    setIsChangingPassword(true);
+    try {
+      const response = await fetch(`${getApiUrl()}/api/auth/change-password`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${await getAuthToken()}`,
+        },
+        body: JSON.stringify({
+          currentPassword,
+          newPassword,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to change password");
+      }
+
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      Alert.alert("Success", "Your password has been changed");
+      setShowChangePasswordModal(false);
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (error: any) {
+      Alert.alert("Error", error.message || "Failed to change password");
+    } finally {
+      setIsChangingPassword(false);
+    }
+  };
+
+  const getAuthToken = async (): Promise<string> => {
+    const AsyncStorage = require("@react-native-async-storage/async-storage").default;
+    return await AsyncStorage.getItem("authToken") || "";
   };
 
   return (
@@ -471,6 +532,20 @@ export default function SettingsScreen() {
 
         <View style={styles.section}>
           <ThemedText style={[styles.sectionTitle, { color: theme.textSecondary }]}>
+            SECURITY
+          </ThemedText>
+          <View style={[styles.sectionCard, { backgroundColor: theme.backgroundDefault }]}>
+            <SettingsItem
+              icon="lock"
+              label="Change Password"
+              subtitle="Update your account password"
+              onPress={() => setShowChangePasswordModal(true)}
+            />
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <ThemedText style={[styles.sectionTitle, { color: theme.textSecondary }]}>
             ACCOUNT
           </ThemedText>
           <View style={[styles.sectionCard, { backgroundColor: theme.backgroundDefault }]}>
@@ -589,6 +664,121 @@ export default function SettingsScreen() {
         selectedFacilityIds={selectedFacilityIds}
         title="Add Hospital"
       />
+
+      <Modal
+        visible={showChangePasswordModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowChangePasswordModal(false)}
+      >
+        <Pressable
+          style={styles.modalOverlay}
+          onPress={() => setShowChangePasswordModal(false)}
+        >
+          <View 
+            style={[styles.passwordModalContent, { backgroundColor: theme.backgroundDefault }]}
+            onStartShouldSetResponder={() => true}
+          >
+            <View style={styles.facilitiesModalHeader}>
+              <ThemedText style={styles.modalTitle}>Change Password</ThemedText>
+              <Pressable onPress={() => setShowChangePasswordModal(false)}>
+                <Feather name="x" size={24} color={theme.textSecondary} />
+              </Pressable>
+            </View>
+            <ThemedText style={[styles.modalSubtitle, { color: theme.textSecondary }]}>
+              Enter your current password and choose a new one.
+            </ThemedText>
+
+            <View style={styles.passwordInputContainer}>
+              <ThemedText style={[styles.inputLabel, { color: theme.textSecondary }]}>
+                Current Password
+              </ThemedText>
+              <TextInput
+                style={[
+                  styles.passwordInput,
+                  { 
+                    backgroundColor: theme.backgroundSecondary,
+                    color: theme.text,
+                    borderColor: theme.border,
+                  }
+                ]}
+                placeholder="Enter current password"
+                placeholderTextColor={theme.textTertiary}
+                secureTextEntry
+                value={currentPassword}
+                onChangeText={setCurrentPassword}
+                autoCapitalize="none"
+                testID="input-current-password"
+              />
+            </View>
+
+            <View style={styles.passwordInputContainer}>
+              <ThemedText style={[styles.inputLabel, { color: theme.textSecondary }]}>
+                New Password
+              </ThemedText>
+              <TextInput
+                style={[
+                  styles.passwordInput,
+                  { 
+                    backgroundColor: theme.backgroundSecondary,
+                    color: theme.text,
+                    borderColor: theme.border,
+                  }
+                ]}
+                placeholder="Enter new password (min 8 characters)"
+                placeholderTextColor={theme.textTertiary}
+                secureTextEntry
+                value={newPassword}
+                onChangeText={setNewPassword}
+                autoCapitalize="none"
+                testID="input-new-password"
+              />
+            </View>
+
+            <View style={styles.passwordInputContainer}>
+              <ThemedText style={[styles.inputLabel, { color: theme.textSecondary }]}>
+                Confirm New Password
+              </ThemedText>
+              <TextInput
+                style={[
+                  styles.passwordInput,
+                  { 
+                    backgroundColor: theme.backgroundSecondary,
+                    color: theme.text,
+                    borderColor: theme.border,
+                  }
+                ]}
+                placeholder="Confirm new password"
+                placeholderTextColor={theme.textTertiary}
+                secureTextEntry
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                autoCapitalize="none"
+                testID="input-confirm-password"
+              />
+            </View>
+
+            <Pressable
+              style={[
+                styles.changePasswordButton,
+                { backgroundColor: theme.link },
+                isChangingPassword && { opacity: 0.7 }
+              ]}
+              onPress={handleChangePassword}
+              disabled={isChangingPassword}
+              testID="button-change-password"
+            >
+              {isChangingPassword ? (
+                <ActivityIndicator color="#FFF" size="small" />
+              ) : (
+                <ThemedText style={styles.changePasswordButtonText}>
+                  Change Password
+                </ThemedText>
+              )}
+            </Pressable>
+          </View>
+        </Pressable>
+      </Modal>
 
     </>
   );
@@ -887,5 +1077,39 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 18,
     textAlign: "center",
+  },
+  passwordModalContent: {
+    width: "100%",
+    maxWidth: 400,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.lg,
+    ...Shadows.modal,
+  },
+  passwordInputContainer: {
+    marginBottom: Spacing.md,
+  },
+  inputLabel: {
+    fontSize: 12,
+    fontWeight: "500",
+    marginBottom: Spacing.xs,
+  },
+  passwordInput: {
+    height: 48,
+    borderRadius: BorderRadius.sm,
+    borderWidth: 1,
+    paddingHorizontal: Spacing.md,
+    fontSize: 15,
+  },
+  changePasswordButton: {
+    height: 48,
+    borderRadius: BorderRadius.md,
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: Spacing.md,
+  },
+  changePasswordButtonText: {
+    color: "#FFF",
+    fontSize: 16,
+    fontWeight: "600",
   },
 });
