@@ -145,6 +145,23 @@ function serveLandingPage({
   res.status(200).send(html);
 }
 
+function serveLegalPage(templateName: string, res: Response) {
+  const templatePath = path.resolve(
+    process.cwd(),
+    "server",
+    "templates",
+    templateName,
+  );
+  
+  if (!fs.existsSync(templatePath)) {
+    return res.status(404).send("Page not found");
+  }
+  
+  const html = fs.readFileSync(templatePath, "utf-8");
+  res.setHeader("Content-Type", "text/html; charset=utf-8");
+  res.status(200).send(html);
+}
+
 function configureExpoAndLanding(app: express.Application) {
   const templatePath = path.resolve(
     process.cwd(),
@@ -156,6 +173,18 @@ function configureExpoAndLanding(app: express.Application) {
   const appName = getAppName();
 
   log("Serving static Expo files with dynamic manifest routing");
+
+  app.get("/privacy", (_req: Request, res: Response) => {
+    serveLegalPage("privacy-policy.html", res);
+  });
+
+  app.get("/terms", (_req: Request, res: Response) => {
+    serveLegalPage("terms-of-service.html", res);
+  });
+
+  app.get("/licenses", (_req: Request, res: Response) => {
+    serveLegalPage("open-source-licenses.html", res);
+  });
 
   app.use((req: Request, res: Response, next: NextFunction) => {
     if (req.path.startsWith("/api")) {

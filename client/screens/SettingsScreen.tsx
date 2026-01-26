@@ -24,14 +24,18 @@ import { clearAllData, exportCasesAsJSON, getCases, getSettings, AppSettings } f
 import { getCodingSystemForProfile } from "@/lib/snomedCt";
 import { useAuth } from "@/contexts/AuthContext";
 import { MasterFacility, getFacilityById, SUPPORTED_COUNTRIES } from "@/data/facilities";
+import { getApiUrl } from "@/lib/queryClient";
 
 const APP_VERSION = Constants.expoConfig?.version || "1.0.0";
 const BUILD_NUMBER = Constants.expoConfig?.ios?.buildNumber || Constants.expoConfig?.android?.versionCode || "1";
 
-const LEGAL_URLS = {
-  privacyPolicy: "https://reconlog.app/privacy",
-  termsOfService: "https://reconlog.app/terms",
-  openSourceLicenses: "https://reconlog.app/licenses",
+const getLegalUrls = () => {
+  const baseUrl = getApiUrl().replace(/\/$/, '');
+  return {
+    privacyPolicy: `${baseUrl}/privacy`,
+    termsOfService: `${baseUrl}/terms`,
+    openSourceLicenses: `${baseUrl}/licenses`,
+  };
 };
 
 const SUPPORT_EMAIL = "support@reconlog.app";
@@ -432,21 +436,21 @@ export default function SettingsScreen() {
               icon="shield"
               label="Privacy Policy"
               subtitle="How we protect your data"
-              onPress={() => handleOpenUrl(LEGAL_URLS.privacyPolicy)}
+              onPress={() => handleOpenUrl(getLegalUrls().privacyPolicy)}
             />
             <View style={[styles.divider, { backgroundColor: theme.border }]} />
             <SettingsItem
               icon="file-text"
               label="Terms of Service"
               subtitle="Usage terms and conditions"
-              onPress={() => handleOpenUrl(LEGAL_URLS.termsOfService)}
+              onPress={() => handleOpenUrl(getLegalUrls().termsOfService)}
             />
             <View style={[styles.divider, { backgroundColor: theme.border }]} />
             <SettingsItem
               icon="code"
               label="Open Source Licenses"
               subtitle="Third-party libraries"
-              onPress={() => handleOpenUrl(LEGAL_URLS.openSourceLicenses)}
+              onPress={() => handleOpenUrl(getLegalUrls().openSourceLicenses)}
             />
           </View>
         </View>
