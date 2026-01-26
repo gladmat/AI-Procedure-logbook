@@ -8,6 +8,7 @@ import { allSeedData } from "./seedData";
 import { searchProcedures, searchDiagnoses, getConceptDetails } from "./snomedApi";
 import { getStagingForDiagnosis, getAllStagingConfigs } from "./diagnosisStagingConfig";
 import { processDocument } from "./documentRouter";
+import { sendPasswordResetEmail } from "./email";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { z } from "zod";
@@ -363,10 +364,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       await storage.createPasswordResetToken(user.id, token, expiresAt);
 
-      // Note: Email sending would happen here when email service is configured
-      // For now, log the token (in production, this would be sent via email)
-      console.log(`Password reset token for ${email}: ${token}`);
-      console.log(`Reset link would be: ${process.env.EXPO_PUBLIC_DOMAIN || 'http://localhost:5000'}/reset-password?token=${token}`);
+      // Send password reset email via Resend
+      const emailResult = await sendPasswordResetEmail(
+        email, 
+        token, 
+        user.fullName || undefined
+      );
+      
+      if (!emailResult.success) {
+        console.error(`Failed to send password reset email to ${email}:`, emailResult.error);
+      }
 
       res.json({ success: true, message: "If an account exists, reset instructions will be sent" });
     } catch (error) {
