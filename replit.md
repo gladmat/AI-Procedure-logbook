@@ -56,6 +56,14 @@ The privacy pipeline ensures all patient data remains on the device or is proces
 - **Anatomical/Clinical Specialty Categories**: Restructured categories and a procedure tagging system for cross-specialty analytics.
 - **Modular Procedure Configuration**: Configuration files define specialty-specific fields.
 - **Multi-Procedure Support**: Allows logging of multiple distinct procedures per case.
+- **Complete Password Management**: Change password functionality in Settings with current password verification, and Forgot Password flow with email-based reset tokens (1-hour expiry).
+- **App Store Legal Compliance**: Privacy Policy, Terms of Service, and Open Source Licenses pages accessible via Settings.
+
+### Authentication & Security
+- **Password Security**: bcrypt hashing (10 rounds), minimum 8-character passwords.
+- **Password Reset Flow**: Token-based reset via web page (`/reset-password`), tokens expire after 1 hour and are single-use.
+- **Rate Limiting**: Auth endpoints protected against brute force attacks.
+- **Database Tables**: `passwordResetTokens` table tracks reset token state with expiry and usage timestamps.
 
 ## External Dependencies
 
