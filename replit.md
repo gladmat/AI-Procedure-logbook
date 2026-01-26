@@ -15,7 +15,23 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (January 2026)
 
-### Standardized Facility Selection (Latest)
+### Skin Lesion Histology Capture (Latest)
+- **Automated Histology Report Capture**: New workflow for skin lesion excision procedures to capture and analyze histology reports
+- **Camera-based Capture**: Use device camera or photo library to capture histology report images
+- **OCR Text Extraction**: On-device Tesseract.js extracts text from histology report images
+- **Pattern-based Data Extraction**: Local regex patterns extract:
+  - Histology diagnosis (e.g., "Basal cell carcinoma, nodular type")
+  - Peripheral margin (mm)
+  - Deep margin (mm)
+  - Excision completeness (complete/incomplete/uncertain)
+- **Confidence Indicator**: Shows extraction confidence level (high/medium/low) to guide user verification
+- **Manual Confirmation Required**: Extracted data is ALWAYS presented for user review before saving
+- **Navigation Flow**: CaseDetail → AddTimelineEvent (follow-up visit) → HistologyCapture → Confirm & Save
+- **Skin Lesion Detection**: Automatically shows histology capture option for procedures matching keywords:
+  - skin lesion excision, wide local excision, excision biopsy
+  - BCC, SCC, melanoma, basal cell, squamous cell
+
+### Standardized Facility Selection
 - **Master Hospital List**: Curated database of verified hospitals organized by country (currently New Zealand with 80+ hospitals)
 - **Regional Organization**: Hospitals grouped by region (Auckland, Waikato, Bay of Plenty, Wellington, Canterbury, etc.)
 - **Hospital Types**: Public and private facilities distinguished with filtering capability
