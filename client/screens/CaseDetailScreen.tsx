@@ -202,9 +202,38 @@ export default function CaseDetailScreen() {
     );
   };
 
+  const isSkinLesionCase = useCallback(() => {
+    if (!caseData) return false;
+    
+    const skinLesionKeywords = [
+      "skin lesion excision",
+      "lesion excision",
+      "excision of skin lesion",
+      "excision biopsy",
+      "excisional biopsy",
+      "wide local excision",
+      "skin cancer",
+      "bcc",
+      "scc",
+      "melanoma",
+      "basal cell",
+      "squamous cell",
+    ];
+    
+    const procedureName = caseData.procedures?.[0]?.name?.toLowerCase() || "";
+    const diagnosisName = caseData.clinicalDiagnosis?.displayName?.toLowerCase() || "";
+    
+    return skinLesionKeywords.some(
+      keyword => procedureName.includes(keyword) || diagnosisName.includes(keyword)
+    );
+  }, [caseData]);
+
   const handleAddEvent = () => {
     if (caseData) {
-      navigation.navigate("AddTimelineEvent", { caseId: caseData.id });
+      navigation.navigate("AddTimelineEvent", { 
+        caseId: caseData.id,
+        isSkinLesion: isSkinLesionCase(),
+      });
     }
   };
 
