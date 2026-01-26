@@ -40,7 +40,7 @@ const getLegalUrls = () => {
   };
 };
 
-const SUPPORT_EMAIL = "support@reconlog.app";
+const SUPPORT_EMAIL = "support@drgladysz.com";
 
 interface SettingsItemProps {
   icon: keyof typeof Feather.glyphMap;
