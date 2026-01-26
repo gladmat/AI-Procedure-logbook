@@ -1,0 +1,86 @@
+Yes, absolutely. In fact, if you do not include a Privacy Policy in specific locations, **Apple and Google will reject your app submission.**
+
+Since your app handles health data (Sensitive Personal Data), the scrutiny is much higher than for a game or a calculator.
+
+Here is exactly where the Privacy Policy and "About" info must appear, and why the "Sign-up Consent" alone is not enough.
+
+### **1. The Mandatory Locations (Where it MUST exist)**
+
+You need to place your Privacy Policy in **three** distinct places:
+
+#### **A. The App Store Listing (Pre-Download)**
+
+* **Requirement:** Both the Apple App Store and Google Play Console require you to paste a **URL** to your privacy policy in the metadata section.
+* **Why:** Users must be able to read how their data is handled *before* they decide to download the app.
+* **The "Nutrition Label":** Apple will ask you to fill out a questionnaire (App Privacy Details). You must honestly declare:
+* *Data Used to Track You:* **None.**
+* *Data Linked to You:* **Contact Info** (if you have accounts), **Health & Fitness** (if you sync to cloud).
+* *Data Not Linked to You:* **Diagnostics** (crash logs).
+
+
+
+#### **B. Inside the App (Post-Download)**
+
+* **Requirement:** Users must be able to review the terms *at any time*, not just when they click "I Agree" 3 years ago during sign-up.
+* **Standard Location:** `Settings`  `About`  `Privacy Policy` link.
+* **Why:** Under GDPR and New Zealand Privacy Act 2020, users have a "Right to be Informed." If they forget what they agreed to, they must be able to check.
+
+#### **C. The Sign-Up Flow (Consent)**
+
+* **Status:** You are already doing this. **Keep doing it.** This is the "active consent" required for processing health data.
+
+---
+
+### **2. The "About" Screen (Why you need it)**
+
+You should absolutely add a dedicated "About" screen in your app settings. For a medical professional app, this isn't just fluff; it's a trust signal.
+
+**What to include in the "About" screen:**
+
+1. **App Version:** (e.g., `v1.0.2 (Build 45)`). *Crucial for debugging when a user emails you with a bug.*
+2. **"Made by":** "Developed by Dr. Mateusz Gładysz in New Zealand." (Adds professional credibility).
+3. **Legal Links:**
+* **Privacy Policy:** (Tappable link).
+* **Terms of Service:** (Tappable link - defines liability, e.g., "This app is for documentation, not for clinical decision making").
+* **Open Source Libraries:** (Replit/React uses open source code. Licenses often *require* you to list them here).
+
+
+4. **Support:** A "Send Feedback" or "Report Bug" button.
+
+---
+
+### **3. Implementation Plan for Replit**
+
+You need a static webpage to host the text of your policy (so you have a URL for the App Store), and an internal screen to link to it.
+
+**Action 1: The Content (What to write)**
+Since your app is "Local-First," your policy is actually a huge selling point.
+
+* *Key Phrase:* **"ReconLog utilizes a Local-First architecture. Clinical data is stored on your device and is not transmitted to our servers unless you explicitly use the Secure Cloud Verification features. We do not sell your data."**
+
+**Action 2: The Replit Prompt**
+Use this prompt to add the **Settings/About** module to your app.
+
+> "Add a **Settings & Legal** module to the app.
+> **1. Create a `SettingsScreen.tsx`:**
+> * **Section: Account:** Show current user email and 'Sign Out' button.
+> * **Section: Preferences:** 'Default Hospital' (Dropdown), 'My Career Stage'.
+> * **Section: About & Legal:**
+> * **App Version:** Display dynamic version number (e.g., v1.0.0).
+> * **Privacy Policy:** A row that opens an external URL (use a placeholder `https://reconlog.com/privacy` for now).
+> * **Terms of Use:** A row that opens `https://reconlog.com/terms`.
+> * **Open Source Licenses:** A page listing 'React, Supabase, Tesseract.js'.
+> 
+> 
+> 
+> 
+> **2. Disclaimer Footer:**
+> * At the bottom of the Settings screen, add small grey text:
+> * *'ReconLog is a documentation tool. The treating surgeon remains solely responsible for patient care and clinical records.'*
+> 
+> 
+> 
+> 
+> **3. Navigation:** Add a 'Settings' gear icon to the main dashboard header to access this screen."
+
+**Do you need help generating the actual text of the Privacy Policy for the website?** I can draft a "Medical App Standard" policy for you.
