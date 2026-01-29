@@ -623,7 +623,9 @@ export default function SettingsScreen() {
             </Pressable>
 
             {facilities.length > 0 ? (
-              facilities.map((facility) => (
+              facilities.map((facility) => {
+                const displayName = facility.facilityName || (facility as any).facility_name || "Unknown Facility";
+                return (
                 <View
                   key={facility.id}
                   style={[styles.facilityItem, { backgroundColor: theme.backgroundSecondary }]}
@@ -631,24 +633,25 @@ export default function SettingsScreen() {
                   <View style={styles.facilityItemInfo}>
                     <Feather name="home" size={16} color={theme.textSecondary} />
                     <View style={styles.facilityItemTextContainer}>
-                      <ThemedText style={styles.facilityItemName}>{facility.facilityName}</ThemedText>
-                      {facility.facilityId ? (
+                      <ThemedText style={styles.facilityItemName}>{displayName}</ThemedText>
+                      {facility.facilityId || (facility as any).facility_id ? (
                         <ThemedText style={[styles.facilityItemId, { color: theme.textTertiary }]}>
                           Verified facility
                         </ThemedText>
                       ) : null}
                     </View>
-                    {facility.isPrimary ? (
+                    {facility.isPrimary || (facility as any).is_primary ? (
                       <View style={[styles.primaryBadge, { backgroundColor: theme.link + "20" }]}>
                         <ThemedText style={[styles.primaryBadgeText, { color: theme.link }]}>Primary</ThemedText>
                       </View>
                     ) : null}
                   </View>
-                  <Pressable onPress={() => handleRemoveFacility(facility.id, facility.facilityName)}>
+                  <Pressable onPress={() => handleRemoveFacility(facility.id, displayName)}>
                     <Feather name="x" size={18} color={theme.error} />
                   </Pressable>
                 </View>
-              ))
+              );
+              })
             ) : (
               <View style={styles.emptyFacilities}>
                 <Feather name="home" size={32} color={theme.textTertiary} />
