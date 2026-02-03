@@ -643,22 +643,6 @@ export default function CaseFormScreen() {
     loadExistingCase();
   }, [isEditMode, caseId]);
 
-  useEffect(() => {
-    navigation.setOptions({
-      headerTitle: isEditMode ? "Edit Case" : `${SPECIALTY_LABELS[specialty]} Case`,
-      headerRight: () => (
-        <HeaderButton
-          onPress={handleSave}
-          disabled={saving}
-          tintColor={theme.link}
-        >
-          <ThemedText style={{ color: theme.link, fontWeight: "600" }}>
-            {saving ? "Saving..." : "Save"}
-          </ThemedText>
-        </HeaderButton>
-      ),
-    });
-  }, [saving, patientIdentifier, facility, clinicalDetails, isEditMode, specialty]);
 
   useEffect(() => {
     if (!draftLoadedRef.current) return;
@@ -1059,6 +1043,23 @@ export default function CaseFormScreen() {
       setSaving(false);
     }
   };
+
+  useEffect(() => {
+    navigation.setOptions({
+      headerTitle: isEditMode ? "Edit Case" : `${SPECIALTY_LABELS[specialty]} Case`,
+      headerRight: () => (
+        <HeaderButton
+          onPress={handleSave}
+          disabled={saving}
+          tintColor={theme.link}
+        >
+          <ThemedText style={{ color: theme.link, fontWeight: "600" }}>
+            {saving ? "Saving..." : "Save"}
+          </ThemedText>
+        </HeaderButton>
+      ),
+    });
+  }, [saving, patientIdentifier, facility, clinicalDetails, isEditMode, specialty, infectionOverlay]);
 
   const procedureOptions = (PROCEDURE_TYPES[specialty] || []).map((p) => ({
     value: p,
