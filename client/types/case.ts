@@ -744,14 +744,14 @@ export const VESSEL_TYPE_LABELS: Record<VesselType, string> = {
 
 export const COUPLING_METHOD_LABELS: Record<CouplingMethod, string> = {
   hand_sewn: "Hand-sewn",
-  coupler: "Mechanical Coupler",
+  coupler: "Coupler",
   hybrid: "Hybrid", // Legacy - not used in UI
 };
 
 // For venous anastomosis - only coupler or hand-sewn (no hybrid)
 export const VEIN_COUPLING_METHOD_OPTIONS: { value: CouplingMethod; label: string }[] = [
   { value: "hand_sewn", label: "Hand-sewn" },
-  { value: "coupler", label: "Mechanical Coupler" },
+  { value: "coupler", label: "Coupler" },
 ];
 
 export const ANATOMICAL_REGION_LABELS: Record<AnatomicalRegion, string> = {
