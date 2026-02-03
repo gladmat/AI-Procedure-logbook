@@ -6,7 +6,10 @@ import {
   Pressable,
   ScrollView,
   Modal,
+  TextInput,
+  Alert,
 } from "react-native";
+import DateTimePicker, { DateTimePickerEvent } from "@react-native-community/datetimepicker";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -21,7 +24,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, Shadows } from "@/constants/theme";
 import { Case, Specialty, Role, SPECIALTY_LABELS, ROLE_LABELS } from "@/types/case";
 import { INFECTION_SYNDROME_LABELS, InfectionSyndrome } from "@/types/infection";
-import { getCases, getCasesPendingFollowUp, markNoComplications } from "@/lib/storage";
+import { getCases, getCasesPendingFollowUp, markNoComplications, updateCase } from "@/lib/storage";
 import { CaseCard } from "@/components/CaseCard";
 import { SkeletonCard } from "@/components/LoadingState";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
@@ -248,6 +251,66 @@ export default function DashboardScreen() {
   }, [cases]);
   
   const [showActiveCases, setShowActiveCases] = useState(true);
+  
+  // Discharge modal state
+  const [dischargeModalVisible, setDischargeModalVisible] = useState(false);
+  const [dischargeCase, setDischargeCase] = useState<Case | null>(null);
+  const [dischargeDate, setDischargeDate] = useState(new Date());
+  const [dischargeNotes, setDischargeNotes] = useState("");
+  const [showDischargeDatePicker, setShowDischargeDatePicker] = useState(false);
+
+  const handleOpenDischargeModal = (caseItem: Case) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setDischargeCase(caseItem);
+    setDischargeDate(new Date());
+    setDischargeNotes("");
+    setDischargeModalVisible(true);
+  };
+
+  const handleConfirmDischarge = async () => {
+    if (!dischargeCase) return;
+    
+    try {
+      await updateCase(dischargeCase.id, {
+        dischargeDate: dischargeDate.toISOString().split("T")[0],
+        infectionOverlay: dischargeCase.infectionOverlay ? {
+          ...dischargeCase.infectionOverlay,
+          dischargeNotes: dischargeNotes || undefined,
+          resolvedDate: dischargeDate.toISOString().split("T")[0],
+        } : undefined,
+      });
+      
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      
+      // Update local state
+      setCases(prev => prev.map(c => 
+        c.id === dischargeCase.id 
+          ? { 
+              ...c, 
+              dischargeDate: dischargeDate.toISOString().split("T")[0],
+              infectionOverlay: c.infectionOverlay ? {
+                ...c.infectionOverlay,
+                dischargeNotes: dischargeNotes || undefined,
+                resolvedDate: dischargeDate.toISOString().split("T")[0],
+              } : undefined,
+            } 
+          : c
+      ));
+      
+      setDischargeModalVisible(false);
+      setDischargeCase(null);
+    } catch (error) {
+      console.error("Error discharging case:", error);
+      Alert.alert("Error", "Failed to discharge case. Please try again.");
+    }
+  };
+
+  const handleDischargeDateChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
+    setShowDischargeDatePicker(false);
+    if (selectedDate) {
+      setDischargeDate(selectedDate);
+    }
+  };
 
   const handleCasePress = (caseData: Case) => {
     navigation.navigate("CaseDetail", { caseId: caseData.id });
@@ -394,12 +457,11 @@ export default function DashboardScreen() {
             {showActiveCases ? (
               <>
                 {activeCases.slice(0, 5).map((caseItem) => (
-                  <Pressable 
-                    key={caseItem.id} 
-                    style={[styles.followUpCard, { backgroundColor: theme.backgroundDefault }]}
-                    onPress={() => handleCasePress(caseItem)}
-                  >
-                    <View style={styles.followUpCardContent}>
+                  <View key={caseItem.id} style={[styles.followUpCard, { backgroundColor: theme.backgroundDefault }]}>
+                    <Pressable 
+                      style={styles.activeCaseContent}
+                      onPress={() => handleCasePress(caseItem)}
+                    >
                       <View style={styles.followUpCaseInfo}>
                         <View style={{ flexDirection: "row", alignItems: "center", gap: Spacing.xs }}>
                           <View style={[styles.activeBadge, { backgroundColor: theme.error }]}>
@@ -415,9 +477,17 @@ export default function DashboardScreen() {
                           {caseItem.patientIdentifier} - {new Date(caseItem.procedureDate).toLocaleDateString()}
                         </ThemedText>
                       </View>
-                    </View>
-                    <Feather name="chevron-right" size={18} color={theme.textTertiary} />
-                  </Pressable>
+                      <Feather name="chevron-right" size={18} color={theme.textTertiary} />
+                    </Pressable>
+                    <Pressable 
+                      style={[styles.dischargeButton, { backgroundColor: theme.success }]}
+                      onPress={() => handleOpenDischargeModal(caseItem)}
+                      testID={`discharge-button-${caseItem.id}`}
+                    >
+                      <Feather name="check-circle" size={14} color="#fff" />
+                      <ThemedText style={styles.dischargeButtonText}>Discharge</ThemedText>
+                    </Pressable>
+                  </View>
                 ))}
                 
                 {activeCases.length > 5 ? (
@@ -789,6 +859,96 @@ export default function DashboardScreen() {
           </View>
         </Pressable>
       </Modal>
+
+      <Modal
+        visible={dischargeModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setDischargeModalVisible(false)}
+      >
+        <View style={styles.dischargeModalOverlay}>
+          <View style={[styles.dischargeModalContent, { backgroundColor: theme.backgroundDefault }]}>
+            <View style={styles.dischargeModalHeader}>
+              <ThemedText style={styles.dischargeModalTitle}>Discharge Patient</ThemedText>
+              <Pressable onPress={() => setDischargeModalVisible(false)}>
+                <Feather name="x" size={24} color={theme.textSecondary} />
+              </Pressable>
+            </View>
+            
+            {dischargeCase ? (
+              <View style={styles.dischargeModalBody}>
+                <View style={[styles.dischargePatientInfo, { backgroundColor: theme.backgroundSecondary }]}>
+                  <ThemedText style={styles.dischargePatientId}>{dischargeCase.patientIdentifier}</ThemedText>
+                  <ThemedText style={[styles.dischargeSyndrome, { color: theme.textSecondary }]}>
+                    {dischargeCase.infectionOverlay?.syndromePrimary 
+                      ? INFECTION_SYNDROME_LABELS[dischargeCase.infectionOverlay.syndromePrimary] 
+                      : dischargeCase.procedureType}
+                  </ThemedText>
+                  <ThemedText style={[styles.dischargeEpisodes, { color: theme.textTertiary }]}>
+                    {dischargeCase.infectionOverlay?.episodes?.length || 1} episode(s) documented
+                  </ThemedText>
+                </View>
+
+                <View style={styles.dischargeField}>
+                  <ThemedText style={styles.dischargeFieldLabel}>Discharge Date</ThemedText>
+                  <Pressable 
+                    onPress={() => setShowDischargeDatePicker(true)}
+                    style={[styles.dischargeDateButton, { backgroundColor: theme.backgroundSecondary, borderColor: theme.border }]}
+                  >
+                    <ThemedText>{dischargeDate.toLocaleDateString()}</ThemedText>
+                    <Feather name="calendar" size={18} color={theme.textSecondary} />
+                  </Pressable>
+                </View>
+
+                {showDischargeDatePicker ? (
+                  <DateTimePicker
+                    value={dischargeDate}
+                    mode="date"
+                    display="spinner"
+                    onChange={handleDischargeDateChange}
+                    maximumDate={new Date()}
+                  />
+                ) : null}
+
+                <View style={styles.dischargeField}>
+                  <ThemedText style={styles.dischargeFieldLabel}>Discharge Notes (Optional)</ThemedText>
+                  <TextInput
+                    style={[styles.dischargeNotesInput, { 
+                      backgroundColor: theme.backgroundSecondary, 
+                      borderColor: theme.border,
+                      color: theme.textPrimary,
+                    }]}
+                    placeholder="e.g., Infection resolved, wound healed"
+                    placeholderTextColor={theme.textTertiary}
+                    value={dischargeNotes}
+                    onChangeText={setDischargeNotes}
+                    multiline
+                    numberOfLines={3}
+                    textAlignVertical="top"
+                  />
+                </View>
+
+                <View style={styles.dischargeActions}>
+                  <Pressable 
+                    style={[styles.dischargeCancelButton, { borderColor: theme.border }]}
+                    onPress={() => setDischargeModalVisible(false)}
+                  >
+                    <ThemedText>Cancel</ThemedText>
+                  </Pressable>
+                  <Pressable 
+                    style={[styles.dischargeConfirmButton, { backgroundColor: theme.success }]}
+                    onPress={handleConfirmDischarge}
+                    testID="confirm-discharge-button"
+                  >
+                    <Feather name="check" size={18} color="#fff" />
+                    <ThemedText style={styles.dischargeConfirmText}>Confirm Discharge</ThemedText>
+                  </Pressable>
+                </View>
+              </View>
+            ) : null}
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -1156,5 +1316,114 @@ const styles = StyleSheet.create({
   },
   modalOptionText: {
     fontSize: 15,
+  },
+  activeCaseContent: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  dischargeButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.sm,
+    marginLeft: Spacing.sm,
+  },
+  dischargeButtonText: {
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  dischargeModalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "flex-end",
+  },
+  dischargeModalContent: {
+    borderTopLeftRadius: BorderRadius.xl,
+    borderTopRightRadius: BorderRadius.xl,
+    padding: Spacing.lg,
+    paddingBottom: 40,
+    ...Shadows.floating,
+  },
+  dischargeModalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: Spacing.lg,
+  },
+  dischargeModalTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+  },
+  dischargeModalBody: {
+    gap: Spacing.md,
+  },
+  dischargePatientInfo: {
+    padding: Spacing.md,
+    borderRadius: BorderRadius.md,
+  },
+  dischargePatientId: {
+    fontSize: 18,
+    fontWeight: "600",
+  },
+  dischargeSyndrome: {
+    fontSize: 14,
+    marginTop: 2,
+  },
+  dischargeEpisodes: {
+    fontSize: 12,
+    marginTop: 4,
+  },
+  dischargeField: {
+    gap: Spacing.xs,
+  },
+  dischargeFieldLabel: {
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  dischargeDateButton: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: Spacing.md,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+  },
+  dischargeNotesInput: {
+    padding: Spacing.md,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    fontSize: 15,
+    minHeight: 80,
+  },
+  dischargeActions: {
+    flexDirection: "row",
+    gap: Spacing.md,
+    marginTop: Spacing.md,
+  },
+  dischargeCancelButton: {
+    flex: 1,
+    padding: Spacing.md,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    alignItems: "center",
+  },
+  dischargeConfirmButton: {
+    flex: 2,
+    flexDirection: "row",
+    padding: Spacing.md,
+    borderRadius: BorderRadius.md,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Spacing.xs,
+  },
+  dischargeConfirmText: {
+    color: "#fff",
+    fontSize: 15,
+    fontWeight: "600",
   },
 });
