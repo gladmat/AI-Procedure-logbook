@@ -206,7 +206,41 @@ export type AnatomicalRegion =
 
 export type HarvestSide = "left" | "right";
 
-export type ElevationPlane = "subfascial" | "suprafascial";
+export type ElevationPlane = 
+  | "subfascial" 
+  | "suprafascial" 
+  | "epifascial" 
+  | "thin_alt";  // Suprafascial thin ALT (defatted)
+
+export type FreeFlap = 
+  | "alt"
+  | "latissimus_dorsi" 
+  | "gracilis"
+  | "scip"
+  | "radial_forearm"
+  | "fibula"
+  | "diep"
+  | "medial_sural"
+  | "other";
+
+export const FREE_FLAP_LABELS: Record<FreeFlap, string> = {
+  alt: "ALT (Anterolateral Thigh)",
+  latissimus_dorsi: "Latissimus Dorsi",
+  gracilis: "Gracilis",
+  scip: "SCIP (Superficial Circumflex Iliac Perforator)",
+  radial_forearm: "Radial Forearm",
+  fibula: "Fibula (Osteocutaneous)",
+  diep: "DIEP",
+  medial_sural: "Medial Sural Artery Perforator",
+  other: "Other",
+};
+
+export const ELEVATION_PLANE_LABELS: Record<ElevationPlane, string> = {
+  subfascial: "Subfascial",
+  suprafascial: "Suprafascial",
+  epifascial: "Epifascial",
+  thin_alt: "Thin ALT (Suprafascial Defatted)",
+};
 
 export type CountryCode = "CH" | "GB" | "PL" | "AU" | "NZ" | "US";
 
@@ -289,6 +323,7 @@ export interface AnastomosisEntry {
 export interface FreeFlapDetails {
   harvestSide: HarvestSide;
   indication: Indication;
+  flapType?: FreeFlap;
   flapSnomedCode?: string;
   flapDisplayName?: string;
   flapCommonName?: string;

@@ -13,7 +13,7 @@ import {
   VEIN_COUPLING_METHOD_OPTIONS,
   ANASTOMOSIS_LABELS,
 } from "@/types/case";
-import { fetchVesselsByRegion } from "@/lib/snomedApi";
+import { fetchVesselsByRegion, getRecipientVesselPresets } from "@/lib/snomedApi";
 
 interface AnastomosisEntryCardProps {
   entry: AnastomosisEntry;
@@ -47,10 +47,45 @@ export function AnastomosisEntryCard({
         fetchVesselsByRegion(recipientRegion, "vein"),
       ])
         .then(([arteriesData, veinsData]) => {
-          setArteries(arteriesData);
-          setVeins(veinsData);
+          // Use server data if available, otherwise use local presets
+          if (arteriesData.length > 0) {
+            setArteries(arteriesData);
+          } else {
+            const localArteries = getRecipientVesselPresets(recipientRegion, "artery");
+            setArteries(localArteries.map((name) => ({
+              snomedCtCode: name.toLowerCase().replace(/\s+/g, "_"),
+              displayName: name,
+              commonName: name,
+            } as SnomedRefItem)));
+          }
+          
+          if (veinsData.length > 0) {
+            setVeins(veinsData);
+          } else {
+            const localVeins = getRecipientVesselPresets(recipientRegion, "vein");
+            setVeins(localVeins.map((name) => ({
+              snomedCtCode: name.toLowerCase().replace(/\s+/g, "_"),
+              displayName: name,
+              commonName: name,
+            } as SnomedRefItem)));
+          }
         })
-        .catch((err) => console.error("Error fetching vessels:", err))
+        .catch((err) => {
+          console.error("Error fetching vessels:", err);
+          // Fall back to local presets on error
+          const localArteries = getRecipientVesselPresets(recipientRegion, "artery");
+          const localVeins = getRecipientVesselPresets(recipientRegion, "vein");
+          setArteries(localArteries.map((name) => ({
+            snomedCtCode: name.toLowerCase().replace(/\s+/g, "_"),
+            displayName: name,
+            commonName: name,
+          } as SnomedRefItem)));
+          setVeins(localVeins.map((name) => ({
+            snomedCtCode: name.toLowerCase().replace(/\s+/g, "_"),
+            displayName: name,
+            commonName: name,
+          } as SnomedRefItem)));
+        })
         .finally(() => setIsLoading(false));
     }
   }, [recipientRegion]);

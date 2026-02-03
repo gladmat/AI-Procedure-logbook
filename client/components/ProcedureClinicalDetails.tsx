@@ -8,6 +8,7 @@ import { BorderRadius, Spacing } from "@/constants/theme";
 import { FormField, PickerField } from "@/components/FormField";
 import { AnastomosisEntryCard } from "@/components/AnastomosisEntryCard";
 import { RecipientSiteSelector } from "@/components/RecipientSiteSelector";
+import { FreeFlapPicker } from "@/components/FreeFlapPicker";
 import { SectionHeader } from "@/components/SectionHeader";
 import { v4 as uuidv4 } from "uuid";
 import {
@@ -21,6 +22,7 @@ import {
   type HarvestSide,
   type Indication,
   type ElevationPlane,
+  type FreeFlap,
   INDICATION_LABELS,
 } from "@/types/case";
 
@@ -30,38 +32,42 @@ interface FreeFlapClinicalFieldsProps {
   onUpdate: (details: FreeFlapDetails) => void;
 }
 
-const DEFAULT_DONOR_VESSELS: Record<string, { artery: string; vein: string }> = {
-  "ALT Flap": {
-    artery: "Lateral circumflex femoral artery descending branch",
+const DEFAULT_DONOR_VESSELS: Record<FreeFlap, { artery: string; vein: string }> = {
+  alt: {
+    artery: "Descending branch of lateral circumflex femoral artery",
     vein: "Lateral circumflex femoral vein",
   },
-  "DIEP Flap": {
+  diep: {
     artery: "Deep inferior epigastric artery",
     vein: "Deep inferior epigastric vein",
   },
-  "Radial Forearm Flap": {
+  radial_forearm: {
     artery: "Radial artery",
-    vein: "Radial artery venae comitantes",
+    vein: "Venae comitantes of radial artery",
   },
-  "Fibula Flap": {
+  fibula: {
     artery: "Peroneal artery",
-    vein: "Peroneal artery venae comitantes",
+    vein: "Venae comitantes of peroneal artery",
   },
-  "Latissimus Dorsi Flap": {
+  latissimus_dorsi: {
     artery: "Thoracodorsal artery",
     vein: "Thoracodorsal vein",
   },
-  "Gracilis Flap": {
-    artery: "Medial circumflex femoral artery gracilis branch",
+  gracilis: {
+    artery: "Gracilis branch of medial circumflex femoral artery",
     vein: "Gracilis vein",
   },
-  "SCIP Flap": {
+  scip: {
     artery: "Superficial circumflex iliac artery",
     vein: "Superficial circumflex iliac vein",
   },
-  "Medial Sural Artery Perforator Flap": {
+  medial_sural: {
     artery: "Medial sural artery",
     vein: "Medial sural vein",
+  },
+  other: {
+    artery: "",
+    vein: "",
   },
 };
 
@@ -104,10 +110,23 @@ export function FreeFlapClinicalFields({
     });
   };
 
-  const donorVessels = DEFAULT_DONOR_VESSELS[procedureType];
+  const flapType = clinicalDetails.flapType;
+  const donorVessels = flapType ? DEFAULT_DONOR_VESSELS[flapType] : undefined;
 
   return (
     <View style={styles.container}>
+      <FreeFlapPicker
+        flapType={clinicalDetails.flapType}
+        elevationPlane={clinicalDetails.elevationPlane}
+        onFlapTypeChange={(flap) => 
+          onUpdate({ ...clinicalDetails, flapType: flap })
+        }
+        onElevationPlaneChange={(plane) => 
+          onUpdate({ ...clinicalDetails, elevationPlane: plane })
+        }
+        required
+      />
+
       <RecipientSiteSelector
         value={recipientSiteRegion}
         onSelect={(region) => 

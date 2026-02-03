@@ -184,3 +184,128 @@ export async function fetchAnastomosisConfigs(): Promise<SnomedRefItem[]> {
   if (!response.ok) throw new Error("Failed to fetch anastomosis configs");
   return response.json();
 }
+
+// Local recipient vessel presets by body region for fallback
+export const RECIPIENT_VESSEL_PRESETS: Record<AnatomicalRegion, { arteries: string[]; veins: string[] }> = {
+  lower_leg: {
+    arteries: [
+      "Anterior tibial artery",
+      "Posterior tibial artery",
+      "Peroneal artery",
+      "Dorsalis pedis artery",
+    ],
+    veins: [
+      "Great saphenous vein",
+      "Small saphenous vein",
+      "Venae comitantes of posterior tibial artery",
+      "Venae comitantes of anterior tibial artery",
+    ],
+  },
+  knee: {
+    arteries: [
+      "Popliteal artery",
+      "Descending genicular artery",
+      "Superior medial genicular artery",
+      "Superior lateral genicular artery",
+    ],
+    veins: [
+      "Popliteal vein",
+      "Great saphenous vein",
+      "Small saphenous vein",
+    ],
+  },
+  foot: {
+    arteries: [
+      "Dorsalis pedis artery",
+      "Medial plantar artery",
+      "Lateral plantar artery",
+      "First dorsal metatarsal artery",
+    ],
+    veins: [
+      "Dorsal venous arch",
+      "Great saphenous vein",
+      "Small saphenous vein",
+    ],
+  },
+  thigh: {
+    arteries: [
+      "Superficial femoral artery",
+      "Profunda femoris artery",
+      "Descending branch of lateral circumflex femoral artery",
+    ],
+    veins: [
+      "Great saphenous vein",
+      "Femoral vein",
+      "Profunda femoris vein",
+    ],
+  },
+  hand: {
+    arteries: [
+      "Radial artery at anatomical snuffbox",
+      "Ulnar artery",
+      "Superficial palmar arch",
+      "Deep palmar arch",
+      "Common digital artery",
+      "Proper digital artery",
+    ],
+    veins: [
+      "Cephalic vein",
+      "Basilic vein",
+      "Superficial venous arch",
+      "Dorsal metacarpal veins",
+    ],
+  },
+  forearm: {
+    arteries: [
+      "Radial artery",
+      "Ulnar artery",
+      "Anterior interosseous artery",
+      "Posterior interosseous artery",
+    ],
+    veins: [
+      "Cephalic vein",
+      "Basilic vein",
+      "Median antebrachial vein",
+      "Venae comitantes of radial artery",
+      "Venae comitantes of ulnar artery",
+    ],
+  },
+  upper_arm: {
+    arteries: [
+      "Brachial artery",
+      "Profunda brachii artery",
+    ],
+    veins: [
+      "Cephalic vein",
+      "Basilic vein",
+      "Brachial veins",
+    ],
+  },
+  head_neck: {
+    arteries: [
+      "Facial artery",
+      "Superior thyroid artery",
+      "Superficial temporal artery",
+      "Transverse cervical artery",
+      "External carotid artery",
+    ],
+    veins: [
+      "Facial vein",
+      "External jugular vein",
+      "Internal jugular vein",
+      "Anterior jugular vein",
+    ],
+  },
+};
+
+/**
+ * Get local recipient vessel presets for a region
+ */
+export function getRecipientVesselPresets(
+  region: AnatomicalRegion,
+  vesselType: "artery" | "vein"
+): string[] {
+  const presets = RECIPIENT_VESSEL_PRESETS[region];
+  if (!presets) return [];
+  return vesselType === "artery" ? presets.arteries : presets.veins;
+}
