@@ -1,6 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Case, TimelineEvent, CountryCode, ComplicationEntry } from "@/types/case";
 import { encryptData, decryptData } from "./encryption";
+import * as Crypto from "expo-crypto";
 
 const CASE_INDEX_KEY = "@surgical_logbook_case_index";
 const CASE_PREFIX = "@surgical_logbook_case_";
@@ -29,15 +30,65 @@ export type CaseDraft = Partial<Case>;
 interface CaseIndexEntry {
   id: string;
   procedureDate: string;
-  patientIdentifier?: string;
+  patientIdentifierHash?: string;
   updatedAt: string;
+}
+
+async function hashPatientIdentifier(patientIdentifier?: string): Promise<string | undefined> {
+  if (!patientIdentifier) return undefined;
+  const normalized = patientIdentifier.toUpperCase().replace(/\s/g, "");
+  return Crypto.digestStringAsync(
+    Crypto.CryptoDigestAlgorithm.SHA256,
+    normalized,
+    { encoding: Crypto.CryptoEncoding.HEX }
+  );
+}
+
+let indexMigrated = false;
+
+async function migrateCaseIndexIfNeeded(entries: CaseIndexEntry[]): Promise<CaseIndexEntry[]> {
+  let changed = false;
+  const migrated: CaseIndexEntry[] = [];
+
+  for (const entry of entries) {
+    const rawIdentifier = (entry as any).patientIdentifier as string | undefined;
+    let patientIdentifierHash = (entry as any).patientIdentifierHash as string | undefined;
+
+    if (!patientIdentifierHash && rawIdentifier) {
+      patientIdentifierHash = await hashPatientIdentifier(rawIdentifier);
+      changed = true;
+    }
+
+    if ((entry as any).patientIdentifier !== undefined) {
+      changed = true;
+    }
+
+    migrated.push({
+      id: entry.id,
+      procedureDate: entry.procedureDate,
+      patientIdentifierHash,
+      updatedAt: entry.updatedAt,
+    });
+  }
+
+  if (changed) {
+    await saveCaseIndex(migrated);
+  }
+
+  return migrated;
 }
 
 async function getCaseIndex(): Promise<CaseIndexEntry[]> {
   try {
     const data = await AsyncStorage.getItem(CASE_INDEX_KEY);
     if (data) {
-      return JSON.parse(data);
+      const parsed = JSON.parse(data) as CaseIndexEntry[];
+      if (!indexMigrated) {
+        const migrated = await migrateCaseIndexIfNeeded(parsed);
+        indexMigrated = true;
+        return migrated;
+      }
+      return parsed;
     }
     return [];
   } catch (error) {
@@ -61,10 +112,11 @@ async function migrateLegacyData(): Promise<boolean> {
       for (const caseData of cases) {
         const encrypted = await encryptData(JSON.stringify(caseData));
         await AsyncStorage.setItem(`${CASE_PREFIX}${caseData.id}`, encrypted);
+        const patientIdentifierHash = await hashPatientIdentifier(caseData.patientIdentifier);
         index.push({
           id: caseData.id,
           procedureDate: caseData.procedureDate,
-          patientIdentifier: caseData.patientIdentifier,
+          patientIdentifierHash,
           updatedAt: caseData.updatedAt || caseData.createdAt || new Date().toISOString(),
         });
       }
@@ -84,10 +136,11 @@ async function migrateLegacyData(): Promise<boolean> {
       for (const caseData of cases) {
         const encrypted = await encryptData(JSON.stringify(caseData));
         await AsyncStorage.setItem(`${CASE_PREFIX}${caseData.id}`, encrypted);
+        const patientIdentifierHash = await hashPatientIdentifier(caseData.patientIdentifier);
         index.push({
           id: caseData.id,
           procedureDate: caseData.procedureDate,
-          patientIdentifier: caseData.patientIdentifier,
+          patientIdentifierHash,
           updatedAt: caseData.updatedAt || caseData.createdAt || new Date().toISOString(),
         });
       }
@@ -153,6 +206,7 @@ export async function saveCase(caseData: Case): Promise<void> {
     
     const encrypted = await encryptData(JSON.stringify(updatedCase));
     await AsyncStorage.setItem(`${CASE_PREFIX}${caseData.id}`, encrypted);
+    const patientIdentifierHash = await hashPatientIdentifier(caseData.patientIdentifier);
     
     const index = await getCaseIndex();
     const existingIdx = index.findIndex((e) => e.id === caseData.id);
@@ -160,7 +214,7 @@ export async function saveCase(caseData: Case): Promise<void> {
     const indexEntry: CaseIndexEntry = {
       id: caseData.id,
       procedureDate: caseData.procedureDate,
-      patientIdentifier: caseData.patientIdentifier,
+      patientIdentifierHash,
       updatedAt: now,
     };
     
@@ -249,11 +303,11 @@ export async function markNoComplications(caseId: string): Promise<void> {
 
 export async function findCasesByPatientId(patientId: string): Promise<Case[]> {
   const index = await getCaseIndex();
-  const normalizedId = patientId.toUpperCase().replace(/\s/g, "");
+  const patientIdentifierHash = await hashPatientIdentifier(patientId);
+  if (!patientIdentifierHash) return [];
   
   const matchingEntries = index.filter((e) => {
-    const entryPatientId = e.patientIdentifier?.toUpperCase().replace(/\s/g, "") || "";
-    return entryPatientId === normalizedId;
+    return e.patientIdentifierHash === patientIdentifierHash;
   });
   
   const cases: Case[] = [];
