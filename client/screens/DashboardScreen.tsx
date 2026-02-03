@@ -20,6 +20,7 @@ import { ThemedView } from "@/components/ThemedView";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, Shadows } from "@/constants/theme";
 import { Case, Specialty, Role, SPECIALTY_LABELS, ROLE_LABELS } from "@/types/case";
+import { INFECTION_SYNDROME_LABELS, InfectionSyndrome } from "@/types/infection";
 import { getCases, getCasesPendingFollowUp, markNoComplications } from "@/lib/storage";
 import { CaseCard } from "@/components/CaseCard";
 import { SkeletonCard } from "@/components/LoadingState";
@@ -237,6 +238,16 @@ export default function DashboardScreen() {
   const statistics = useMemo(() => calculateStatistics(filteredCases, filters.specialty), [filteredCases, filters.specialty]);
   const recentCases = useMemo(() => filteredCases.slice(0, 5), [filteredCases]);
   const facilities = useMemo(() => getUniqueFacilities(cases), [cases]);
+  
+  const activeCases = useMemo(() => {
+    return cases.filter(c => 
+      c.infectionOverlay && !c.dischargeDate
+    ).sort((a, b) => 
+      new Date(b.procedureDate).getTime() - new Date(a.procedureDate).getTime()
+    );
+  }, [cases]);
+  
+  const [showActiveCases, setShowActiveCases] = useState(true);
 
   const handleCasePress = (caseData: Case) => {
     navigation.navigate("CaseDetail", { caseId: caseData.id });
@@ -364,6 +375,60 @@ export default function DashboardScreen() {
             />
           </View>
         </View>
+
+        {activeCases.length > 0 ? (
+          <View style={styles.followUpSection}>
+            <Pressable 
+              onPress={() => setShowActiveCases(!showActiveCases)}
+              style={styles.followUpHeader}
+            >
+              <View style={styles.followUpTitleRow}>
+                <Feather name="activity" size={18} color={theme.error} />
+                <ThemedText style={[styles.followUpTitle, { color: theme.error }]}>
+                  Active Cases ({activeCases.length})
+                </ThemedText>
+              </View>
+              <Feather name={showActiveCases ? "chevron-up" : "chevron-down"} size={20} color={theme.textSecondary} />
+            </Pressable>
+            
+            {showActiveCases ? (
+              <>
+                {activeCases.slice(0, 5).map((caseItem) => (
+                  <Pressable 
+                    key={caseItem.id} 
+                    style={[styles.followUpCard, { backgroundColor: theme.backgroundDefault }]}
+                    onPress={() => handleCasePress(caseItem)}
+                  >
+                    <View style={styles.followUpCardContent}>
+                      <View style={styles.followUpCaseInfo}>
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: Spacing.xs }}>
+                          <View style={[styles.activeBadge, { backgroundColor: theme.error }]}>
+                            <ThemedText style={styles.activeBadgeText}>
+                              {caseItem.infectionOverlay?.episodes?.length || 1} ep
+                            </ThemedText>
+                          </View>
+                          <ThemedText style={styles.followUpCaseType} numberOfLines={1}>
+                            {caseItem.infectionOverlay?.syndromePrimary ? INFECTION_SYNDROME_LABELS[caseItem.infectionOverlay.syndromePrimary] : caseItem.procedureType}
+                          </ThemedText>
+                        </View>
+                        <ThemedText style={[styles.followUpCaseDate, { color: theme.textSecondary }]}>
+                          {caseItem.patientIdentifier} - {new Date(caseItem.procedureDate).toLocaleDateString()}
+                        </ThemedText>
+                      </View>
+                    </View>
+                    <Feather name="chevron-right" size={18} color={theme.textTertiary} />
+                  </Pressable>
+                ))}
+                
+                {activeCases.length > 5 ? (
+                  <ThemedText style={[styles.moreFollowUps, { color: theme.textSecondary }]}>
+                    +{activeCases.length - 5} more active cases
+                  </ThemedText>
+                ) : null}
+              </>
+            ) : null}
+          </View>
+        ) : null}
 
         {pendingFollowUps.length > 0 && showFollowUps ? (
           <View style={styles.followUpSection}>
@@ -1037,6 +1102,16 @@ const styles = StyleSheet.create({
     fontSize: 13,
     textAlign: "center",
     marginTop: Spacing.xs,
+  },
+  activeBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: BorderRadius.sm,
+  },
+  activeBadgeText: {
+    color: "#fff",
+    fontSize: 10,
+    fontWeight: "600",
   },
   collapsedFollowUp: {
     flexDirection: "row",
