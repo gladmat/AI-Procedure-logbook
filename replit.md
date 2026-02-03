@@ -93,10 +93,12 @@ Comprehensive infection case documentation with serial episode tracking, designe
 ### Authentication & Security
 - **Password Security**: bcrypt hashing (10 rounds), minimum 8-character passwords.
 - **Password Reset Flow**: Token-based reset via web page (`/reset-password`), tokens expire after 1 hour and are single-use. Tokens are SHA-256 hashed before database storage for additional security.
-- **JWT Token Revocation**: Users table includes `tokenVersion` field. JWT tokens include `tokenVersion` in payload, validated against current user version on each authenticated request. Incrementing user's `tokenVersion` immediately revokes all their existing tokens.
+- **JWT Token Revocation**: Users table includes `tokenVersion` field. JWT tokens include `tokenVersion` in payload, validated against current user version on each authenticated request. Password changes automatically increment `tokenVersion`, immediately revoking all existing tokens.
 - **Profile Update Protection**: Profile update endpoint restricted to only allowed fields (fullName, countryOfPractice, medicalCouncilNumber, careerStage) to prevent mass assignment vulnerabilities.
-- **Rate Limiting**: Auth endpoints protected against brute force attacks.
+- **Rate Limiting**: Auth endpoints protected against brute force attacks. Express `trust proxy` enabled for accurate client IP detection behind reverse proxies.
 - **Seed Endpoint Protection**: Database seeding endpoint protected with SEED_TOKEN header validation in production.
+- **Patient Identifier Privacy**: Patient identifiers in local case index are SHA-256 hashed using expo-crypto, preventing plaintext storage even in local storage. Migration automatically upgrades existing data.
+- **OCR Privacy**: Removed debug logging of extracted OCR text to prevent patient data appearing in server logs.
 - **Database Tables**: `passwordResetTokens` table tracks reset token state with expiry and usage timestamps.
 
 ### Email Configuration
