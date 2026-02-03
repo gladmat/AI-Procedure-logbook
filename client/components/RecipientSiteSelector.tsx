@@ -18,6 +18,7 @@ const REGION_ORDER: AnatomicalRegion[] = [
   "forearm",
   "hand",
   "thigh",
+  "knee",
   "lower_leg",
   "foot",
 ];

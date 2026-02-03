@@ -10,7 +10,7 @@ import {
   type AnatomicalRegion,
   type SnomedRefItem,
   VESSEL_TYPE_LABELS,
-  COUPLING_METHOD_LABELS,
+  VEIN_COUPLING_METHOD_OPTIONS,
   ANASTOMOSIS_LABELS,
 } from "@/types/case";
 import { fetchVesselsByRegion } from "@/lib/snomedApi";
@@ -199,11 +199,11 @@ export function AnastomosisEntryCard({
         placeholder={defaultDonorVessel || "e.g., Desc. branch LCFA"}
       />
 
-      {/* Arteries are always hand-sewn, veins can use couplers */}
+      {/* Arteries are always hand-sewn, veins can choose coupler or hand-sewn */}
       {entry.vesselType === "artery" ? (
         <View style={styles.fixedValue}>
           <ThemedText style={[styles.label, { color: theme.textSecondary }]}>
-            Coupling Method
+            Technique
           </ThemedText>
           <ThemedText style={[styles.fixedValueText, { color: theme.text }]}>
             Hand-sewn (standard for arteries)
@@ -211,19 +211,16 @@ export function AnastomosisEntryCard({
         </View>
       ) : (
         <PickerField
-          label="Coupling Method"
+          label="Technique"
           value={entry.couplingMethod || ""}
-          options={Object.entries(COUPLING_METHOD_LABELS).map(([value, label]) => ({
-            value,
-            label,
-          }))}
+          options={VEIN_COUPLING_METHOD_OPTIONS}
           onSelect={(value) =>
             onUpdate({ ...entry, couplingMethod: value as any })
           }
         />
       )}
 
-      {entry.vesselType === "vein" && (entry.couplingMethod === "coupler" || entry.couplingMethod === "hybrid") ? (
+      {entry.vesselType === "vein" && entry.couplingMethod === "coupler" ? (
         <PickerField
           label="Coupler Size (mm)"
           value={entry.couplerSizeMm?.toString() || ""}
@@ -234,29 +231,29 @@ export function AnastomosisEntryCard({
         />
       ) : null}
 
-      <PickerField
-        label="Configuration"
-        value={entry.configuration || ""}
-        options={Object.entries(ANASTOMOSIS_LABELS).map(([value, label]) => ({
-          value,
-          label,
-        }))}
-        onSelect={(value) =>
-          onUpdate({ ...entry, configuration: value as any })
-        }
-      />
-
-      <PickerField
-        label="Patency Confirmed"
-        value={entry.patencyConfirmed === true ? "yes" : entry.patencyConfirmed === false ? "no" : ""}
-        options={[
-          { value: "yes", label: "Yes" },
-          { value: "no", label: "No" },
-        ]}
-        onSelect={(value) =>
-          onUpdate({ ...entry, patencyConfirmed: value === "yes" })
-        }
-      />
+      {/* Veins are always end-to-end configuration */}
+      {entry.vesselType === "vein" ? (
+        <View style={styles.fixedValue}>
+          <ThemedText style={[styles.label, { color: theme.textSecondary }]}>
+            Configuration
+          </ThemedText>
+          <ThemedText style={[styles.fixedValueText, { color: theme.text }]}>
+            End-to-end (standard for veins)
+          </ThemedText>
+        </View>
+      ) : (
+        <PickerField
+          label="Configuration"
+          value={entry.configuration || ""}
+          options={Object.entries(ANASTOMOSIS_LABELS).map(([value, label]) => ({
+            value,
+            label,
+          }))}
+          onSelect={(value) =>
+            onUpdate({ ...entry, configuration: value as any })
+          }
+        />
+      )}
     </View>
   );
 }

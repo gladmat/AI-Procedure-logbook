@@ -196,6 +196,7 @@ export type CouplingMethod = "hand_sewn" | "coupler" | "hybrid";
 
 export type AnatomicalRegion = 
   | "lower_leg" 
+  | "knee"
   | "foot" 
   | "thigh" 
   | "hand" 
@@ -642,11 +643,18 @@ export const VESSEL_TYPE_LABELS: Record<VesselType, string> = {
 export const COUPLING_METHOD_LABELS: Record<CouplingMethod, string> = {
   hand_sewn: "Hand-sewn",
   coupler: "Mechanical Coupler",
-  hybrid: "Hybrid",
+  hybrid: "Hybrid", // Legacy - not used in UI
 };
+
+// For venous anastomosis - only coupler or hand-sewn (no hybrid)
+export const VEIN_COUPLING_METHOD_OPTIONS: { value: CouplingMethod; label: string }[] = [
+  { value: "hand_sewn", label: "Hand-sewn" },
+  { value: "coupler", label: "Mechanical Coupler" },
+];
 
 export const ANATOMICAL_REGION_LABELS: Record<AnatomicalRegion, string> = {
   lower_leg: "Lower Leg",
+  knee: "Knee",
   foot: "Foot",
   thigh: "Thigh",
   hand: "Hand",
