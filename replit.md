@@ -59,6 +59,26 @@ The privacy pipeline ensures all patient data remains on the device or is proces
 - **Complete Password Management**: Change password functionality in Settings with current password verification, and Forgot Password flow with email-based reset tokens (1-hour expiry).
 - **App Store Legal Compliance**: Privacy Policy, Terms of Service, and Open Source Licenses pages accessible via Settings.
 
+### Infection Documentation Module (v1.2.0+)
+Comprehensive infection case documentation with serial episode tracking, designed for clinical workflow from simple abscess to necrotizing fasciitis.
+
+- **InfectionOverlay**: Attachable overlay on any case specialty, enabling infection documentation without specialty restrictions.
+- **Quick Templates**: Pre-configured templates for common infection patterns:
+  - Abscess / I&D (localized skin/soft tissue)
+  - Necrotising Fasciitis (regional, systemic/sepsis, ICU)
+  - Implant Infection (device/implant related)
+  - Deep Space Infection (deep infection)
+  - Bite Injury (bite related)
+- **Infection Syndromes**: Skin/Soft Tissue, Deep Infection, Device/Implant Related, Bone/Joint, Necrotising Soft Tissue Infection, Wound Infection/Dehiscence, Bite Related, Burn Wound Infection.
+- **Progressive Disclosure UI**: Collapsible sections for microbiology, clinical scores (LRINEC, qSOFA, SOFA), and episode details.
+- **Serial Episode Tracking**: Auto-incrementing episode numbers with date prefill, supporting cases requiring multiple operative interventions.
+- **Episode Documentation**: Operative intent (I&D, debridement, fasciotomy, amputation, etc.), debridement extent, compartments involved, wound management, reconstruction type, amputation level.
+- **Microbiology Data**: Culture status, organism entries with resistance flags (MRSA, ESBL, CRE, VRE), blood culture status.
+- **Active Cases Dashboard**: Cases with infectionOverlay and no discharge date shown prominently with episode count badges and syndrome labels.
+- **Discharge Workflow**: Quick discharge modal with date picker and optional notes, moves case from Active to resolved.
+- **Infection Statistics**: Dashboard card showing active/resolved counts, total episodes, avg episodes/case, syndrome breakdown, severity distribution, amputation and mortality counts.
+- **Export**: All infection data automatically included in JSON export.
+
 ### Free Flap / Orthoplastic Documentation (v1.1.0+)
 - **FreeFlapPicker Component**: Selectable list of common free flaps (ALT, Latissimus Dorsi, Gracilis, SCIP, Radial Forearm, Fibula, Medial Sural, DIEP).
 - **ALT-Specific Elevation Planes**: Subfascial, Epifascial, and Thin ALT (Suprafascial Defatted) options.
