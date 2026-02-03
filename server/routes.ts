@@ -1,5 +1,6 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "node:http";
+import { createHash, randomBytes } from "node:crypto";
 import { extractTextFromImage } from "./ocr";
 import { parseHistologyReport } from "./histologyParser";
 import { redactSensitiveData, extractNHI, extractSurgeryDate } from "./privacyUtils";
@@ -11,10 +12,16 @@ import { processDocument } from "./documentRouter";
 import { sendPasswordResetEmail } from "./email";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { z } from "zod";
 import { insertProfileSchema, insertFlapSchema, insertAnastomosisSchema } from "@shared/schema";
 
-const profileUpdateSchema = insertProfileSchema.partial().omit({ userId: true });
+const profileUpdateSchema = insertProfileSchema
+  .pick({
+    fullName: true,
+    countryOfPractice: true,
+    medicalCouncilNumber: true,
+    careerStage: true,
+  })
+  .partial();
 const flapCreateSchema = insertFlapSchema;
 const flapUpdateSchema = insertFlapSchema.partial().omit({ procedureId: true });
 const anastomosisCreateSchema = insertAnastomosisSchema;
@@ -47,11 +54,15 @@ if (!process.env.JWT_SECRET) {
 }
 const JWT_SECRET = process.env.JWT_SECRET;
 
+// Hash password reset tokens before storing in database
+const hashResetToken = (token: string) =>
+  createHash("sha256").update(token).digest("hex");
+
 interface AuthenticatedRequest extends Request {
   userId?: string;
 }
 
-const authenticateToken = (req: AuthenticatedRequest, res: Response, next: Function) => {
+const authenticateToken = async (req: AuthenticatedRequest, res: Response, next: Function) => {
   const authHeader = req.headers["authorization"];
   const token = authHeader && authHeader.split(" ")[1];
 
@@ -60,7 +71,15 @@ const authenticateToken = (req: AuthenticatedRequest, res: Response, next: Funct
   }
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as { userId: string };
+    const decoded = jwt.verify(token, JWT_SECRET) as { userId: string; tokenVersion?: number };
+    const user = await storage.getUser(decoded.userId);
+    if (!user) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+    const currentTokenVersion = user.tokenVersion ?? 0;
+    if ((decoded.tokenVersion ?? 0) !== currentTokenVersion) {
+      return res.status(401).json({ error: "Token has been revoked" });
+    }
     req.userId = decoded.userId;
     next();
   } catch (error) {
@@ -244,7 +263,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       await storage.createProfile({ userId: user.id, onboardingComplete: false });
       
-      const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: "30d" });
+      const token = jwt.sign(
+        { userId: user.id, tokenVersion: user.tokenVersion ?? 0 },
+        JWT_SECRET,
+        { expiresIn: "30d" }
+      );
       
       res.json({ token, user: { id: user.id, email: user.email } });
     } catch (error) {
@@ -278,7 +301,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const profile = await storage.getProfile(user.id);
       const facilities = await storage.getUserFacilities(user.id);
-      const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: "30d" });
+      const token = jwt.sign(
+        { userId: user.id, tokenVersion: user.tokenVersion ?? 0 },
+        JWT_SECRET,
+        { expiresIn: "30d" }
+      );
       
       res.json({ 
         token, 
@@ -375,18 +402,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Clean up expired tokens
       await storage.deleteExpiredPasswordResetTokens();
 
-      // Generate secure token
-      const crypto = await import("crypto");
-      const token = crypto.randomBytes(32).toString("hex");
+      // Generate secure token and hash it before storing
+      const token = randomBytes(32).toString("hex");
+      const tokenHash = hashResetToken(token);
       const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour expiry
 
-      await storage.createPasswordResetToken(user.id, token, expiresAt);
+      await storage.createPasswordResetToken(user.id, tokenHash, expiresAt);
 
-      // Send password reset email via Resend
-      const emailResult = await sendPasswordResetEmail(
-        email, 
-        token
-      );
+      // Send password reset email via Resend (send plain token to user)
+      const emailResult = await sendPasswordResetEmail(email, token);
       
       if (!emailResult.success) {
         console.error(`Failed to send password reset email to ${email}:`, emailResult.error);
@@ -412,7 +436,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Password must be at least 8 characters" });
       }
 
-      const resetToken = await storage.getPasswordResetToken(token);
+      // Hash the incoming token to match against stored hash
+      const resetToken = await storage.getPasswordResetToken(hashResetToken(token));
       
       if (!resetToken) {
         return res.status(400).json({ error: "Invalid or expired reset token" });
@@ -604,6 +629,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Seed Data Endpoint (run once to populate reference data)
   app.post("/api/seed-snomed-ref", async (req: Request, res: Response) => {
     try {
+      // Protect seed endpoint in production
+      const seedHeader = req.header("x-seed-token");
+      const seedToken = process.env.SEED_TOKEN;
+      const isProduction = process.env.NODE_ENV === "production";
+
+      if (isProduction && !seedToken) {
+        return res.status(403).json({ error: "Seed token not configured" });
+      }
+      if (seedToken && seedHeader !== seedToken) {
+        return res.status(403).json({ error: "Forbidden" });
+      }
+
       // Check if data already exists
       const existing = await storage.getSnomedRefs();
       if (existing.length > 0) {
