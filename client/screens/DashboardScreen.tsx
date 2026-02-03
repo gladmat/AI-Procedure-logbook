@@ -35,6 +35,7 @@ import {
   ROLE_FILTER_LABELS,
   filterCases,
   calculateStatistics,
+  calculateInfectionStatistics,
   getUniqueFacilities,
   formatDuration,
   formatPercentage,
@@ -44,6 +45,7 @@ import {
   HandSurgeryStatistics,
   OrthoplasticStatistics,
   BreastStatistics,
+  InfectionStatistics,
 } from "@/lib/statistics";
 
 const SPECIALTY_FILTERS: (Specialty | "all")[] = [
@@ -239,6 +241,7 @@ export default function DashboardScreen() {
 
   const filteredCases = useMemo(() => filterCases(cases, filters), [cases, filters]);
   const statistics = useMemo(() => calculateStatistics(filteredCases, filters.specialty), [filteredCases, filters.specialty]);
+  const infectionStats = useMemo(() => calculateInfectionStatistics(filteredCases), [filteredCases]);
   const recentCases = useMemo(() => filteredCases.slice(0, 5), [filteredCases]);
   const facilities = useMemo(() => getUniqueFacilities(cases), [cases]);
   
@@ -719,6 +722,123 @@ export default function DashboardScreen() {
             </View>
           ) : null}
         </View>
+
+        {infectionStats.totalInfectionCases > 0 ? (
+          <View style={[styles.infectionStatsCard, { backgroundColor: theme.backgroundDefault }]}>
+            <View style={styles.infectionStatsHeader}>
+              <Feather name="activity" size={18} color={theme.error} />
+              <ThemedText style={styles.infectionStatsTitle}>Infection Cases</ThemedText>
+            </View>
+            
+            <View style={styles.infectionStatsGrid}>
+              <View style={[styles.infectionStatItem, { borderColor: theme.border }]}>
+                <ThemedText style={[styles.infectionStatValue, { color: theme.error }]}>
+                  {infectionStats.activeInfectionCases}
+                </ThemedText>
+                <ThemedText style={[styles.infectionStatLabel, { color: theme.textSecondary }]}>
+                  Active
+                </ThemedText>
+              </View>
+              <View style={[styles.infectionStatItem, { borderColor: theme.border }]}>
+                <ThemedText style={[styles.infectionStatValue, { color: theme.success }]}>
+                  {infectionStats.resolvedInfectionCases}
+                </ThemedText>
+                <ThemedText style={[styles.infectionStatLabel, { color: theme.textSecondary }]}>
+                  Resolved
+                </ThemedText>
+              </View>
+              <View style={[styles.infectionStatItem, { borderColor: theme.border }]}>
+                <ThemedText style={styles.infectionStatValue}>
+                  {infectionStats.totalEpisodes}
+                </ThemedText>
+                <ThemedText style={[styles.infectionStatLabel, { color: theme.textSecondary }]}>
+                  Episodes
+                </ThemedText>
+              </View>
+              <View style={[styles.infectionStatItem, { borderColor: theme.border }]}>
+                <ThemedText style={styles.infectionStatValue}>
+                  {infectionStats.averageEpisodesPerCase}
+                </ThemedText>
+                <ThemedText style={[styles.infectionStatLabel, { color: theme.textSecondary }]}>
+                  Avg/Case
+                </ThemedText>
+              </View>
+            </View>
+
+            {infectionStats.casesBySyndrome.length > 0 ? (
+              <View style={styles.infectionBreakdown}>
+                <ThemedText style={[styles.infectionBreakdownTitle, { color: theme.textSecondary }]}>
+                  By Syndrome
+                </ThemedText>
+                {infectionStats.casesBySyndrome.slice(0, 4).map(item => (
+                  <View key={item.syndrome} style={styles.infectionBreakdownRow}>
+                    <ThemedText style={styles.infectionBreakdownLabel} numberOfLines={1}>
+                      {item.syndrome}
+                    </ThemedText>
+                    <ThemedText style={[styles.infectionBreakdownCount, { color: theme.textSecondary }]}>
+                      {item.count}
+                    </ThemedText>
+                  </View>
+                ))}
+              </View>
+            ) : null}
+
+            {infectionStats.casesBySeverity.length > 0 ? (
+              <View style={styles.infectionBreakdown}>
+                <ThemedText style={[styles.infectionBreakdownTitle, { color: theme.textSecondary }]}>
+                  By Severity
+                </ThemedText>
+                {infectionStats.casesBySeverity.map(item => (
+                  <View key={item.severity} style={styles.infectionBreakdownRow}>
+                    <ThemedText style={styles.infectionBreakdownLabel}>
+                      {item.severity}
+                    </ThemedText>
+                    <View style={styles.infectionSeverityBar}>
+                      <View 
+                        style={[
+                          styles.infectionSeverityFill, 
+                          { 
+                            backgroundColor: item.severity === "Shock/ICU" ? theme.error : 
+                              item.severity === "Systemic/Sepsis" ? theme.warning : theme.success,
+                            width: `${Math.min((item.count / infectionStats.totalInfectionCases) * 100, 100)}%`,
+                          }
+                        ]} 
+                      />
+                    </View>
+                    <ThemedText style={[styles.infectionBreakdownCount, { color: theme.textSecondary }]}>
+                      {item.count}
+                    </ThemedText>
+                  </View>
+                ))}
+              </View>
+            ) : null}
+
+            {(infectionStats.amputationCount > 0 || infectionStats.mortalityCount > 0) ? (
+              <View style={styles.infectionOutcomes}>
+                {infectionStats.amputationCount > 0 ? (
+                  <View style={[styles.infectionOutcomeItem, { backgroundColor: theme.warning + "20" }]}>
+                    <ThemedText style={[styles.infectionOutcomeValue, { color: theme.warning }]}>
+                      {infectionStats.amputationCount}
+                    </ThemedText>
+                    <ThemedText style={[styles.infectionOutcomeLabel, { color: theme.textSecondary }]}>
+                      Amputations
+                    </ThemedText>
+                  </View>
+                ) : null}
+                {infectionStats.mortalityCount > 0 ? (
+                  <View style={[styles.infectionOutcomeItem, { backgroundColor: theme.error + "20" }]}>
+                    <ThemedText style={[styles.infectionOutcomeValue, { color: theme.error }]}>
+                      {infectionStats.mortalityCount}
+                    </ThemedText>
+                    <ThemedText style={[styles.infectionOutcomeLabel, { color: theme.textSecondary }]}>
+                      Deaths
+                    </ThemedText>
+                  </View>
+                ) : null}
+              </View>
+            ) : null}
+          </View>
+        ) : null}
 
         <View style={styles.recentSection}>
           <View style={styles.sectionHeader}>
@@ -1425,5 +1545,97 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 15,
     fontWeight: "600",
+  },
+  infectionStatsCard: {
+    padding: Spacing.md,
+    borderRadius: BorderRadius.md,
+    marginBottom: Spacing.lg,
+    ...Shadows.card,
+  },
+  infectionStatsHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.xs,
+    marginBottom: Spacing.md,
+  },
+  infectionStatsTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  infectionStatsGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: Spacing.sm,
+    marginBottom: Spacing.md,
+  },
+  infectionStatItem: {
+    flex: 1,
+    minWidth: "45%",
+    padding: Spacing.sm,
+    borderRadius: BorderRadius.sm,
+    borderWidth: 1,
+    alignItems: "center",
+  },
+  infectionStatValue: {
+    fontSize: 24,
+    fontWeight: "700",
+  },
+  infectionStatLabel: {
+    fontSize: 11,
+    marginTop: 2,
+  },
+  infectionBreakdown: {
+    marginTop: Spacing.sm,
+  },
+  infectionBreakdownTitle: {
+    fontSize: 12,
+    fontWeight: "600",
+    marginBottom: Spacing.xs,
+  },
+  infectionBreakdownRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 4,
+    gap: Spacing.sm,
+  },
+  infectionBreakdownLabel: {
+    flex: 1,
+    fontSize: 13,
+  },
+  infectionBreakdownCount: {
+    fontSize: 13,
+    fontWeight: "600",
+    minWidth: 24,
+    textAlign: "right",
+  },
+  infectionSeverityBar: {
+    flex: 1,
+    height: 6,
+    backgroundColor: "rgba(0,0,0,0.05)",
+    borderRadius: 3,
+    overflow: "hidden",
+  },
+  infectionSeverityFill: {
+    height: "100%",
+    borderRadius: 3,
+  },
+  infectionOutcomes: {
+    flexDirection: "row",
+    gap: Spacing.sm,
+    marginTop: Spacing.md,
+  },
+  infectionOutcomeItem: {
+    flex: 1,
+    padding: Spacing.sm,
+    borderRadius: BorderRadius.sm,
+    alignItems: "center",
+  },
+  infectionOutcomeValue: {
+    fontSize: 18,
+    fontWeight: "700",
+  },
+  infectionOutcomeLabel: {
+    fontSize: 10,
+    marginTop: 2,
   },
 });

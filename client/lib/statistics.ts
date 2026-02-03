@@ -1,4 +1,5 @@
 import { Case, Specialty, Role, FreeFlapDetails, ClavienDindoGrade } from "@/types/case";
+import { INFECTION_SYNDROME_LABELS, InfectionSyndrome } from "@/types/infection";
 
 export type TimePeriod = "all_time" | "this_year" | "last_6_months" | "last_12_months" | "custom";
 
@@ -47,6 +48,19 @@ export interface BodyContouringStatistics extends BaseStatistics {
 export interface BreastStatistics extends BaseStatistics {
   reconstructionCount: number;
   casesByProcedureType: { procedureType: string; count: number }[];
+}
+
+export interface InfectionStatistics {
+  totalInfectionCases: number;
+  activeInfectionCases: number;
+  resolvedInfectionCases: number;
+  totalEpisodes: number;
+  averageEpisodesPerCase: number;
+  culturePositiveRate: number;
+  casesBySyndrome: { syndrome: string; count: number }[];
+  casesBySeverity: { severity: string; count: number }[];
+  amputationCount: number;
+  mortalityCount: number;
 }
 
 export type SpecialtyStatistics = BaseStatistics | FreeFlapStatistics | HandSurgeryStatistics | BodyContouringStatistics | OrthoplasticStatistics | BreastStatistics;
@@ -460,4 +474,90 @@ export function formatMonthLabel(monthKey: string): string {
   const [year, month] = monthKey.split("-");
   const date = new Date(parseInt(year), parseInt(month) - 1);
   return date.toLocaleDateString("en-US", { month: "short", year: "2-digit" });
+}
+
+export function calculateInfectionStatistics(cases: Case[]): InfectionStatistics {
+  const infectionCases = cases.filter(c => c.infectionOverlay);
+  const totalInfectionCases = infectionCases.length;
+  
+  const activeInfectionCases = infectionCases.filter(c => !c.dischargeDate).length;
+  const resolvedInfectionCases = infectionCases.filter(c => c.dischargeDate).length;
+  
+  let totalEpisodes = 0;
+  infectionCases.forEach(c => {
+    totalEpisodes += c.infectionOverlay?.episodes?.length || 1;
+  });
+  
+  const averageEpisodesPerCase = totalInfectionCases > 0 
+    ? Math.round((totalEpisodes / totalInfectionCases) * 10) / 10 
+    : 0;
+  
+  const casesWithCultureData = infectionCases.filter(c => 
+    c.infectionOverlay?.microbiology?.culturesTaken
+  );
+  const culturePositiveCases = casesWithCultureData.filter(c =>
+    c.infectionOverlay?.microbiology?.cultureStatus === "positive" ||
+    (c.infectionOverlay?.microbiology?.organisms && c.infectionOverlay.microbiology.organisms.length > 0)
+  );
+  const culturePositiveRate = casesWithCultureData.length > 0
+    ? (culturePositiveCases.length / casesWithCultureData.length) * 100
+    : 0;
+  
+  const syndromeCounts = new Map<string, number>();
+  infectionCases.forEach(c => {
+    const syndrome = c.infectionOverlay?.syndromePrimary;
+    if (syndrome) {
+      const label = INFECTION_SYNDROME_LABELS[syndrome] || syndrome;
+      syndromeCounts.set(label, (syndromeCounts.get(label) || 0) + 1);
+    }
+  });
+  const casesBySyndrome = Array.from(syndromeCounts.entries())
+    .sort((a, b) => b[1] - a[1])
+    .map(([syndrome, count]) => ({ syndrome, count }));
+  
+  const severityCounts = new Map<string, number>();
+  infectionCases.forEach(c => {
+    const severity = c.infectionOverlay?.severity;
+    if (severity) {
+      const severityLabels: Record<string, string> = {
+        local: "Local",
+        systemic_sepsis: "Systemic/Sepsis", 
+        shock_icu: "Shock/ICU",
+      };
+      const label = severityLabels[severity] || severity;
+      severityCounts.set(label, (severityCounts.get(label) || 0) + 1);
+    }
+  });
+  const casesBySeverity = Array.from(severityCounts.entries())
+    .sort((a, b) => {
+      const order = ["Local", "Systemic/Sepsis", "Shock/ICU"];
+      return order.indexOf(a[0]) - order.indexOf(b[0]);
+    })
+    .map(([severity, count]) => ({ severity, count }));
+  
+  let amputationCount = 0;
+  let mortalityCount = 0;
+  infectionCases.forEach(c => {
+    c.infectionOverlay?.episodes?.forEach(ep => {
+      if (ep.amputationLevel) {
+        amputationCount++;
+      }
+    });
+    if (c.infectionOverlay?.status === "deceased") {
+      mortalityCount++;
+    }
+  });
+  
+  return {
+    totalInfectionCases,
+    activeInfectionCases,
+    resolvedInfectionCases,
+    totalEpisodes,
+    averageEpisodesPerCase,
+    culturePositiveRate,
+    casesBySyndrome,
+    casesBySeverity,
+    amputationCount,
+    mortalityCount,
+  };
 }
