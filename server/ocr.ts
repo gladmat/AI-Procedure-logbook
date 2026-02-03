@@ -51,9 +51,6 @@ export async function extractTextFromImage(base64Image: string): Promise<string>
     
     if (textLength === 0) {
       console.warn("[OCR] Warning: No text extracted from image");
-    } else {
-      // Log first 200 chars for debugging
-      console.log(`[OCR] First 200 chars: ${data.text.substring(0, 200).replace(/\n/g, ' ')}`);
     }
     
     return data.text || "";

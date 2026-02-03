@@ -71,9 +71,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateUserPassword(userId: string, hashedPassword: string): Promise<boolean> {
-    const result = await db
+    await db
       .update(users)
-      .set({ password: hashedPassword })
+      .set({
+        password: hashedPassword,
+        tokenVersion: sql`${users.tokenVersion} + 1`,
+      })
       .where(eq(users.id, userId));
     return true;
   }
