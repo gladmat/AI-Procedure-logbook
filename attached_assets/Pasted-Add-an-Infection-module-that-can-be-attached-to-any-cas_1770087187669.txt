@@ -1,0 +1,70 @@
+Add an “Infection” module that can be attached to any case (as primary pathology or overlay) and supports serial operative episodes.
+
+DATA MODEL / FIELDS
+1) Infection overlay (one per case; allow multiple if your model supports multiple infection problems, but start with one):
+- syndrome_primary (enum): 
+  - skin_soft_tissue
+  - deep_infection
+  - device_implant_related
+  - bone_joint
+  - necrotising_soft_tissue_infection
+  - wound_infection_dehiscence
+  - bite_related
+  - burn_wound_infection
+- syndrome_secondary (multi-select, optional; same enum)
+- region (enum): hand, upper_limb, lower_limb, trunk, breast, head_neck, perineum, other
+- laterality (enum): left, right, bilateral, midline, NA
+- subregion (string, optional)
+- extent (enum): localized, regional, multi_compartment, disseminated
+- severity (enum): local, systemic_sepsis, shock_ICU
+- toggles:
+  - icu (bool)
+  - vasopressors (bool)
+  - source_control_achieved_index_op (enum): yes, no, unclear
+
+2) Microbiology (fast capture; optional):
+- cultures_taken (bool)
+- culture_status (enum): pending, negative, positive
+- organisms (array of items): { organism_name (string), resistance_flag (enum optional): none, MRSA, ESBL, CRE, other, free_text_resistance (string optional) }
+- blood_cultures (enum optional): not_taken, pending, negative, positive
+
+3) Scores (optional, generic slots; multiple allowed):
+- score_entries[]: { score_type (enum): LRINEC, qSOFA, SOFA, other, score_value (number), datetime (datetime), notes (string optional) }
+
+4) Operative episode model (serial management):
+Add “Infection Episode” entries linked to the case, each timestamped and ordered.
+Fields:
+- episode_datetime
+- episode_number (auto increment per case)
+- intent (multi-select enum):
+  - incision_and_drainage
+  - debridement
+  - fasciotomy
+  - explant_hardware_removal
+  - washout
+  - amputation
+  - reconstruction_coverage
+  - relook_planned
+- magnitude modifiers (conditional):
+  a) Debridement extent (enum) with objective definitions:
+     - LIMITED = confined to one tissue layer (skin ± subcutaneous only) AND one anatomical subregion; no deep structure exposure; no compartment opening.
+     - EXTENSIVE = involves multiple tissue layers (e.g., fascia/muscle/tendon/joint capsule) OR any compartment opened OR extension beyond focal collection required to reach viable margins.
+     - RADICAL = necrotising infection OR excision/sacrifice of entire anatomical compartments or functional units OR would not be closable without staged reconstruction; limb/life-saving wide excision to bleeding viable tissue across planes.
+  b) Compartments_involved (enum optional): 0_superficial_only, 1, 2_3, ge_4_or_entire_segment
+  c) Reconstruction type (enum shown only if reconstruction_coverage selected):
+     delayed_primary_closure, secondary_intention, skin_graft, local_flap, regional_flap, free_flap, VAC_negative_pressure
+  d) Amputation level (enum shown only if amputation selected):
+     digit, ray, partial_hand, wrist_disarticulation, below_elbow, below_knee, above_knee, other
+
+UI/UX REQUIREMENTS
+- Keep default entry fast: syndrome + region + severity + (optional cultures) should be completable in <20 seconds.
+- Use progressive disclosure: show microbiology/scores only when toggled on; show modifiers only when relevant intents selected.
+- Provide templates/presets (optional but recommended): “Abscess/I&D”, “Implant infection”, “Nec fasc”, “Deep space infection”.
+- Allow multiple procedures per case by episodes; display them as a timeline (Episode #1, #2, etc.).
+- Ensure this integrates with existing case categories (plastic surgery + hand + trauma + burns etc.) without forcing “General”.
+
+EXPORT/AUDIT
+- Ensure infection fields and episode entries are included in export (CSV/JSON).
+- Provide basic analytics counts if the app has dashboards: number of episodes, debridements per case, necrotising cases, reconstruction after infection, culture positivity rate.
+
+Implement DB migrations, UI forms, validation, and update any existing case detail pages accordingly.
