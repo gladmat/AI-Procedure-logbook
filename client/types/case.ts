@@ -1,3 +1,13 @@
+import { InfectionOverlay } from "./infection";
+
+// Case status for active patient tracking
+export type CaseStatus = "active" | "discharged";
+
+export const CASE_STATUS_LABELS: Record<CaseStatus, string> = {
+  active: "Active",
+  discharged: "Discharged",
+};
+
 // RACS MALT Supervision Levels (role in theatre)
 export type Role = "PS" | "PP" | "AS" | "ONS" | "SS" | "SNS" | "A";
 
@@ -484,6 +494,12 @@ export interface Case {
   
   // Operative Media (photos/files attached during case documentation)
   operativeMedia?: OperativeMediaItem[];
+  
+  // Infection Overlay (can be attached to any case as primary or secondary pathology)
+  infectionOverlay?: InfectionOverlay;
+  
+  // Case Status (active until discharge note recorded)
+  caseStatus?: CaseStatus;
   
   clinicalDetails: ClinicalDetails;
   teamMembers: TeamMember[];
