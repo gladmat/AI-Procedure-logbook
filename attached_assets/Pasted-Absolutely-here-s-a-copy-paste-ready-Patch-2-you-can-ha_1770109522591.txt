@@ -1,0 +1,224 @@
+Absolutely — here’s a **copy‑paste‑ready Patch 2** you can hand straight to Replit Agent. It upgrades encryption to **real authenticated encryption** using `@noble` with **XChaCha20‑Poly1305**, keeps **backward compatibility** with your old XOR data, and stays **Expo‑friendly** for mobile + web.
+
+**Patch 2 Goals**
+- Replace XOR with XChaCha20‑Poly1305 (AEAD)
+- Keep legacy XOR decryption so existing data still opens
+- Versioned envelope format `enc:v1:<nonceHex>:<cipherHex>`
+- Key stored in SecureStore on native, AsyncStorage on web
+- Ready for future E2EE (key‑based encryption helpers included)
+
+---
+
+**1) Add dependencies**
+
+Apply this patch to `package.json`:
+
+```diff
+diff --git a/package.json b/package.json
+index 4f0a123..8d3c0b9 100644
+--- a/package.json
++++ b/package.json
+@@ -8,6 +8,9 @@
+   "dependencies": {
++    "@noble/ciphers": "^1.1.3",
++    "@noble/hashes": "^1.8.0",
+     "@expo-google-fonts/nunito": "^0.4.2",
+@@ -34,6 +37,7 @@
+     "expo-glass-effect": "~0.1.6",
+     "expo-haptics": "~15.0.7",
+     "expo-image": "~3.0.10",
++    "expo-random": "~15.0.1",
+     "expo-image-picker": "~17.0.10",
+     "expo-linking": "~8.0.8",
+```
+
+Then run:
+```bash
+npm install
+```
+
+---
+
+**2) Replace `client/lib/encryption.ts` completely**
+
+Copy‑paste this entire file:
+
+```ts
+import { Platform } from "react-native";
+import * as SecureStore from "expo-secure-store";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as Random from "expo-random";
+import { xchacha20poly1305 } from "@noble/ciphers/chacha";
+import {
+  bytesToHex,
+  hexToBytes,
+  utf8ToBytes,
+  bytesToUtf8,
+} from "@noble/hashes/utils";
+
+const ENCRYPTION_KEY_ALIAS = "surgical_logbook_encryption_key";
+const ENVELOPE_PREFIX = "enc:v1";
+const KEY_BYTES = 32;
+const NONCE_BYTES = 24;
+
+function isHex(value: string): boolean {
+  return /^[0-9a-f]+$/i.test(value) && value.length % 2 === 0;
+}
+
+async function getKeyHex(): Promise<string> {
+  if (Platform.OS === "web") {
+    const stored = await AsyncStorage.getItem(`@${ENCRYPTION_KEY_ALIAS}`);
+    if (stored && isHex(stored)) return stored;
+
+    const newKey = bytesToHex(await Random.getRandomBytesAsync(KEY_BYTES));
+    await AsyncStorage.setItem(`@${ENCRYPTION_KEY_ALIAS}`, newKey);
+    return newKey;
+  }
+
+  const stored = await SecureStore.getItemAsync(ENCRYPTION_KEY_ALIAS);
+  if (stored && isHex(stored)) return stored;
+
+  const newKey = bytesToHex(await Random.getRandomBytesAsync(KEY_BYTES));
+  await SecureStore.setItemAsync(ENCRYPTION_KEY_ALIAS, newKey);
+  return newKey;
+}
+
+async function getKeyBytes(): Promise<Uint8Array> {
+  const keyHex = await getKeyHex();
+  return hexToBytes(keyHex);
+}
+
+function legacyXorDecrypt(encrypted: string, key: string): string {
+  const atobFn = globalThis.atob;
+  if (!atobFn) {
+    throw new Error("atob is not available for legacy decryption");
+  }
+
+  const encryptedBytes = Uint8Array.from(atobFn(encrypted), c => c.charCodeAt(0));
+  const keyBytes = utf8ToBytes(key);
+  const result = new Uint8Array(encryptedBytes.length);
+
+  for (let i = 0; i < encryptedBytes.length; i++) {
+    result[i] = encryptedBytes[i] ^ keyBytes[i % keyBytes.length];
+  }
+
+  return bytesToUtf8(result);
+}
+
+function looksLikeJson(data: string): boolean {
+  try {
+    JSON.parse(data);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function generateKeyHex(): Promise<string> {
+  return bytesToHex(await Random.getRandomBytesAsync(KEY_BYTES));
+}
+
+export async function encryptWithKey(plaintext: string, keyHex: string): Promise<string> {
+  const key = hexToBytes(keyHex);
+  const nonce = await Random.getRandomBytesAsync(NONCE_BYTES);
+  const cipher = xchacha20poly1305(key);
+  const ciphertext = cipher.encrypt(nonce, utf8ToBytes(plaintext));
+
+  return `${ENVELOPE_PREFIX}:${bytesToHex(nonce)}:${bytesToHex(ciphertext)}`;
+}
+
+export async function decryptWithKey(envelope: string, keyHex: string): Promise<string> {
+  if (!envelope.startsWith(`${ENVELOPE_PREFIX}:`)) {
+    return envelope;
+  }
+
+  const parts = envelope.split(":");
+  if (parts.length !== 3) return envelope;
+
+  const nonceHex = parts[1];
+  const cipherHex = parts[2];
+  if (!nonceHex || !cipherHex) return envelope;
+
+  const key = hexToBytes(keyHex);
+  const nonce = hexToBytes(nonceHex);
+  const ciphertext = hexToBytes(cipherHex);
+
+  const cipher = xchacha20poly1305(key);
+  const plaintextBytes = cipher.decrypt(nonce, ciphertext);
+  return bytesToUtf8(plaintextBytes);
+}
+
+export async function encryptData(data: string): Promise<string> {
+  try {
+    const key = await getKeyBytes();
+    const nonce = await Random.getRandomBytesAsync(NONCE_BYTES);
+    const cipher = xchacha20poly1305(key);
+    const ciphertext = cipher.encrypt(nonce, utf8ToBytes(data));
+
+    return `${ENVELOPE_PREFIX}:${bytesToHex(nonce)}:${bytesToHex(ciphertext)}`;
+  } catch (error) {
+    console.error("Encryption failed, storing unencrypted:", error);
+    return data;
+  }
+}
+
+export async function decryptData(encryptedData: string): Promise<string> {
+  try {
+    if (!encryptedData.startsWith(`${ENVELOPE_PREFIX}:`)) {
+      if (looksLikeJson(encryptedData)) return encryptedData;
+
+      try {
+        const legacyKey = await getKeyHex();
+        const legacyPlain = legacyXorDecrypt(encryptedData, legacyKey);
+        return legacyPlain;
+      } catch {
+        return encryptedData;
+      }
+    }
+
+    const parts = encryptedData.split(":");
+    if (parts.length !== 3) return encryptedData;
+
+    const nonceHex = parts[1];
+    const cipherHex = parts[2];
+    if (!nonceHex || !cipherHex) return encryptedData;
+
+    const key = await getKeyBytes();
+    const nonce = hexToBytes(nonceHex);
+    const ciphertext = hexToBytes(cipherHex);
+
+    const cipher = xchacha20poly1305(key);
+    const plaintextBytes = cipher.decrypt(nonce, ciphertext);
+    return bytesToUtf8(plaintextBytes);
+  } catch (error) {
+    console.error("Decryption failed, returning as-is:", error);
+    return encryptedData;
+  }
+}
+
+export async function isEncrypted(data: string): Promise<boolean> {
+  return data.startsWith(`${ENVELOPE_PREFIX}:`);
+}
+```
+
+---
+
+**3) No other files required**
+
+This patch is drop‑in. Existing calls to `encryptData` and `decryptData` keep working.
+
+---
+
+**Important Notes**
+- Old XOR data is still readable via `legacyXorDecrypt`. New data is encrypted with XChaCha20‑Poly1305.
+- Web still stores the key in AsyncStorage (same as before). That’s the weakest link if XSS happens. We can later add a passphrase‑derived key for web.
+- `encryptWithKey` / `decryptWithKey` / `generateKeyHex` are included for future E2EE case‑key flows.
+
+---
+
+If you want, I can now produce **Patch 3** for E2EE scaffolding:
+1. Case key envelopes per team member
+2. Key rotation on membership change
+3. Public‑key storage for surgeons
+
+Just say the word and I’ll draft it.

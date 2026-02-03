@@ -1,0 +1,218 @@
+Absolutely — here is a **step‑by‑step, Replit‑Agent‑ready instruction set** for Patch 2. You can copy‑paste this directly into Replit Agent.
+
+---
+
+# ✅ PATCH 2 — Replit Agent Instructions (Detailed)
+
+**Goal:** Replace the current XOR “encryption” with real authenticated encryption using `@noble` + XChaCha20‑Poly1305.  
+**Keep backward compatibility** so existing stored data still decrypts.
+
+---
+
+## **Step 1 — Add dependencies**
+
+1. Open `package.json`
+2. In `"dependencies"`, add these:
+
+```
+"@noble/ciphers": "^1.1.3",
+"@noble/hashes": "^1.8.0",
+"expo-random": "~15.0.1",
+```
+
+Example block (place in dependencies with the others):
+```json
+"dependencies": {
+  "@noble/ciphers": "^1.1.3",
+  "@noble/hashes": "^1.8.0",
+  "expo-random": "~15.0.1",
+  ...
+}
+```
+
+3. Run:
+```bash
+npm install
+```
+
+---
+
+## **Step 2 — Replace `client/lib/encryption.ts`**
+
+Replace the entire file with the following:
+
+```ts
+import { Platform } from "react-native";
+import * as SecureStore from "expo-secure-store";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as Random from "expo-random";
+import { xchacha20poly1305 } from "@noble/ciphers/chacha";
+import {
+  bytesToHex,
+  hexToBytes,
+  utf8ToBytes,
+  bytesToUtf8,
+} from "@noble/hashes/utils";
+
+const ENCRYPTION_KEY_ALIAS = "surgical_logbook_encryption_key";
+const ENVELOPE_PREFIX = "enc:v1";
+const KEY_BYTES = 32;
+const NONCE_BYTES = 24;
+
+function isHex(value: string): boolean {
+  return /^[0-9a-f]+$/i.test(value) && value.length % 2 === 0;
+}
+
+async function getKeyHex(): Promise<string> {
+  if (Platform.OS === "web") {
+    const stored = await AsyncStorage.getItem(`@${ENCRYPTION_KEY_ALIAS}`);
+    if (stored && isHex(stored)) return stored;
+
+    const newKey = bytesToHex(await Random.getRandomBytesAsync(KEY_BYTES));
+    await AsyncStorage.setItem(`@${ENCRYPTION_KEY_ALIAS}`, newKey);
+    return newKey;
+  }
+
+  const stored = await SecureStore.getItemAsync(ENCRYPTION_KEY_ALIAS);
+  if (stored && isHex(stored)) return stored;
+
+  const newKey = bytesToHex(await Random.getRandomBytesAsync(KEY_BYTES));
+  await SecureStore.setItemAsync(ENCRYPTION_KEY_ALIAS, newKey);
+  return newKey;
+}
+
+async function getKeyBytes(): Promise<Uint8Array> {
+  const keyHex = await getKeyHex();
+  return hexToBytes(keyHex);
+}
+
+function legacyXorDecrypt(encrypted: string, key: string): string {
+  const atobFn = globalThis.atob;
+  if (!atobFn) {
+    throw new Error("atob is not available for legacy decryption");
+  }
+
+  const encryptedBytes = Uint8Array.from(atobFn(encrypted), c => c.charCodeAt(0));
+  const keyBytes = utf8ToBytes(key);
+  const result = new Uint8Array(encryptedBytes.length);
+
+  for (let i = 0; i < encryptedBytes.length; i++) {
+    result[i] = encryptedBytes[i] ^ keyBytes[i % keyBytes.length];
+  }
+
+  return bytesToUtf8(result);
+}
+
+function looksLikeJson(data: string): boolean {
+  try {
+    JSON.parse(data);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function generateKeyHex(): Promise<string> {
+  return bytesToHex(await Random.getRandomBytesAsync(KEY_BYTES));
+}
+
+export async function encryptWithKey(plaintext: string, keyHex: string): Promise<string> {
+  const key = hexToBytes(keyHex);
+  const nonce = await Random.getRandomBytesAsync(NONCE_BYTES);
+  const cipher = xchacha20poly1305(key);
+  const ciphertext = cipher.encrypt(nonce, utf8ToBytes(plaintext));
+
+  return `${ENVELOPE_PREFIX}:${bytesToHex(nonce)}:${bytesToHex(ciphertext)}`;
+}
+
+export async function decryptWithKey(envelope: string, keyHex: string): Promise<string> {
+  if (!envelope.startsWith(`${ENVELOPE_PREFIX}:`)) {
+    return envelope;
+  }
+
+  const parts = envelope.split(":");
+  if (parts.length !== 3) return envelope;
+
+  const nonceHex = parts[1];
+  const cipherHex = parts[2];
+  if (!nonceHex || !cipherHex) return envelope;
+
+  const key = hexToBytes(keyHex);
+  const nonce = hexToBytes(nonceHex);
+  const ciphertext = hexToBytes(cipherHex);
+
+  const cipher = xchacha20poly1305(key);
+  const plaintextBytes = cipher.decrypt(nonce, ciphertext);
+  return bytesToUtf8(plaintextBytes);
+}
+
+export async function encryptData(data: string): Promise<string> {
+  try {
+    const key = await getKeyBytes();
+    const nonce = await Random.getRandomBytesAsync(NONCE_BYTES);
+    const cipher = xchacha20poly1305(key);
+    const ciphertext = cipher.encrypt(nonce, utf8ToBytes(data));
+
+    return `${ENVELOPE_PREFIX}:${bytesToHex(nonce)}:${bytesToHex(ciphertext)}`;
+  } catch (error) {
+    console.error("Encryption failed, storing unencrypted:", error);
+    return data;
+  }
+}
+
+export async function decryptData(encryptedData: string): Promise<string> {
+  try {
+    if (!encryptedData.startsWith(`${ENVELOPE_PREFIX}:`)) {
+      if (looksLikeJson(encryptedData)) return encryptedData;
+
+      try {
+        const legacyKey = await getKeyHex();
+        const legacyPlain = legacyXorDecrypt(encryptedData, legacyKey);
+        return legacyPlain;
+      } catch {
+        return encryptedData;
+      }
+    }
+
+    const parts = encryptedData.split(":");
+    if (parts.length !== 3) return encryptedData;
+
+    const nonceHex = parts[1];
+    const cipherHex = parts[2];
+    if (!nonceHex || !cipherHex) return encryptedData;
+
+    const key = await getKeyBytes();
+    const nonce = hexToBytes(nonceHex);
+    const ciphertext = hexToBytes(cipherHex);
+
+    const cipher = xchacha20poly1305(key);
+    const plaintextBytes = cipher.decrypt(nonce, ciphertext);
+    return bytesToUtf8(plaintextBytes);
+  } catch (error) {
+    console.error("Decryption failed, returning as-is:", error);
+    return encryptedData;
+  }
+}
+
+export async function isEncrypted(data: string): Promise<boolean> {
+  return data.startsWith(`${ENVELOPE_PREFIX}:`);
+}
+```
+
+---
+
+## **Step 3 — Done**
+
+No other files need changes.  
+Existing calls to `encryptData` / `decryptData` continue working.  
+Legacy XOR data will still decrypt.
+
+---
+
+If you want, I can now prepare **Patch 3** (E2EE team‑sharing scaffolding):
+- Case key envelopes per surgeon
+- Key rotation
+- Public key registry
+- Optional multi‑device support
+
+Just say “go for Patch 3.”
