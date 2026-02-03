@@ -12,6 +12,7 @@ import { v4 as uuidv4 } from "uuid";
 import { ThemedText } from "@/components/ThemedText";
 import { FormField, SelectField } from "@/components/FormField";
 import { SectionHeader } from "@/components/SectionHeader";
+import { InfectionEpisodeTimeline } from "@/components/InfectionEpisodeTimeline";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import {
@@ -409,12 +410,10 @@ export function InfectionOverlayForm({
             ) : null}
           </View>
 
-          <View style={styles.episodesSummary}>
-            <Feather name="layers" size={16} color={theme.textSecondary} />
-            <ThemedText style={[styles.episodesText, { color: theme.textSecondary }]}>
-              {value.episodes.length} Episode{value.episodes.length !== 1 ? "s" : ""} recorded
-            </ThemedText>
-          </View>
+          <InfectionEpisodeTimeline
+            overlay={value}
+            onOverlayChange={onChange}
+          />
         </View>
       ) : null}
     </View>

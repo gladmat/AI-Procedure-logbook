@@ -63,7 +63,9 @@ import {
   ETHNICITY_OPTIONS,
   PROCEDURE_CATEGORY_OPTIONS,
 } from "@/types/case";
+import { InfectionOverlay } from "@/types/infection";
 import { FormField, SelectField, PickerField, DatePickerField } from "@/components/FormField";
+import { InfectionOverlayForm } from "@/components/InfectionOverlayForm";
 import { TimeField } from "@/components/TimeField";
 import { SectionHeader } from "@/components/SectionHeader";
 import { Button } from "@/components/Button";
@@ -242,6 +244,9 @@ export default function CaseFormScreen() {
   const [clinicalDetails, setClinicalDetails] = useState<Record<string, any>>(
     extractedData || getDefaultClinicalDetails(specialty)
   );
+
+  const [infectionOverlay, setInfectionOverlay] = useState<InfectionOverlay | undefined>(undefined);
+  const [infectionCollapsed, setInfectionCollapsed] = useState(false);
 
   const [recipientSiteRegion, setRecipientSiteRegion] = useState<AnatomicalRegion | undefined>(
     (extractedData as FreeFlapDetails | undefined)?.recipientSiteRegion
@@ -612,6 +617,7 @@ export default function CaseFormScreen() {
         if (caseData.comorbidities) setSelectedComorbidities(caseData.comorbidities);
         if (caseData.fractures) setFractures(caseData.fractures);
         if (caseData.operativeMedia) setOperativeMedia(caseData.operativeMedia);
+        if (caseData.infectionOverlay) setInfectionOverlay(caseData.infectionOverlay);
         
         // Load diagnosis
         if (caseData.preManagementDiagnosis || caseData.finalDiagnosis) {
@@ -1013,6 +1019,12 @@ export default function CaseFormScreen() {
         outcome: outcome || undefined,
         mortalityClassification: mortalityClassification || undefined,
         discussedAtMDM: discussedAtMDM || undefined,
+        
+        // Infection Overlay
+        infectionOverlay: infectionOverlay || undefined,
+        
+        // Case Status (active if no discharge date)
+        caseStatus: dischargeDate ? "discharged" : "active",
         
         clinicalDetails: {} as any,
         teamMembers: isEditMode && existingCase?.teamMembers 
@@ -1664,6 +1676,14 @@ export default function CaseFormScreen() {
         </Pressable>
         <ThemedText style={styles.checkboxLabel}>DVT Prophylaxis Given</ThemedText>
       </View>
+
+      <SectionHeader title="Infection Documentation" subtitle="Add if this case involves infection" />
+      <InfectionOverlayForm
+        value={infectionOverlay}
+        onChange={setInfectionOverlay}
+        collapsed={infectionCollapsed}
+        onToggleCollapse={() => setInfectionCollapsed(!infectionCollapsed)}
+      />
 
       <SectionHeader title="Outcomes" />
 
