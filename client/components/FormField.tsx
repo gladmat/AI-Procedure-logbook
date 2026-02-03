@@ -346,7 +346,7 @@ export function PickerField({
         </View>
       ) : null}
       
-      <Pressable
+      <TouchableOpacity
         style={[
           styles.pickerButton,
           {
@@ -355,6 +355,8 @@ export function PickerField({
           },
         ]}
         onPress={() => setModalVisible(true)}
+        activeOpacity={0.7}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
       >
         {selectedOption ? (
           <ThemedText style={[styles.pickerButtonText, { color: theme.text, fontWeight: "500" }]}>
@@ -366,7 +368,7 @@ export function PickerField({
           </ThemedText>
         )}
         <Feather name="chevron-down" size={20} color={theme.textSecondary} />
-      </Pressable>
+      </TouchableOpacity>
 
       {error ? (
         <ThemedText style={[styles.error, { color: theme.error }]}>
