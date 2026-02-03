@@ -8,11 +8,12 @@ import AddCaseScreen from "@/screens/AddCaseScreen";
 import SmartCaptureScreen from "@/screens/SmartCaptureScreen";
 import AddTimelineEventScreen from "@/screens/AddTimelineEventScreen";
 import HistologyCaptureScreen from "@/screens/HistologyCaptureScreen";
+import MediaManagementScreen from "@/screens/MediaManagementScreen";
 import AuthScreen from "@/screens/AuthScreen";
 import OnboardingScreen from "@/screens/OnboardingScreen";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
 import { useAuth } from "@/contexts/AuthContext";
-import { Specialty, TimelineEventType } from "@/types/case";
+import { Specialty, TimelineEventType, MediaAttachment } from "@/types/case";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/useColorScheme";
 
@@ -26,6 +27,12 @@ export type RootStackParamList = {
   SmartCapture: { mode?: "op_note" | "discharge_summary" } | undefined;
   AddTimelineEvent: { caseId: string; initialEventType?: TimelineEventType; isSkinLesion?: boolean };
   HistologyCapture: { caseId: string; procedureIndex?: number };
+  MediaManagement: {
+    existingAttachments?: MediaAttachment[];
+    onSave?: (attachments: MediaAttachment[]) => void;
+    maxAttachments?: number;
+    context?: "case" | "timeline";
+  };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -107,6 +114,14 @@ export default function RootStackNavigator() {
             component={HistologyCaptureScreen}
             options={{
               headerTitle: "Capture Histology",
+              presentation: "fullScreenModal",
+            }}
+          />
+          <Stack.Screen
+            name="MediaManagement"
+            component={MediaManagementScreen}
+            options={{
+              headerShown: false,
               presentation: "fullScreenModal",
             }}
           />

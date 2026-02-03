@@ -524,6 +524,56 @@ export interface PROMData {
   responses?: Record<string, string | number>;
 }
 
+export type MediaCategory = 
+  | "preop"
+  | "flap_harvest"
+  | "flap_inset"
+  | "anastomosis"
+  | "closure"
+  | "immediate_postop"
+  | "xray"
+  | "ct_angiogram"
+  | "ultrasound"
+  | "followup_photo"
+  | "donor_site"
+  | "complication"
+  | "revision"
+  | "other";
+
+export const MEDIA_CATEGORY_OPTIONS: { value: MediaCategory; label: string; group: string }[] = [
+  { value: "preop", label: "Pre-op", group: "Operation Day" },
+  { value: "flap_harvest", label: "Flap Harvest", group: "Operation Day" },
+  { value: "flap_inset", label: "Flap Inset", group: "Operation Day" },
+  { value: "anastomosis", label: "Anastomosis", group: "Operation Day" },
+  { value: "closure", label: "Closure", group: "Operation Day" },
+  { value: "immediate_postop", label: "Immediate Post-op", group: "Operation Day" },
+  { value: "xray", label: "X-ray", group: "Imaging" },
+  { value: "ct_angiogram", label: "CT/Angiogram", group: "Imaging" },
+  { value: "ultrasound", label: "Ultrasound/Doppler", group: "Imaging" },
+  { value: "followup_photo", label: "Follow-up Photo", group: "Follow-up" },
+  { value: "donor_site", label: "Donor Site", group: "Follow-up" },
+  { value: "complication", label: "Complication", group: "Follow-up" },
+  { value: "revision", label: "Revision", group: "Follow-up" },
+  { value: "other", label: "Other", group: "Other" },
+];
+
+export const MEDIA_CATEGORY_LABELS: Record<MediaCategory, string> = {
+  preop: "Pre-op",
+  flap_harvest: "Flap Harvest",
+  flap_inset: "Flap Inset",
+  anastomosis: "Anastomosis",
+  closure: "Closure",
+  immediate_postop: "Immediate Post-op",
+  xray: "X-ray",
+  ct_angiogram: "CT/Angiogram",
+  ultrasound: "Ultrasound/Doppler",
+  followup_photo: "Follow-up Photo",
+  donor_site: "Donor Site",
+  complication: "Complication",
+  revision: "Revision",
+  other: "Other",
+};
+
 export interface MediaAttachment {
   id: string;
   localUri: string;
@@ -531,6 +581,7 @@ export interface MediaAttachment {
   mimeType: string;
   caption?: string;
   createdAt: string;
+  category?: MediaCategory;
 }
 
 // Operative media for photos/files attached directly to case record

@@ -64,6 +64,7 @@ import {
   PROCEDURE_CATEGORY_OPTIONS,
 } from "@/types/case";
 import { FormField, SelectField, PickerField, DatePickerField } from "@/components/FormField";
+import { TimeField } from "@/components/TimeField";
 import { SectionHeader } from "@/components/SectionHeader";
 import { Button } from "@/components/Button";
 import { saveCase, getCase, updateCase, getCaseDraft, saveCaseDraft, clearCaseDraft, CaseDraft } from "@/lib/storage";
@@ -1433,19 +1434,19 @@ export default function CaseFormScreen() {
 
       <View style={styles.row}>
         <View style={styles.halfField}>
-          <FormField
+          <TimeField
             label="Start Time"
             value={surgeryStartTime}
             onChangeText={setSurgeryStartTime}
-            placeholder="HH:MM (e.g., 08:30)"
+            placeholder="e.g., 0830"
           />
         </View>
         <View style={styles.halfField}>
-          <FormField
+          <TimeField
             label="End Time"
             value={surgeryEndTime}
             onChangeText={setSurgeryEndTime}
-            placeholder="HH:MM (e.g., 14:15)"
+            placeholder="e.g., 1415"
           />
         </View>
       </View>

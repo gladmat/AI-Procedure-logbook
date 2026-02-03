@@ -8,6 +8,8 @@ import {
   Platform,
   ScrollView,
 } from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import * as Haptics from "expo-haptics";
@@ -15,7 +17,8 @@ import { v4 as uuidv4 } from "uuid";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
-import { MediaAttachment } from "@/types/case";
+import { MediaAttachment, MEDIA_CATEGORY_LABELS } from "@/types/case";
+import { RootStackParamList } from "@/navigation/RootStackNavigator";
 
 interface MediaCaptureProps {
   attachments: MediaAttachment[];
@@ -31,10 +34,21 @@ export function MediaCapture({
   mediaType = "all",
 }: MediaCaptureProps) {
   const { theme } = useTheme();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [cameraPermission, requestCameraPermission] =
     ImagePicker.useCameraPermissions();
 
   const canAddMore = attachments.length < maxAttachments;
+
+  const handleOpenMediaManager = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    navigation.navigate("MediaManagement", {
+      existingAttachments: attachments,
+      onSave: onAttachmentsChange,
+      maxAttachments,
+      context: "case",
+    });
+  };
 
   const handleCameraCapture = async () => {
     if (!cameraPermission?.granted) {
@@ -171,8 +185,9 @@ export function MediaCapture({
           contentContainerStyle={styles.previewContainer}
         >
           {attachments.map((attachment) => (
-            <View
+            <Pressable
               key={attachment.id}
+              onPress={handleOpenMediaManager}
               style={[
                 styles.previewItem,
                 { backgroundColor: theme.backgroundDefault },
@@ -190,51 +205,45 @@ export function MediaCapture({
               >
                 <Feather name="x" size={12} color="#fff" />
               </Pressable>
-              {attachment.caption ? (
+              {attachment.category ? (
                 <View
                   style={[
-                    styles.captionBadge,
-                    { backgroundColor: theme.backgroundRoot },
+                    styles.categoryBadge,
+                    { backgroundColor: theme.link },
                   ]}
                 >
-                  <ThemedText style={styles.captionText} numberOfLines={1}>
-                    {attachment.caption}
+                  <ThemedText style={styles.categoryBadgeText} numberOfLines={1}>
+                    {MEDIA_CATEGORY_LABELS[attachment.category]}
                   </ThemedText>
                 </View>
-              ) : null}
-              <Pressable
-                onPress={() => handleCaptionEdit(attachment.id)}
-                style={[
-                  styles.captionButton,
-                  { backgroundColor: theme.backgroundDefault + "cc" },
-                ]}
-              >
-                <Feather name="edit-2" size={10} color={theme.text} />
-              </Pressable>
-            </View>
+              ) : (
+                <View
+                  style={[
+                    styles.categoryBadge,
+                    { backgroundColor: theme.warning },
+                  ]}
+                >
+                  <ThemedText style={styles.categoryBadgeText} numberOfLines={1}>
+                    Uncategorized
+                  </ThemedText>
+                </View>
+              )}
+            </Pressable>
           ))}
-          {canAddMore ? (
-            <View style={styles.addButtonsColumn}>
-              <Pressable
-                onPress={handleCameraCapture}
-                style={[
-                  styles.smallAddButton,
-                  { backgroundColor: theme.link },
-                ]}
-              >
-                <Feather name="camera" size={18} color={theme.buttonText} />
-              </Pressable>
-              <Pressable
-                onPress={handleGalleryPick}
-                style={[
-                  styles.smallAddButton,
-                  { backgroundColor: theme.backgroundDefault },
-                ]}
-              >
-                <Feather name="image" size={18} color={theme.text} />
-              </Pressable>
-            </View>
-          ) : null}
+          <View style={styles.addButtonsColumn}>
+            <Pressable
+              onPress={handleOpenMediaManager}
+              style={[
+                styles.manageButton,
+                { backgroundColor: theme.link },
+              ]}
+            >
+              <Feather name="grid" size={16} color={theme.buttonText} />
+              <ThemedText style={[styles.manageButtonText, { color: theme.buttonText }]}>
+                Manage
+              </ThemedText>
+            </Pressable>
+          </View>
         </ScrollView>
       ) : (
         <View style={styles.emptyState}>
@@ -356,5 +365,32 @@ const styles = StyleSheet.create({
   placeholderText: {
     fontSize: 13,
     textAlign: "center",
+  },
+  categoryBadge: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 4,
+    paddingVertical: 2,
+  },
+  categoryBadgeText: {
+    fontSize: 9,
+    color: "#fff",
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  manageButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Spacing.xs,
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.md,
+    borderRadius: BorderRadius.md,
+  },
+  manageButtonText: {
+    fontSize: 13,
+    fontWeight: "600",
   },
 });
