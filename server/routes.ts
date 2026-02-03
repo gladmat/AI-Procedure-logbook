@@ -95,25 +95,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { image, images, text } = req.body;
       
+      console.log("[SmartCapture] Request received - text:", !!text, "images:", images?.length || 0, "image:", !!image);
+      
       let originalText: string;
       
       if (text) {
-        console.log("Using pre-extracted text from client OCR");
+        console.log("[SmartCapture] Using pre-extracted text from client OCR");
+        console.log("[SmartCapture] Text length:", text.length);
         originalText = text;
       } else {
         const imageArray: string[] = images || (image ? [image] : []);
         
         if (imageArray.length === 0) {
+          console.log("[SmartCapture] Error: No images or text provided");
           return res.status(400).json({ error: "No images or text provided" });
         }
 
+        console.log(`[SmartCapture] Processing ${imageArray.length} image(s) with OCR...`);
+        
         const extractedTexts: string[] = [];
-        for (const img of imageArray) {
-          const extractedText = await extractTextFromImage(img);
-          extractedTexts.push(extractedText);
+        for (let i = 0; i < imageArray.length; i++) {
+          console.log(`[SmartCapture] Processing image ${i + 1}/${imageArray.length}...`);
+          try {
+            const extractedText = await extractTextFromImage(imageArray[i]);
+            extractedTexts.push(extractedText);
+          } catch (ocrError) {
+            console.error(`[SmartCapture] OCR failed for image ${i + 1}:`, ocrError);
+            extractedTexts.push("");
+          }
         }
         
         originalText = extractedTexts.join("\n\n---\n\n");
+        console.log(`[SmartCapture] Total extracted text length: ${originalText.length}`);
       }
       
       console.log("Processing document with local privacy-first document router...");

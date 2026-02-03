@@ -59,6 +59,17 @@ The privacy pipeline ensures all patient data remains on the device or is proces
 - **Complete Password Management**: Change password functionality in Settings with current password verification, and Forgot Password flow with email-based reset tokens (1-hour expiry).
 - **App Store Legal Compliance**: Privacy Policy, Terms of Service, and Open Source Licenses pages accessible via Settings.
 
+### Free Flap / Orthoplastic Documentation (v1.1.0+)
+- **FreeFlapPicker Component**: Selectable list of common free flaps (ALT, Latissimus Dorsi, Gracilis, SCIP, Radial Forearm, Fibula, Medial Sural, DIEP).
+- **ALT-Specific Elevation Planes**: Subfascial, Epifascial, and Thin ALT (Suprafascial Defatted) options.
+- **Donor Vessel Auto-Population**: Selecting a flap type automatically suggests the corresponding donor vessels.
+- **Recipient Site Regions**: Expanded to include Knee alongside Head & Neck, Upper Arm, Forearm, Hand, Thigh, Lower Leg, and Foot.
+- **Recipient Vessel Presets**: Local presets for common recipient vessels by body region (e.g., lower leg: anterior/posterior tibial, peroneal, dorsalis pedis arteries; great/small saphenous veins).
+- **Simplified Anastomosis Documentation**:
+  - Arterial: Always hand-sewn technique (displayed as fixed text, not editable).
+  - Venous: End-to-end configuration (fixed), technique is either coupler or hand-sewn only (no hybrid option).
+  - Removed "Patency Confirmed" field to streamline documentation.
+
 ### Authentication & Security
 - **Password Security**: bcrypt hashing (10 rounds), minimum 8-character passwords.
 - **Password Reset Flow**: Token-based reset via web page (`/reset-password`), tokens expire after 1 hour and are single-use.
