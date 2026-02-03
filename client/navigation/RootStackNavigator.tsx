@@ -29,7 +29,7 @@ export type RootStackParamList = {
   HistologyCapture: { caseId: string; procedureIndex?: number };
   MediaManagement: {
     existingAttachments?: MediaAttachment[];
-    onSave?: (attachments: MediaAttachment[]) => void;
+    callbackId?: string;
     maxAttachments?: number;
     context?: "case" | "timeline";
   };

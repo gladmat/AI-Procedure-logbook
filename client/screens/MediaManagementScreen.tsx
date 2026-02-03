@@ -21,6 +21,7 @@ import { ThemedView } from "@/components/ThemedView";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
+import { useMediaCallback } from "@/contexts/MediaCallbackContext";
 import {
   MediaAttachment,
   MediaCategory,
@@ -36,8 +37,9 @@ export default function MediaManagementScreen() {
   const route = useRoute<MediaManagementRouteProp>();
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
+  const { executeCallback } = useMediaCallback();
 
-  const { existingAttachments, onSave, maxAttachments = 20, context = "case" } = route.params || {};
+  const { existingAttachments, callbackId, maxAttachments = 20, context = "case" } = route.params || {};
 
   const [attachments, setAttachments] = useState<MediaAttachment[]>(existingAttachments || []);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -142,11 +144,11 @@ export default function MediaManagementScreen() {
 
   const handleSave = useCallback(() => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    if (onSave) {
-      onSave(attachments);
+    if (callbackId) {
+      executeCallback(callbackId, attachments);
     }
     navigation.goBack();
-  }, [attachments, onSave, navigation]);
+  }, [attachments, callbackId, executeCallback, navigation]);
 
   const selectedAttachment = attachments.find((a) => a.id === selectedId);
 

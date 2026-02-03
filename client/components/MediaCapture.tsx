@@ -19,6 +19,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { MediaAttachment, MEDIA_CATEGORY_LABELS } from "@/types/case";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
+import { useMediaCallback } from "@/contexts/MediaCallbackContext";
 
 interface MediaCaptureProps {
   attachments: MediaAttachment[];
@@ -35,6 +36,7 @@ export function MediaCapture({
 }: MediaCaptureProps) {
   const { theme } = useTheme();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { registerCallback } = useMediaCallback();
   const [cameraPermission, requestCameraPermission] =
     ImagePicker.useCameraPermissions();
 
@@ -42,9 +44,10 @@ export function MediaCapture({
 
   const handleOpenMediaManager = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const callbackId = registerCallback(onAttachmentsChange);
     navigation.navigate("MediaManagement", {
       existingAttachments: attachments,
-      onSave: onAttachmentsChange,
+      callbackId,
       maxAttachments,
       context: "case",
     });
