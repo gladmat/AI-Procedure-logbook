@@ -176,3 +176,19 @@ export async function deleteFacility(id: string): Promise<void> {
     throw new Error(error.error || "Failed to delete facility");
   }
 }
+
+export async function registerDeviceKey(
+  deviceId: string,
+  publicKey: string,
+  label?: string
+): Promise<void> {
+  const res = await authFetch("/api/keys/device", {
+    method: "POST",
+    body: JSON.stringify({ deviceId, publicKey, label }),
+  });
+
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.error || "Failed to register device key");
+  }
+}

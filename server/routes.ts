@@ -531,6 +531,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Device Key Routes (E2EE scaffolding)
+  app.post("/api/keys/device", authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { deviceId, publicKey, label } = req.body;
+
+      if (!deviceId || !publicKey) {
+        return res.status(400).json({ error: "deviceId and publicKey required" });
+      }
+
+      if (typeof deviceId !== "string" || typeof publicKey !== "string") {
+        return res.status(400).json({ error: "Invalid payload" });
+      }
+
+      const key = await storage.upsertUserDeviceKey(
+        req.userId!,
+        deviceId,
+        publicKey,
+        typeof label === "string" ? label : null
+      );
+
+      res.json({ success: true, keyId: key.id });
+    } catch (error) {
+      console.error("Device key upsert error:", error);
+      res.status(500).json({ error: "Failed to register device key" });
+    }
+  });
+
+  app.get("/api/keys/me", authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const keys = await storage.getUserDeviceKeys(req.userId!);
+      res.json(keys);
+    } catch (error) {
+      console.error("Device key fetch error:", error);
+      res.status(500).json({ error: "Failed to fetch device keys" });
+    }
+  });
+
+  app.post("/api/keys/revoke", authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { deviceId } = req.body;
+      if (!deviceId || typeof deviceId !== "string") {
+        return res.status(400).json({ error: "deviceId required" });
+      }
+
+      await storage.revokeUserDeviceKey(req.userId!, deviceId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Device key revoke error:", error);
+      res.status(500).json({ error: "Failed to revoke device key" });
+    }
+  });
+
   // SNOMED Reference Data API
   app.get("/api/snomed-ref", async (req: Request, res: Response) => {
     try {

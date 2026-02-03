@@ -6,10 +6,11 @@ import {
   procedures, type Procedure, type InsertProcedure,
   flaps, type Flap, type InsertFlap,
   anastomoses, type Anastomosis, type InsertAnastomosis,
-  passwordResetTokens, type PasswordResetToken
+  passwordResetTokens, type PasswordResetToken,
+  userDeviceKeys, type UserDeviceKey
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, ilike, sql, lt } from "drizzle-orm";
+import { eq, and, ilike, sql, lt, isNull } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -52,6 +53,10 @@ export interface IStorage {
   createAnastomosis(anastomosis: InsertAnastomosis): Promise<Anastomosis>;
   updateAnastomosis(id: string, anastomosis: Partial<InsertAnastomosis>): Promise<Anastomosis | undefined>;
   deleteAnastomosis(id: string): Promise<boolean>;
+  
+  getUserDeviceKeys(userId: string): Promise<UserDeviceKey[]>;
+  upsertUserDeviceKey(userId: string, deviceId: string, publicKey: string, label?: string | null): Promise<UserDeviceKey>;
+  revokeUserDeviceKey(userId: string, deviceId: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -273,6 +278,48 @@ export class DatabaseStorage implements IStorage {
     const anastomosis = await this.getAnastomosis(anastomosisId);
     if (!anastomosis) return false;
     return this.verifyFlapOwnership(anastomosis.flapId, userId);
+  }
+
+  async getUserDeviceKeys(userId: string): Promise<UserDeviceKey[]> {
+    return db
+      .select()
+      .from(userDeviceKeys)
+      .where(and(eq(userDeviceKeys.userId, userId), isNull(userDeviceKeys.revokedAt)));
+  }
+
+  async upsertUserDeviceKey(userId: string, deviceId: string, publicKey: string, label?: string | null): Promise<UserDeviceKey> {
+    const [existing] = await db
+      .select()
+      .from(userDeviceKeys)
+      .where(and(eq(userDeviceKeys.userId, userId), eq(userDeviceKeys.deviceId, deviceId)));
+
+    if (existing) {
+      const [updated] = await db
+        .update(userDeviceKeys)
+        .set({
+          publicKey,
+          label: label ?? existing.label ?? null,
+          lastSeenAt: new Date(),
+          revokedAt: null,
+        })
+        .where(eq(userDeviceKeys.id, existing.id))
+        .returning();
+      return updated;
+    }
+
+    const [created] = await db
+      .insert(userDeviceKeys)
+      .values({ userId, deviceId, publicKey, label: label ?? null })
+      .returning();
+    return created;
+  }
+
+  async revokeUserDeviceKey(userId: string, deviceId: string): Promise<boolean> {
+    await db
+      .update(userDeviceKeys)
+      .set({ revokedAt: new Date() })
+      .where(and(eq(userDeviceKeys.userId, userId), eq(userDeviceKeys.deviceId, deviceId)));
+    return true;
   }
 }
 

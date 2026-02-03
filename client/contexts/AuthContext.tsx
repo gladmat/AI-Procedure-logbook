@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from "react";
+import { Platform } from "react-native";
 import { 
   AuthUser, 
   UserProfile, 
@@ -11,7 +12,9 @@ import {
   getUserFacilities,
   createFacility as authCreateFacility,
   deleteFacility as authDeleteFacility,
+  registerDeviceKey,
 } from "@/lib/auth";
+import { getOrCreateDeviceIdentity } from "@/lib/e2ee";
 
 interface AuthContextType {
   user: AuthUser | null;
@@ -44,6 +47,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(data.user);
         setProfile(data.profile || null);
         setFacilities(data.facilities || []);
+        
+        try {
+          const { deviceId, publicKey } = await getOrCreateDeviceIdentity();
+          await registerDeviceKey(deviceId, publicKey, Platform.OS);
+        } catch (error) {
+          console.warn("Device key registration failed:", error);
+        }
       } else {
         setUser(null);
         setProfile(null);
@@ -69,6 +79,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(data.user);
     setProfile(data.profile || null);
     setFacilities(data.facilities || []);
+    
+    try {
+      const { deviceId, publicKey } = await getOrCreateDeviceIdentity();
+      await registerDeviceKey(deviceId, publicKey, Platform.OS);
+    } catch (error) {
+      console.warn("Device key registration failed:", error);
+    }
   };
 
   const signup = async (email: string, password: string) => {
@@ -76,6 +93,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(data.user);
     setProfile(data.profile || null);
     setFacilities([]);
+    
+    try {
+      const { deviceId, publicKey } = await getOrCreateDeviceIdentity();
+      await registerDeviceKey(deviceId, publicKey, Platform.OS);
+    } catch (error) {
+      console.warn("Device key registration failed:", error);
+    }
   };
 
   const logout = async () => {

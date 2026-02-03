@@ -1,5 +1,5 @@
 import { sql, relations } from "drizzle-orm";
-import { pgTable, text, varchar, boolean, integer, decimal, timestamp, serial } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, boolean, integer, decimal, timestamp, serial, uniqueIndex } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -20,6 +20,37 @@ export const insertUserSchema = createInsertSchema(users).pick({
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
+
+export const userDeviceKeys = pgTable(
+  "user_device_keys",
+  {
+    id: varchar("id")
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    userId: varchar("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    deviceId: varchar("device_id", { length: 64 }).notNull(),
+    publicKey: text("public_key").notNull(),
+    label: text("label"),
+    createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
+    lastSeenAt: timestamp("last_seen_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
+    revokedAt: timestamp("revoked_at"),
+  },
+  (t) => [
+    uniqueIndex("user_device_keys_user_device_idx").on(t.userId, t.deviceId),
+  ],
+);
+
+export const insertUserDeviceKeySchema = createInsertSchema(userDeviceKeys).omit({
+  id: true,
+  createdAt: true,
+  lastSeenAt: true,
+  revokedAt: true,
+});
+
+export type UserDeviceKey = typeof userDeviceKeys.$inferSelect;
+export type InsertUserDeviceKey = z.infer<typeof insertUserDeviceKeySchema>;
 
 export const passwordResetTokens = pgTable("password_reset_tokens", {
   id: varchar("id")

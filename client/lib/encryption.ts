@@ -1,68 +1,115 @@
 import { Platform } from "react-native";
 import * as SecureStore from "expo-secure-store";
-import * as Crypto from "expo-crypto";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as Crypto from "expo-crypto";
+import { xchacha20poly1305 } from "@noble/ciphers/chacha";
+import {
+  bytesToHex,
+  hexToBytes,
+  utf8ToBytes,
+  bytesToUtf8,
+} from "@noble/hashes/utils";
 
 const ENCRYPTION_KEY_ALIAS = "surgical_logbook_encryption_key";
+const ENVELOPE_PREFIX = "enc:v1";
+const KEY_BYTES = 32;
+const NONCE_BYTES = 24;
 
-async function getOrCreateEncryptionKey(): Promise<string> {
+function isHex(value: string): boolean {
+  return /^[0-9a-f]+$/i.test(value) && value.length % 2 === 0;
+}
+
+async function getKeyHex(): Promise<string> {
   if (Platform.OS === "web") {
-    const existingKey = await AsyncStorage.getItem(`@${ENCRYPTION_KEY_ALIAS}`);
-    if (existingKey) {
-      return existingKey;
-    }
-    const newKey = await Crypto.digestStringAsync(
-      Crypto.CryptoDigestAlgorithm.SHA256,
-      `${Date.now()}-${Math.random()}`
-    );
+    const stored = await AsyncStorage.getItem(`@${ENCRYPTION_KEY_ALIAS}`);
+    if (stored && isHex(stored)) return stored;
+
+    const newKey = bytesToHex(await Crypto.getRandomBytesAsync(KEY_BYTES));
     await AsyncStorage.setItem(`@${ENCRYPTION_KEY_ALIAS}`, newKey);
     return newKey;
   }
-  
-  const existingKey = await SecureStore.getItemAsync(ENCRYPTION_KEY_ALIAS);
-  if (existingKey) {
-    return existingKey;
-  }
-  const newKey = await Crypto.digestStringAsync(
-    Crypto.CryptoDigestAlgorithm.SHA256,
-    `${Date.now()}-${Math.random()}`
-  );
+
+  const stored = await SecureStore.getItemAsync(ENCRYPTION_KEY_ALIAS);
+  if (stored && isHex(stored)) return stored;
+
+  const newKey = bytesToHex(await Crypto.getRandomBytesAsync(KEY_BYTES));
   await SecureStore.setItemAsync(ENCRYPTION_KEY_ALIAS, newKey);
   return newKey;
 }
 
-function xorEncrypt(text: string, key: string): string {
-  const textBytes = new TextEncoder().encode(text);
-  const keyBytes = new TextEncoder().encode(key);
-  const result = new Uint8Array(textBytes.length);
-  
-  for (let i = 0; i < textBytes.length; i++) {
-    result[i] = textBytes[i] ^ keyBytes[i % keyBytes.length];
-  }
-  
-  return btoa(String.fromCharCode(...result));
+async function getKeyBytes(): Promise<Uint8Array> {
+  const keyHex = await getKeyHex();
+  return hexToBytes(keyHex);
 }
 
-function xorDecrypt(encrypted: string, key: string): string {
-  try {
-    const encryptedBytes = Uint8Array.from(atob(encrypted), c => c.charCodeAt(0));
-    const keyBytes = new TextEncoder().encode(key);
-    const result = new Uint8Array(encryptedBytes.length);
-    
-    for (let i = 0; i < encryptedBytes.length; i++) {
-      result[i] = encryptedBytes[i] ^ keyBytes[i % keyBytes.length];
-    }
-    
-    return new TextDecoder().decode(result);
-  } catch {
-    return encrypted;
+function legacyXorDecrypt(encrypted: string, key: string): string {
+  const atobFn = globalThis.atob;
+  if (!atobFn) {
+    throw new Error("atob is not available for legacy decryption");
   }
+
+  const encryptedBytes = Uint8Array.from(atobFn(encrypted), c => c.charCodeAt(0));
+  const keyBytes = utf8ToBytes(key);
+  const result = new Uint8Array(encryptedBytes.length);
+
+  for (let i = 0; i < encryptedBytes.length; i++) {
+    result[i] = encryptedBytes[i] ^ keyBytes[i % keyBytes.length];
+  }
+
+  return bytesToUtf8(result);
+}
+
+function looksLikeJson(data: string): boolean {
+  try {
+    JSON.parse(data);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function generateKeyHex(): Promise<string> {
+  return bytesToHex(await Crypto.getRandomBytesAsync(KEY_BYTES));
+}
+
+export async function encryptWithKey(plaintext: string, keyHex: string): Promise<string> {
+  const key = hexToBytes(keyHex);
+  const nonce = await Crypto.getRandomBytesAsync(NONCE_BYTES);
+  const cipher = xchacha20poly1305(key, nonce);
+  const ciphertext = cipher.encrypt(utf8ToBytes(plaintext));
+
+  return `${ENVELOPE_PREFIX}:${bytesToHex(nonce)}:${bytesToHex(ciphertext)}`;
+}
+
+export async function decryptWithKey(envelope: string, keyHex: string): Promise<string> {
+  if (!envelope.startsWith(`${ENVELOPE_PREFIX}:`)) {
+    return envelope;
+  }
+
+  const parts = envelope.split(":");
+  if (parts.length !== 4) return envelope;
+
+  const nonceHex = parts[2];
+  const cipherHex = parts[3];
+  if (!nonceHex || !cipherHex) return envelope;
+
+  const key = hexToBytes(keyHex);
+  const nonce = hexToBytes(nonceHex);
+  const ciphertext = hexToBytes(cipherHex);
+
+  const cipher = xchacha20poly1305(key, nonce);
+  const plaintextBytes = cipher.decrypt(ciphertext);
+  return bytesToUtf8(plaintextBytes);
 }
 
 export async function encryptData(data: string): Promise<string> {
   try {
-    const key = await getOrCreateEncryptionKey();
-    return xorEncrypt(data, key);
+    const key = await getKeyBytes();
+    const nonce = await Crypto.getRandomBytesAsync(NONCE_BYTES);
+    const cipher = xchacha20poly1305(key, nonce);
+    const ciphertext = cipher.encrypt(utf8ToBytes(data));
+
+    return `${ENVELOPE_PREFIX}:${bytesToHex(nonce)}:${bytesToHex(ciphertext)}`;
   } catch (error) {
     console.error("Encryption failed, storing unencrypted:", error);
     return data;
@@ -71,8 +118,32 @@ export async function encryptData(data: string): Promise<string> {
 
 export async function decryptData(encryptedData: string): Promise<string> {
   try {
-    const key = await getOrCreateEncryptionKey();
-    return xorDecrypt(encryptedData, key);
+    if (!encryptedData.startsWith(`${ENVELOPE_PREFIX}:`)) {
+      if (looksLikeJson(encryptedData)) return encryptedData;
+
+      try {
+        const legacyKey = await getKeyHex();
+        const legacyPlain = legacyXorDecrypt(encryptedData, legacyKey);
+        return legacyPlain;
+      } catch {
+        return encryptedData;
+      }
+    }
+
+    const parts = encryptedData.split(":");
+    if (parts.length !== 4) return encryptedData;
+
+    const nonceHex = parts[2];
+    const cipherHex = parts[3];
+    if (!nonceHex || !cipherHex) return encryptedData;
+
+    const key = await getKeyBytes();
+    const nonce = hexToBytes(nonceHex);
+    const ciphertext = hexToBytes(cipherHex);
+
+    const cipher = xchacha20poly1305(key, nonce);
+    const plaintextBytes = cipher.decrypt(ciphertext);
+    return bytesToUtf8(plaintextBytes);
   } catch (error) {
     console.error("Decryption failed, returning as-is:", error);
     return encryptedData;
@@ -80,10 +151,5 @@ export async function decryptData(encryptedData: string): Promise<string> {
 }
 
 export async function isEncrypted(data: string): Promise<boolean> {
-  try {
-    JSON.parse(data);
-    return false;
-  } catch {
-    return true;
-  }
+  return data.startsWith(`${ENVELOPE_PREFIX}:`);
 }
