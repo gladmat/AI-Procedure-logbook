@@ -101,6 +101,20 @@ Comprehensive infection case documentation with serial episode tracking, designe
 - **OCR Privacy**: Removed debug logging of extracted OCR text to prevent patient data appearing in server logs.
 - **Database Tables**: `passwordResetTokens` table tracks reset token state with expiry and usage timestamps.
 
+### Encryption Architecture (v1.3.0+)
+- **XChaCha20-Poly1305 AEAD**: All local case data encrypted with authenticated encryption using @noble/ciphers.
+- **Envelope Format**: Encrypted data stored as `enc:v1:nonce:ciphertext` for version identification and future algorithm updates.
+- **Backward Compatibility**: Legacy XOR-encrypted data automatically decrypted and re-encrypted with XChaCha20-Poly1305 on read.
+- **Key Derivation**: Device encryption key derived from user passphrase using scrypt (N=2^15, r=8, p=1).
+
+### End-to-End Encryption Scaffolding (v1.3.0+)
+- **Per-Device Key Pairs**: Each device generates X25519 key pair stored securely via expo-secure-store.
+- **Device Key Registration**: Public keys automatically registered with server on login/signup.
+- **Key Registry API**: Server stores device public keys in `userDeviceKeys` table with device metadata.
+- **Key Revocation**: Devices can be remotely revoked, invalidating their public keys.
+- **Case Key Wrapping**: Infrastructure for wrapping symmetric case keys with recipient public keys using X25519 ECDH + HKDF + XChaCha20-Poly1305.
+- **Future Team Sharing**: E2EE scaffolding ready for encrypted case sharing with team members.
+
 ### Email Configuration
 - **Email Provider**: Resend integration for transactional emails.
 - **Sender Domain**: drgladysz.com (verified in Resend portal).
@@ -126,3 +140,6 @@ The application leverages specific libraries and a local database for its functi
 - **react-native-reanimated**: For enhanced animations.
 - **drizzle-orm/drizzle-zod**: For database schema definition and validation.
 - **uuid**: For generating unique identifiers.
+- **@noble/ciphers**: XChaCha20-Poly1305 authenticated encryption.
+- **@noble/hashes**: SHA-256, scrypt, HKDF for key derivation and hashing.
+- **@noble/curves**: X25519 elliptic curve for E2EE key exchange.
