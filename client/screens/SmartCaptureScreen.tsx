@@ -155,11 +155,24 @@ export default function SmartCaptureScreen() {
         
         const images = capturedPhotos.map(p => p.base64);
         
+        // Log image sizes for debugging
+        console.log(`[SmartCapture] Sending ${images.length} images to server`);
+        images.forEach((img, i) => {
+          console.log(`[SmartCapture] Image ${i + 1} size: ${Math.round(img.length / 1024)}KB`);
+        });
+        
         const response = await apiRequest("POST", "/api/analyze-op-note", {
           images: images,
         });
         
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error(`[SmartCapture] Server error: ${response.status} - ${errorText}`);
+          throw new Error(`Server error: ${response.status}`);
+        }
+        
         const result = await response.json();
+        console.log("[SmartCapture] Server response:", JSON.stringify(result).substring(0, 500));
         
         if (result.extractedData) {
           const specialty = result.detectedSpecialty || result.extractedData.detectedSpecialty || "general";
