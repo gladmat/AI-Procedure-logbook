@@ -2,16 +2,19 @@ import { Platform } from "react-native";
 import * as SecureStore from "expo-secure-store";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Crypto from "expo-crypto";
-import { x25519 } from "@noble/curves/ed25519";
-import { hkdf } from "@noble/hashes/hkdf";
-import { sha256 } from "@noble/hashes/sha256";
-import { xchacha20poly1305 } from "@noble/ciphers/chacha";
+import { x25519 } from "@noble/curves/ed25519.js";
+import { hkdf } from "@noble/hashes/hkdf.js";
+import { sha256 } from "@noble/hashes/sha2.js";
+import { xchacha20poly1305 } from "@noble/ciphers/chacha.js";
 import {
   bytesToHex,
   hexToBytes,
   utf8ToBytes,
-  bytesToUtf8,
-} from "@noble/hashes/utils";
+} from "@noble/hashes/utils.js";
+
+function bytesToUtf8(bytes: Uint8Array): string {
+  return new TextDecoder().decode(bytes);
+}
 
 const DEVICE_ID_KEY = "@surgical_logbook_device_id";
 const DEVICE_PRIVATE_KEY = "@surgical_logbook_device_private_key";

@@ -2,13 +2,16 @@ import { Platform } from "react-native";
 import * as SecureStore from "expo-secure-store";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Crypto from "expo-crypto";
-import { xchacha20poly1305 } from "@noble/ciphers/chacha";
+import { xchacha20poly1305 } from "@noble/ciphers/chacha.js";
 import {
   bytesToHex,
   hexToBytes,
   utf8ToBytes,
-  bytesToUtf8,
-} from "@noble/hashes/utils";
+} from "@noble/hashes/utils.js";
+
+function bytesToUtf8(bytes: Uint8Array): string {
+  return new TextDecoder().decode(bytes);
+}
 
 const ENCRYPTION_KEY_ALIAS = "surgical_logbook_encryption_key";
 const ENVELOPE_PREFIX = "enc:v1";
