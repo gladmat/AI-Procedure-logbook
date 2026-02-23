@@ -13,6 +13,7 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import * as Haptics from "expo-haptics";
+import { v4 as uuidv4 } from "uuid";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
@@ -93,22 +94,53 @@ export function OperativeMediaSection({
   };
 
   const handleGalleryPick = async () => {
+    const remaining = maxItems - media.length;
+    if (remaining <= 0) return;
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ["images"],
         quality: 0.8,
-        allowsMultipleSelection: false,
+        allowsMultipleSelection: true,
+        selectionLimit: remaining,
       });
 
       if (!result.canceled && result.assets.length > 0) {
-        const asset = result.assets[0];
-        navigateToAddMedia(asset.uri, asset.mimeType || "image/jpeg");
+        if (result.assets.length === 1) {
+          const asset = result.assets[0];
+          navigateToAddMedia(asset.uri, asset.mimeType || "image/jpeg");
+        } else {
+          const newItems: OperativeMediaItem[] = result.assets.map((asset) => ({
+            id: uuidv4(),
+            localUri: asset.uri,
+            mimeType: asset.mimeType || "image/jpeg",
+            mediaType: "intraoperative_photo" as const,
+            createdAt: new Date().toISOString(),
+          }));
+          onMediaChange([...media, ...newItems]);
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        }
       }
     } catch (error) {
       console.error("Error picking image:", error);
-      Alert.alert("Error", "Failed to select image. Please try again.");
+      Alert.alert("Error", "Failed to select images. Please try again.");
     }
+  };
+
+  const handleEditMedia = (item: OperativeMediaItem) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const callbackId = registerGenericCallback((updatedMedia: OperativeMediaItem) => {
+      onMediaChange(media.map((m) => (m.id === updatedMedia.id ? updatedMedia : m)));
+    });
+    navigation.navigate("AddOperativeMedia", {
+      imageUri: item.localUri,
+      mimeType: item.mimeType,
+      callbackId,
+      editMode: true,
+      existingMediaId: item.id,
+      existingMediaType: item.mediaType,
+      existingCaption: item.caption,
+    });
   };
 
   const handleRemove = (mediaId: string) => {
@@ -146,8 +178,9 @@ export function OperativeMediaSection({
           contentContainerStyle={styles.previewContainer}
         >
           {media.map((item) => (
-            <View
+            <Pressable
               key={item.id}
+              onPress={() => handleEditMedia(item)}
               style={[styles.previewItem, { backgroundColor: theme.backgroundDefault }]}
             >
               <Image
@@ -167,6 +200,9 @@ export function OperativeMediaSection({
               >
                 <Feather name="x" size={12} color="#fff" />
               </Pressable>
+              <View style={[styles.editBadge, { backgroundColor: "rgba(0,0,0,0.5)" }]}>
+                <Feather name="edit-2" size={10} color="#fff" />
+              </View>
               {item.caption ? (
                 <View style={[styles.captionOverlay, { backgroundColor: "rgba(0,0,0,0.6)" }]}>
                   <ThemedText style={styles.captionText} numberOfLines={2}>
@@ -174,7 +210,7 @@ export function OperativeMediaSection({
                   </ThemedText>
                 </View>
               ) : null}
-            </View>
+            </Pressable>
           ))}
           {canAddMore ? (
             <View style={styles.addButtonsColumn}>
@@ -278,6 +314,16 @@ const styles = StyleSheet.create({
     width: 20,
     height: 20,
     borderRadius: 10,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  editBadge: {
+    position: "absolute",
+    bottom: 4,
+    right: 4,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
     justifyContent: "center",
     alignItems: "center",
   },

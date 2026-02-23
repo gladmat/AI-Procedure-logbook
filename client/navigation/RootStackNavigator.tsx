@@ -38,6 +38,10 @@ export type RootStackParamList = {
     imageUri: string;
     mimeType?: string;
     callbackId?: string;
+    editMode?: boolean;
+    existingMediaId?: string;
+    existingMediaType?: string;
+    existingCaption?: string;
   };
 };
 

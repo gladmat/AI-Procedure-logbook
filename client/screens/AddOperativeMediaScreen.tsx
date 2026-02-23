@@ -45,10 +45,20 @@ export default function AddOperativeMediaScreen() {
   const insets = useSafeAreaInsets();
 
   const { executeGenericCallback } = useMediaCallback();
-  const { imageUri, mimeType = "image/jpeg", callbackId } = route.params;
+  const {
+    imageUri,
+    mimeType = "image/jpeg",
+    callbackId,
+    editMode = false,
+    existingMediaId,
+    existingMediaType,
+    existingCaption,
+  } = route.params;
 
-  const [selectedType, setSelectedType] = useState<OperativeMediaType>("intraoperative_photo");
-  const [captionInput, setCaptionInput] = useState("");
+  const [selectedType, setSelectedType] = useState<OperativeMediaType>(
+    (existingMediaType as OperativeMediaType) || "intraoperative_photo"
+  );
+  const [captionInput, setCaptionInput] = useState(existingCaption || "");
   const [cameraPermission, requestCameraPermission] = ImagePicker.useCameraPermissions();
   const [currentUri, setCurrentUri] = useState(imageUri);
   const [currentMimeType, setCurrentMimeType] = useState(mimeType);
@@ -111,8 +121,8 @@ export default function AddOperativeMediaScreen() {
   const handleConfirm = () => {
     if (!currentUri) return;
 
-    const newMedia = {
-      id: uuidv4(),
+    const mediaData = {
+      id: editMode && existingMediaId ? existingMediaId : uuidv4(),
       localUri: currentUri,
       mimeType: currentMimeType,
       mediaType: selectedType,
@@ -122,7 +132,7 @@ export default function AddOperativeMediaScreen() {
 
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     if (callbackId) {
-      executeGenericCallback(callbackId, newMedia);
+      executeGenericCallback(callbackId, mediaData);
     }
     navigation.goBack();
   };
@@ -134,9 +144,9 @@ export default function AddOperativeMediaScreen() {
           <Pressable onPress={() => navigation.goBack()} style={styles.headerButton}>
             <Feather name="x" size={24} color={theme.text} />
           </Pressable>
-          <ThemedText style={styles.headerTitle}>Add Media</ThemedText>
+          <ThemedText style={styles.headerTitle}>{editMode ? "Edit Media" : "Add Media"}</ThemedText>
           <Pressable onPress={handleConfirm} style={styles.headerButton}>
-            <ThemedText style={[styles.saveText, { color: theme.link }]}>Add</ThemedText>
+            <ThemedText style={[styles.saveText, { color: theme.link }]}>{editMode ? "Save" : "Add"}</ThemedText>
           </Pressable>
         </View>
 
@@ -237,7 +247,7 @@ export default function AddOperativeMediaScreen() {
             style={[styles.confirmButton, { backgroundColor: theme.link }]}
           >
             <Feather name="check" size={20} color="#fff" />
-            <ThemedText style={styles.confirmButtonText}>Add Media</ThemedText>
+            <ThemedText style={styles.confirmButtonText}>{editMode ? "Save Changes" : "Add Media"}</ThemedText>
           </Pressable>
         </ScrollView>
       </KeyboardAvoidingView>
