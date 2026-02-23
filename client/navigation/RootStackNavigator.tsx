@@ -9,6 +9,7 @@ import SmartCaptureScreen from "@/screens/SmartCaptureScreen";
 import AddTimelineEventScreen from "@/screens/AddTimelineEventScreen";
 import HistologyCaptureScreen from "@/screens/HistologyCaptureScreen";
 import MediaManagementScreen from "@/screens/MediaManagementScreen";
+import AddOperativeMediaScreen from "@/screens/AddOperativeMediaScreen";
 import AuthScreen from "@/screens/AuthScreen";
 import OnboardingScreen from "@/screens/OnboardingScreen";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
@@ -32,6 +33,11 @@ export type RootStackParamList = {
     callbackId?: string;
     maxAttachments?: number;
     context?: "case" | "timeline";
+  };
+  AddOperativeMedia: {
+    imageUri: string;
+    mimeType?: string;
+    callbackId?: string;
   };
 };
 
@@ -120,6 +126,14 @@ export default function RootStackNavigator() {
           <Stack.Screen
             name="MediaManagement"
             component={MediaManagementScreen}
+            options={{
+              headerShown: false,
+              presentation: "fullScreenModal",
+            }}
+          />
+          <Stack.Screen
+            name="AddOperativeMedia"
+            component={AddOperativeMediaScreen}
             options={{
               headerShown: false,
               presentation: "fullScreenModal",

@@ -423,10 +423,11 @@ export function PickerField({
                     { borderBottomColor: theme.border },
                   ]}
                   onPress={() => {
-                    setModalVisible(false);
-                    setTimeout(() => {
-                      onSelect(item.value);
-                    }, 50);
+                    const selectedValue = item.value;
+                    onSelect(selectedValue);
+                    requestAnimationFrame(() => {
+                      setModalVisible(false);
+                    });
                   }}
                 >
                   <ThemedText

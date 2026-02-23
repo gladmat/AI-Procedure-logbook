@@ -1347,12 +1347,35 @@ export default function CaseFormScreen() {
           </View>
         </View>
         <View style={styles.halfField}>
-          <PickerField
-            label="Stay Type"
-            value={stayType}
-            options={Object.entries(STAY_TYPE_LABELS).map(([value, label]) => ({ value, label }))}
-            onSelect={(v) => setStayType(v as StayType)}
-          />
+          <ThemedText style={[styles.fieldLabel, { color: theme.textSecondary }]}>Stay Type</ThemedText>
+          <View style={[styles.segmentedControl, { borderColor: theme.border, backgroundColor: theme.backgroundDefault }]}>
+            {(Object.entries(STAY_TYPE_LABELS) as [StayType, string][]).map(([value, label]) => {
+              const isSelected = stayType === value;
+              return (
+                <Pressable
+                  key={value}
+                  testID={`toggle-stay-${value}`}
+                  style={[
+                    styles.segmentedButton,
+                    isSelected ? { backgroundColor: theme.link } : undefined,
+                  ]}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    setStayType(value);
+                  }}
+                >
+                  <ThemedText
+                    style={[
+                      styles.segmentedButtonText,
+                      { color: isSelected ? "#FFFFFF" : theme.textSecondary },
+                    ]}
+                  >
+                    {label}
+                  </ThemedText>
+                </Pressable>
+              );
+            })}
+          </View>
         </View>
       </View>
 

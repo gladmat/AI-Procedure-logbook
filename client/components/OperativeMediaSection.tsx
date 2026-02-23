@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   View,
   StyleSheet,
@@ -7,18 +7,18 @@ import {
   Alert,
   Platform,
   ScrollView,
-  Modal,
-  TextInput,
 } from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import * as Haptics from "expo-haptics";
-import { v4 as uuidv4 } from "uuid";
 import { ThemedText } from "@/components/ThemedText";
-import { ThemedView } from "@/components/ThemedView";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
-import { OperativeMediaItem, OperativeMediaType, OPERATIVE_MEDIA_TYPE_LABELS } from "@/types/case";
+import { OperativeMediaItem, OPERATIVE_MEDIA_TYPE_LABELS } from "@/types/case";
+import { RootStackParamList } from "@/navigation/RootStackNavigator";
+import { useMediaCallback } from "@/contexts/MediaCallbackContext";
 
 interface OperativeMediaSectionProps {
   media: OperativeMediaItem[];
@@ -26,30 +26,28 @@ interface OperativeMediaSectionProps {
   maxItems?: number;
 }
 
-const MEDIA_TYPE_OPTIONS: { value: OperativeMediaType; label: string; icon: keyof typeof Feather.glyphMap }[] = [
-  { value: "intraoperative_photo", label: "Intraop Photo", icon: "camera" },
-  { value: "xray", label: "X-ray", icon: "file" },
-  { value: "ct_scan", label: "CT Scan", icon: "layers" },
-  { value: "mri", label: "MRI", icon: "activity" },
-  { value: "diagram", label: "Diagram", icon: "edit-3" },
-  { value: "document", label: "Document", icon: "file-text" },
-  { value: "other", label: "Other", icon: "paperclip" },
-];
-
 export function OperativeMediaSection({
   media,
   onMediaChange,
   maxItems = 20,
 }: OperativeMediaSectionProps) {
   const { theme } = useTheme();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { registerGenericCallback } = useMediaCallback();
   const [cameraPermission, requestCameraPermission] = ImagePicker.useCameraPermissions();
-  const [showTypeModal, setShowTypeModal] = useState(false);
-  const [pendingMediaUri, setPendingMediaUri] = useState<string | null>(null);
-  const [pendingMimeType, setPendingMimeType] = useState<string>("image/jpeg");
-  const [captionInput, setCaptionInput] = useState("");
-  const [selectedType, setSelectedType] = useState<OperativeMediaType>("intraoperative_photo");
 
   const canAddMore = media.length < maxItems;
+
+  const navigateToAddMedia = (uri: string, mimeType: string) => {
+    const callbackId = registerGenericCallback((newMedia: OperativeMediaItem) => {
+      onMediaChange([...media, newMedia]);
+    });
+    navigation.navigate("AddOperativeMedia", {
+      imageUri: uri,
+      mimeType,
+      callbackId,
+    });
+  };
 
   const handleCameraCapture = async () => {
     if (!cameraPermission?.granted) {
@@ -86,11 +84,7 @@ export function OperativeMediaSection({
 
       if (!result.canceled && result.assets.length > 0) {
         const asset = result.assets[0];
-        setPendingMediaUri(asset.uri);
-        setPendingMimeType(asset.mimeType || "image/jpeg");
-        setSelectedType("intraoperative_photo");
-        setCaptionInput("");
-        setShowTypeModal(true);
+        navigateToAddMedia(asset.uri, asset.mimeType || "image/jpeg");
       }
     } catch (error) {
       console.error("Error capturing image:", error);
@@ -109,35 +103,12 @@ export function OperativeMediaSection({
 
       if (!result.canceled && result.assets.length > 0) {
         const asset = result.assets[0];
-        setPendingMediaUri(asset.uri);
-        setPendingMimeType(asset.mimeType || "image/jpeg");
-        setSelectedType("intraoperative_photo");
-        setCaptionInput("");
-        setShowTypeModal(true);
+        navigateToAddMedia(asset.uri, asset.mimeType || "image/jpeg");
       }
     } catch (error) {
       console.error("Error picking image:", error);
       Alert.alert("Error", "Failed to select image. Please try again.");
     }
-  };
-
-  const handleConfirmMedia = () => {
-    if (!pendingMediaUri) return;
-
-    const newMedia: OperativeMediaItem = {
-      id: uuidv4(),
-      localUri: pendingMediaUri,
-      mimeType: pendingMimeType,
-      mediaType: selectedType,
-      caption: captionInput.trim() || undefined,
-      createdAt: new Date().toISOString(),
-    };
-
-    onMediaChange([...media, newMedia]);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    setShowTypeModal(false);
-    setPendingMediaUri(null);
-    setCaptionInput("");
   };
 
   const handleRemove = (mediaId: string) => {
@@ -211,7 +182,7 @@ export function OperativeMediaSection({
                 onPress={handleCameraCapture}
                 style={[styles.smallAddButton, { backgroundColor: theme.link }]}
               >
-                <Feather name="camera" size={18} color={theme.buttonText} />
+                <Feather name="camera" size={18} color="#fff" />
               </Pressable>
               <Pressable
                 onPress={handleGalleryPick}
@@ -229,8 +200,8 @@ export function OperativeMediaSection({
               onPress={handleCameraCapture}
               style={[styles.addButton, { backgroundColor: theme.link }]}
             >
-              <Feather name="camera" size={20} color={theme.buttonText} />
-              <ThemedText style={[styles.addButtonText, { color: theme.buttonText }]}>
+              <Feather name="camera" size={20} color="#fff" />
+              <ThemedText style={[styles.addButtonText, { color: "#fff" }]}>
                 Take Photo
               </ThemedText>
             </Pressable>
@@ -247,120 +218,6 @@ export function OperativeMediaSection({
           </ThemedText>
         </View>
       )}
-
-      <Modal
-        visible={showTypeModal}
-        animationType="slide"
-        transparent
-        onRequestClose={() => setShowTypeModal(false)}
-      >
-        <Pressable
-          style={styles.modalOverlay}
-          onPress={() => setShowTypeModal(false)}
-        >
-          <Pressable onPress={() => {}} style={[styles.modalContent, { backgroundColor: theme.backgroundDefault }]}>
-            <View style={styles.modalHeader}>
-              <ThemedText type="h3">Add Media</ThemedText>
-              <Pressable onPress={() => setShowTypeModal(false)}>
-                <Feather name="x" size={24} color={theme.text} />
-              </Pressable>
-            </View>
-
-            {pendingMediaUri ? (
-              <Image
-                source={{ uri: pendingMediaUri }}
-                style={styles.modalPreview}
-                resizeMode="contain"
-              />
-            ) : null}
-
-            <ThemedText style={styles.fieldLabel}>
-              Media Type
-            </ThemedText>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.typeChipsContainer}
-            >
-              {MEDIA_TYPE_OPTIONS.map((option) => (
-                <Pressable
-                  key={option.value}
-                  onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    setSelectedType(option.value);
-                  }}
-                  style={[
-                    styles.typeChip,
-                    {
-                      backgroundColor:
-                        selectedType === option.value
-                          ? theme.link
-                          : theme.backgroundRoot,
-                      borderColor:
-                        selectedType === option.value
-                          ? theme.link
-                          : theme.border,
-                    },
-                  ]}
-                >
-                  <Feather
-                    name={option.icon}
-                    size={14}
-                    color={selectedType === option.value ? theme.buttonText : theme.text}
-                  />
-                  <ThemedText
-                    style={[
-                      styles.typeChipText,
-                      {
-                        color: selectedType === option.value ? theme.buttonText : theme.text,
-                      },
-                    ]}
-                  >
-                    {option.label}
-                  </ThemedText>
-                </Pressable>
-              ))}
-            </ScrollView>
-
-            <ThemedText style={styles.fieldLabel}>
-              Caption (optional)
-            </ThemedText>
-            <TextInput
-              value={captionInput}
-              onChangeText={setCaptionInput}
-              placeholder="e.g., Pre-fixation view, Flap inset..."
-              placeholderTextColor={theme.textTertiary}
-              style={[
-                styles.captionInputField,
-                {
-                  backgroundColor: theme.backgroundRoot,
-                  color: theme.text,
-                  borderColor: theme.border,
-                },
-              ]}
-              multiline
-              numberOfLines={2}
-            />
-
-            <View style={styles.modalButtons}>
-              <Pressable
-                onPress={() => setShowTypeModal(false)}
-                style={[styles.modalButton, { backgroundColor: theme.backgroundRoot }]}
-              >
-                <ThemedText>Cancel</ThemedText>
-              </Pressable>
-              <Pressable
-                onPress={handleConfirmMedia}
-                style={[styles.modalButton, { backgroundColor: theme.link }]}
-              >
-                <ThemedText style={{ color: theme.buttonText, fontWeight: "600" }}>
-                  Add Media
-                </ThemedText>
-              </Pressable>
-            </View>
-          </Pressable>
-        </Pressable>
-      </Modal>
     </View>
   );
 }
@@ -470,71 +327,5 @@ const styles = StyleSheet.create({
   placeholderText: {
     fontSize: 13,
     textAlign: "center",
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    justifyContent: "flex-end",
-  },
-  modalContent: {
-    borderTopLeftRadius: BorderRadius.xl,
-    borderTopRightRadius: BorderRadius.xl,
-    padding: Spacing.lg,
-    maxHeight: "85%",
-  },
-  modalHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: Spacing.lg,
-  },
-  modalPreview: {
-    width: "100%",
-    height: 180,
-    borderRadius: BorderRadius.md,
-    marginBottom: Spacing.lg,
-    backgroundColor: "#000",
-  },
-  fieldLabel: {
-    marginBottom: Spacing.sm,
-  },
-  typeChipsContainer: {
-    gap: Spacing.sm,
-    paddingBottom: Spacing.md,
-    marginBottom: Spacing.md,
-  },
-  typeChip: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
-  },
-  typeChipText: {
-    fontSize: 13,
-    fontWeight: "500",
-  },
-  captionInputField: {
-    borderWidth: 1,
-    borderRadius: BorderRadius.md,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    fontSize: 15,
-    minHeight: 60,
-    marginBottom: Spacing.lg,
-    textAlignVertical: "top",
-  },
-  modalButtons: {
-    flexDirection: "row",
-    gap: Spacing.md,
-  },
-  modalButton: {
-    flex: 1,
-    paddingVertical: Spacing.md,
-    borderRadius: BorderRadius.md,
-    alignItems: "center",
-    justifyContent: "center",
   },
 });

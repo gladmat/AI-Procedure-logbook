@@ -1,18 +1,22 @@
-import React, { createContext, useContext, useState, useCallback, useRef } from "react";
+import React, { createContext, useContext, useCallback, useRef } from "react";
 import { MediaAttachment } from "@/types/case";
 
 type MediaCallback = (attachments: MediaAttachment[]) => void;
+type GenericCallback = (...args: any[]) => void;
 
 interface MediaCallbackContextType {
   registerCallback: (callback: MediaCallback) => string;
   executeCallback: (callbackId: string, attachments: MediaAttachment[]) => void;
   clearCallback: (callbackId: string) => void;
+  registerGenericCallback: (callback: GenericCallback) => string;
+  executeGenericCallback: (callbackId: string, ...args: any[]) => void;
 }
 
 const MediaCallbackContext = createContext<MediaCallbackContextType | null>(null);
 
 export function MediaCallbackProvider({ children }: { children: React.ReactNode }) {
   const callbacksRef = useRef<Map<string, MediaCallback>>(new Map());
+  const genericCallbacksRef = useRef<Map<string, GenericCallback>>(new Map());
   const idCounterRef = useRef(0);
 
   const registerCallback = useCallback((callback: MediaCallback): string => {
@@ -31,10 +35,25 @@ export function MediaCallbackProvider({ children }: { children: React.ReactNode 
 
   const clearCallback = useCallback((callbackId: string) => {
     callbacksRef.current.delete(callbackId);
+    genericCallbacksRef.current.delete(callbackId);
+  }, []);
+
+  const registerGenericCallback = useCallback((callback: GenericCallback): string => {
+    const id = `generic_callback_${++idCounterRef.current}`;
+    genericCallbacksRef.current.set(id, callback);
+    return id;
+  }, []);
+
+  const executeGenericCallback = useCallback((callbackId: string, ...args: any[]) => {
+    const callback = genericCallbacksRef.current.get(callbackId);
+    if (callback) {
+      callback(...args);
+      genericCallbacksRef.current.delete(callbackId);
+    }
   }, []);
 
   return (
-    <MediaCallbackContext.Provider value={{ registerCallback, executeCallback, clearCallback }}>
+    <MediaCallbackContext.Provider value={{ registerCallback, executeCallback, clearCallback, registerGenericCallback, executeGenericCallback }}>
       {children}
     </MediaCallbackContext.Provider>
   );
