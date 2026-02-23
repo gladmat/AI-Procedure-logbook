@@ -8,7 +8,9 @@ import {
   Platform,
   ScrollView,
   FlatList,
+  TextInput,
 } from "react-native";
+import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -142,6 +144,12 @@ export default function MediaManagementScreen() {
     );
   };
 
+  const handleCaptionChange = (id: string, caption: string) => {
+    setAttachments((prev) =>
+      prev.map((a) => (a.id === id ? { ...a, caption } : a))
+    );
+  };
+
   const handleSave = useCallback(() => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     if (callbackId) {
@@ -191,6 +199,7 @@ export default function MediaManagementScreen() {
 
   return (
     <ThemedView style={styles.container}>
+      <KeyboardAvoidingView style={styles.keyboardAvoidingView} behavior="padding" keyboardVerticalOffset={0}>
       <View style={[styles.header, { paddingTop: insets.top + Spacing.md }]}>
         <Pressable onPress={() => navigation.goBack()} style={styles.headerButton}>
           <Feather name="x" size={24} color={theme.text} />
@@ -239,6 +248,25 @@ export default function MediaManagementScreen() {
               resizeMode="contain"
             />
           </View>
+
+          <TextInput
+            testID="input-caption"
+            style={[
+              styles.captionInput,
+              {
+                color: theme.text,
+                backgroundColor: theme.backgroundElevated,
+                borderColor: theme.border,
+              },
+            ]}
+            placeholder="Add a caption or note..."
+            placeholderTextColor={theme.textTertiary}
+            value={selectedAttachment.caption || ""}
+            onChangeText={(text) => handleCaptionChange(selectedAttachment.id, text)}
+            multiline
+            numberOfLines={3}
+            textAlignVertical="top"
+          />
 
           <ThemedText style={[styles.sectionTitle, { color: theme.text }]}>
             Select Category
@@ -351,12 +379,16 @@ export default function MediaManagementScreen() {
           <ThemedText style={styles.saveButtonText}>Save Photos</ThemedText>
         </Pressable>
       </View>
+      </KeyboardAvoidingView>
     </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+  },
+  keyboardAvoidingView: {
     flex: 1,
   },
   header: {
@@ -448,6 +480,15 @@ const styles = StyleSheet.create({
   previewImage: {
     width: "100%",
     height: "100%",
+  },
+  captionInput: {
+    borderWidth: 1,
+    borderRadius: BorderRadius.sm,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    fontSize: 14,
+    minHeight: 72,
+    marginBottom: Spacing.lg,
   },
   sectionTitle: {
     fontSize: 16,

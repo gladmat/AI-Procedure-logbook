@@ -61,7 +61,6 @@ import {
   ASA_GRADE_LABELS,
   COMMON_COMORBIDITIES,
   ETHNICITY_OPTIONS,
-  PROCEDURE_CATEGORY_OPTIONS,
 } from "@/types/case";
 import { InfectionOverlay } from "@/types/infection";
 import { FormField, SelectField, PickerField, DatePickerField } from "@/components/FormField";
@@ -1102,9 +1101,10 @@ export default function CaseFormScreen() {
       <FormField
         label="Patient Identifier"
         value={patientIdentifier}
-        onChangeText={setPatientIdentifier}
+        onChangeText={(text) => setPatientIdentifier(text.toUpperCase())}
         placeholder="e.g., MRN or initials"
         required
+        autoCapitalize="characters"
       />
 
       <DatePickerField
@@ -1316,24 +1316,36 @@ export default function CaseFormScreen() {
 
       <View style={styles.row}>
         <View style={styles.halfField}>
-          <PickerField
-            label="Urgency"
-            value={admissionUrgency}
-            options={Object.entries(ADMISSION_URGENCY_LABELS).map(([value, label]) => ({ value, label }))}
-            onSelect={(v) => setAdmissionUrgency(v as AdmissionUrgency)}
-          />
+          <ThemedText style={[styles.fieldLabel, { color: theme.textSecondary }]}>Urgency</ThemedText>
+          <View style={[styles.segmentedControl, { borderColor: theme.border, backgroundColor: theme.backgroundDefault }]}>
+            {(Object.entries(ADMISSION_URGENCY_LABELS) as [AdmissionUrgency, string][]).map(([value, label]) => {
+              const isSelected = admissionUrgency === value;
+              return (
+                <Pressable
+                  key={value}
+                  testID={`toggle-urgency-${value}`}
+                  style={[
+                    styles.segmentedButton,
+                    isSelected ? { backgroundColor: theme.link } : undefined,
+                  ]}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    setAdmissionUrgency(value);
+                  }}
+                >
+                  <ThemedText
+                    style={[
+                      styles.segmentedButtonText,
+                      { color: isSelected ? "#FFFFFF" : theme.textSecondary },
+                    ]}
+                  >
+                    {label}
+                  </ThemedText>
+                </Pressable>
+              );
+            })}
+          </View>
         </View>
-        <View style={styles.halfField}>
-          <PickerField
-            label="Procedure Category"
-            value={procedureCategory}
-            options={PROCEDURE_CATEGORY_OPTIONS[specialty] || [{ value: "other", label: "Other" }]}
-            onSelect={setProcedureCategory}
-          />
-        </View>
-      </View>
-
-      <View style={styles.row}>
         <View style={styles.halfField}>
           <PickerField
             label="Stay Type"
@@ -2057,5 +2069,26 @@ const styles = StyleSheet.create({
   },
   suggestionText: {
     fontSize: 13,
+  },
+  fieldLabel: {
+    fontSize: 14,
+    fontWeight: "500",
+    marginBottom: Spacing.sm,
+  },
+  segmentedControl: {
+    flexDirection: "row",
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    overflow: "hidden",
+  },
+  segmentedButton: {
+    flex: 1,
+    paddingVertical: Spacing.sm + 2,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  segmentedButtonText: {
+    fontSize: 14,
+    fontWeight: "600",
   },
 });

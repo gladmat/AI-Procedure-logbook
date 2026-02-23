@@ -8,7 +8,6 @@ import {
   Modal,
   FlatList,
   TouchableOpacity,
-  InteractionManager,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Feather } from "@expo/vector-icons";
@@ -28,6 +27,7 @@ interface FormFieldProps {
   multiline?: boolean;
   error?: string;
   editable?: boolean;
+  autoCapitalize?: "none" | "sentences" | "words" | "characters";
 }
 
 export function FormField({
@@ -41,6 +41,7 @@ export function FormField({
   multiline = false,
   error,
   editable = true,
+  autoCapitalize,
 }: FormFieldProps) {
   const { theme } = useTheme();
 
@@ -71,6 +72,7 @@ export function FormField({
           keyboardType={keyboardType}
           multiline={multiline}
           editable={editable}
+          autoCapitalize={autoCapitalize}
           style={[
             styles.input,
             {
@@ -422,9 +424,9 @@ export function PickerField({
                   ]}
                   onPress={() => {
                     setModalVisible(false);
-                    InteractionManager.runAfterInteractions(() => {
+                    setTimeout(() => {
                       onSelect(item.value);
-                    });
+                    }, 50);
                   }}
                 >
                   <ThemedText
