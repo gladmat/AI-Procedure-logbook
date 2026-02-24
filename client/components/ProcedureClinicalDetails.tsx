@@ -11,6 +11,7 @@ import { RecipientSiteSelector } from "@/components/RecipientSiteSelector";
 import { FreeFlapPicker } from "@/components/FreeFlapPicker";
 import { SectionHeader } from "@/components/SectionHeader";
 import { v4 as uuidv4 } from "uuid";
+import { findPicklistEntry } from "@/lib/procedurePicklist";
 import {
   type Specialty,
   type AnatomicalRegion,
@@ -24,6 +25,8 @@ import {
   type ElevationPlane,
   type FreeFlap,
   INDICATION_LABELS,
+  FLAP_SNOMED_MAP,
+  RECIPIENT_SITE_SNOMED_MAP,
 } from "@/types/case";
 
 interface FreeFlapClinicalFieldsProps {
@@ -35,7 +38,7 @@ interface FreeFlapClinicalFieldsProps {
 const DEFAULT_DONOR_VESSELS: Record<FreeFlap, { artery: string; vein: string }> = {
   alt: {
     artery: "Descending branch of lateral circumflex femoral artery",
-    vein: "Lateral circumflex femoral vein",
+    vein: "Venae comitantes of lateral circumflex femoral artery",
   },
   diep: {
     artery: "Deep inferior epigastric artery",
@@ -55,15 +58,47 @@ const DEFAULT_DONOR_VESSELS: Record<FreeFlap, { artery: string; vein: string }> 
   },
   gracilis: {
     artery: "Gracilis branch of medial circumflex femoral artery",
-    vein: "Gracilis vein",
+    vein: "Venae comitantes of medial circumflex femoral artery",
+  },
+  tug: {
+    artery: "Gracilis branch of medial circumflex femoral artery",
+    vein: "Venae comitantes of medial circumflex femoral artery",
   },
   scip: {
     artery: "Superficial circumflex iliac artery",
     vein: "Superficial circumflex iliac vein",
   },
+  siea: {
+    artery: "Superficial inferior epigastric artery",
+    vein: "Superficial inferior epigastric vein",
+  },
   medial_sural: {
     artery: "Medial sural artery",
-    vein: "Medial sural vein",
+    vein: "Venae comitantes of medial sural artery",
+  },
+  sgap: {
+    artery: "Superior gluteal artery (perforator branch)",
+    vein: "Superior gluteal vein",
+  },
+  igap: {
+    artery: "Inferior gluteal artery (perforator branch)",
+    vein: "Inferior gluteal vein",
+  },
+  pap: {
+    artery: "Profunda femoris artery (perforator branch)",
+    vein: "Venae comitantes of profunda femoris artery",
+  },
+  tdap: {
+    artery: "Thoracodorsal artery (perforator branch)",
+    vein: "Thoracodorsal vein",
+  },
+  parascapular: {
+    artery: "Circumflex scapular artery",
+    vein: "Circumflex scapular vein",
+  },
+  serratus_anterior: {
+    artery: "Thoracodorsal artery (serratus branch)",
+    vein: "Thoracodorsal vein",
   },
   other: {
     artery: "",
@@ -113,25 +148,60 @@ export function FreeFlapClinicalFields({
   const flapType = clinicalDetails.flapType;
   const donorVessels = flapType ? DEFAULT_DONOR_VESSELS[flapType] : undefined;
 
+  const FLAPS_WITH_SKIN_ISLAND: FreeFlap[] = [
+    "gracilis", "tug", "serratus_anterior", "pap", "latissimus_dorsi",
+  ];
+  const showSkinIsland = flapType ? FLAPS_WITH_SKIN_ISLAND.includes(flapType) : false;
+
+  const handleFlapTypeChange = (flap: FreeFlap) => {
+    const snomedEntry = FLAP_SNOMED_MAP[flap];
+    onUpdate({
+      ...clinicalDetails,
+      flapType: flap,
+      flapSnomedCode: snomedEntry?.code,
+      flapSnomedDisplay: snomedEntry?.display,
+      skinIsland: undefined,
+    });
+  };
+
+  const handleRecipientSiteChange = (region: AnatomicalRegion) => {
+    const snomedEntry = RECIPIENT_SITE_SNOMED_MAP[region];
+    onUpdate({
+      ...clinicalDetails,
+      recipientSiteRegion: region,
+      recipientSiteSnomedCode: snomedEntry?.code,
+      recipientSiteSnomedDisplay: snomedEntry?.display,
+    });
+  };
+
   return (
     <View style={styles.container}>
       <FreeFlapPicker
         flapType={clinicalDetails.flapType}
         elevationPlane={clinicalDetails.elevationPlane}
-        onFlapTypeChange={(flap) => 
-          onUpdate({ ...clinicalDetails, flapType: flap })
-        }
-        onElevationPlaneChange={(plane) => 
+        onFlapTypeChange={handleFlapTypeChange}
+        onElevationPlaneChange={(plane) =>
           onUpdate({ ...clinicalDetails, elevationPlane: plane })
         }
         required
       />
 
+      {showSkinIsland ? (
+        <SelectField
+          label="Skin Island"
+          value={clinicalDetails.skinIsland === true ? "yes" : clinicalDetails.skinIsland === false ? "no" : ""}
+          options={[
+            { value: "yes", label: "With skin island" },
+            { value: "no", label: "Muscle only" },
+          ]}
+          onSelect={(v) => onUpdate({ ...clinicalDetails, skinIsland: v === "yes" })}
+          required
+        />
+      ) : null}
+
       <RecipientSiteSelector
-        value={recipientSiteRegion}
-        onSelect={(region) => 
-          onUpdate({ ...clinicalDetails, recipientSiteRegion: region })
-        }
+        value={clinicalDetails.recipientSiteRegion}
+        onSelect={handleRecipientSiteChange}
         required
       />
 
@@ -412,6 +482,7 @@ export function BodyContouringClinicalFields({
 interface ProcedureClinicalDetailsProps {
   specialty: Specialty;
   procedureType: string;
+  picklistEntryId?: string;
   clinicalDetails: ClinicalDetails;
   onUpdate: (details: ClinicalDetails) => void;
 }
@@ -419,15 +490,18 @@ interface ProcedureClinicalDetailsProps {
 export function ProcedureClinicalDetails({
   specialty,
   procedureType,
+  picklistEntryId,
   clinicalDetails,
   onUpdate,
 }: ProcedureClinicalDetailsProps) {
   const { theme } = useTheme();
   
-  // Check if procedure type involves free flaps (orthoplastic, head & neck, or specific procedure types)
-  const isFreeFlapProcedure = procedureType.toLowerCase().includes("free flap") || 
-    procedureType.toLowerCase().includes("free tissue") ||
-    ["orthoplastic", "head_neck"].includes(specialty);
+  const picklistEntry = picklistEntryId ? findPicklistEntry(picklistEntryId) : undefined;
+  const isFreeFlapProcedure = picklistEntry
+    ? !!picklistEntry.hasFreeFlap
+    : procedureType.toLowerCase().includes("free flap") ||
+      procedureType.toLowerCase().includes("free tissue") ||
+      ["orthoplastic", "head_neck"].includes(specialty);
   
   if (isFreeFlapProcedure) {
     const existingDetails = clinicalDetails as FreeFlapDetails || {};

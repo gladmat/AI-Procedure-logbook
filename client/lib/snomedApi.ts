@@ -284,8 +284,9 @@ export const RECIPIENT_VESSEL_PRESETS: Record<AnatomicalRegion, { arteries: stri
   head_neck: {
     arteries: [
       "Facial artery",
-      "Superior thyroid artery",
+      "Lingual artery",
       "Superficial temporal artery",
+      "Superior thyroid artery",
       "Transverse cervical artery",
       "External carotid artery",
     ],
@@ -294,6 +295,20 @@ export const RECIPIENT_VESSEL_PRESETS: Record<AnatomicalRegion, { arteries: stri
       "External jugular vein",
       "Internal jugular vein",
       "Anterior jugular vein",
+    ],
+  },
+  breast_chest: {
+    arteries: [
+      "Internal mammary artery (IMA)",
+      "Thoracodorsal artery",
+      "Lateral thoracic artery",
+      "Thoracoacromial artery",
+    ],
+    veins: [
+      "Internal mammary vein",
+      "Thoracodorsal vein",
+      "Lateral thoracic vein",
+      "Cephalic vein",
     ],
   },
 };

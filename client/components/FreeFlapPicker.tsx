@@ -21,15 +21,23 @@ interface FreeFlapPickerProps {
   required?: boolean;
 }
 
-const COMMON_FLAPS: FreeFlap[] = [
+const ALL_FLAPS: FreeFlap[] = [
   "alt",
   "latissimus_dorsi",
   "gracilis",
+  "tug",
   "scip",
+  "siea",
   "radial_forearm",
   "fibula",
-  "medial_sural",
   "diep",
+  "medial_sural",
+  "sgap",
+  "igap",
+  "pap",
+  "tdap",
+  "parascapular",
+  "serratus_anterior",
   "other",
 ];
 
@@ -78,7 +86,7 @@ export function FreeFlapPicker({
       </View>
 
       <View style={styles.flapGrid}>
-        {COMMON_FLAPS.map((flap) => (
+        {ALL_FLAPS.map((flap) => (
           <Pressable
             key={flap}
             onPress={() => handleFlapSelect(flap)}

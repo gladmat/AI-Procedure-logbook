@@ -266,29 +266,17 @@ export function AnastomosisEntryCard({
         />
       ) : null}
 
-      {/* Veins are always end-to-end configuration */}
-      {entry.vesselType === "vein" ? (
-        <View style={styles.fixedValue}>
-          <ThemedText style={[styles.label, { color: theme.textSecondary }]}>
-            Configuration
-          </ThemedText>
-          <ThemedText style={[styles.fixedValueText, { color: theme.text }]}>
-            End-to-end (standard for veins)
-          </ThemedText>
-        </View>
-      ) : (
-        <PickerField
-          label="Configuration"
-          value={entry.configuration || ""}
-          options={Object.entries(ANASTOMOSIS_LABELS).map(([value, label]) => ({
-            value,
-            label,
-          }))}
-          onSelect={(value) =>
-            onUpdate({ ...entry, configuration: value as any })
-          }
-        />
-      )}
+      <PickerField
+        label="Configuration"
+        value={entry.configuration || ""}
+        options={Object.entries(ANASTOMOSIS_LABELS).map(([value, label]) => ({
+          value,
+          label,
+        }))}
+        onSelect={(value) =>
+          onUpdate({ ...entry, configuration: value as any })
+        }
+      />
     </View>
   );
 }

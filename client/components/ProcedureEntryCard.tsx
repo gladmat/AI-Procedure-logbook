@@ -7,8 +7,11 @@ import { useTheme } from "@/hooks/useTheme";
 import { BorderRadius, Spacing } from "@/constants/theme";
 import { FormField, PickerField } from "@/components/FormField";
 import { ProcedureClinicalDetails } from "@/components/ProcedureClinicalDetails";
+import { ProcedureSubcategoryPicker } from "@/components/ProcedureSubcategoryPicker";
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 import { SnomedSearchPicker } from "@/components/SnomedSearchPicker";
+import { hasPicklistForSpecialty, findPicklistEntry } from "@/lib/procedurePicklist";
+import type { ProcedurePicklistEntry } from "@/lib/procedurePicklist";
 import {
   type CaseProcedure,
   type Role,
@@ -53,6 +56,23 @@ export function ProcedureEntryCard({
       ...procedure,
       specialty: value as Specialty,
       procedureName: "",
+      picklistEntryId: undefined,
+      subcategory: undefined,
+      snomedCtCode: undefined,
+      snomedCtDisplay: undefined,
+    });
+  };
+
+  const handlePicklistSelect = (entry: ProcedurePicklistEntry) => {
+    onUpdate({
+      ...procedure,
+      procedureName: entry.displayName,
+      picklistEntryId: entry.id,
+      subcategory: entry.subcategory,
+      tags: entry.tags,
+      snomedCtCode: entry.snomedCtCode,
+      snomedCtDisplay: entry.snomedCtDisplay,
+      clinicalDetails: undefined,
     });
   };
 
@@ -60,6 +80,8 @@ export function ProcedureEntryCard({
     onUpdate({
       ...procedure,
       procedureName: value,
+      picklistEntryId: undefined,
+      subcategory: undefined,
     });
   };
 
@@ -180,14 +202,30 @@ export function ProcedureEntryCard({
       />
 
       {procedure.specialty ? (
-        <PickerField
-          label="Procedure Type"
-          value={procedure.procedureName}
-          options={procedureTypeOptions}
-          onSelect={handleProcedureNameChange}
-          placeholder="Select procedure"
-          required
-        />
+        hasPicklistForSpecialty(procedure.specialty) ? (
+          <View style={styles.procedurePickerSection}>
+            <View style={styles.fieldLabelRow}>
+              <ThemedText style={[styles.fieldLabel, { color: theme.textSecondary }]}>
+                Procedure
+              </ThemedText>
+              <ThemedText style={[styles.requiredAsterisk, { color: theme.error }]}>*</ThemedText>
+            </View>
+            <ProcedureSubcategoryPicker
+              specialty={procedure.specialty}
+              selectedEntryId={procedure.picklistEntryId}
+              onSelect={handlePicklistSelect}
+            />
+          </View>
+        ) : (
+          <PickerField
+            label="Procedure Type"
+            value={procedure.procedureName}
+            options={procedureTypeOptions}
+            onSelect={handleProcedureNameChange}
+            placeholder="Select procedure"
+            required
+          />
+        )
       ) : null}
 
       <View style={styles.tagsSection}>
@@ -329,6 +367,7 @@ export function ProcedureEntryCard({
         <ProcedureClinicalDetails
           specialty={procedure.specialty}
           procedureType={procedure.procedureName}
+          picklistEntryId={procedure.picklistEntryId}
           clinicalDetails={procedure.clinicalDetails || {}}
           onUpdate={handleClinicalDetailsUpdate}
         />
@@ -338,6 +377,14 @@ export function ProcedureEntryCard({
 }
 
 const styles = StyleSheet.create({
+  procedurePickerSection: {
+    marginBottom: Spacing.md,
+  },
+  fieldLabelRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: Spacing.sm,
+  },
   card: {
     borderWidth: 1,
     borderRadius: BorderRadius.lg,

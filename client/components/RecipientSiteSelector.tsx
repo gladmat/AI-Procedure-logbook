@@ -14,6 +14,7 @@ interface RecipientSiteSelectorProps {
 
 const REGION_ORDER: AnatomicalRegion[] = [
   "head_neck",
+  "breast_chest",
   "upper_arm",
   "forearm",
   "hand",

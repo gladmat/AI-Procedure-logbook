@@ -212,7 +212,8 @@ export type AnatomicalRegion =
   | "hand" 
   | "forearm" 
   | "upper_arm" 
-  | "head_neck";
+  | "head_neck"
+  | "breast_chest";
 
 export type HarvestSide = "left" | "right";
 
@@ -226,22 +227,38 @@ export type FreeFlap =
   | "alt"
   | "latissimus_dorsi" 
   | "gracilis"
+  | "tug"
   | "scip"
+  | "siea"
   | "radial_forearm"
   | "fibula"
   | "diep"
   | "medial_sural"
+  | "sgap"
+  | "igap"
+  | "pap"
+  | "tdap"
+  | "parascapular"
+  | "serratus_anterior"
   | "other";
 
 export const FREE_FLAP_LABELS: Record<FreeFlap, string> = {
   alt: "ALT (Anterolateral Thigh)",
-  latissimus_dorsi: "Latissimus Dorsi",
+  latissimus_dorsi: "Latissimus Dorsi (LD)",
   gracilis: "Gracilis",
+  tug: "TUG (Transverse Upper Gracilis)",
   scip: "SCIP (Superficial Circumflex Iliac Perforator)",
-  radial_forearm: "Radial Forearm",
+  siea: "SIEA (Superficial Inferior Epigastric Artery)",
+  radial_forearm: "RFFF (Radial Forearm)",
   fibula: "Fibula (Osteocutaneous)",
   diep: "DIEP",
-  medial_sural: "Medial Sural Artery Perforator",
+  medial_sural: "MSAP (Medial Sural Artery Perforator)",
+  sgap: "SGAP (Superior Gluteal Artery Perforator)",
+  igap: "IGAP (Inferior Gluteal Artery Perforator)",
+  pap: "PAP (Profunda Artery Perforator)",
+  tdap: "TDAP (Thoracodorsal Artery Perforator)",
+  parascapular: "Parascapular",
+  serratus_anterior: "Serratus Anterior",
   other: "Other",
 };
 
@@ -250,6 +267,37 @@ export const ELEVATION_PLANE_LABELS: Record<ElevationPlane, string> = {
   suprafascial: "Suprafascial",
   epifascial: "Epifascial",
   thin_alt: "Thin ALT (Suprafascial Defatted)",
+};
+
+export const FLAP_SNOMED_MAP: Partial<Record<FreeFlap, { code: string; display: string }>> = {
+  alt:               { code: "234298008", display: "Anterolateral thigh free flap (procedure)" },
+  diep:              { code: "234294006", display: "Deep inferior epigastric perforator flap (procedure)" },
+  radial_forearm:    { code: "234295007", display: "Free radial forearm flap (procedure)" },
+  fibula:            { code: "234289000", display: "Free fibula osteocutaneous flap (procedure)" },
+  latissimus_dorsi:  { code: "234296008", display: "Free latissimus dorsi flap (procedure)" },
+  gracilis:          { code: "234297004", display: "Free gracilis flap (procedure)" },
+  tug:               { code: "234297004", display: "Free gracilis flap (procedure)" },
+  scip:              { code: "234299000", display: "Free superficial circumflex iliac artery flap (procedure)" },
+  siea:              { code: "234300002", display: "Free superficial inferior epigastric artery flap (procedure)" },
+  medial_sural:      { code: "234306008", display: "Free medial sural artery perforator flap (procedure)" },
+  sgap:              { code: "234301003", display: "Free superior gluteal artery perforator flap (procedure)" },
+  igap:              { code: "234302005", display: "Free inferior gluteal artery perforator flap (procedure)" },
+  pap:               { code: "234308009", display: "Free profunda artery perforator flap (procedure)" },
+  tdap:              { code: "234307004", display: "Free thoracodorsal artery perforator flap (procedure)" },
+  parascapular:      { code: "234304006", display: "Free parascapular flap (procedure)" },
+  serratus_anterior: { code: "234305007", display: "Free serratus anterior flap (procedure)" },
+};
+
+export const RECIPIENT_SITE_SNOMED_MAP: Partial<Record<AnatomicalRegion, { code: string; display: string }>> = {
+  lower_leg:    { code: "30021000",  display: "Lower leg structure (body structure)" },
+  knee:         { code: "72696002",  display: "Knee region structure (body structure)" },
+  foot:         { code: "56459004",  display: "Foot structure (body structure)" },
+  thigh:        { code: "68367000",  display: "Thigh structure (body structure)" },
+  hand:         { code: "85562004",  display: "Hand structure (body structure)" },
+  forearm:      { code: "14975008",  display: "Forearm structure (body structure)" },
+  upper_arm:    { code: "40983000",  display: "Upper arm structure (body structure)" },
+  head_neck:    { code: "774007",    display: "Head and neck structure (body structure)" },
+  breast_chest: { code: "80248007",  display: "Breast structure (body structure)" },
 };
 
 export type CountryCode = "CH" | "GB" | "PL" | "AU" | "NZ" | "US";
@@ -335,12 +383,15 @@ export interface FreeFlapDetails {
   indication: Indication;
   flapType?: FreeFlap;
   flapSnomedCode?: string;
-  flapDisplayName?: string;
+  flapSnomedDisplay?: string;
   flapCommonName?: string;
   composition?: string;
   harvestTechnique?: string;
+  skinIsland?: boolean;
   recipientSite?: string;
   recipientSiteRegion?: AnatomicalRegion;
+  recipientSiteSnomedCode?: string;
+  recipientSiteSnomedDisplay?: string;
   ischemiaTimeMinutes?: number;
   flapWidthCm?: number;
   flapLengthCm?: number;
@@ -348,7 +399,7 @@ export interface FreeFlapDetails {
   elevationPlane?: ElevationPlane;
   isFlowThrough?: boolean;
   anastomoses: AnastomosisEntry[];
-  // Legacy fields for backward compatibility
+  flapDisplayName?: string;
   recipientArteryName?: string;
   recipientVeinName?: string;
   anastomosisType?: AnastomosisType;
@@ -419,6 +470,8 @@ export interface CaseProcedure {
   sequenceOrder: number;
   procedureName: string;
   specialty?: Specialty;
+  subcategory?: string;
+  picklistEntryId?: string;
   tags?: ProcedureTag[];
   snomedCtCode?: string;
   snomedCtDisplay?: string;
@@ -763,6 +816,7 @@ export const ANATOMICAL_REGION_LABELS: Record<AnatomicalRegion, string> = {
   forearm: "Forearm",
   upper_arm: "Upper Arm",
   head_neck: "Head & Neck",
+  breast_chest: "Breast / Chest Wall",
 };
 
 export const COUNTRY_LABELS: Record<CountryCode, string> = {

@@ -51,7 +51,7 @@ export const vesselSeedData: InsertSnomedRef[] = [
   { snomedCtCode: "44984001", displayName: "Ulnar artery (at wrist)", commonName: "UA at wrist", category: "vessel", subcategory: "artery", anatomicalRegion: "hand", specialty: "free_flap", sortOrder: 4 },
   { snomedCtCode: "54020004", displayName: "Common digital artery", commonName: null, category: "vessel", subcategory: "artery", anatomicalRegion: "hand", specialty: "free_flap", sortOrder: 5 },
   { snomedCtCode: "62944002", displayName: "Proper palmar digital artery", commonName: "Digital artery", category: "vessel", subcategory: "artery", anatomicalRegion: "hand", specialty: "free_flap", sortOrder: 6 },
-  { snomedCtCode: "62944002", displayName: "First dorsal metacarpal artery", commonName: "FDMA", category: "vessel", subcategory: "artery", anatomicalRegion: "hand", specialty: "free_flap", sortOrder: 7 },
+  { snomedCtCode: "13351009", displayName: "First dorsal metacarpal artery", commonName: "FDMA", category: "vessel", subcategory: "artery", anatomicalRegion: "hand", specialty: "free_flap", sortOrder: 7 },
   
   // HAND VEINS
   { snomedCtCode: "42740004", displayName: "Dorsal digital veins of hand", commonName: null, category: "vessel", subcategory: "vein", anatomicalRegion: "hand", specialty: "free_flap", sortOrder: 10 },
@@ -61,10 +61,10 @@ export const vesselSeedData: InsertSnomedRef[] = [
   
   // HEAD & NECK ARTERIES
   { snomedCtCode: "69105007", displayName: "Facial artery", commonName: null, category: "vessel", subcategory: "artery", anatomicalRegion: "head_neck", specialty: "free_flap", sortOrder: 1 },
-  { snomedCtCode: "17137000", displayName: "Superior thyroid artery", commonName: null, category: "vessel", subcategory: "artery", anatomicalRegion: "head_neck", specialty: "free_flap", sortOrder: 2 },
+  { snomedCtCode: "74805009", displayName: "Superior thyroid artery", commonName: null, category: "vessel", subcategory: "artery", anatomicalRegion: "head_neck", specialty: "free_flap", sortOrder: 2 },
   { snomedCtCode: "43899006", displayName: "Superficial temporal artery", commonName: "STA", category: "vessel", subcategory: "artery", anatomicalRegion: "head_neck", specialty: "free_flap", sortOrder: 3 },
   { snomedCtCode: "42258001", displayName: "External carotid artery", commonName: "ECA", category: "vessel", subcategory: "artery", anatomicalRegion: "head_neck", specialty: "free_flap", sortOrder: 4 },
-  { snomedCtCode: "17137000", displayName: "Transverse cervical artery", commonName: null, category: "vessel", subcategory: "artery", anatomicalRegion: "head_neck", specialty: "free_flap", sortOrder: 5 },
+  { snomedCtCode: "57591007", displayName: "Transverse cervical artery", commonName: null, category: "vessel", subcategory: "artery", anatomicalRegion: "head_neck", specialty: "free_flap", sortOrder: 5 },
   { snomedCtCode: "23074001", displayName: "Internal mammary artery", commonName: "IMA", category: "vessel", subcategory: "artery", anatomicalRegion: "head_neck", specialty: "free_flap", sortOrder: 6 },
   
   // HEAD & NECK VEINS
@@ -73,6 +73,15 @@ export const vesselSeedData: InsertSnomedRef[] = [
   { snomedCtCode: "70578003", displayName: "Facial vein", commonName: null, category: "vessel", subcategory: "vein", anatomicalRegion: "head_neck", specialty: "free_flap", sortOrder: 12 },
   { snomedCtCode: "6574001", displayName: "Superficial temporal vein", commonName: null, category: "vessel", subcategory: "vein", anatomicalRegion: "head_neck", specialty: "free_flap", sortOrder: 13 },
   { snomedCtCode: "23074001", displayName: "Internal mammary vein", commonName: "IMV", category: "vessel", subcategory: "vein", anatomicalRegion: "head_neck", specialty: "free_flap", sortOrder: 14 },
+
+  // BREAST / CHEST WALL VESSELS
+  { snomedCtCode: "23074001", displayName: "Internal mammary artery (internal thoracic artery)", commonName: "IMA", category: "vessel", subcategory: "artery", anatomicalRegion: "breast_chest", specialty: "free_flap", sortOrder: 1 },
+  { snomedCtCode: "181354005", displayName: "Thoracodorsal artery", commonName: null, category: "vessel", subcategory: "artery", anatomicalRegion: "breast_chest", specialty: "free_flap", sortOrder: 2 },
+  { snomedCtCode: "68455001", displayName: "Lateral thoracic artery", commonName: null, category: "vessel", subcategory: "artery", anatomicalRegion: "breast_chest", specialty: "free_flap", sortOrder: 3 },
+  { snomedCtCode: "31114002", displayName: "Thoracoacromial artery", commonName: null, category: "vessel", subcategory: "artery", anatomicalRegion: "breast_chest", specialty: "free_flap", sortOrder: 4 },
+  { snomedCtCode: "23074001", displayName: "Internal mammary vein (internal thoracic vein)", commonName: "IMV", category: "vessel", subcategory: "vein", anatomicalRegion: "breast_chest", specialty: "free_flap", sortOrder: 10 },
+  { snomedCtCode: "181356007", displayName: "Thoracodorsal vein", commonName: null, category: "vessel", subcategory: "vein", anatomicalRegion: "breast_chest", specialty: "free_flap", sortOrder: 11 },
+  { snomedCtCode: "83215007", displayName: "Cephalic vein (deltopectoral groove)", commonName: null, category: "vessel", subcategory: "vein", anatomicalRegion: "breast_chest", specialty: "free_flap", sortOrder: 12 },
   
   // THIGH ARTERIES (for groin and thigh recipient sites)
   { snomedCtCode: "181347002", displayName: "Femoral artery", commonName: null, category: "vessel", subcategory: "artery", anatomicalRegion: "thigh", specialty: "free_flap", sortOrder: 1 },
