@@ -9,6 +9,7 @@ import { FormField, PickerField } from "@/components/FormField";
 import { AnastomosisEntryCard } from "@/components/AnastomosisEntryCard";
 import { RecipientSiteSelector } from "@/components/RecipientSiteSelector";
 import { FreeFlapPicker } from "@/components/FreeFlapPicker";
+import { FlapSpecificFields } from "@/components/FlapSpecificFields";
 import { SectionHeader } from "@/components/SectionHeader";
 import { v4 as uuidv4 } from "uuid";
 import { findPicklistEntry } from "@/lib/procedurePicklist";
@@ -24,6 +25,7 @@ import {
   type Indication,
   type ElevationPlane,
   type FreeFlap,
+  type FlapSpecificDetails,
   INDICATION_LABELS,
   FLAP_SNOMED_MAP,
   RECIPIENT_SITE_SNOMED_MAP,
@@ -96,6 +98,10 @@ const DEFAULT_DONOR_VESSELS: Record<FreeFlap, { artery: string; vein: string }> 
     artery: "Circumflex scapular artery",
     vein: "Circumflex scapular vein",
   },
+  scapular: {
+    artery: "Circumflex scapular artery",
+    vein: "Circumflex scapular vein",
+  },
   serratus_anterior: {
     artery: "Thoracodorsal artery (serratus branch)",
     vein: "Thoracodorsal vein",
@@ -161,6 +167,7 @@ export function FreeFlapClinicalFields({
       flapSnomedCode: snomedEntry?.code,
       flapSnomedDisplay: snomedEntry?.display,
       skinIsland: undefined,
+      flapSpecificDetails: {},
     });
   };
 
@@ -311,35 +318,14 @@ export function FreeFlapClinicalFields({
         </View>
       </View>
 
-      {procedureType === "ALT Flap" ? (
-        <>
-          <SelectField
-            label="Perforator Count"
-            value={clinicalDetails.perforatorCount ? String(clinicalDetails.perforatorCount) : ""}
-            options={[
-              { value: "1", label: "1" },
-              { value: "2", label: "2" },
-              { value: "3", label: "3+" },
-            ]}
-            onSelect={(v) => onUpdate({ 
-              ...clinicalDetails, 
-              perforatorCount: v ? parseInt(v) as 1 | 2 | 3 : undefined 
-            })}
-          />
-
-          <SelectField
-            label="Elevation Plane"
-            value={clinicalDetails.elevationPlane || ""}
-            options={[
-              { value: "subfascial", label: "Subfascial" },
-              { value: "suprafascial", label: "Suprafascial" },
-            ]}
-            onSelect={(v) => onUpdate({ 
-              ...clinicalDetails, 
-              elevationPlane: v as ElevationPlane 
-            })}
-          />
-        </>
+      {flapType ? (
+        <FlapSpecificFields
+          flapType={flapType}
+          details={clinicalDetails.flapSpecificDetails || {}}
+          onUpdate={(fsd: FlapSpecificDetails) =>
+            onUpdate({ ...clinicalDetails, flapSpecificDetails: fsd })
+          }
+        />
       ) : null}
     </View>
   );

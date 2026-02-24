@@ -221,7 +221,10 @@ export type ElevationPlane =
   | "subfascial" 
   | "suprafascial" 
   | "epifascial" 
-  | "thin_alt";  // Suprafascial thin ALT (defatted)
+  | "thin"
+  | "superthin"
+  | "ultrathin"
+  | "subdermal";
 
 export type FreeFlap = 
   | "alt"
@@ -239,6 +242,7 @@ export type FreeFlap =
   | "pap"
   | "tdap"
   | "parascapular"
+  | "scapular"
   | "serratus_anterior"
   | "other";
 
@@ -258,6 +262,7 @@ export const FREE_FLAP_LABELS: Record<FreeFlap, string> = {
   pap: "PAP (Profunda Artery Perforator)",
   tdap: "TDAP (Thoracodorsal Artery Perforator)",
   parascapular: "Parascapular",
+  scapular: "Scapular System",
   serratus_anterior: "Serratus Anterior",
   other: "Other",
 };
@@ -266,8 +271,214 @@ export const ELEVATION_PLANE_LABELS: Record<ElevationPlane, string> = {
   subfascial: "Subfascial",
   suprafascial: "Suprafascial",
   epifascial: "Epifascial",
-  thin_alt: "Thin ALT (Suprafascial Defatted)",
+  thin: "Thin (~4\u201311 mm)",
+  superthin: "Superthin (~2\u20134 mm)",
+  ultrathin: "Ultrathin (<5 mm)",
+  subdermal: "Subdermal / Pure Skin",
 };
+
+export type ALTPerforatorType = "musculocutaneous" | "septocutaneous" | "oblique_branch";
+export type ALTPedicleSource = "type_i_descending" | "type_ii_transverse" | "type_iii_profunda";
+export type ALTPerforatorLocation = "a_proximal" | "b_midpoint" | "c_distal";
+export type ALTTissueComposition = "fasciocutaneous" | "myocutaneous" | "chimeric" | "adipofascial" | "fascial_only" | "de_epithelialized";
+export type ALTExtendedVariant = "standard" | "extended" | "bipedicled" | "conjoined_alt_tfl";
+
+export type DIEPPerfusionZones = "zone_i_only" | "zone_i_iii" | "zone_i_ii_iii" | "zone_i_ii_iii_iv";
+export type DIEPPerforatorRow = "medial" | "lateral" | "both";
+export type MSTRAMClassification = "ms_0" | "ms_1" | "ms_2" | "ms_3";
+export type GillDIEPSubtype = "diep_1" | "diep_2" | "diep_3";
+export type DIEPFlapConfiguration = "standard_unilateral" | "hemi_diep" | "stacked" | "conjoined_double_pedicle" | "bipedicled";
+export type DIEPVenousSupercharge = "none" | "siev_ipsilateral" | "siev_contralateral" | "bipedicled" | "turbocharged";
+export type DIEPFlapExtent = "hemi_diep" | "full_diep";
+
+export type SIEAVesselStatus = "present_adequate" | "present_inadequate" | "absent";
+export type SIEAOriginPattern = "independent" | "common_trunk_scia" | "absent";
+export type SIEAFlapExtent = "hemi_abdominal" | "full_abdominal";
+
+export type GracilisTissueComposition = "muscle_only" | "myocutaneous" | "myofasciocutaneous" | "perforator_only";
+export type GracilisSkinPaddle = "none" | "transverse_tug" | "vertical" | "oblique_dug" | "l_shaped";
+export type GracilisNerveTarget = "cfng" | "masseteric" | "dual" | "hypoglossal" | "spinal_accessory";
+export type GracilisCoaptation = "end_to_end" | "end_to_side" | "dual";
+export type GracilisHarvestExtent = "complete" | "partial_proximal" | "segmental";
+
+export type PAPSkinPaddle = "transverse_tpap" | "vertical_vpap" | "diagonal_dpap" | "fleur_de_lis" | "s_shaped";
+export type PAPPerforatorType = "musculocutaneous" | "septocutaneous";
+export type PAPStacking = "single" | "stacked_bilateral" | "stacked_diep_pap" | "tug_pap";
+
+export type SCIPPedicleBranch = "superficial_scias" | "deep_sciad" | "both";
+export type SCIPThickness = "standard" | "thin" | "superthin" | "subdermal";
+export type SCIPLymphatic = "none" | "vlnt" | "vlvt" | "lyst";
+export type SCIPTissueComposition = "cutaneous" | "adipofascial" | "fasciocutaneous";
+
+export type LDHarvestExtent = "tdap" | "msld_i" | "msld_ii" | "msld_iii" | "complete_ld" | "extended_ld";
+export type LDTissueComposition = "muscle_only" | "myocutaneous" | "fasciocutaneous_tdap" | "osteomyocutaneous_rib" | "osteomyocutaneous_scapular_tip";
+export type LDNerveStatus = "divided" | "preserved";
+export type LDExtensionArea = "scapular_fat" | "parascapular_fat" | "lumbar_fat" | "combined";
+export type LDSkinPaddle = "transverse" | "vertical" | "oblique" | "fleur_de_lis" | "none";
+export type LDMuscleBranch = "whole_muscle" | "descending" | "transverse" | "bilobed";
+
+export type TDAPTissueComposition = "fasciocutaneous" | "adipofascial" | "chimeric_ld_cuff" | "chimeric_serratus";
+export type TDAPPerforatorSource = "descending_branch" | "transverse_branch" | "main_tda_trunk";
+export type TDAPThinning = "standard" | "primary_thinned" | "superthin";
+export type TDAPConversion = "completed_tdap" | "converted_msld" | "converted_full_ld";
+export type TDAPSkinPaddle = "transverse" | "vertical" | "oblique" | "propeller";
+
+export type FibulaTissueComposition = "bone_only" | "osteocutaneous" | "osteomyocutaneous";
+export type FibulaSkinPaddleType = "type_a_septocutaneous" | "type_b_septo_musculo" | "type_c_musculocutaneous" | "type_d_popliteal";
+export type FibulaBarrel = "single" | "double" | "hybrid_1_2_1" | "biaxial_double";
+export type FibulaPlanningMethod = "freehand" | "vsp_models" | "vsp_cutting_guides" | "vsp_psi" | "in_house_vsp";
+export type FibulaFixation = "reconstruction_plate" | "miniplates" | "patient_specific_plate" | "combination";
+export type FibulaDentalImplant = "immediate" | "delayed" | "not_planned";
+export type FibulaReconSite = "mandible" | "maxilla" | "long_bone";
+
+export type ScapularSkinPaddle = "scapular" | "parascapular" | "both_boomerang" | "none";
+export type ScapularBoneComponent = "none" | "lateral_border" | "scapular_tip" | "both";
+export type ScapularVascularPedicle = "csa_only" | "subscapular_extended" | "tda_for_tip";
+
+export type GAPSubtype = "sgap" | "igap" | "sc_gap";
+export type SGAPSkinPaddle = "oblique" | "transverse" | "modified_lateral";
+export type IGAPSkinPaddle = "in_the_crease" | "oblique" | "transverse";
+export type GAPPerforatorType = "musculocutaneous" | "septocutaneous";
+
+export type RFFFTissueComposition = "fasciocutaneous" | "osteocutaneous" | "adipofascial" | "composite_palmaris" | "composite_neuroteno";
+export type RFFFSensateNerve = "non_sensate" | "labcn" | "mabcn" | "both";
+export type RFFFDissectionPlane = "subfascial" | "suprafascial";
+export type RFFFVenousDrainage = "venae_comitantes" | "cephalic_vein" | "both";
+export type RFFFVariant = "radial" | "ulnar";
+export type RFFFConfiguration = "standard" | "folded" | "tubed";
+
+export type MSAPTissueComposition = "fasciocutaneous" | "adipofascial" | "chimeric_gastrocnemius";
+export type MSAPBranchingPattern = "type_i_single" | "type_iia_dual_superior" | "type_iib_dual_inferior" | "type_iii_triple";
+export type MSAPPerforatorCourse = "type_1_direct" | "type_2_oblique" | "type_3_tortuous";
+export type MSAPSensate = "non_sensate" | "medial_sural_cutaneous" | "sural_nerve";
+export type MSAPThinning = "standard" | "thinned";
+
+export type SerratusTissueComposition = "muscle_only" | "myocutaneous" | "fascia_only" | "osteomuscular" | "osteomyocutaneous";
+export type SerratusNerveStatus = "preserved" | "divided";
+export type SerratusNerveTarget = "masseteric" | "facial_nerve" | "cfng";
+export type SerratusChimeric = "serratus_alone" | "plus_ld" | "plus_ld_rib" | "plus_ld_scapular_bone" | "mega_flap";
+
+export interface FlapSpecificDetails {
+  altTissueComposition?: ALTTissueComposition;
+  altPerforatorType?: ALTPerforatorType;
+  altPedicleSource?: ALTPedicleSource;
+  altPerforatorLocation?: ALTPerforatorLocation;
+  altNumberOfSkinPaddles?: number;
+  altFlowThrough?: boolean;
+  altSensate?: boolean;
+  altPrimaryThinning?: boolean;
+  altExtendedVariant?: ALTExtendedVariant;
+
+  diepPerfusionZones?: DIEPPerfusionZones;
+  diepPerforatorRow?: DIEPPerforatorRow;
+  diepMSTRAM?: MSTRAMClassification;
+  diepGillSubtype?: GillDIEPSubtype;
+  diepFlapConfiguration?: DIEPFlapConfiguration;
+  diepVenousSupercharge?: DIEPVenousSupercharge;
+  diepMotorNervePreservation?: string;
+  diepSensoryNeurotization?: boolean;
+  diepFlapExtent?: DIEPFlapExtent;
+
+  sieaVesselStatus?: SIEAVesselStatus;
+  sieaArterialDiameterMm?: number;
+  sieaOriginPattern?: SIEAOriginPattern;
+  sieaConvertedToDiep?: boolean;
+  sieaFlapExtent?: SIEAFlapExtent;
+  sieaConjoinedWithDiep?: boolean;
+
+  gracilisTissueComposition?: GracilisTissueComposition;
+  gracilisSkinPaddle?: GracilisSkinPaddle;
+  gracilisFunctionalTransfer?: boolean;
+  gracilisNerveTarget?: GracilisNerveTarget;
+  gracilisCoaptation?: GracilisCoaptation;
+  gracilisCFNGStaging?: "single_stage" | "two_stage";
+  gracilisHarvestExtent?: GracilisHarvestExtent;
+
+  papSkinPaddle?: PAPSkinPaddle;
+  papPerforatorType?: PAPPerforatorType;
+  papSensate?: boolean;
+  papSensateNerve?: string;
+  papStacking?: PAPStacking;
+
+  scipPedicleBranch?: SCIPPedicleBranch;
+  scipThickness?: SCIPThickness;
+  scipLymphatic?: SCIPLymphatic;
+  scipTissueComposition?: SCIPTissueComposition;
+  scipBoneIncluded?: boolean;
+  scipSensate?: boolean;
+  scipChimericComponents?: string[];
+
+  ldHarvestExtent?: LDHarvestExtent;
+  ldTissueComposition?: LDTissueComposition;
+  ldNerveStatus?: LDNerveStatus;
+  ldNerveTarget?: string;
+  ldExtensionArea?: LDExtensionArea;
+  ldSkinPaddle?: LDSkinPaddle;
+  ldMuscleBranch?: LDMuscleBranch;
+  ldChimericComponents?: string[];
+
+  tdapTissueComposition?: TDAPTissueComposition;
+  tdapPerforatorSource?: TDAPPerforatorSource;
+  tdapThinning?: TDAPThinning;
+  tdapConversion?: TDAPConversion;
+  tdapSkinPaddle?: TDAPSkinPaddle;
+  tdapChimericComponents?: string[];
+
+  fibulaTissueComposition?: FibulaTissueComposition;
+  fibulaSkinPaddleType?: FibulaSkinPaddleType;
+  fibulaOsteotomyCount?: number;
+  fibulaBarrel?: FibulaBarrel;
+  fibulaPlanningMethod?: FibulaPlanningMethod;
+  fibulaFixation?: FibulaFixation;
+  fibulaBoneLengthCm?: number;
+  fibulaSkinPaddleCount?: number;
+  fibulaDentalImplant?: FibulaDentalImplant;
+  fibulaReconSite?: FibulaReconSite;
+
+  scapularSkinPaddle?: ScapularSkinPaddle;
+  scapularBoneComponent?: ScapularBoneComponent;
+  scapularVascularPedicle?: ScapularVascularPedicle;
+  scapularMusclesIncluded?: string[];
+  scapularChimericCount?: number;
+
+  gapSubtype?: GAPSubtype;
+  sgapSkinPaddle?: SGAPSkinPaddle;
+  igapSkinPaddle?: IGAPSkinPaddle;
+  gapPerforatorType?: GAPPerforatorType;
+  gapSensate?: boolean;
+  gapStacked?: boolean;
+  gapPositionChange?: boolean;
+
+  rfffTissueComposition?: RFFFTissueComposition;
+  rfffSensateNerve?: RFFFSensateNerve;
+  rfffDissectionPlane?: RFFFDissectionPlane;
+  rfffPalmarisIncluded?: "yes" | "no" | "absent";
+  rfffBrachioradialisIncluded?: boolean;
+  rfffFcrIncluded?: boolean;
+  rfffVenousDrainage?: RFFFVenousDrainage;
+  rfffBoneSegmentCm?: number;
+  rfffProphylacticPlating?: boolean;
+  rfffVariant?: RFFFVariant;
+  rfffConfiguration?: RFFFConfiguration;
+  rfffSkinPaddleCount?: number;
+
+  msapTissueComposition?: MSAPTissueComposition;
+  msapBranchingPattern?: MSAPBranchingPattern;
+  msapPerforatorCourse?: MSAPPerforatorCourse;
+  msapSensate?: MSAPSensate;
+  msapDominantBranch?: "lateral" | "medial";
+  msapChimericMuscle?: "none" | "medial_gastrocnemius";
+  msapThinning?: MSAPThinning;
+
+  serratusSlipCount?: number;
+  serratusSpecificSlips?: string;
+  serratusTissueComposition?: SerratusTissueComposition;
+  serratusRibIncluded?: boolean;
+  serratusRibNumbers?: string;
+  serratusNerveStatus?: SerratusNerveStatus;
+  serratusNerveTarget?: SerratusNerveTarget;
+  serratusChimeric?: SerratusChimeric;
+}
 
 export const FLAP_SNOMED_MAP: Partial<Record<FreeFlap, { code: string; display: string }>> = {
   alt:               { code: "234298008", display: "Anterolateral thigh free flap (procedure)" },
@@ -286,6 +497,7 @@ export const FLAP_SNOMED_MAP: Partial<Record<FreeFlap, { code: string; display: 
   tdap:              { code: "234307004", display: "Free thoracodorsal artery perforator flap (procedure)" },
   parascapular:      { code: "234304006", display: "Free parascapular flap (procedure)" },
   serratus_anterior: { code: "234305007", display: "Free serratus anterior flap (procedure)" },
+  scapular: { code: "234303001", display: "Free scapular flap (procedure)" },
 };
 
 export const RECIPIENT_SITE_SNOMED_MAP: Partial<Record<AnatomicalRegion, { code: string; display: string }>> = {
@@ -404,6 +616,7 @@ export interface FreeFlapDetails {
   recipientVeinName?: string;
   anastomosisType?: AnastomosisType;
   couplerSizeMm?: number;
+  flapSpecificDetails?: FlapSpecificDetails;
 }
 
 // AO/OTA fracture classification entry

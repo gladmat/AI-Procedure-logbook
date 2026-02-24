@@ -6,6 +6,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { BorderRadius, Spacing } from "@/constants/theme";
 import { PickerField } from "@/components/FormField";
+import { FLAP_ELEVATION_PLANES } from "@/data/flapFieldConfig";
 import {
   type FreeFlap,
   type ElevationPlane,
@@ -37,19 +38,9 @@ const ALL_FLAPS: FreeFlap[] = [
   "pap",
   "tdap",
   "parascapular",
+  "scapular",
   "serratus_anterior",
   "other",
-];
-
-const ALT_ELEVATION_PLANES: ElevationPlane[] = [
-  "subfascial",
-  "epifascial",
-  "thin_alt",
-];
-
-const NON_ALT_ELEVATION_PLANES: ElevationPlane[] = [
-  "subfascial",
-  "suprafascial",
 ];
 
 export function FreeFlapPicker({
@@ -65,14 +56,17 @@ export function FreeFlapPicker({
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onFlapTypeChange(flap);
     
-    if (flap === "alt" && elevationPlane && !ALT_ELEVATION_PLANES.includes(elevationPlane)) {
-      onElevationPlaneChange("subfascial");
-    } else if (flap !== "alt" && elevationPlane && !NON_ALT_ELEVATION_PLANES.includes(elevationPlane)) {
-      onElevationPlaneChange("subfascial");
+    const newPlanes = FLAP_ELEVATION_PLANES[flap];
+    if (newPlanes && elevationPlane && !newPlanes.includes(elevationPlane)) {
+      onElevationPlaneChange("subfascial" as ElevationPlane);
     }
   };
 
-  const elevationOptions = flapType === "alt" ? ALT_ELEVATION_PLANES : NON_ALT_ELEVATION_PLANES;
+  const elevationOptions = flapType
+    ? (FLAP_ELEVATION_PLANES[flapType] || []).map(
+        (plane) => plane as ElevationPlane
+      )
+    : [];
 
   return (
     <View style={styles.container}>
@@ -119,7 +113,7 @@ export function FreeFlapPicker({
         ))}
       </View>
 
-      {flapType ? (
+      {flapType && elevationOptions.length > 0 ? (
         <View style={styles.elevationSection}>
           <PickerField
             label="Elevation Plane"
@@ -132,7 +126,7 @@ export function FreeFlapPicker({
           />
           {flapType === "alt" ? (
             <ThemedText style={[styles.hint, { color: theme.textSecondary }]}>
-              ALT flaps support subfascial, epifascial, or thin (suprafascial defatted) elevation
+              ALT flaps support 6-level elevation plane granularity
             </ThemedText>
           ) : null}
         </View>
