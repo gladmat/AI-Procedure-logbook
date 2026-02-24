@@ -46,6 +46,7 @@ Patient data remains on the device or is processed temporarily and locally:
 - **RACS MALT Supervision Levels**: Implementation of official RACS MALT supervision level codes.
 - **Anatomical/Clinical Specialty Categories**: Restructured categories and procedure tagging system.
 - **Modular Procedure Configuration**: Configuration files define specialty-specific fields.
+- **Complete 8-Specialty Procedure Picklist**: 398 unique procedures across all 8 specialties (Orthoplastic 43, Hand Surgery 94, Head & Neck 85, General 74, Breast 47, Burns 34, Aesthetics 53, Body Contouring 31) with cross-specialty tagging and SNOMED CT codes. All specialties now use the subcategory picker UI.
 - **Multi-Procedure Support**: Allows logging multiple distinct procedures per case.
 - **Complete Password Management**: Change password and Forgot Password flow with email-based reset tokens.
 - **App Store Legal Compliance**: Accessible Privacy Policy, Terms of Service, and Open Source Licenses.
