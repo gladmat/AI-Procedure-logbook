@@ -1,4 +1,4 @@
-import type { FreeFlap } from "@/types/case";
+import type { FreeFlap, ElevationPlane } from "@/types/case";
 
 export type FlapFieldType = "select" | "boolean" | "number" | "text" | "multi_select";
 
@@ -435,6 +435,17 @@ export const FLAP_FIELD_CONFIG: Partial<Record<FreeFlap, FlapFieldDefinition[]>>
       label: "Sensate (T12/L1 cutaneous branches)",
       type: "boolean",
     },
+    {
+      key: "scipChimericComponents",
+      label: "Chimeric Components",
+      type: "multi_select",
+      options: [
+        { value: "external_oblique_fascia", label: "External oblique fascia" },
+        { value: "sartorius", label: "Sartorius muscle" },
+        { value: "iliac_bone", label: "Iliac bone (deep branch)" },
+        { value: "lymph_nodes", label: "Inguinal lymph nodes" },
+      ],
+    },
   ],
 
   latissimus_dorsi: [
@@ -508,6 +519,29 @@ export const FLAP_FIELD_CONFIG: Partial<Record<FreeFlap, FlapFieldDefinition[]>>
         { value: "combined", label: "Combined" },
       ],
     },
+    {
+      key: "ldNerveTarget",
+      label: "Nerve Coaptation Target (if functional)",
+      type: "select",
+      showWhen: { key: "ldNerveStatus", values: ["preserved"] },
+      options: [
+        { value: "cfng", label: "Cross-face nerve graft" },
+        { value: "masseteric", label: "Masseteric nerve" },
+        { value: "dual", label: "Dual (masseteric + CFNG)" },
+        { value: "hypoglossal", label: "Hypoglossal" },
+      ],
+    },
+    {
+      key: "ldChimericComponents",
+      label: "Chimeric Components",
+      type: "multi_select",
+      options: [
+        { value: "serratus_anterior", label: "Serratus anterior" },
+        { value: "scapular_tip_bone", label: "Scapular tip bone" },
+        { value: "parascapular_skin", label: "Parascapular skin" },
+        { value: "rib", label: "Rib" },
+      ],
+    },
   ],
 
   tdap: [
@@ -564,6 +598,16 @@ export const FLAP_FIELD_CONFIG: Partial<Record<FreeFlap, FlapFieldDefinition[]>>
         { value: "vertical", label: "Vertical" },
         { value: "oblique", label: "Oblique" },
         { value: "propeller", label: "Propeller" },
+      ],
+    },
+    {
+      key: "tdapChimericComponents",
+      label: "Chimeric Components",
+      type: "multi_select",
+      options: [
+        { value: "ld_cuff", label: "LD muscle cuff" },
+        { value: "serratus_anterior", label: "Serratus anterior" },
+        { value: "scapular_bone", label: "Scapular bone" },
       ],
     },
   ],
@@ -725,6 +769,16 @@ export const FLAP_FIELD_CONFIG: Partial<Record<FreeFlap, FlapFieldDefinition[]>>
         { value: "5", label: "5+ (mega-flap)" },
       ],
     },
+    {
+      key: "scapularMusclesIncluded",
+      label: "Muscles Included",
+      type: "multi_select",
+      options: [
+        { value: "teres_major", label: "Teres major" },
+        { value: "serratus_anterior", label: "Serratus anterior" },
+        { value: "latissimus_dorsi", label: "Latissimus dorsi" },
+      ],
+    },
   ],
 
   parascapular: [
@@ -771,6 +825,16 @@ export const FLAP_FIELD_CONFIG: Partial<Record<FreeFlap, FlapFieldDefinition[]>>
         { value: "3", label: "3" },
         { value: "4", label: "4" },
         { value: "5", label: "5+ (mega-flap)" },
+      ],
+    },
+    {
+      key: "scapularMusclesIncluded",
+      label: "Muscles Included",
+      type: "multi_select",
+      options: [
+        { value: "teres_major", label: "Teres major" },
+        { value: "serratus_anterior", label: "Serratus anterior" },
+        { value: "latissimus_dorsi", label: "Latissimus dorsi" },
       ],
     },
   ],
@@ -955,6 +1019,16 @@ export const FLAP_FIELD_CONFIG: Partial<Record<FreeFlap, FlapFieldDefinition[]>>
         { value: "1", label: "1" },
         { value: "2", label: "2 (bipaddle)" },
       ],
+    },
+    {
+      key: "rfffBrachioradialisIncluded",
+      label: "Brachioradialis Included",
+      type: "boolean",
+    },
+    {
+      key: "rfffFcrIncluded",
+      label: "FCR Tendon Included",
+      type: "boolean",
     },
   ],
 
@@ -1145,7 +1219,7 @@ export const FLAP_FIELD_CONFIG: Partial<Record<FreeFlap, FlapFieldDefinition[]>>
   ],
 };
 
-export const FLAP_ELEVATION_PLANES: Partial<Record<FreeFlap, string[]>> = {
+export const FLAP_ELEVATION_PLANES: Partial<Record<FreeFlap, ElevationPlane[]>> = {
   alt: ["subfascial", "epifascial", "thin", "superthin", "ultrathin", "subdermal"],
   scip: ["subfascial", "suprafascial"],
   tdap: ["subfascial", "suprafascial"],

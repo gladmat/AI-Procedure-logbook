@@ -64,6 +64,22 @@ export function FlapSpecificFields({
                 }}
               />
             );
+          case "multi_select":
+            return (
+              <MultiSelectField
+                key={field.key}
+                field={field}
+                values={(getValue(field.key) as string[]) ?? []}
+                onToggle={(v) => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  const current = (getValue(field.key) as string[]) ?? [];
+                  const next = current.includes(v)
+                    ? current.filter((x) => x !== v)
+                    : [...current, v];
+                  setValue(field.key, next.length > 0 ? next : undefined);
+                }}
+              />
+            );
           case "boolean":
             return (
               <BooleanField
@@ -184,6 +200,63 @@ function BooleanField({
         trackColor={{ false: theme.border, true: theme.link + "60" }}
         thumbColor={value ? theme.link : theme.textSecondary}
       />
+    </View>
+  );
+}
+
+function MultiSelectField({
+  field,
+  values,
+  onToggle,
+}: {
+  field: FlapFieldDefinition;
+  values: string[];
+  onToggle: (value: string) => void;
+}) {
+  const { theme } = useTheme();
+
+  return (
+    <View style={styles.fieldContainer}>
+      <ThemedText style={[styles.fieldLabel, { color: theme.textSecondary }]}>
+        {field.label}{field.required ? " *" : ""} (select all that apply)
+      </ThemedText>
+      {field.hint ? (
+        <ThemedText style={[styles.fieldHint, { color: theme.textSecondary }]}>
+          {field.hint}
+        </ThemedText>
+      ) : null}
+      <View style={styles.optionsWrap}>
+        {(field.options || []).map((option) => {
+          const selected = values.includes(option.value);
+          return (
+            <Pressable
+              key={option.value}
+              style={[
+                styles.optionChip,
+                {
+                  backgroundColor: selected
+                    ? theme.link + "20"
+                    : theme.backgroundDefault,
+                  borderColor: selected ? theme.link : theme.border,
+                },
+              ]}
+              onPress={() => onToggle(option.value)}
+            >
+              <ThemedText
+                style={[
+                  styles.optionText,
+                  {
+                    color: selected ? theme.link : theme.text,
+                    fontWeight: selected ? "600" : "400",
+                  },
+                ]}
+              >
+                {selected ? "\u2713 " : ""}{option.label}
+              </ThemedText>
+            </Pressable>
+          );
+        })}
+      </View>
     </View>
   );
 }
