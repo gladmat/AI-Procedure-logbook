@@ -497,7 +497,7 @@ export const FLAP_SNOMED_MAP: Partial<Record<FreeFlap, { code: string; display: 
   tdap:              { code: "234307004", display: "Free thoracodorsal artery perforator flap (procedure)" },
   parascapular:      { code: "234304006", display: "Free parascapular flap (procedure)" },
   serratus_anterior: { code: "234305007", display: "Free serratus anterior flap (procedure)" },
-  scapular: { code: "234303001", display: "Free scapular flap (procedure)" },
+  scapular: { code: "234303000", display: "Free scapular flap (procedure)" },
 };
 
 export const RECIPIENT_SITE_SNOMED_MAP: Partial<Record<AnatomicalRegion, { code: string; display: string }>> = {
