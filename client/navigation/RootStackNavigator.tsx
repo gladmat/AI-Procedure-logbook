@@ -5,9 +5,7 @@ import MainTabNavigator from "@/navigation/MainTabNavigator";
 import CaseDetailScreen from "@/screens/CaseDetailScreen";
 import CaseFormScreen from "@/screens/CaseFormScreen";
 import AddCaseScreen from "@/screens/AddCaseScreen";
-import SmartCaptureScreen from "@/screens/SmartCaptureScreen";
 import AddTimelineEventScreen from "@/screens/AddTimelineEventScreen";
-import HistologyCaptureScreen from "@/screens/HistologyCaptureScreen";
 import MediaManagementScreen from "@/screens/MediaManagementScreen";
 import AddOperativeMediaScreen from "@/screens/AddOperativeMediaScreen";
 import AuthScreen from "@/screens/AuthScreen";
@@ -23,11 +21,9 @@ export type RootStackParamList = {
   Onboarding: undefined;
   Main: undefined;
   CaseDetail: { caseId: string; showComplicationForm?: boolean };
-  CaseForm: { specialty?: Specialty; extractedData?: Record<string, unknown>; caseId?: string };
+  CaseForm: { specialty?: Specialty; caseId?: string };
   AddCase: undefined;
-  SmartCapture: { mode?: "op_note" | "discharge_summary" } | undefined;
   AddTimelineEvent: { caseId: string; initialEventType?: TimelineEventType; isSkinLesion?: boolean };
-  HistologyCapture: { caseId: string; procedureIndex?: number };
   MediaManagement: {
     existingAttachments?: MediaAttachment[];
     callbackId?: string;
@@ -104,27 +100,11 @@ export default function RootStackNavigator() {
             }}
           />
           <Stack.Screen
-            name="SmartCapture"
-            component={SmartCaptureScreen}
-            options={{
-              headerShown: false,
-              presentation: "fullScreenModal",
-            }}
-          />
-          <Stack.Screen
             name="AddTimelineEvent"
             component={AddTimelineEventScreen}
             options={{
               headerTitle: "Add Event",
               presentation: "modal",
-            }}
-          />
-          <Stack.Screen
-            name="HistologyCapture"
-            component={HistologyCaptureScreen}
-            options={{
-              headerTitle: "Capture Histology",
-              presentation: "fullScreenModal",
             }}
           />
           <Stack.Screen

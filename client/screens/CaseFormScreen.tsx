@@ -77,9 +77,8 @@ import { AnastomosisEntryCard } from "@/components/AnastomosisEntryCard";
 import { ProcedureEntryCard } from "@/components/ProcedureEntryCard";
 import { SnomedSearchPicker } from "@/components/SnomedSearchPicker";
 import { useAuth } from "@/contexts/AuthContext";
-import { getDiagnosisStaging, DiagnosisStagingConfig, searchSnomedDiagnoses, searchSnomedProcedures, SnomedSearchResult } from "@/lib/snomedApi";
+import { getDiagnosisStaging, DiagnosisStagingConfig, searchSnomedDiagnoses, SnomedSearchResult } from "@/lib/snomedApi";
 import { DiagnosisClinicalFields } from "@/components/DiagnosisClinicalFields";
-import { DocumentTypeBadge } from "@/components/AutoFilledField";
 import { FractureEntry, DiagnosisClinicalDetails } from "@/types/case";
 import { FractureClassificationWizard } from "@/components/FractureClassificationWizard";
 import { OperativeMediaSection } from "@/components/OperativeMediaSection";
@@ -206,15 +205,10 @@ export default function CaseFormScreen() {
   const scrollViewRef = useRef<any>(null);
   const scrollPositionRef = useRef(0);
 
-  const { specialty: routeSpecialty, extractedData, caseId } = route.params;
+  const { specialty: routeSpecialty, caseId } = route.params;
   const isEditMode = !!caseId;
   const [existingCase, setExistingCase] = useState<Case | null>(null);
   const specialty = routeSpecialty || existingCase?.specialty || "general";
-  
-  const documentType = (extractedData as any)?._documentType;
-  const confidence = (extractedData as any)?._confidence;
-  const detectedTriggers = (extractedData as any)?._detectedTriggers;
-  const autoFilledFields: string[] = (extractedData as any)?._autoFilledFields || [];
   const config = getConfigForSpecialty(specialty);
 
   const primaryFacility = facilities.find(f => f.isPrimary)?.facilityName || facilities[0]?.facilityName || "";
@@ -226,8 +220,6 @@ export default function CaseFormScreen() {
   );
   const [facility, setFacility] = useState(primaryFacility);
   const [procedureType, setProcedureType] = useState<string>(
-    (extractedData as FreeFlapDetails | undefined)?.flapDisplayName || 
-    (extractedData as any)?.flapType || 
     PROCEDURE_TYPES[specialty]?.[0] || ""
   );
   const [asaScore, setAsaScore] = useState<string>("");
@@ -251,30 +243,28 @@ export default function CaseFormScreen() {
   const [newTeamMemberRole, setNewTeamMemberRole] = useState<OperatingTeamRole>("scrub_nurse");
 
   const [clinicalDetails, setClinicalDetails] = useState<Record<string, any>>(
-    extractedData || getDefaultClinicalDetails(specialty)
+    getDefaultClinicalDetails(specialty)
   );
 
   const [infectionOverlay, setInfectionOverlay] = useState<InfectionOverlay | undefined>(undefined);
   const [infectionCollapsed, setInfectionCollapsed] = useState(false);
 
   const [recipientSiteRegion, setRecipientSiteRegion] = useState<AnatomicalRegion | undefined>(
-    (extractedData as FreeFlapDetails | undefined)?.recipientSiteRegion
+    undefined
   );
   const [anastomoses, setAnastomoses] = useState<AnastomosisEntry[]>(
-    (extractedData as FreeFlapDetails | undefined)?.anastomoses || []
+    []
   );
 
   const buildDefaultProcedures = useCallback((): CaseProcedure[] => ([
     {
       id: uuidv4(),
       sequenceOrder: 1,
-      procedureName: (extractedData as FreeFlapDetails | undefined)?.flapDisplayName || 
-        (extractedData as any)?.flapType || 
-        PROCEDURE_TYPES[specialty]?.[0] || "",
+      procedureName: PROCEDURE_TYPES[specialty]?.[0] || "",
       specialty: specialty,
       surgeonRole: "PS",
     },
-  ]), [extractedData, specialty]);
+  ]), [specialty]);
 
   // Multi-procedure support
   const [procedures, setProcedures] = useState<CaseProcedure[]>(buildDefaultProcedures);
@@ -377,155 +367,8 @@ export default function CaseFormScreen() {
     fetchStaging();
   }, [primaryDiagnosis]);
 
-  // Populate ALL form fields from extractedData (Smart Capture)
-  useEffect(() => {
-    if (!extractedData) return;
-    
-    const data = extractedData as any;
-    console.log("Populating form from extracted data:", Object.keys(data).filter(k => data[k] !== null));
-    
-    // Patient Identifier (extracted before redaction)
-    if (data.patientIdentifier) setPatientIdentifier(data.patientIdentifier);
-    
-    // Procedure Date (extracted before redaction)
-    if (data.procedureDate) setProcedureDate(data.procedureDate);
-    
-    // Patient Demographics
-    if (data.gender) setGender(data.gender);
-    if (data.age) setAge(String(data.age));
-    
-    // Procedure Category
-    if (data.procedureCategory) setProcedureCategory(data.procedureCategory);
-    
-    // Admission Details
-    if (data.admissionUrgency) setAdmissionUrgency(data.admissionUrgency);
-    if (data.stayType) setStayType(data.stayType);
-    
-    // ASA Score
-    if (data.asaScore) setAsaScore(String(data.asaScore));
-    
-    // Surgery Timing
-    if (data.surgeryStartTime) setSurgeryStartTime(data.surgeryStartTime);
-    if (data.surgeryEndTime) setSurgeryEndTime(data.surgeryEndTime);
-    
-    // Operating Team - include ALL team members, use "unassigned" for those without roles
-    if (data.operatingTeam && Array.isArray(data.operatingTeam)) {
-      const team: OperatingTeamMember[] = data.operatingTeam.map((member: any) => ({
-        id: uuidv4(),
-        name: member.name,
-        role: member.role || "unassigned",
-      }));
-      setOperatingTeam(team);
-    }
-    
-    // Diagnoses - auto-search SNOMED for best match
-    const diagnosisText = data.finalDiagnosis || data.preManagementDiagnosis;
-    const detectedSpecialty = data.detectedSpecialty || specialty;
-    if (diagnosisText) {
-      setDiagnosis(diagnosisText);
-      // Auto-search SNOMED for diagnosis
-      searchSnomedDiagnoses(diagnosisText, detectedSpecialty, 5)
-        .then(results => {
-          if (results.length > 0) {
-            const bestMatch = results[0];
-            setPrimaryDiagnosis({ conceptId: bestMatch.conceptId, term: bestMatch.term });
-          }
-        })
-        .catch(err => console.warn("Auto-SNOMED diagnosis search failed:", err));
-    }
-    
-    // Comorbidities - match to SNOMED coded items
-    if (data.comorbidities && Array.isArray(data.comorbidities)) {
-      const matchedComorbidities: SnomedCodedItem[] = [];
-      for (const comorb of data.comorbidities) {
-        const match = COMMON_COMORBIDITIES.find(cc => 
-          cc.displayName.toLowerCase().includes(comorb.toLowerCase()) ||
-          comorb.toLowerCase().includes(cc.displayName.toLowerCase())
-        );
-        if (match) {
-          matchedComorbidities.push(match);
-        }
-      }
-      if (matchedComorbidities.length > 0) {
-        setSelectedComorbidities(matchedComorbidities);
-      }
-    }
-    
-    // Operative Factors
-    if (data.anaestheticType) setAnaestheticType(data.anaestheticType);
-    if (data.woundInfectionRisk) setWoundInfectionRisk(data.woundInfectionRisk);
-    if (typeof data.antibioticProphylaxis === "boolean") setAntibioticProphylaxis(data.antibioticProphylaxis);
-    if (typeof data.dvtProphylaxis === "boolean") setDvtProphylaxis(data.dvtProphylaxis);
-    
-    // Outcomes
-    if (typeof data.returnToTheatre === "boolean") setReturnToTheatre(data.returnToTheatre);
-    if (data.returnToTheatreReason) setReturnToTheatreReason(data.returnToTheatreReason);
-    if (data.unplannedICU === true) setUnplannedICU(data.unplannedICUReason || "other");
-    
-    // Clinical Details (specialty-specific)
-    if (data.clinicalDetails) {
-      setClinicalDetails(prev => ({ ...prev, ...data.clinicalDetails }));
-      
-      // Free flap specific
-      if (data.clinicalDetails.recipientSiteRegion) {
-        setRecipientSiteRegion(data.clinicalDetails.recipientSiteRegion);
-      }
-      if (data.clinicalDetails.anastomoses) {
-        setAnastomoses(data.clinicalDetails.anastomoses);
-      }
-    }
-    
-    // Also check for top-level flap details (older format)
-    if (data.recipientSiteRegion) setRecipientSiteRegion(data.recipientSiteRegion);
-    if (data.anastomoses && Array.isArray(data.anastomoses)) setAnastomoses(data.anastomoses);
-    
-    // Procedures - extract and auto-search SNOMED for each
-    if (data.procedures && Array.isArray(data.procedures) && data.procedures.length > 0) {
-      const extractedProcedures: CaseProcedure[] = data.procedures.map((proc: any, index: number) => ({
-        id: uuidv4(),
-        sequenceOrder: index + 1,
-        procedureName: proc.procedureName || "",
-        specialty: detectedSpecialty || specialty,
-        surgeonRole: "PS",
-        laterality: proc.laterality,
-        procedureTags: proc.procedureTags || [],
-        notes: proc.notes,
-      }));
-      setProcedures(extractedProcedures);
-      
-      // Also set the primary procedure type
-      if (extractedProcedures[0]?.procedureName) {
-        setProcedureType(extractedProcedures[0].procedureName);
-      }
-      
-      // Auto-search SNOMED for each procedure (runs in parallel)
-      extractedProcedures.forEach((proc, index) => {
-        if (proc.procedureName) {
-          searchSnomedProcedures(proc.procedureName, detectedSpecialty || specialty, 3)
-            .then(results => {
-              if (results.length > 0) {
-                const bestMatch = results[0];
-                setProcedures(prev => prev.map((p, i) => 
-                  i === index 
-                    ? { ...p, snomedCode: bestMatch.conceptId, snomedTerm: bestMatch.term }
-                    : p
-                ));
-              }
-            })
-            .catch(err => console.warn("Auto-SNOMED procedure search failed:", err));
-        }
-      });
-    }
-    
-    draftLoadedRef.current = true;
-  }, [extractedData, specialty]);
-
   useEffect(() => {
     const loadDraft = async () => {
-      if (extractedData) {
-        // Already handled by the extractedData effect above
-        return;
-      }
       const draft = await getCaseDraft(specialty);
       if (!draft) {
         draftLoadedRef.current = true;
@@ -581,7 +424,7 @@ export default function CaseFormScreen() {
     };
 
     loadDraft();
-  }, [buildDefaultProcedures, extractedData, primaryFacility, specialty]);
+  }, [buildDefaultProcedures, primaryFacility, specialty]);
 
   // Load existing case for edit mode
   useEffect(() => {
@@ -1234,14 +1077,6 @@ export default function CaseFormScreen() {
       onScroll={handleScroll}
       scrollEventThrottle={16}
     >
-      {documentType ? (
-        <DocumentTypeBadge
-          documentType={documentType}
-          confidence={confidence}
-          detectedTriggers={detectedTriggers}
-        />
-      ) : null}
-      
       <SectionHeader title="Patient Information" />
 
       <FormField

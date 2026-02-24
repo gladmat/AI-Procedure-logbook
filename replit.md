@@ -2,7 +2,7 @@
 
 ## Overview
 
-Surgical Logbook is a privacy-first mobile application for surgeons to document surgical procedures, particularly microsurgery and free flap reconstruction. Its main purpose is to streamline case logging through intelligent, local document parsing from operation notes while ensuring complete patient confidentiality. It integrates RACS MALT fields for auditing and logging. The application emphasizes on-device processing, utilizing Tesseract.js for OCR and local regex patterns for parsing, avoiding external cloud AI services like Gemini or OpenAI.
+Surgical Logbook is a privacy-first mobile application for surgeons to document surgical procedures, particularly microsurgery and free flap reconstruction. Its main purpose is to streamline case logging while ensuring complete patient confidentiality. It integrates RACS MALT fields for auditing and logging. The application emphasizes on-device data storage and end-to-end encryption.
 
 ## User Preferences
 
@@ -20,8 +20,8 @@ The application is built with a strong emphasis on privacy, local processing, an
 
 ### Backend Architecture
 - **Runtime**: Express.js server with TypeScript.
-- **API Design**: RESTful endpoints for SNOMED CT lookups and document processing.
-- **Document Router**: Manages local regex-based parsers for surgical document extraction.
+- **API Design**: RESTful endpoints for SNOMED CT lookups and reference data.
+- **Security**: All API endpoints are auth-gated except health check and auth routes.
 
 ### Data Model
 - **Local-first Architecture**: Patient data stored locally with encryption.
@@ -29,18 +29,9 @@ The application is built with a strong emphasis on privacy, local processing, an
 - **Core Case Fields**: Includes patient demographics, diagnoses, operative factors, SNOMED CT codes, and outcomes.
 - **RACS MALT Data Model**: Comprehensive implementation of RACS MALT requirements.
 
-### Privacy Pipeline
-Patient data remains on the device or is processed temporarily and locally:
-1. On-device camera capture.
-2. OCR Text Extraction: On-device (web) or server-side (mobile, images discarded) via Tesseract.js.
-3. Local Document Classification and Regex Extraction: Uses modular, hospital-specific parsers without cloud AI.
-4. Auto-population of form fields.
-5. Local storage of all extracted surgical data on the device.
-
 ### Key Features
 - **Standardized Facility Selection**: Curated hospital list with user-managed "My Hospitals".
 - **AO/OTA Fracture Classification**: Dynamic, cascading form for detailed fracture classification.
-- **Skin Lesion Histology Capture**: Automated extraction from reports using OCR and local regex.
 - **Dynamic Statistics Dashboard**: Specialty-aware analytics with multi-filtering.
 - **Enhanced Follow-up Timeline**: Supports flexible follow-up intervals and various event types with media capture.
 - **RACS MALT Supervision Levels**: Implementation of official RACS MALT supervision level codes.
@@ -80,7 +71,7 @@ Comprehensive infection case documentation with serial episode tracking.
 - **Profile Update Protection**: Restricted fields to prevent mass assignment vulnerabilities.
 - **Rate Limiting**: Auth endpoints protected against brute force attacks.
 - **Patient Identifier Privacy**: Patient identifiers in local case index are SHA-256 hashed.
-- **OCR Privacy**: Removed debug logging of extracted OCR text.
+- **Endpoint Protection**: All SNOMED and staging endpoints require authentication.
 
 ### Encryption Architecture
 - **XChaCha20-Poly1305 AEAD**: All local case data encrypted.
@@ -102,18 +93,12 @@ Comprehensive infection case documentation with serial episode tracking.
 
 ## External Dependencies
 
-### Local Processing
-- **Tesseract.js**: For on-device OCR text extraction.
-- **Document Router**: Custom modular regex-based parsers.
-
 ### Database
 - **PostgreSQL**: Used for SNOMED CT reference data, managed via Drizzle ORM.
 - **AsyncStorage**: Primary mechanism for local data persistence on the device.
 
 ### Key Libraries
-- **expo-camera**: For capturing images.
 - **expo-image-picker**: For selecting images from the gallery.
-- **tesseract.js**: Core OCR engine.
 - **@noble/ciphers**: XChaCha20-Poly1305 authenticated encryption.
 - **@noble/hashes**: SHA-256, scrypt, HKDF.
 - **@noble/curves**: X25519 elliptic curve for E2EE key exchange.

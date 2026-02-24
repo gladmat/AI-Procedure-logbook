@@ -1,10 +1,8 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   View,
   StyleSheet,
   Pressable,
-  Alert,
-  Platform,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -43,11 +41,6 @@ export default function AddCaseScreen() {
     navigation.navigate("CaseForm", { specialty });
   };
 
-  const handleScanPress = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    navigation.navigate("SmartCapture");
-  };
-
   return (
     <KeyboardAwareScrollViewCompat
       style={[styles.container, { backgroundColor: theme.backgroundRoot }]}
@@ -59,40 +52,6 @@ export default function AddCaseScreen() {
         },
       ]}
     >
-      <Pressable
-        onPress={handleScanPress}
-        style={({ pressed }) => [
-          styles.scanCard,
-          {
-            backgroundColor: theme.link,
-            transform: [{ scale: pressed ? 0.98 : 1 }],
-          },
-        ]}
-      >
-        <View style={styles.scanContent}>
-          <View style={[styles.scanIconContainer, { backgroundColor: "rgba(255,255,255,0.2)" }]}>
-            <Feather name="camera" size={28} color={theme.buttonText} />
-          </View>
-          <View style={styles.scanText}>
-            <ThemedText style={[styles.scanTitle, { color: theme.buttonText }]}>
-              Smart Capture
-            </ThemedText>
-            <ThemedText style={[styles.scanSubtitle, { color: "rgba(255,255,255,0.8)" }]}>
-              Photograph your operation note and let AI extract the details
-            </ThemedText>
-          </View>
-        </View>
-        <Feather name="chevron-right" size={24} color={theme.buttonText} />
-      </Pressable>
-
-      <View style={styles.dividerContainer}>
-        <View style={[styles.dividerLine, { backgroundColor: theme.border }]} />
-        <ThemedText style={[styles.dividerText, { color: theme.textSecondary }]}>
-          or select specialty
-        </ThemedText>
-        <View style={[styles.dividerLine, { backgroundColor: theme.border }]} />
-      </View>
-
       <View style={styles.specialtyGrid}>
         {(Object.keys(SPECIALTY_LABELS) as Specialty[]).map((specialty) => (
           <Pressable
@@ -137,54 +96,6 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: Spacing.lg,
-  },
-  scanCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: Spacing.xl,
-    borderRadius: BorderRadius.lg,
-    ...Shadows.card,
-  },
-  scanContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-    gap: Spacing.lg,
-  },
-  scanIconContainer: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  scanText: {
-    flex: 1,
-  },
-  scanTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    marginBottom: Spacing.xs,
-  },
-  scanSubtitle: {
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  dividerContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginVertical: Spacing["2xl"],
-    gap: Spacing.md,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-  },
-  dividerText: {
-    fontSize: 13,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
   },
   specialtyGrid: {
     flexDirection: "row",

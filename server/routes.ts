@@ -1,14 +1,10 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "node:http";
 import { createHash, randomBytes } from "node:crypto";
-import { extractTextFromImage } from "./ocr";
-import { parseHistologyReport } from "./histologyParser";
-import { redactSensitiveData, extractNHI, extractSurgeryDate } from "./privacyUtils";
 import { storage } from "./storage";
 import { allSeedData } from "./seedData";
 import { searchProcedures, searchDiagnoses, getConceptDetails } from "./snomedApi";
 import { getStagingForDiagnosis, getAllStagingConfigs } from "./diagnosisStagingConfig";
-import { processDocument } from "./documentRouter";
 import { sendPasswordResetEmail } from "./email";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
@@ -88,155 +84,8 @@ const authenticateToken = async (req: AuthenticatedRequest, res: Response, next:
 };
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  app.post("/api/extract-flap-data", async (req: Request, res: Response) => {
-    try {
-      const { text } = req.body;
-      
-      if (!text) {
-        return res.status(400).json({ error: "No text provided" });
-      }
-
-      console.log("Processing flap data with local document router...");
-      const result = processDocument(text);
-      
-      res.json({ 
-        extractedData: result.extractedData,
-        documentType: result.documentTypeName,
-        autoFilledFields: result.autoFilledFields,
-      });
-    } catch (error) {
-      console.error("Error extracting flap data:", error);
-      res.status(500).json({ error: "Failed to extract data" });
-    }
-  });
-
-  app.post("/api/analyze-op-note", async (req: Request, res: Response) => {
-    try {
-      const { image, images, text } = req.body;
-      
-      console.log("[SmartCapture] Request received - text:", !!text, "images:", images?.length || 0, "image:", !!image);
-      
-      let originalText: string;
-      
-      if (text) {
-        console.log("[SmartCapture] Using pre-extracted text from client OCR");
-        console.log("[SmartCapture] Text length:", text.length);
-        originalText = text;
-      } else {
-        const imageArray: string[] = images || (image ? [image] : []);
-        
-        if (imageArray.length === 0) {
-          console.log("[SmartCapture] Error: No images or text provided");
-          return res.status(400).json({ error: "No images or text provided" });
-        }
-
-        console.log(`[SmartCapture] Processing ${imageArray.length} image(s) with OCR...`);
-        
-        const extractedTexts: string[] = [];
-        for (let i = 0; i < imageArray.length; i++) {
-          console.log(`[SmartCapture] Processing image ${i + 1}/${imageArray.length}...`);
-          try {
-            const extractedText = await extractTextFromImage(imageArray[i]);
-            extractedTexts.push(extractedText);
-          } catch (ocrError) {
-            console.error(`[SmartCapture] OCR failed for image ${i + 1}:`, ocrError);
-            extractedTexts.push("");
-          }
-        }
-        
-        originalText = extractedTexts.join("\n\n---\n\n");
-        console.log(`[SmartCapture] Total extracted text length: ${originalText.length}`);
-      }
-      
-      console.log("Processing document with local privacy-first document router...");
-      console.log("Text length:", originalText.length);
-
-      const result = processDocument(originalText);
-      
-      console.log("Document type detected:", result.documentTypeName);
-      console.log("Confidence:", result.confidence);
-      console.log("Auto-filled fields:", result.autoFilledFields.join(", "));
-
-      const extractedData = {
-        ...result.extractedData,
-        detectedSpecialty: "general",
-      };
-
-      res.json({ 
-        extractedData,
-        detectedSpecialty: "general",
-        patientIdentifier: result.extractedData.patientIdentifier,
-        procedureDate: result.extractedData.procedureDate,
-        documentType: result.documentType,
-        documentTypeName: result.documentTypeName,
-        confidence: result.confidence,
-        detectedTriggers: result.detectedTriggers,
-        autoFilledFields: result.autoFilledFields,
-      });
-    } catch (error) {
-      console.error("Error analyzing operation note:", error);
-      res.status(500).json({ error: "Failed to analyze images" });
-    }
-  });
-
-  app.post("/api/analyze-discharge-summary", async (req: Request, res: Response) => {
-    try {
-      const { text } = req.body;
-      
-      if (!text) {
-        return res.status(400).json({ error: "No text provided" });
-      }
-
-      console.log("Processing discharge summary with local document router...");
-      const result = processDocument(text);
-      
-      const extractedData = {
-        hasComplications: (result.extractedData.complications?.length ?? 0) > 0,
-        complications: result.extractedData.complications || [],
-        documentType: result.documentTypeName,
-      };
-
-      res.json({ 
-        extractedData,
-        autoFilledFields: result.autoFilledFields,
-      });
-    } catch (error) {
-      console.error("Error analyzing discharge summary:", error);
-      res.status(500).json({ error: "Failed to analyze discharge summary" });
-    }
-  });
-
   app.get("/api/health", (req: Request, res: Response) => {
     res.json({ status: "ok", timestamp: new Date().toISOString() });
-  });
-
-  app.post("/api/analyze-histology", async (req: Request, res: Response) => {
-    try {
-      const { image, text } = req.body;
-      
-      let reportText: string;
-      
-      if (text) {
-        reportText = text;
-      } else if (image) {
-        reportText = await extractTextFromImage(image);
-      } else {
-        return res.status(400).json({ error: "No image or text provided" });
-      }
-      
-      console.log("Processing histology report...");
-      console.log("Text length:", reportText.length);
-      
-      const extractedData = parseHistologyReport(reportText);
-      
-      res.json({
-        extractedData,
-        rawText: reportText.substring(0, 500),
-      });
-    } catch (error) {
-      console.error("Error analyzing histology report:", error);
-      res.status(500).json({ error: "Failed to analyze histology report" });
-    }
   });
 
   // Auth Routes
@@ -584,7 +433,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // SNOMED Reference Data API
-  app.get("/api/snomed-ref", async (req: Request, res: Response) => {
+  app.get("/api/snomed-ref", authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { category, anatomicalRegion, specialty } = req.query;
       const refs = await storage.getSnomedRefs(
@@ -599,7 +448,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/snomed-ref/vessels/:region", async (req: Request, res: Response) => {
+  app.get("/api/snomed-ref/vessels/:region", authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { region } = req.params;
       const { subcategory } = req.query;
@@ -617,7 +466,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/snomed-ref/regions", async (req: Request, res: Response) => {
+  app.get("/api/snomed-ref/regions", authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
       const refs = await storage.getSnomedRefs("anatomical_region");
       res.json(refs);
@@ -627,7 +476,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/snomed-ref/flap-types", async (req: Request, res: Response) => {
+  app.get("/api/snomed-ref/flap-types", authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
       const refs = await storage.getSnomedRefs("flap");
       res.json(refs);
@@ -637,7 +486,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/snomed-ref/donor-vessels/:flapType", async (req: Request, res: Response) => {
+  app.get("/api/snomed-ref/donor-vessels/:flapType", authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { flapType } = req.params;
       const refs = await storage.getSnomedRefs("donor_vessel", flapType);
@@ -648,7 +497,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/snomed-ref/compositions", async (req: Request, res: Response) => {
+  app.get("/api/snomed-ref/compositions", authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
       const refs = await storage.getSnomedRefs("composition");
       res.json(refs);
@@ -658,7 +507,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/snomed-ref/coupling-methods", async (req: Request, res: Response) => {
+  app.get("/api/snomed-ref/coupling-methods", authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
       const refs = await storage.getSnomedRefs("coupling_method");
       res.json(refs);
@@ -668,7 +517,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/snomed-ref/anastomosis-configs", async (req: Request, res: Response) => {
+  app.get("/api/snomed-ref/anastomosis-configs", authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
       const refs = await storage.getSnomedRefs("anastomosis_config");
       res.json(refs);
@@ -679,7 +528,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Seed Data Endpoint (run once to populate reference data)
-  app.post("/api/seed-snomed-ref", async (req: Request, res: Response) => {
+  app.post("/api/seed-snomed-ref", authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
       // Protect seed endpoint in production
       const seedHeader = req.header("x-seed-token");
@@ -888,7 +737,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // SNOMED CT Search API (using Snowstorm)
-  app.get("/api/snomed/procedures", async (req: Request, res: Response) => {
+  app.get("/api/snomed/procedures", authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { q, specialty, limit } = req.query;
       
@@ -909,7 +758,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/snomed/diagnoses", async (req: Request, res: Response) => {
+  app.get("/api/snomed/diagnoses", authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { q, specialty, limit } = req.query;
       
@@ -930,7 +779,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/snomed/concepts/:conceptId", async (req: Request, res: Response) => {
+  app.get("/api/snomed/concepts/:conceptId", authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { conceptId } = req.params;
       const details = await getConceptDetails(conceptId);
@@ -947,7 +796,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Diagnosis Staging Configuration API
-  app.get("/api/staging/diagnosis", async (req: Request, res: Response) => {
+  app.get("/api/staging/diagnosis", authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { snomedCode, diagnosisName } = req.query;
       
@@ -963,7 +812,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/staging/all", async (req: Request, res: Response) => {
+  app.get("/api/staging/all", authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
       const configs = getAllStagingConfigs();
       res.json(configs);
