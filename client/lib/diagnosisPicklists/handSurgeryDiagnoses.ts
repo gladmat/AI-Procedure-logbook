@@ -1,0 +1,1166 @@
+/**
+ * Hand Surgery Diagnosis Picklist
+ *
+ * ~37 structured diagnoses covering ~90% of hand surgery cases.
+ * Each diagnosis maps to suggested procedures from procedurePicklist.ts.
+ *
+ * SNOMED CT codes are from the Clinical Finding hierarchy (<<404684003).
+ * Procedure suggestion IDs reference ProcedurePicklistEntry.id values.
+ */
+
+import type { DiagnosisPicklistEntry } from "@/types/diagnosis";
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// TRAUMA — FRACTURES
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const HAND_DX_FRACTURES: DiagnosisPicklistEntry[] = [
+  {
+    id: "hand_dx_distal_radius_fx",
+    displayName: "Distal radius fracture",
+    shortName: "Distal radius #",
+    snomedCtCode: "263102004",
+    snomedCtDisplay: "Fracture of distal radius (disorder)",
+    specialty: "hand_surgery",
+    subcategory: "Fractures",
+    clinicalGroup: "trauma",
+    hasStaging: false,
+    searchSynonyms: ["Colles", "Smith", "Barton", "distal radius", "wrist fracture", "DRF"],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hand_fx_distal_radius_orif",
+        displayName: "Distal radius ORIF (volar plate)",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "hand_fx_distal_radius_crif",
+        displayName: "Distal radius CRIF (K-wires / ex-fix)",
+        isDefault: false,
+        sortOrder: 2,
+      },
+    ],
+    sortOrder: 1,
+  },
+  {
+    id: "hand_dx_metacarpal_fx",
+    displayName: "Metacarpal fracture (2nd–5th)",
+    shortName: "Metacarpal #",
+    snomedCtCode: "65966004",
+    snomedCtDisplay: "Fracture of metacarpal bone (disorder)",
+    specialty: "hand_surgery",
+    subcategory: "Fractures",
+    clinicalGroup: "trauma",
+    hasStaging: false,
+    searchSynonyms: ["MC fracture", "boxer's fracture", "5th metacarpal", "metacarpal neck"],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hand_fx_metacarpal_orif",
+        displayName: "Metacarpal fracture ORIF",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "hand_fx_metacarpal_crif",
+        displayName: "Metacarpal fracture CRIF (K-wires)",
+        isDefault: false,
+        sortOrder: 2,
+      },
+    ],
+    sortOrder: 2,
+  },
+  {
+    id: "hand_dx_phalanx_fx",
+    displayName: "Phalangeal fracture",
+    shortName: "Phalanx #",
+    snomedCtCode: "263171006",
+    snomedCtDisplay: "Fracture of phalanx of hand (disorder)",
+    specialty: "hand_surgery",
+    subcategory: "Fractures",
+    clinicalGroup: "trauma",
+    hasStaging: false,
+    searchSynonyms: ["finger fracture", "P1", "P2", "P3", "proximal phalanx", "middle phalanx"],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hand_fx_phalanx_orif",
+        displayName: "Phalangeal fracture ORIF",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "hand_fx_phalanx_crif",
+        displayName: "Phalangeal fracture CRIF (K-wires)",
+        isDefault: false,
+        sortOrder: 2,
+      },
+    ],
+    sortOrder: 3,
+  },
+  {
+    id: "hand_dx_scaphoid_fx",
+    displayName: "Scaphoid fracture",
+    shortName: "Scaphoid #",
+    snomedCtCode: "21947006",
+    snomedCtDisplay: "Fracture of scaphoid bone (disorder)",
+    specialty: "hand_surgery",
+    subcategory: "Fractures",
+    clinicalGroup: "trauma",
+    hasStaging: false,
+    searchSynonyms: ["scaphoid", "navicular fracture"],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hand_fx_scaphoid_orif",
+        displayName: "Scaphoid ORIF (headless screw)",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "hand_fx_scaphoid_percutaneous",
+        displayName: "Scaphoid percutaneous fixation",
+        isDefault: false,
+        sortOrder: 2,
+      },
+    ],
+    sortOrder: 4,
+  },
+  {
+    id: "hand_dx_bennett_fx",
+    displayName: "Bennett's fracture",
+    shortName: "Bennett's #",
+    snomedCtCode: "20527002",
+    snomedCtDisplay: "Bennett fracture (disorder)",
+    specialty: "hand_surgery",
+    subcategory: "Fractures",
+    clinicalGroup: "trauma",
+    hasStaging: false,
+    searchSynonyms: ["Bennett", "1st metacarpal base fracture", "thumb metacarpal"],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hand_fx_bennett",
+        displayName: "Bennett's fracture fixation",
+        isDefault: true,
+        sortOrder: 1,
+      },
+    ],
+    sortOrder: 5,
+  },
+  {
+    id: "hand_dx_rolando_fx",
+    displayName: "Rolando's fracture",
+    shortName: "Rolando's #",
+    snomedCtCode: "30400005",
+    snomedCtDisplay: "Rolando fracture (disorder)",
+    specialty: "hand_surgery",
+    subcategory: "Fractures",
+    clinicalGroup: "trauma",
+    hasStaging: false,
+    searchSynonyms: ["Rolando", "comminuted thumb metacarpal base"],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hand_fx_rolando",
+        displayName: "Rolando's fracture fixation",
+        isDefault: true,
+        sortOrder: 1,
+      },
+    ],
+    sortOrder: 6,
+  },
+  {
+    id: "hand_dx_scaphoid_nonunion",
+    displayName: "Scaphoid nonunion",
+    snomedCtCode: "73936003",
+    snomedCtDisplay: "Nonunion of fracture of scaphoid (disorder)",
+    specialty: "hand_surgery",
+    subcategory: "Fractures",
+    clinicalGroup: "trauma",
+    hasStaging: false,
+    searchSynonyms: ["scaphoid non-union", "scaphoid pseudarthrosis", "SNAC"],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hand_fx_scaphoid_nonunion",
+        displayName: "Scaphoid nonunion repair (bone graft ± fixation)",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "hand_joint_prc",
+        displayName: "Proximal row carpectomy",
+        isDefault: false,
+        sortOrder: 2,
+      },
+    ],
+    sortOrder: 7,
+  },
+  {
+    id: "hand_dx_malunion_hand",
+    displayName: "Malunion of hand / wrist",
+    snomedCtCode: "128308003",
+    snomedCtDisplay: "Malunion of fracture (disorder)",
+    specialty: "hand_surgery",
+    subcategory: "Fractures",
+    clinicalGroup: "trauma",
+    hasStaging: false,
+    searchSynonyms: ["malunion", "malunited fracture", "rotational deformity"],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hand_fx_corrective_osteotomy",
+        displayName: "Corrective osteotomy (malunion)",
+        isDefault: true,
+        sortOrder: 1,
+      },
+    ],
+    sortOrder: 8,
+  },
+];
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// TRAUMA — TENDONS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const HAND_DX_TENDON_INJURIES: DiagnosisPicklistEntry[] = [
+  {
+    id: "hand_dx_flexor_tendon_lac",
+    displayName: "Flexor tendon laceration",
+    shortName: "Flexor tendon lac",
+    snomedCtCode: "283588004",
+    snomedCtDisplay: "Laceration of flexor tendon of hand (disorder)",
+    specialty: "hand_surgery",
+    subcategory: "Tendon Injuries",
+    clinicalGroup: "trauma",
+    hasStaging: false,
+    searchSynonyms: ["FDP", "FDS", "flexor tendon", "zone II", "no man's land"],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hand_tend_flexor_repair",
+        displayName: "Flexor tendon repair",
+        isDefault: true,
+        sortOrder: 1,
+      },
+    ],
+    sortOrder: 1,
+  },
+  {
+    id: "hand_dx_extensor_tendon_lac",
+    displayName: "Extensor tendon laceration",
+    shortName: "Extensor tendon lac",
+    snomedCtCode: "283589007",
+    snomedCtDisplay: "Laceration of extensor tendon of hand (disorder)",
+    specialty: "hand_surgery",
+    subcategory: "Tendon Injuries",
+    clinicalGroup: "trauma",
+    hasStaging: false,
+    searchSynonyms: ["EDC", "extensor tendon", "dorsal laceration"],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hand_tend_extensor_repair",
+        displayName: "Extensor tendon repair",
+        isDefault: true,
+        sortOrder: 1,
+      },
+    ],
+    sortOrder: 2,
+  },
+  {
+    id: "hand_dx_fpl_laceration",
+    displayName: "FPL tendon laceration",
+    shortName: "FPL lac",
+    snomedCtCode: "283588004",
+    snomedCtDisplay: "Laceration of flexor pollicis longus tendon (disorder)",
+    specialty: "hand_surgery",
+    subcategory: "Tendon Injuries",
+    clinicalGroup: "trauma",
+    hasStaging: false,
+    searchSynonyms: ["FPL", "flexor pollicis longus", "thumb flexor"],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hand_tend_fpl_repair",
+        displayName: "FPL tendon repair",
+        isDefault: true,
+        sortOrder: 1,
+      },
+    ],
+    sortOrder: 3,
+  },
+  {
+    id: "hand_dx_epl_rupture",
+    displayName: "EPL tendon rupture",
+    shortName: "EPL rupture",
+    snomedCtCode: "48188001",
+    snomedCtDisplay: "Rupture of extensor pollicis longus tendon (disorder)",
+    specialty: "hand_surgery",
+    subcategory: "Tendon Injuries",
+    clinicalGroup: "trauma",
+    hasStaging: false,
+    searchSynonyms: ["EPL", "extensor pollicis longus", "thumb extension loss", "EIP transfer"],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hand_tend_epl_rupture_repair",
+        displayName: "EPL rupture — EIP transfer",
+        isDefault: true,
+        sortOrder: 1,
+      },
+    ],
+    sortOrder: 4,
+  },
+  {
+    id: "hand_dx_mallet_finger",
+    displayName: "Mallet finger",
+    snomedCtCode: "48574002",
+    snomedCtDisplay: "Mallet finger (disorder)",
+    specialty: "hand_surgery",
+    subcategory: "Tendon Injuries",
+    clinicalGroup: "trauma",
+    hasStaging: false,
+    searchSynonyms: ["mallet", "DIP extensor", "baseball finger", "drop finger"],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hand_tend_mallet_finger",
+        displayName: "Mallet finger repair / splinting",
+        isDefault: true,
+        sortOrder: 1,
+      },
+    ],
+    sortOrder: 5,
+  },
+  {
+    id: "hand_dx_boutonniere",
+    displayName: "Boutonnière deformity",
+    snomedCtCode: "29750009",
+    snomedCtDisplay: "Boutonniere deformity of finger (disorder)",
+    specialty: "hand_surgery",
+    subcategory: "Tendon Injuries",
+    clinicalGroup: "trauma",
+    hasStaging: false,
+    searchSynonyms: ["boutonniere", "central slip", "PIP flexion"],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hand_tend_boutonniere",
+        displayName: "Boutonnière repair / correction",
+        isDefault: true,
+        sortOrder: 1,
+      },
+    ],
+    sortOrder: 6,
+  },
+  {
+    id: "hand_dx_swan_neck",
+    displayName: "Swan neck deformity",
+    snomedCtCode: "50389003",
+    snomedCtDisplay: "Swan neck deformity of finger (disorder)",
+    specialty: "hand_surgery",
+    subcategory: "Tendon Injuries",
+    clinicalGroup: "elective",
+    hasStaging: false,
+    searchSynonyms: ["swan neck", "PIP hyperextension"],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hand_tend_swan_neck",
+        displayName: "Swan neck correction",
+        isDefault: true,
+        sortOrder: 1,
+      },
+    ],
+    sortOrder: 7,
+  },
+];
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// TRAUMA — NERVES
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const HAND_DX_NERVE_INJURIES: DiagnosisPicklistEntry[] = [
+  {
+    id: "hand_dx_digital_nerve_lac",
+    displayName: "Digital nerve laceration",
+    shortName: "Digital nerve lac",
+    snomedCtCode: "283013008",
+    snomedCtDisplay: "Laceration of digital nerve (disorder)",
+    specialty: "hand_surgery",
+    subcategory: "Nerve Injuries",
+    clinicalGroup: "trauma",
+    hasStaging: false,
+    searchSynonyms: ["digital nerve", "proper digital", "common digital"],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hand_nerve_digital_repair",
+        displayName: "Digital nerve repair",
+        isDefault: true,
+        sortOrder: 1,
+      },
+    ],
+    sortOrder: 1,
+  },
+  {
+    id: "hand_dx_median_nerve_lac",
+    displayName: "Median nerve laceration",
+    shortName: "Median nerve lac",
+    snomedCtCode: "283018004",
+    snomedCtDisplay: "Laceration of median nerve (disorder)",
+    specialty: "hand_surgery",
+    subcategory: "Nerve Injuries",
+    clinicalGroup: "trauma",
+    hasStaging: false,
+    searchSynonyms: ["median nerve", "wrist laceration median"],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hand_nerve_median_repair",
+        displayName: "Median nerve repair",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "hand_nerve_graft",
+        displayName: "Nerve graft",
+        isDefault: false,
+        sortOrder: 2,
+      },
+    ],
+    sortOrder: 2,
+  },
+  {
+    id: "hand_dx_ulnar_nerve_lac",
+    displayName: "Ulnar nerve laceration",
+    shortName: "Ulnar nerve lac",
+    snomedCtCode: "283019007",
+    snomedCtDisplay: "Laceration of ulnar nerve (disorder)",
+    specialty: "hand_surgery",
+    subcategory: "Nerve Injuries",
+    clinicalGroup: "trauma",
+    hasStaging: false,
+    searchSynonyms: ["ulnar nerve", "wrist laceration ulnar"],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hand_nerve_ulnar_repair",
+        displayName: "Ulnar nerve repair",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "hand_nerve_graft",
+        displayName: "Nerve graft",
+        isDefault: false,
+        sortOrder: 2,
+      },
+    ],
+    sortOrder: 3,
+  },
+  {
+    id: "hand_dx_radial_nerve_lac",
+    displayName: "Radial nerve / PIN / SRN injury",
+    shortName: "Radial nerve injury",
+    snomedCtCode: "283020001",
+    snomedCtDisplay: "Injury of radial nerve (disorder)",
+    specialty: "hand_surgery",
+    subcategory: "Nerve Injuries",
+    clinicalGroup: "trauma",
+    hasStaging: false,
+    searchSynonyms: ["radial nerve", "PIN", "posterior interosseous nerve", "SRN", "wrist drop"],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hand_nerve_radial_repair",
+        displayName: "Radial nerve / PIN / SRN repair",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "hand_nerve_transfer",
+        displayName: "Nerve transfer (distal)",
+        isDefault: false,
+        sortOrder: 2,
+      },
+    ],
+    sortOrder: 4,
+  },
+];
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// TRAUMA — SOFT TISSUE / FINGERTIP
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const HAND_DX_SOFT_TISSUE: DiagnosisPicklistEntry[] = [
+  {
+    id: "hand_dx_fingertip_injury",
+    displayName: "Fingertip injury / amputation",
+    shortName: "Fingertip injury",
+    snomedCtCode: "212978003",
+    snomedCtDisplay: "Crushing injury of finger (disorder)",
+    specialty: "hand_surgery",
+    subcategory: "Soft Tissue Injuries",
+    clinicalGroup: "trauma",
+    hasStaging: false,
+    searchSynonyms: ["fingertip", "pulp loss", "tip amputation", "Allen classification"],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hand_cov_vy_advancement",
+        displayName: "V-Y advancement flap (fingertip)",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "hand_cov_cross_finger",
+        displayName: "Cross-finger flap",
+        isDefault: false,
+        sortOrder: 2,
+      },
+      {
+        procedurePicklistId: "hand_cov_moberg",
+        displayName: "Moberg advancement flap",
+        isDefault: false,
+        sortOrder: 3,
+      },
+      {
+        procedurePicklistId: "hand_cov_skin_graft",
+        displayName: "Skin graft to hand (STSG / FTSG)",
+        isDefault: false,
+        sortOrder: 4,
+      },
+    ],
+    sortOrder: 1,
+  },
+  {
+    id: "hand_dx_digital_amputation",
+    displayName: "Digital amputation (replantable)",
+    shortName: "Digit amputation",
+    snomedCtCode: "30998006",
+    snomedCtDisplay: "Traumatic amputation of finger (disorder)",
+    specialty: "hand_surgery",
+    subcategory: "Soft Tissue Injuries",
+    clinicalGroup: "trauma",
+    hasStaging: false,
+    searchSynonyms: ["replantation", "amputated finger", "severed finger", "ring avulsion"],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hand_cov_replantation",
+        displayName: "Digital replantation",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "hand_cov_revascularisation",
+        displayName: "Digital revascularisation",
+        isDefault: false,
+        sortOrder: 2,
+      },
+    ],
+    sortOrder: 2,
+  },
+  {
+    id: "hand_dx_nail_bed_injury",
+    displayName: "Nail bed injury",
+    snomedCtCode: "283028008",
+    snomedCtDisplay: "Nail bed injury (disorder)",
+    specialty: "hand_surgery",
+    subcategory: "Soft Tissue Injuries",
+    clinicalGroup: "trauma",
+    hasStaging: false,
+    searchSynonyms: ["nail bed", "subungual haematoma", "nail avulsion"],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hand_cov_nail_bed_repair",
+        displayName: "Nail bed repair",
+        isDefault: true,
+        sortOrder: 1,
+      },
+    ],
+    sortOrder: 3,
+  },
+  {
+    id: "hand_dx_hand_degloving",
+    displayName: "Hand / finger degloving injury",
+    snomedCtCode: "283681000",
+    snomedCtDisplay: "Degloving injury of hand (disorder)",
+    specialty: "hand_surgery",
+    subcategory: "Soft Tissue Injuries",
+    clinicalGroup: "trauma",
+    hasStaging: false,
+    searchSynonyms: ["degloving", "ring avulsion", "Urbaniak"],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hand_cov_skin_graft",
+        displayName: "Skin graft to hand",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "hand_cov_free_flap",
+        displayName: "Free flap to hand",
+        isDefault: false,
+        sortOrder: 2,
+      },
+      {
+        procedurePicklistId: "hand_cov_homodigital_island",
+        displayName: "Homodigital island flap",
+        isDefault: false,
+        sortOrder: 3,
+      },
+    ],
+    sortOrder: 4,
+  },
+];
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// COMPRESSION NEUROPATHIES
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const HAND_DX_COMPRESSION: DiagnosisPicklistEntry[] = [
+  {
+    id: "hand_dx_carpal_tunnel",
+    displayName: "Carpal tunnel syndrome",
+    shortName: "CTS",
+    snomedCtCode: "57406009",
+    snomedCtDisplay: "Carpal tunnel syndrome (disorder)",
+    specialty: "hand_surgery",
+    subcategory: "Compression Neuropathies",
+    clinicalGroup: "elective",
+    hasStaging: true, // Severity + EMG grade in diagnosisStagingConfig
+    searchSynonyms: ["CTS", "median nerve compression", "carpal tunnel", "tingling fingers"],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hand_comp_ctr_open",
+        displayName: "Carpal tunnel release — open",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "hand_comp_ctr_endoscopic",
+        displayName: "Carpal tunnel release — endoscopic",
+        isDefault: false,
+        sortOrder: 2,
+      },
+    ],
+    sortOrder: 1,
+  },
+  {
+    id: "hand_dx_cubital_tunnel",
+    displayName: "Cubital tunnel syndrome",
+    shortName: "CuTS",
+    snomedCtCode: "72764000",
+    snomedCtDisplay: "Cubital tunnel syndrome (disorder)",
+    specialty: "hand_surgery",
+    subcategory: "Compression Neuropathies",
+    clinicalGroup: "elective",
+    hasStaging: false,
+    searchSynonyms: ["cubital tunnel", "ulnar nerve elbow", "ulnar neuropathy", "CuTS"],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hand_comp_cubital_insitu",
+        displayName: "Cubital tunnel decompression — in situ",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "hand_comp_cubital_transposition",
+        displayName: "Cubital tunnel — anterior transposition",
+        isDefault: false,
+        sortOrder: 2,
+      },
+    ],
+    sortOrder: 2,
+  },
+  {
+    id: "hand_dx_dequervain",
+    displayName: "De Quervain's tenosynovitis",
+    shortName: "De Quervain's",
+    snomedCtCode: "55473002",
+    snomedCtDisplay: "De Quervain disease (disorder)",
+    specialty: "hand_surgery",
+    subcategory: "Compression Neuropathies",
+    clinicalGroup: "elective",
+    hasStaging: false,
+    searchSynonyms: ["de Quervain", "first compartment", "radial styloid", "Finkelstein"],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hand_comp_dequervain",
+        displayName: "De Quervain's release",
+        isDefault: true,
+        sortOrder: 1,
+      },
+    ],
+    sortOrder: 3,
+  },
+  {
+    id: "hand_dx_trigger_finger",
+    displayName: "Trigger finger",
+    snomedCtCode: "60849009",
+    snomedCtDisplay: "Trigger finger (disorder)",
+    specialty: "hand_surgery",
+    subcategory: "Compression Neuropathies",
+    clinicalGroup: "elective",
+    hasStaging: true, // Quinnell grade in diagnosisStagingConfig
+    searchSynonyms: ["trigger finger", "stenosing tenosynovitis", "locked finger", "A1 pulley"],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hand_comp_trigger_finger",
+        displayName: "Trigger finger release (A1 pulley)",
+        isDefault: true,
+        sortOrder: 1,
+      },
+    ],
+    sortOrder: 4,
+  },
+  {
+    id: "hand_dx_trigger_thumb",
+    displayName: "Trigger thumb",
+    snomedCtCode: "202855006",
+    snomedCtDisplay: "Stenosing tenosynovitis of thumb (disorder)",
+    specialty: "hand_surgery",
+    subcategory: "Compression Neuropathies",
+    clinicalGroup: "elective",
+    hasStaging: true, // Quinnell grade
+    searchSynonyms: ["trigger thumb", "locked thumb"],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hand_comp_trigger_thumb",
+        displayName: "Trigger thumb release",
+        isDefault: true,
+        sortOrder: 1,
+      },
+    ],
+    sortOrder: 5,
+  },
+  {
+    id: "hand_dx_guyon",
+    displayName: "Guyon's canal syndrome",
+    snomedCtCode: "35455005",
+    snomedCtDisplay: "Ulnar nerve entrapment at wrist (disorder)",
+    specialty: "hand_surgery",
+    subcategory: "Compression Neuropathies",
+    clinicalGroup: "elective",
+    hasStaging: false,
+    searchSynonyms: ["Guyon's canal", "ulnar tunnel", "ulnar nerve wrist"],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hand_comp_guyon",
+        displayName: "Guyon's canal release",
+        isDefault: true,
+        sortOrder: 1,
+      },
+    ],
+    sortOrder: 6,
+  },
+];
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// DUPUYTREN'S DISEASE
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const HAND_DX_DUPUYTREN: DiagnosisPicklistEntry[] = [
+  {
+    id: "hand_dx_dupuytren",
+    displayName: "Dupuytren's contracture",
+    shortName: "Dupuytren's",
+    snomedCtCode: "79426006",
+    snomedCtDisplay: "Dupuytren contracture of hand (disorder)",
+    specialty: "hand_surgery",
+    subcategory: "Dupuytren's Disease",
+    clinicalGroup: "elective",
+    hasStaging: true, // Tubiana stage in diagnosisStagingConfig
+    searchSynonyms: ["Dupuytren", "palmar fibromatosis", "palmar contracture", "cord"],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hand_dup_limited_fasciectomy",
+        displayName: "Limited fasciectomy",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "hand_dup_needle_fasciotomy",
+        displayName: "Needle aponeurotomy / fasciotomy",
+        isDefault: false,
+        sortOrder: 2,
+      },
+      {
+        procedurePicklistId: "hand_dup_dermofasciectomy",
+        displayName: "Dermofasciectomy + FTSG",
+        isDefault: false,
+        sortOrder: 3,
+      },
+      {
+        procedurePicklistId: "hand_dup_collagenase",
+        displayName: "Collagenase injection (Xiapex)",
+        isDefault: false,
+        sortOrder: 4,
+      },
+      {
+        procedurePicklistId: "hand_dup_radical_fasciectomy",
+        displayName: "Radical fasciectomy",
+        isDefault: false,
+        isConditional: true,
+        conditionDescription: "For severe recurrence (Tubiana 3–4)",
+        conditionStagingMatch: {
+          stagingSystemName: "Tubiana Stage",
+          matchValues: ["3", "4"],
+        },
+        sortOrder: 5,
+      },
+    ],
+    sortOrder: 1,
+  },
+];
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// DEGENERATIVE / JOINT
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const HAND_DX_JOINT: DiagnosisPicklistEntry[] = [
+  {
+    id: "hand_dx_cmc1_oa",
+    displayName: "CMC1 osteoarthritis (thumb base OA)",
+    shortName: "Thumb OA",
+    snomedCtCode: "202363001",
+    snomedCtDisplay: "Osteoarthritis of first carpometacarpal joint (disorder)",
+    specialty: "hand_surgery",
+    subcategory: "Joint & Degenerative",
+    clinicalGroup: "elective",
+    hasStaging: false,
+    searchSynonyms: ["thumb base", "CMC1", "trapezium", "Eaton", "basal joint arthritis"],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hand_joint_trapeziectomy",
+        displayName: "Trapeziectomy ± LRTI",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "hand_joint_cmc1_prosthesis",
+        displayName: "CMC1 joint prosthesis",
+        isDefault: false,
+        sortOrder: 2,
+      },
+    ],
+    sortOrder: 1,
+  },
+  {
+    id: "hand_dx_sl_injury",
+    displayName: "Scapholunate ligament injury",
+    shortName: "SL injury",
+    snomedCtCode: "239185009",
+    snomedCtDisplay: "Injury of scapholunate ligament (disorder)",
+    specialty: "hand_surgery",
+    subcategory: "Joint & Degenerative",
+    clinicalGroup: "trauma",
+    hasStaging: false,
+    searchSynonyms: ["SL ligament", "scapholunate", "DISI", "Terry Thomas sign"],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hand_joint_sl_ligament_repair",
+        displayName: "Scapholunate ligament repair / reconstruction",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "hand_joint_wrist_arthroscopy_ther",
+        displayName: "Wrist arthroscopy — therapeutic",
+        isDefault: false,
+        sortOrder: 2,
+      },
+    ],
+    sortOrder: 2,
+  },
+  {
+    id: "hand_dx_tfcc_tear",
+    displayName: "TFCC tear",
+    shortName: "TFCC tear",
+    snomedCtCode: "239184008",
+    snomedCtDisplay: "Triangular fibrocartilage complex tear (disorder)",
+    specialty: "hand_surgery",
+    subcategory: "Joint & Degenerative",
+    clinicalGroup: "trauma",
+    hasStaging: false,
+    searchSynonyms: ["TFCC", "triangular fibrocartilage", "ulnar wrist pain", "Palmer"],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hand_joint_tfcc_repair",
+        displayName: "TFCC repair / debridement",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "hand_joint_wrist_arthroscopy_ther",
+        displayName: "Wrist arthroscopy — therapeutic",
+        isDefault: false,
+        sortOrder: 2,
+      },
+    ],
+    sortOrder: 3,
+  },
+  {
+    id: "hand_dx_kienbock",
+    displayName: "Kienböck's disease",
+    shortName: "Kienböck's",
+    snomedCtCode: "30886002",
+    snomedCtDisplay: "Kienbock disease (disorder)",
+    specialty: "hand_surgery",
+    subcategory: "Joint & Degenerative",
+    clinicalGroup: "elective",
+    hasStaging: false,
+    searchSynonyms: ["Kienbock", "lunate AVN", "lunate necrosis", "Lichtman"],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hand_joint_prc",
+        displayName: "Proximal row carpectomy",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "hand_joint_wrist_arthrodesis",
+        displayName: "Wrist arthrodesis",
+        isDefault: false,
+        sortOrder: 2,
+      },
+    ],
+    sortOrder: 4,
+  },
+  {
+    id: "hand_dx_wrist_oa",
+    displayName: "Wrist osteoarthritis (SNAC / SLAC)",
+    shortName: "Wrist OA",
+    snomedCtCode: "396275006",
+    snomedCtDisplay: "Osteoarthritis of wrist (disorder)",
+    specialty: "hand_surgery",
+    subcategory: "Joint & Degenerative",
+    clinicalGroup: "elective",
+    hasStaging: false,
+    searchSynonyms: ["SNAC", "SLAC", "wrist arthritis", "wrist OA"],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hand_joint_wrist_arthrodesis",
+        displayName: "Wrist arthrodesis (total or partial)",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "hand_joint_prc",
+        displayName: "Proximal row carpectomy",
+        isDefault: false,
+        sortOrder: 2,
+      },
+      {
+        procedurePicklistId: "hand_joint_wrist_denervation",
+        displayName: "Wrist denervation",
+        isDefault: false,
+        sortOrder: 3,
+      },
+    ],
+    sortOrder: 5,
+  },
+  {
+    id: "hand_dx_ucl_thumb",
+    displayName: "Thumb UCL injury (Gamekeeper's / Skier's)",
+    shortName: "Thumb UCL",
+    snomedCtCode: "239227006",
+    snomedCtDisplay: "Injury of ulnar collateral ligament of thumb (disorder)",
+    specialty: "hand_surgery",
+    subcategory: "Joint & Degenerative",
+    clinicalGroup: "trauma",
+    hasStaging: false,
+    searchSynonyms: ["UCL", "gamekeeper", "skier's thumb", "Stener lesion"],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hand_joint_mcp_collateral_repair",
+        displayName: "MCP / UCL collateral ligament repair",
+        isDefault: true,
+        sortOrder: 1,
+      },
+    ],
+    sortOrder: 6,
+  },
+];
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// OTHER / TUMOURS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const HAND_DX_OTHER: DiagnosisPicklistEntry[] = [
+  {
+    id: "hand_dx_ganglion",
+    displayName: "Ganglion cyst",
+    shortName: "Ganglion",
+    snomedCtCode: "33981008",
+    snomedCtDisplay: "Ganglion cyst (disorder)",
+    specialty: "hand_surgery",
+    subcategory: "Tumours & Other",
+    clinicalGroup: "elective",
+    hasStaging: false,
+    searchSynonyms: ["ganglion", "dorsal wrist lump", "volar wrist ganglion"],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hand_other_ganglion",
+        displayName: "Ganglion excision",
+        isDefault: true,
+        sortOrder: 1,
+      },
+    ],
+    sortOrder: 1,
+  },
+  {
+    id: "hand_dx_gctts",
+    displayName: "Giant cell tumour of tendon sheath",
+    shortName: "GCTTS",
+    snomedCtCode: "134372003",
+    snomedCtDisplay: "Giant cell tumor of tendon sheath (disorder)",
+    specialty: "hand_surgery",
+    subcategory: "Tumours & Other",
+    clinicalGroup: "elective",
+    hasStaging: false,
+    searchSynonyms: ["GCTTS", "PVNS", "giant cell tumour", "tendon sheath tumour"],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hand_other_gctts",
+        displayName: "Giant cell tumour excision",
+        isDefault: true,
+        sortOrder: 1,
+      },
+    ],
+    sortOrder: 2,
+  },
+  {
+    id: "hand_dx_hand_tumour",
+    displayName: "Hand tumour — other",
+    snomedCtCode: "126670009",
+    snomedCtDisplay: "Neoplasm of hand (disorder)",
+    specialty: "hand_surgery",
+    subcategory: "Tumours & Other",
+    clinicalGroup: "elective",
+    hasStaging: false,
+    searchSynonyms: ["enchondroma", "glomus tumour", "lipoma hand", "schwannoma hand"],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hand_other_tumour",
+        displayName: "Hand tumour excision",
+        isDefault: true,
+        sortOrder: 1,
+      },
+    ],
+    sortOrder: 3,
+  },
+  {
+    id: "hand_dx_neuroma",
+    displayName: "Painful neuroma",
+    snomedCtCode: "276623000",
+    snomedCtDisplay: "Neuroma (disorder)",
+    specialty: "hand_surgery",
+    subcategory: "Tumours & Other",
+    clinicalGroup: "elective",
+    hasStaging: false,
+    searchSynonyms: ["neuroma", "stump neuroma", "TMR", "RPNI"],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hand_nerve_neuroma_excision",
+        displayName: "Neuroma excision ± TMR / RPNI",
+        isDefault: true,
+        sortOrder: 1,
+      },
+    ],
+    sortOrder: 4,
+  },
+];
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// CONGENITAL
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const HAND_DX_CONGENITAL: DiagnosisPicklistEntry[] = [
+  {
+    id: "hand_dx_syndactyly",
+    displayName: "Syndactyly",
+    snomedCtCode: "373413006",
+    snomedCtDisplay: "Syndactyly (disorder)",
+    specialty: "hand_surgery",
+    subcategory: "Congenital",
+    clinicalGroup: "congenital",
+    hasStaging: false,
+    searchSynonyms: ["syndactyly", "webbed fingers", "simple syndactyly", "complex syndactyly"],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hand_cong_syndactyly",
+        displayName: "Syndactyly release",
+        isDefault: true,
+        sortOrder: 1,
+      },
+    ],
+    sortOrder: 1,
+  },
+  {
+    id: "hand_dx_polydactyly",
+    displayName: "Polydactyly",
+    snomedCtCode: "367418001",
+    snomedCtDisplay: "Polydactyly (disorder)",
+    specialty: "hand_surgery",
+    subcategory: "Congenital",
+    clinicalGroup: "congenital",
+    hasStaging: false,
+    searchSynonyms: ["polydactyly", "extra digit", "supernumerary digit", "preaxial", "postaxial"],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hand_cong_polydactyly",
+        displayName: "Polydactyly excision",
+        isDefault: true,
+        sortOrder: 1,
+      },
+    ],
+    sortOrder: 2,
+  },
+  {
+    id: "hand_dx_thumb_hypoplasia",
+    displayName: "Thumb hypoplasia / aplasia",
+    snomedCtCode: "30373003",
+    snomedCtDisplay: "Hypoplastic thumb (disorder)",
+    specialty: "hand_surgery",
+    subcategory: "Congenital",
+    clinicalGroup: "congenital",
+    hasStaging: false,
+    searchSynonyms: ["thumb hypoplasia", "Blauth", "absent thumb"],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hand_cong_thumb_hypoplasia",
+        displayName: "Thumb hypoplasia reconstruction",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "hand_cov_pollicisation",
+        displayName: "Pollicisation",
+        isDefault: false,
+        sortOrder: 2,
+      },
+    ],
+    sortOrder: 3,
+  },
+];
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// EXPORT
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export const HAND_SURGERY_DIAGNOSES: DiagnosisPicklistEntry[] = [
+  ...HAND_DX_FRACTURES,
+  ...HAND_DX_TENDON_INJURIES,
+  ...HAND_DX_NERVE_INJURIES,
+  ...HAND_DX_SOFT_TISSUE,
+  ...HAND_DX_COMPRESSION,
+  ...HAND_DX_DUPUYTREN,
+  ...HAND_DX_JOINT,
+  ...HAND_DX_OTHER,
+  ...HAND_DX_CONGENITAL,
+];
+
+/** Get hand surgery diagnoses grouped by subcategory */
+export function getHandSurgerySubcategories(): string[] {
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const dx of HAND_SURGERY_DIAGNOSES) {
+    if (!seen.has(dx.subcategory)) {
+      seen.add(dx.subcategory);
+      result.push(dx.subcategory);
+    }
+  }
+  return result;
+}
+
+/** Get hand surgery diagnoses for a specific subcategory */
+export function getHandSurgeryDiagnosesForSubcategory(
+  subcategory: string
+): DiagnosisPicklistEntry[] {
+  return HAND_SURGERY_DIAGNOSES.filter((dx) => dx.subcategory === subcategory);
+}
