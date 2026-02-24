@@ -723,6 +723,9 @@ export interface Case {
   preManagementDiagnosis?: Diagnosis;
   finalDiagnosis?: Diagnosis;
   pathologicalDiagnosis?: Diagnosis;
+  diagnosisPicklistId?: string;
+  diagnosisStagingSelections?: Record<string, string>;
+  procedureSuggestionSource?: "picklist" | "skinCancer" | "manual";
   
   // Co-morbidities (SNOMED CT coded)
   comorbidities?: SnomedCodedItem[];

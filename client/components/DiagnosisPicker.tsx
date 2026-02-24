@@ -1,0 +1,252 @@
+import React, { useState, useMemo } from "react";
+import { View, StyleSheet, Pressable, ScrollView, TextInput } from "react-native";
+import { Feather } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
+import { ThemedText } from "@/components/ThemedText";
+import { useTheme } from "@/hooks/useTheme";
+import { BorderRadius, Spacing } from "@/constants/theme";
+import {
+  getDiagnosisSubcategories,
+  getDiagnosesForSubcategory,
+  getDiagnosesForSpecialty,
+  searchDiagnoses,
+  hasDiagnosisPicklist,
+  type DiagnosisPicklistEntry,
+} from "@/lib/diagnosisPicklists";
+import type { Specialty } from "@/types/case";
+
+interface DiagnosisPickerProps {
+  specialty: Specialty;
+  selectedDiagnosisId?: string;
+  onSelect: (diagnosis: DiagnosisPicklistEntry) => void;
+}
+
+export function DiagnosisPicker({
+  specialty,
+  selectedDiagnosisId,
+  onSelect,
+}: DiagnosisPickerProps) {
+  const { theme } = useTheme();
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const subcategories = getDiagnosisSubcategories(specialty);
+
+  const initialSubcat = () => {
+    if (selectedDiagnosisId) {
+      const all = getDiagnosesForSpecialty(specialty);
+      const entry = all.find((e) => e.id === selectedDiagnosisId);
+      if (entry) return entry.subcategory;
+    }
+    return subcategories[0] ?? "";
+  };
+
+  const [activeSubcategory, setActiveSubcategory] = useState<string>(initialSubcat);
+
+  const isSearching = searchQuery.length >= 2;
+  const searchResults = useMemo(
+    () => (isSearching ? searchDiagnoses(searchQuery, specialty) : []),
+    [searchQuery, specialty, isSearching]
+  );
+
+  const diagnosesInSubcat = isSearching
+    ? searchResults
+    : getDiagnosesForSubcategory(specialty, activeSubcategory);
+
+  if (!hasDiagnosisPicklist(specialty)) {
+    return null;
+  }
+
+  return (
+    <View style={styles.container}>
+      <View
+        style={[
+          styles.searchContainer,
+          {
+            backgroundColor: theme.backgroundDefault,
+            borderColor: theme.border,
+          },
+        ]}
+      >
+        <Feather name="search" size={16} color={theme.textTertiary} />
+        <TextInput
+          style={[styles.searchInput, { color: theme.text }]}
+          placeholder="Search diagnoses..."
+          placeholderTextColor={theme.textTertiary}
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          autoCapitalize="none"
+          autoCorrect={false}
+          testID="input-diagnosis-search"
+        />
+        {searchQuery.length > 0 ? (
+          <Pressable
+            onPress={() => setSearchQuery("")}
+            hitSlop={8}
+            testID="button-clear-diagnosis-search"
+          >
+            <Feather name="x" size={16} color={theme.textTertiary} />
+          </Pressable>
+        ) : null}
+      </View>
+
+      {!isSearching ? (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.subcatRow}
+          style={styles.subcatScroll}
+        >
+          {subcategories.map((subcat) => {
+            const isActive = subcat === activeSubcategory;
+            return (
+              <Pressable
+                key={subcat}
+                onPress={() => {
+                  Haptics.selectionAsync();
+                  setActiveSubcategory(subcat);
+                }}
+                style={[
+                  styles.subcatChip,
+                  {
+                    backgroundColor: isActive ? theme.link : theme.backgroundDefault,
+                    borderColor: isActive ? theme.link : theme.border,
+                  },
+                ]}
+                testID={`button-subcat-${subcat}`}
+              >
+                <ThemedText
+                  style={[
+                    styles.subcatChipText,
+                    { color: isActive ? theme.buttonText : theme.textSecondary },
+                  ]}
+                >
+                  {subcat}
+                </ThemedText>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      ) : null}
+
+      <View style={styles.diagnosisList}>
+        {diagnosesInSubcat.length > 0 ? (
+          diagnosesInSubcat.map((dx) => {
+            const isSelected = dx.id === selectedDiagnosisId;
+            return (
+              <Pressable
+                key={dx.id}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  onSelect(dx);
+                }}
+                style={[
+                  styles.diagnosisRow,
+                  {
+                    backgroundColor: isSelected
+                      ? theme.link + "15"
+                      : theme.backgroundDefault,
+                    borderColor: isSelected ? theme.link : theme.border,
+                  },
+                ]}
+                testID={`button-diagnosis-${dx.id}`}
+              >
+                <View style={styles.diagnosisRowLeft}>
+                  <ThemedText
+                    style={[
+                      styles.diagnosisName,
+                      {
+                        color: isSelected ? theme.link : theme.text,
+                        fontWeight: isSelected ? "600" : "400",
+                      },
+                    ]}
+                  >
+                    {dx.displayName}
+                  </ThemedText>
+                  <ThemedText
+                    style={[styles.snomedCode, { color: theme.textTertiary }]}
+                  >
+                    {dx.snomedCtCode}
+                  </ThemedText>
+                </View>
+                {isSelected ? (
+                  <Feather name="check" size={18} color={theme.link} />
+                ) : null}
+              </Pressable>
+            );
+          })
+        ) : isSearching ? (
+          <ThemedText style={[styles.emptyText, { color: theme.textSecondary }]}>
+            No matching diagnoses found
+          </ThemedText>
+        ) : null}
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    marginBottom: Spacing.md,
+  },
+  searchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: Spacing.md,
+    height: 40,
+    borderRadius: BorderRadius.sm,
+    borderWidth: 1,
+    marginBottom: Spacing.md,
+    gap: Spacing.sm,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    height: "100%",
+  },
+  subcatScroll: {
+    marginBottom: Spacing.md,
+  },
+  subcatRow: {
+    flexDirection: "row",
+    gap: Spacing.sm,
+    paddingRight: Spacing.md,
+  },
+  subcatChip: {
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+  },
+  subcatChipText: {
+    fontSize: 13,
+    fontWeight: "500",
+  },
+  diagnosisList: {
+    gap: Spacing.xs,
+  },
+  diagnosisRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.sm,
+    borderWidth: 1,
+  },
+  diagnosisRowLeft: {
+    flex: 1,
+    gap: 2,
+  },
+  diagnosisName: {
+    fontSize: 14,
+  },
+  snomedCode: {
+    fontSize: 11,
+    fontWeight: "500",
+  },
+  emptyText: {
+    fontSize: 14,
+    textAlign: "center",
+    paddingVertical: Spacing.lg,
+  },
+});

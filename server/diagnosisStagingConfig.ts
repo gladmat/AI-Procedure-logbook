@@ -257,6 +257,88 @@ export const diagnosisStagingConfigs: DiagnosisStagingConfig[] = [
       },
     ],
   },
+
+  // Capsular Contracture (Baker Classification)
+  {
+    snomedCtCodes: [
+      "236507001", // Capsular contracture of breast implant
+    ],
+    keywords: ["capsular contracture", "baker"],
+    stagingSystems: [
+      {
+        name: "Baker Classification",
+        description: "Baker grading of capsular contracture severity",
+        options: [
+          { value: "I", label: "Grade I", description: "Breast looks and feels natural" },
+          { value: "II", label: "Grade II", description: "Minimal contracture; breast feels slightly firm but looks normal" },
+          { value: "III", label: "Grade III", description: "Moderate contracture; breast feels firm and looks abnormal" },
+          { value: "IV", label: "Grade IV", description: "Severe contracture; breast is hard, painful, and looks abnormal" },
+        ],
+      },
+    ],
+  },
+
+  // Hidradenitis Suppurativa (Hurley Stage)
+  {
+    snomedCtCodes: [
+      "59393003", // Hidradenitis suppurativa
+    ],
+    keywords: ["hidradenitis", "acne inversa", "hurley"],
+    stagingSystems: [
+      {
+        name: "Hurley Stage",
+        description: "Hurley clinical staging of hidradenitis suppurativa",
+        options: [
+          { value: "I", label: "Stage I", description: "Abscess formation (single or multiple) without sinus tracts or scarring" },
+          { value: "II", label: "Stage II", description: "Recurrent abscesses with sinus tracts and scarring; single or multiple widely separated lesions" },
+          { value: "III", label: "Stage III", description: "Diffuse involvement with multiple interconnected sinus tracts and abscesses across entire area" },
+        ],
+      },
+    ],
+  },
+
+  // Lymphoedema (ISL Stage)
+  {
+    snomedCtCodes: [
+      "234097001", // Lymphedema
+    ],
+    keywords: ["lymphoedema", "lymphedema", "isl stage"],
+    stagingSystems: [
+      {
+        name: "ISL Stage",
+        description: "International Society of Lymphology staging",
+        options: [
+          { value: "I", label: "Stage I", description: "Reversible; pitting oedema that subsides with elevation" },
+          { value: "II", label: "Stage II", description: "Spontaneously irreversible; pitting oedema that does not resolve with elevation alone" },
+          { value: "IIb", label: "Stage IIb (late II)", description: "Non-pitting; tissue fibrosis evident" },
+          { value: "III", label: "Stage III", description: "Lymphostatic elephantiasis; non-pitting with skin changes (acanthosis, fat deposits)" },
+        ],
+      },
+    ],
+  },
+
+  // Facial Nerve Palsy (House-Brackmann Grade) — Phase 3 prep
+  {
+    snomedCtCodes: [
+      "280816001", // Facial nerve palsy
+      "95666003", // Bell's palsy
+    ],
+    keywords: ["facial nerve palsy", "bell's palsy", "facial palsy", "house-brackmann"],
+    stagingSystems: [
+      {
+        name: "House-Brackmann Grade",
+        description: "House-Brackmann facial nerve grading system",
+        options: [
+          { value: "I", label: "Grade I", description: "Normal; normal facial function in all areas" },
+          { value: "II", label: "Grade II", description: "Mild dysfunction; slight weakness noticeable on close inspection" },
+          { value: "III", label: "Grade III", description: "Moderate dysfunction; obvious but not disfiguring difference; complete eye closure with effort" },
+          { value: "IV", label: "Grade IV", description: "Moderately severe dysfunction; obvious weakness and/or disfiguring asymmetry; incomplete eye closure" },
+          { value: "V", label: "Grade V", description: "Severe dysfunction; barely perceptible motion; incomplete eye closure" },
+          { value: "VI", label: "Grade VI", description: "Total paralysis; no movement" },
+        ],
+      },
+    ],
+  },
 ];
 
 /**

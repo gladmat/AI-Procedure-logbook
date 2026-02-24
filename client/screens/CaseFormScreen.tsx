@@ -85,6 +85,16 @@ import { FractureClassificationWizard } from "@/components/FractureClassificatio
 import { OperativeMediaSection } from "@/components/OperativeMediaSection";
 import { getAoToSnomedSuggestion } from "@/data/aoToSnomedMapping";
 import { OperativeMediaItem } from "@/types/case";
+import { DiagnosisPicker } from "@/components/DiagnosisPicker";
+import { ProcedureSuggestions } from "@/components/ProcedureSuggestions";
+import {
+  hasDiagnosisPicklist,
+  getActiveProcedureIds,
+  evaluateSuggestions,
+  findDiagnosisById,
+} from "@/lib/diagnosisPicklists";
+import type { DiagnosisPicklistEntry, StagingSelections } from "@/types/diagnosis";
+import { findPicklistEntry } from "@/lib/procedurePicklist";
 
 type RouteParams = RouteProp<RootStackParamList, "CaseForm">;
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -294,6 +304,9 @@ export default function CaseFormScreen() {
   const [operativeMedia, setOperativeMedia] = useState<OperativeMediaItem[]>([]);
   const [showFractureWizardFromCheckbox, setShowFractureWizardFromCheckbox] = useState(false);
   const [snomedSuggestion, setSnomedSuggestion] = useState<{ searchTerm: string; displayName: string } | null>(null);
+  
+  const [selectedDiagnosis, setSelectedDiagnosis] = useState<DiagnosisPicklistEntry | null>(null);
+  const [selectedSuggestionIds, setSelectedSuggestionIds] = useState<Set<string>>(new Set());
   
   // Legacy diagnosis field for backwards compatibility
   const [diagnosis, setDiagnosis] = useState("");
@@ -631,6 +644,20 @@ export default function CaseFormScreen() {
           }
         }
 
+        if (caseData.diagnosisPicklistId) {
+          const dx = findDiagnosisById(caseData.diagnosisPicklistId);
+          if (dx) {
+            setSelectedDiagnosis(dx);
+            const procIds = (caseData.procedures || [])
+              .map((p) => p.picklistEntryId)
+              .filter(Boolean) as string[];
+            setSelectedSuggestionIds(new Set(procIds));
+          }
+        }
+        if (caseData.diagnosisStagingSelections) {
+          setStagingValues(caseData.diagnosisStagingSelections);
+        }
+
         // Load team member role
         const userMember = caseData.teamMembers?.find(m => m.name === "You");
         if (userMember?.role) setRole(userMember.role);
@@ -895,6 +922,121 @@ export default function CaseFormScreen() {
     }
   };
 
+  const handleDiagnosisSelect = useCallback((dx: DiagnosisPicklistEntry) => {
+    setSelectedDiagnosis(dx);
+    setPrimaryDiagnosis({ conceptId: dx.snomedCtCode, term: dx.displayName });
+    setDiagnosis(dx.displayName);
+
+    setStagingValues({});
+
+    const activeIds = getActiveProcedureIds(dx, {});
+    setSelectedSuggestionIds(new Set(activeIds));
+
+    const newProcedures: CaseProcedure[] = activeIds.map((picklistId, idx) => {
+      const entry = findPicklistEntry(picklistId);
+      return {
+        id: uuidv4(),
+        sequenceOrder: idx + 1,
+        procedureName: entry?.displayName || "",
+        specialty,
+        surgeonRole: "PS" as Role,
+        picklistEntryId: picklistId,
+        snomedCtCode: entry?.snomedCtCode,
+        snomedCtDisplay: entry?.snomedCtDisplay,
+        subcategory: entry?.subcategory,
+        tags: entry?.tags,
+      };
+    });
+    setProcedures(newProcedures.length > 0 ? newProcedures : buildDefaultProcedures());
+  }, [specialty, buildDefaultProcedures]);
+
+  const handleStagingChangeForSuggestions = useCallback((systemName: string, value: string) => {
+    const newStagingValues = { ...stagingValues, [systemName]: value };
+    setStagingValues(newStagingValues);
+
+    if (selectedDiagnosis) {
+      const evaluated = evaluateSuggestions(selectedDiagnosis, newStagingValues);
+      const activeIds = new Set(evaluated.filter((s) => s.isActive).map((s) => s.procedurePicklistId));
+      const allSuggestionIds = new Set(evaluated.map((s) => s.procedurePicklistId));
+
+      const manuallySelected = new Set<string>();
+      selectedSuggestionIds.forEach((id) => {
+        if (!allSuggestionIds.has(id) || activeIds.has(id)) {
+          manuallySelected.add(id);
+        }
+      });
+      const newSelected = new Set([...activeIds, ...manuallySelected]);
+
+      const idsToAdd = [...activeIds].filter(
+        (id) => !procedures.some((p) => p.picklistEntryId === id)
+      );
+
+      const conditionalIds = new Set(
+        evaluated.filter((s) => s.isConditional).map((s) => s.procedurePicklistId)
+      );
+      const idsToRemove = new Set(
+        [...conditionalIds].filter((id) => !activeIds.has(id) && !manuallySelected.has(id))
+      );
+
+      setProcedures((prev) => {
+        let updated = prev.filter((p) => !p.picklistEntryId || !idsToRemove.has(p.picklistEntryId));
+        if (idsToAdd.length > 0) {
+          const addedProcedures: CaseProcedure[] = idsToAdd.map((picklistId) => {
+            const entry = findPicklistEntry(picklistId);
+            return {
+              id: uuidv4(),
+              sequenceOrder: 1,
+              procedureName: entry?.displayName || "",
+              specialty,
+              surgeonRole: "PS" as Role,
+              picklistEntryId: picklistId,
+              snomedCtCode: entry?.snomedCtCode,
+              snomedCtDisplay: entry?.snomedCtDisplay,
+              subcategory: entry?.subcategory,
+              tags: entry?.tags,
+            };
+          });
+          updated = [...updated, ...addedProcedures];
+        }
+        return updated.map((p, i) => ({ ...p, sequenceOrder: i + 1 }));
+      });
+      setSelectedSuggestionIds(newSelected);
+    }
+  }, [stagingValues, selectedDiagnosis, selectedSuggestionIds, procedures, specialty]);
+
+  const handleToggleProcedureSuggestion = useCallback((procedurePicklistId: string, isSelected: boolean) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (isSelected) {
+      setSelectedSuggestionIds((prev) => new Set([...prev, procedurePicklistId]));
+      const entry = findPicklistEntry(procedurePicklistId);
+      if (entry && !procedures.some((p) => p.picklistEntryId === procedurePicklistId)) {
+        const newProc: CaseProcedure = {
+          id: uuidv4(),
+          sequenceOrder: procedures.length + 1,
+          procedureName: entry.displayName,
+          specialty,
+          surgeonRole: "PS" as Role,
+          picklistEntryId: procedurePicklistId,
+          snomedCtCode: entry.snomedCtCode,
+          snomedCtDisplay: entry.snomedCtDisplay,
+          subcategory: entry.subcategory,
+          tags: entry.tags,
+        };
+        setProcedures((prev) => [...prev, newProc]);
+      }
+    } else {
+      setSelectedSuggestionIds((prev) => {
+        const next = new Set(prev);
+        next.delete(procedurePicklistId);
+        return next;
+      });
+      setProcedures((prev) => {
+        const filtered = prev.filter((p) => p.picklistEntryId !== procedurePicklistId);
+        return filtered.map((p, i) => ({ ...p, sequenceOrder: i + 1 }));
+      });
+    }
+  }, [procedures, specialty]);
+
   const handleSave = async () => {
     if (!patientIdentifier.trim()) {
       Alert.alert("Required Field", "Please enter a patient identifier");
@@ -975,6 +1117,10 @@ export default function CaseFormScreen() {
         
         // Co-morbidities
         comorbidities: selectedComorbidities.length > 0 ? selectedComorbidities : undefined,
+        
+        diagnosisPicklistId: selectedDiagnosis?.id || undefined,
+        diagnosisStagingSelections: Object.keys(stagingValues).length > 0 ? stagingValues : undefined,
+        procedureSuggestionSource: selectedDiagnosis ? "picklist" : "manual",
         
         // AO/OTA Fracture Classifications (for fracture diagnoses)
         fractures: fractures.length > 0 ? fractures : undefined,
@@ -1134,7 +1280,15 @@ export default function CaseFormScreen() {
         />
       )}
 
-      <SectionHeader title="Primary Diagnosis" subtitle="SNOMED CT coded diagnosis" />
+      <SectionHeader title="Primary Diagnosis" subtitle={hasDiagnosisPicklist(specialty) ? "Select from structured list or search SNOMED CT" : "SNOMED CT coded diagnosis"} />
+
+      {hasDiagnosisPicklist(specialty) ? (
+        <DiagnosisPicker
+          specialty={specialty}
+          selectedDiagnosisId={selectedDiagnosis?.id}
+          onSelect={handleDiagnosisSelect}
+        />
+      ) : null}
 
       {specialty === "hand_surgery" ? (
         <View style={styles.fractureCheckboxContainer}>
@@ -1223,13 +1377,26 @@ export default function CaseFormScreen() {
                 value: opt.value,
                 label: opt.description ? `${opt.label} - ${opt.description}` : opt.label,
               }))}
-              onSelect={(value) => 
-                setStagingValues((prev) => ({ ...prev, [system.name]: value }))
-              }
+              onSelect={(value) => {
+                if (selectedDiagnosis) {
+                  handleStagingChangeForSuggestions(system.name, value);
+                } else {
+                  setStagingValues((prev) => ({ ...prev, [system.name]: value }));
+                }
+              }}
               placeholder={`Select ${system.name.toLowerCase()}...`}
             />
           ))}
         </View>
+      ) : null}
+
+      {selectedDiagnosis ? (
+        <ProcedureSuggestions
+          diagnosis={selectedDiagnosis}
+          stagingSelections={stagingValues}
+          selectedProcedureIds={selectedSuggestionIds}
+          onToggle={handleToggleProcedureSuggestion}
+        />
       ) : null}
 
       {primaryDiagnosis ? (
