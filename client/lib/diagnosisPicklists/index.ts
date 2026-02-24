@@ -8,7 +8,7 @@
  *
  * Phase 1: Hand Surgery, Burns, Body Contouring
  * Phase 2: Breast, Aesthetics, General
- * Phase 3 (TODO): Head & Neck, Orthoplastic
+ * Phase 3: Head & Neck, Orthoplastic
  *
  * Usage:
  *   import { getDiagnosesForSpecialty, evaluateSuggestions } from "@/lib/diagnosisPicklists";
@@ -30,6 +30,8 @@ export { BODY_CONTOURING_DIAGNOSES } from "./bodyContouringDiagnoses";
 export { BREAST_DIAGNOSES } from "./breastDiagnoses";
 export { AESTHETICS_DIAGNOSES } from "./aestheticsDiagnoses";
 export { GENERAL_DIAGNOSES } from "./generalDiagnoses";
+export { HEAD_NECK_DIAGNOSES } from "./headNeckDiagnoses";
+export { ORTHOPLASTIC_DIAGNOSES } from "./orthoplasticDiagnoses";
 
 // Re-export types
 export type {
@@ -48,9 +50,8 @@ import { BREAST_DIAGNOSES } from "./breastDiagnoses";
 import { AESTHETICS_DIAGNOSES } from "./aestheticsDiagnoses";
 import { GENERAL_DIAGNOSES } from "./generalDiagnoses";
 
-// Phase 3 — import and add here as built:
-// import { HEAD_NECK_DIAGNOSES } from "./headNeckDiagnoses";
-// import { ORTHOPLASTIC_DIAGNOSES } from "./orthoplasticDiagnoses";
+import { HEAD_NECK_DIAGNOSES } from "./headNeckDiagnoses";
+import { ORTHOPLASTIC_DIAGNOSES } from "./orthoplasticDiagnoses";
 
 // ─── Master Diagnosis Registry ───────────────────────────────────────────────
 
@@ -65,9 +66,8 @@ export const ALL_DIAGNOSES: DiagnosisPicklistEntry[] = [
   ...BREAST_DIAGNOSES,
   ...AESTHETICS_DIAGNOSES,
   ...GENERAL_DIAGNOSES,
-  // Phase 3:
-  // ...HEAD_NECK_DIAGNOSES,
-  // ...ORTHOPLASTIC_DIAGNOSES,
+  ...HEAD_NECK_DIAGNOSES,
+  ...ORTHOPLASTIC_DIAGNOSES,
 ];
 
 // ─── Lookup by specialty ─────────────────────────────────────────────────────
@@ -80,9 +80,8 @@ const SPECIALTY_MAP: Partial<Record<Specialty, DiagnosisPicklistEntry[]>> = {
   breast: BREAST_DIAGNOSES,
   aesthetics: AESTHETICS_DIAGNOSES,
   general: GENERAL_DIAGNOSES,
-  // Phase 3:
-  // head_neck: HEAD_NECK_DIAGNOSES,
-  // orthoplastic: ORTHOPLASTIC_DIAGNOSES,
+  head_neck: HEAD_NECK_DIAGNOSES,
+  orthoplastic: ORTHOPLASTIC_DIAGNOSES,
 };
 
 /**

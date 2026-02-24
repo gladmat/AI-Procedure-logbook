@@ -317,7 +317,48 @@ export const diagnosisStagingConfigs: DiagnosisStagingConfig[] = [
     ],
   },
 
-  // Facial Nerve Palsy (House-Brackmann Grade) — Phase 3 prep
+  // Wagner Classification — Diabetic Foot
+  {
+    snomedCtCodes: [
+      "280137006",
+    ],
+    keywords: ["diabetic foot", "diabetic ulcer", "Wagner", "neuropathic ulcer"],
+    stagingSystems: [
+      {
+        name: "Wagner Grade",
+        description: "Diabetic foot ulcer classification — guides surgical management",
+        options: [
+          { value: "0", label: "Grade 0", description: "Intact skin; bony deformity (pre-ulcerative)" },
+          { value: "1", label: "Grade 1", description: "Superficial ulcer (epidermis + dermis)" },
+          { value: "2", label: "Grade 2", description: "Deep ulcer to tendon / bone / joint" },
+          { value: "3", label: "Grade 3", description: "Deep ulcer + abscess / osteomyelitis" },
+          { value: "4", label: "Grade 4", description: "Partial foot gangrene (toe / forefoot)" },
+          { value: "5", label: "Grade 5", description: "Whole foot gangrene — amputation usually required" },
+        ],
+      },
+    ],
+  },
+
+  // Le Fort Classification — Midface Fractures
+  {
+    snomedCtCodes: [
+      "263175007",
+    ],
+    keywords: ["Le Fort", "LeFort", "midface fracture", "maxillary fracture"],
+    stagingSystems: [
+      {
+        name: "Le Fort Classification",
+        description: "Midface fracture pattern classification",
+        options: [
+          { value: "I", label: "Le Fort I", description: "Horizontal maxillary — alveolar process separation" },
+          { value: "II", label: "Le Fort II", description: "Pyramidal — maxilla + nasal bones; infraorbital involvement" },
+          { value: "III", label: "Le Fort III", description: "Craniofacial disjunction — complete separation of facial skeleton from cranial base" },
+        ],
+      },
+    ],
+  },
+
+  // Facial Nerve Palsy (House-Brackmann Grade)
   {
     snomedCtCodes: [
       "280816001", // Facial nerve palsy
