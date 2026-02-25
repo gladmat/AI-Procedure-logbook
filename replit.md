@@ -116,6 +116,7 @@ Comprehensive infection case documentation with serial episode tracking.
 ### Database
 - **PostgreSQL**: Used for SNOMED CT reference data, managed via Drizzle ORM.
 - **AsyncStorage**: Primary mechanism for local data persistence on the device.
+- **Performance Indexes** (`migrations/add_performance_indexes.sql`): 8 indexes on high-frequency query paths — procedures (user_id, user_id+date), flaps (procedure_id), anastomoses (flap_id), case_procedures (case_id), password_reset_tokens (expires_at), snomed_ref (category+is_active), user_facilities (user_id). All use `IF NOT EXISTS` for idempotent execution.
 
 ### Key Libraries
 - **expo-image-picker**: For selecting images from the gallery.
