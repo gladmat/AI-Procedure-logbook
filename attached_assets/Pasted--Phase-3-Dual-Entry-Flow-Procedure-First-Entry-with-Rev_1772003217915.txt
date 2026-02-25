@@ -1,0 +1,573 @@
+# Phase 3: Dual Entry Flow — Procedure-First Entry with Reverse Diagnosis Mapping
+
+## Overview
+
+Add procedure-first entry as an alternative starting point for case logging. When a surgeon picks a procedure without having selected a diagnosis first, the app shows a "What's the diagnosis?" prompt with smart suggestions derived from reverse-mapping the procedure back to likely diagnoses.
+
+**Current flow**: Specialty → Diagnosis → Suggested Procedures (auto-populated)
+**New flow (added)**: Specialty → Procedure (picked first) → "What's the diagnosis?" prompt with smart suggestions → Diagnosis selected → merge additional procedure suggestions
+
+Both flows coexist. No toggle or mode switch — the system detects which path the user took and responds accordingly.
+
+---
+
+## Step 1: Add reverse mapping functions to `client/lib/diagnosisPicklists/index.ts`
+
+Add the following types and functions **after** the existing `getAllSuggestionProcedureIds` function (near line 293):
+
+```typescript
+// ─── Reverse Mapping: Procedure → Diagnoses ────────────────────────────────
+
+/**
+ * Result of a reverse procedure → diagnosis lookup.
+ * Indicates how strongly this diagnosis is associated with the procedure.
+ */
+export interface ReverseDiagnosisSuggestion {
+  diagnosis: DiagnosisPicklistEntry;
+  /** The procedure is a default (auto-selected) suggestion for this diagnosis */
+  isDefaultForDiagnosis: boolean;
+  /** The procedure is conditional (staging-dependent) for this diagnosis */
+  isConditionalForDiagnosis: boolean;
+  /** Condition description if conditional */
+  conditionDescription?: string;
+}
+
+/** Lazily built reverse index: procedurePicklistId → diagnoses that suggest it */
+let _reverseIndex: Map<string, ReverseDiagnosisSuggestion[]> | null = null;
+
+function getReverseIndex(): Map<string, ReverseDiagnosisSuggestion[]> {
+  if (!_reverseIndex) {
+    _reverseIndex = new Map();
+    for (const dx of ALL_DIAGNOSES) {
+      for (const suggestion of dx.suggestedProcedures) {
+        const existing = _reverseIndex.get(suggestion.procedurePicklistId) || [];
+        existing.push({
+          diagnosis: dx,
+          isDefaultForDiagnosis: suggestion.isDefault,
+          isConditionalForDiagnosis: !!suggestion.isConditional,
+          conditionDescription: suggestion.conditionDescription,
+        });
+        _reverseIndex.set(suggestion.procedurePicklistId, existing);
+      }
+    }
+  }
+  return _reverseIndex;
+}
+
+/**
+ * Reverse lookup: given a procedure picklist ID, find all diagnoses that
+ * list it as a suggestion. Results are ranked by relevance:
+ *   1. Same-specialty diagnoses where the procedure is a default
+ *   2. Same-specialty diagnoses where the procedure is conditional
+ *   3. Cross-specialty diagnoses where the procedure is a default
+ *   4. Cross-specialty diagnoses where the procedure is conditional
+ *
+ * @param procedurePicklistId - The procedure to reverse-lookup
+ * @param specialty - The current group specialty (for ranking)
+ * @param limit - Maximum results (default 8)
+ */
+export function getDiagnosesForProcedure(
+  procedurePicklistId: string,
+  specialty?: Specialty,
+  limit: number = 8
+): ReverseDiagnosisSuggestion[] {
+  const reverseIndex = getReverseIndex();
+  const matches = reverseIndex.get(procedurePicklistId);
+  if (!matches || matches.length === 0) return [];
+
+  // Deduplicate by diagnosis ID (a procedure might be referenced multiple times
+  // in the same diagnosis array — take the highest-priority entry)
+  const deduped = new Map<string, ReverseDiagnosisSuggestion>();
+  for (const match of matches) {
+    const existing = deduped.get(match.diagnosis.id);
+    if (!existing || (match.isDefaultForDiagnosis && !existing.isDefaultForDiagnosis)) {
+      deduped.set(match.diagnosis.id, match);
+    }
+  }
+
+  const results = Array.from(deduped.values());
+
+  // Sort by relevance
+  results.sort((a, b) => {
+    const aSpecMatch = specialty && a.diagnosis.specialty === specialty ? 1 : 0;
+    const bSpecMatch = specialty && b.diagnosis.specialty === specialty ? 1 : 0;
+    if (aSpecMatch !== bSpecMatch) return bSpecMatch - aSpecMatch;
+
+    const aDefault = a.isDefaultForDiagnosis ? 1 : 0;
+    const bDefault = b.isDefaultForDiagnosis ? 1 : 0;
+    if (aDefault !== bDefault) return bDefault - aDefault;
+
+    const aConditional = a.isConditionalForDiagnosis ? 0 : 1;
+    const bConditional = b.isConditionalForDiagnosis ? 0 : 1;
+    return bConditional - aConditional;
+  });
+
+  return results.slice(0, limit);
+}
+
+/**
+ * Get reverse diagnosis suggestions for multiple procedures at once.
+ * Merges and deduplicates results, prioritising diagnoses that match
+ * more of the selected procedures.
+ */
+export function getDiagnosesForProcedures(
+  procedurePicklistIds: string[],
+  specialty?: Specialty,
+  limit: number = 8
+): ReverseDiagnosisSuggestion[] {
+  if (procedurePicklistIds.length === 0) return [];
+  if (procedurePicklistIds.length === 1) {
+    return getDiagnosesForProcedure(procedurePicklistIds[0], specialty, limit);
+  }
+
+  // Count how many of the selected procedures each diagnosis covers
+  const diagnosisCoverage = new Map<string, { suggestion: ReverseDiagnosisSuggestion; matchCount: number }>();
+
+  for (const procId of procedurePicklistIds) {
+    const matches = getDiagnosesForProcedure(procId, specialty, 20);
+    for (const match of matches) {
+      const existing = diagnosisCoverage.get(match.diagnosis.id);
+      if (existing) {
+        existing.matchCount += 1;
+        // Upgrade to default if any match is default
+        if (match.isDefaultForDiagnosis) {
+          existing.suggestion = match;
+        }
+      } else {
+        diagnosisCoverage.set(match.diagnosis.id, { suggestion: match, matchCount: 1 });
+      }
+    }
+  }
+
+  const results = Array.from(diagnosisCoverage.values());
+
+  // Sort by: match count desc → same specialty → default status
+  results.sort((a, b) => {
+    if (b.matchCount !== a.matchCount) return b.matchCount - a.matchCount;
+    const aSpec = specialty && a.suggestion.diagnosis.specialty === specialty ? 1 : 0;
+    const bSpec = specialty && b.suggestion.diagnosis.specialty === specialty ? 1 : 0;
+    if (aSpec !== bSpec) return bSpec - aSpec;
+    const aDefault = a.suggestion.isDefaultForDiagnosis ? 1 : 0;
+    const bDefault = b.suggestion.isDefaultForDiagnosis ? 1 : 0;
+    return bDefault - aDefault;
+  });
+
+  return results.slice(0, limit).map((r) => r.suggestion);
+}
+```
+
+Also add the new type to the re-exports near the top of the file (around line 42):
+
+```typescript
+// Re-export types
+export type {
+  DiagnosisPicklistEntry,
+  ProcedureSuggestion,
+  EvaluatedSuggestion,
+  StagingSelections,
+} from "@/types/diagnosis";
+```
+
+Add `ReverseDiagnosisSuggestion` to this block. Since it's defined in the index file itself (not in `@/types/diagnosis`), just make sure it's exported (which it is via the `export interface` declaration).
+
+---
+
+## Step 2: Create `client/components/DiagnosisSuggestions.tsx` (NEW file)
+
+Create this new component:
+
+```typescript
+import React, { useMemo } from "react";
+import { View, Pressable, StyleSheet } from "react-native";
+import { Feather } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
+
+import { ThemedText } from "@/components/ThemedText";
+import { useTheme } from "@/hooks/useTheme";
+import { Spacing, BorderRadius, Typography } from "@/constants/theme";
+import type { Specialty } from "@/types/case";
+import type { DiagnosisPicklistEntry } from "@/types/diagnosis";
+import {
+  getDiagnosesForProcedures,
+  type ReverseDiagnosisSuggestion,
+} from "@/lib/diagnosisPicklists";
+import { SPECIALTY_LABELS } from "@/types/case";
+
+interface DiagnosisSuggestionsProps {
+  /** Picklist IDs of procedures currently selected */
+  procedurePicklistIds: string[];
+  /** Current group specialty — used for ranking */
+  specialty: Specialty;
+  /** Called when user taps a suggested diagnosis */
+  onSelect: (diagnosis: DiagnosisPicklistEntry) => void;
+}
+
+/**
+ * Reverse-mapping component: shows diagnosis suggestions based on
+ * already-selected procedures. Appears in "procedure-first" entry flow.
+ */
+export function DiagnosisSuggestions({
+  procedurePicklistIds,
+  specialty,
+  onSelect,
+}: DiagnosisSuggestionsProps) {
+  const { theme } = useTheme();
+
+  const suggestions: ReverseDiagnosisSuggestion[] = useMemo(
+    () => getDiagnosesForProcedures(procedurePicklistIds, specialty),
+    [procedurePicklistIds, specialty]
+  );
+
+  if (suggestions.length === 0) return null;
+
+  // Group: same specialty first, then cross-specialty
+  const sameSpecialty = suggestions.filter(
+    (s) => s.diagnosis.specialty === specialty
+  );
+  const crossSpecialty = suggestions.filter(
+    (s) => s.diagnosis.specialty !== specialty
+  );
+
+  return (
+    <View style={[styles.container, { backgroundColor: theme.backgroundSecondary, borderColor: theme.border }]}>
+      <View style={styles.headerRow}>
+        <View style={[styles.iconBadge, { backgroundColor: theme.warning + "20" }]}>
+          <Feather name="help-circle" size={18} color={theme.warning} />
+        </View>
+        <View style={styles.headerText}>
+          <ThemedText type="h4" style={styles.title}>
+            What's the diagnosis?
+          </ThemedText>
+          <ThemedText
+            type="small"
+            style={[styles.subtitle, { color: theme.textSecondary }]}
+          >
+            Suggested based on the procedure you selected
+          </ThemedText>
+        </View>
+      </View>
+
+      {sameSpecialty.length > 0 ? (
+        <View style={styles.chipGroup}>
+          {sameSpecialty.map((suggestion) => (
+            <DiagnosisChip
+              key={suggestion.diagnosis.id}
+              suggestion={suggestion}
+              isCrossSpecialty={false}
+              theme={theme}
+              onSelect={onSelect}
+            />
+          ))}
+        </View>
+      ) : null}
+
+      {crossSpecialty.length > 0 ? (
+        <View style={styles.crossSpecialtySection}>
+          <ThemedText
+            type="small"
+            style={[styles.crossSpecialtyLabel, { color: theme.textTertiary }]}
+          >
+            From other specialties
+          </ThemedText>
+          <View style={styles.chipGroup}>
+            {crossSpecialty.map((suggestion) => (
+              <DiagnosisChip
+                key={suggestion.diagnosis.id}
+                suggestion={suggestion}
+                isCrossSpecialty={true}
+                theme={theme}
+                onSelect={onSelect}
+              />
+            ))}
+          </View>
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+interface DiagnosisChipProps {
+  suggestion: ReverseDiagnosisSuggestion;
+  isCrossSpecialty: boolean;
+  theme: any;
+  onSelect: (diagnosis: DiagnosisPicklistEntry) => void;
+}
+
+function DiagnosisChip({
+  suggestion,
+  isCrossSpecialty,
+  theme,
+  onSelect,
+}: DiagnosisChipProps) {
+  const chipBg = isCrossSpecialty
+    ? theme.backgroundTertiary
+    : theme.backgroundDefault;
+
+  const chipBorder = isCrossSpecialty
+    ? theme.border
+    : theme.link + "40";
+
+  return (
+    <Pressable
+      style={[
+        styles.chip,
+        { backgroundColor: chipBg, borderColor: chipBorder },
+      ]}
+      onPress={() => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        onSelect(suggestion.diagnosis);
+      }}
+    >
+      <Feather name="arrow-right" size={14} color={theme.link} style={styles.chipIcon} />
+      <View style={styles.chipContent}>
+        <ThemedText type="small" style={[styles.chipText, { color: theme.text }]}>
+          {suggestion.diagnosis.displayName}
+        </ThemedText>
+        {isCrossSpecialty ? (
+          <ThemedText type="small" style={[styles.chipSpecialty, { color: theme.textTertiary }]}>
+            {SPECIALTY_LABELS[suggestion.diagnosis.specialty]}
+          </ThemedText>
+        ) : null}
+        {suggestion.isConditionalForDiagnosis && suggestion.conditionDescription ? (
+          <ThemedText type="small" style={[styles.chipCondition, { color: theme.textTertiary }]}>
+            {suggestion.conditionDescription}
+          </ThemedText>
+        ) : null}
+      </View>
+    </Pressable>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    marginVertical: Spacing.md,
+    padding: Spacing.md,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+  },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: Spacing.sm,
+    marginBottom: Spacing.md,
+  },
+  iconBadge: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 2,
+  },
+  headerText: {
+    flex: 1,
+  },
+  title: {
+    marginBottom: 2,
+  },
+  subtitle: {
+    ...Typography.small,
+  },
+  chipGroup: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: Spacing.sm,
+  },
+  crossSpecialtySection: {
+    marginTop: Spacing.md,
+  },
+  crossSpecialtyLabel: {
+    ...Typography.caption,
+    marginBottom: Spacing.xs,
+    fontStyle: "italic",
+  },
+  chip: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+    maxWidth: "100%",
+  },
+  chipIcon: {
+    marginRight: Spacing.xs,
+    marginTop: 2,
+  },
+  chipContent: {
+    flex: 1,
+  },
+  chipText: {
+    ...Typography.small,
+    fontWeight: "500",
+  },
+  chipSpecialty: {
+    ...Typography.caption,
+    marginTop: 1,
+  },
+  chipCondition: {
+    ...Typography.caption,
+    fontStyle: "italic",
+    marginTop: 1,
+  },
+});
+```
+
+---
+
+## Step 3: Modify `client/components/DiagnosisGroupEditor.tsx`
+
+### 3a. Add import
+
+Near the top of the file, add this import alongside the existing imports:
+
+```typescript
+import { DiagnosisSuggestions } from "@/components/DiagnosisSuggestions";
+```
+
+### 3b. Add computed state for "needs diagnosis" prompt
+
+Inside the `DiagnosisGroupEditor` function body, after the existing `useMemo`/`useCallback` hooks and before the `return (` JSX, add:
+
+```typescript
+  // ─── Procedure-first detection ──────────────────────────────────────────
+  // When the surgeon has picked a procedure from the picklist but hasn't
+  // selected a diagnosis yet, show reverse diagnosis suggestions.
+  const procedurePicklistIds = useMemo(
+    () => procedures
+      .map((p) => p.picklistEntryId)
+      .filter((id): id is string => !!id),
+    [procedures]
+  );
+
+  const showDiagnosisSuggestions =
+    procedurePicklistIds.length > 0 &&
+    !selectedDiagnosis &&
+    !primaryDiagnosis;
+```
+
+### 3c. Add handler for reverse diagnosis selection
+
+Add this handler function near the other handlers (after `handleToggleProcedureSuggestion`):
+
+```typescript
+  /**
+   * Handle diagnosis selected from the reverse (procedure-first) suggestions.
+   * Different from handleDiagnosisSelect: PRESERVES already-selected procedures
+   * and MERGES in any additional defaults from the diagnosis.
+   */
+  const handleReverseDiagnosisSelect = useCallback((dx: DiagnosisPicklistEntry) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+    // Set the diagnosis (same as forward flow)
+    setSelectedDiagnosis(dx);
+    setPrimaryDiagnosis({ conceptId: dx.snomedCtCode, term: dx.displayName });
+    setDiagnosis(dx.displayName);
+    setStagingValues({});
+
+    // Get active procedure IDs from this diagnosis
+    const activeIds = getActiveProcedureIds(dx, {});
+
+    // Build a set of picklist IDs already in the procedure list
+    const existingPicklistIds = new Set(
+      procedures
+        .map((p) => p.picklistEntryId)
+        .filter((id): id is string => !!id)
+    );
+
+    // Add any new defaults that aren't already present
+    const newProcedures: CaseProcedure[] = [];
+    for (const picklistId of activeIds) {
+      if (!existingPicklistIds.has(picklistId)) {
+        const entry = findPicklistEntry(picklistId);
+        if (entry) {
+          newProcedures.push({
+            id: uuidv4(),
+            sequenceOrder: procedures.length + newProcedures.length + 1,
+            procedureName: entry.displayName,
+            specialty: groupSpecialty,
+            surgeonRole: "PS" as Role,
+            picklistEntryId: picklistId,
+            snomedCtCode: entry.snomedCtCode,
+            snomedCtDisplay: entry.snomedCtDisplay,
+            subcategory: entry.subcategory,
+            tags: entry.tags,
+          });
+        }
+      }
+    }
+
+    if (newProcedures.length > 0) {
+      setProcedures((prev) => [...prev, ...newProcedures]);
+    }
+
+    // Update the selected suggestion IDs to reflect all procedures
+    const allIds = new Set([...existingPicklistIds, ...activeIds]);
+    setSelectedSuggestionIds(allIds);
+  }, [procedures, groupSpecialty]);
+```
+
+### 3d. Add DiagnosisSuggestions to the JSX
+
+In the `return (` JSX block, find the section that shows `SnomedSearchPicker` for diagnosis (the one with `label="Search Diagnosis"`, around line 473). **Immediately after** the `SnomedSearchPicker` closing tag `/>` and before the staging container conditional, insert:
+
+```jsx
+      {showDiagnosisSuggestions ? (
+        <DiagnosisSuggestions
+          procedurePicklistIds={procedurePicklistIds}
+          specialty={groupSpecialty}
+          onSelect={handleReverseDiagnosisSelect}
+        />
+      ) : null}
+```
+
+So the order in the JSX becomes:
+1. DiagnosisPicker (structured picklist)
+2. Fracture case checkbox
+3. SnomedSearchPicker (search)
+4. **DiagnosisSuggestions** ← NEW (only visible when procedure-first)
+5. Staging fields
+6. ProcedureSuggestions
+7. DiagnosisClinicalFields
+8. Procedures Performed
+
+---
+
+## Step 4: Add CaseProcedure import if missing
+
+In `DiagnosisGroupEditor.tsx`, make sure `CaseProcedure` is in the existing import from `@/types/case`. It should already be there (check line ~11), but verify this import exists:
+
+```typescript
+import {
+  DiagnosisGroup,
+  CaseProcedure,  // ← ensure this is present
+  Specialty,
+  ...
+} from "@/types/case";
+```
+
+---
+
+## Verification Checklist
+
+After making these changes, verify:
+
+1. **Diagnosis-first flow still works**: Pick a specialty → pick a diagnosis from the picker → procedure suggestions appear and auto-populate. This must be completely unchanged.
+
+2. **Procedure-first flow works**: Pick a specialty → scroll down to "Procedures Performed" → use the procedure subcategory picker to select a procedure (e.g., "Free ALT flap" under Orthoplastic) → scroll back up → the "What's the diagnosis?" card should appear between the SNOMED search and the staging section, showing relevant diagnoses.
+
+3. **Tapping a reverse suggestion works**: Tap one of the suggested diagnoses → the diagnosis is filled in → the SNOMED code is populated → the diagnosis picker shows it as selected → if the diagnosis has additional default procedure suggestions beyond what's already selected, they are ADDED to the procedure list (not replacing the existing ones).
+
+4. **No suggestions = no card**: If a procedure has no reverse mappings (e.g., a manually typed procedure without a picklist entry), the DiagnosisSuggestions card should not appear at all.
+
+5. **Card disappears after diagnosis selection**: Once a diagnosis is selected (either via the reverse suggestion or via the diagnosis picker/SNOMED search), the "What's the diagnosis?" card should disappear.
+
+6. **Cross-specialty labels**: If the reverse lookup returns diagnoses from other specialties (e.g., selecting "Free ALT flap" under General should also show Orthoplastic and Head & Neck diagnoses), these should appear in a separate "From other specialties" section with specialty labels.
+
+7. **TypeScript compiles** with no errors.
+
+## Files Modified
+
+1. `client/lib/diagnosisPicklists/index.ts` — add reverse mapping functions (~110 lines added)
+2. `client/components/DiagnosisSuggestions.tsx` — NEW component (~210 lines)
+3. `client/components/DiagnosisGroupEditor.tsx` — add import, computed state, handler, JSX insertion (~50 lines added)
