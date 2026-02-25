@@ -17,6 +17,8 @@ import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
+import { WoundDimensionChart } from "@/components/WoundDimensionChart";
+import { WoundAssessmentCard } from "@/components/WoundAssessmentCard";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, Shadows } from "@/constants/theme";
 import {
@@ -99,6 +101,8 @@ function getEventTypeIcon(eventType: TimelineEventType): keyof typeof Feather.gl
       return "calendar";
     case "note":
       return "file-text";
+    case "wound_assessment":
+      return "thermometer";
     default:
       return "file";
   }
@@ -118,6 +122,8 @@ function getEventTypeColor(eventType: TimelineEventType, theme: Record<string, s
       return theme.warning;
     case "note":
       return theme.textSecondary;
+    case "wound_assessment":
+      return theme.info;
     default:
       return theme.link;
   }
@@ -1127,6 +1133,7 @@ export default function CaseDetailScreen() {
         ) : null}
 
         <SectionHeader title="Timeline" />
+        <WoundDimensionChart events={timelineEvents} />
         {timelineEvents.length === 0 ? (
           <View style={[styles.emptyTimeline, { backgroundColor: theme.backgroundDefault }]}>
             <Feather name="calendar" size={32} color={theme.textTertiary} />
@@ -1136,7 +1143,17 @@ export default function CaseDetailScreen() {
           </View>
         ) : (
           <View style={[styles.card, { backgroundColor: theme.backgroundDefault }]}>
-            {timelineEvents.map((event) => (
+            {timelineEvents.map((event) => {
+              if (event.eventType === "wound_assessment" && event.woundAssessmentData) {
+                return (
+                  <WoundAssessmentCard
+                    key={event.id}
+                    data={event.woundAssessmentData}
+                    createdAt={event.createdAt}
+                  />
+                );
+              }
+              return (
               <View key={event.id} style={styles.timelineEvent}>
                 <View style={[styles.timelineDot, { backgroundColor: getEventTypeColor(event.eventType, theme) }]} />
                 <View style={styles.timelineContent}>
@@ -1206,7 +1223,8 @@ export default function CaseDetailScreen() {
                   </ThemedText>
                 </View>
               </View>
-            ))}
+              );
+            })}
           </View>
         )}
 

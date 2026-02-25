@@ -1,4 +1,5 @@
 import { InfectionOverlay } from "./infection";
+import { WoundAssessment } from "@/types/wound";
 
 // Case status for active patient tracking
 export type CaseStatus = "active" | "discharged";
@@ -807,7 +808,8 @@ export type TimelineEventType =
   | "imaging"
   | "prom"
   | "complication"
-  | "follow_up_visit";
+  | "follow_up_visit"
+  | "wound_assessment";
 
 export type FollowUpInterval = 
   | "2_weeks"
@@ -928,6 +930,7 @@ export interface TimelineEvent {
   mediaAttachments?: MediaAttachment[];
   promData?: PROMData;
   complicationData?: ComplicationEntry;
+  woundAssessmentData?: WoundAssessment;
 }
 
 export const TIMELINE_EVENT_TYPE_LABELS: Record<TimelineEventType, string> = {
@@ -937,6 +940,7 @@ export const TIMELINE_EVENT_TYPE_LABELS: Record<TimelineEventType, string> = {
   prom: "PROM Score",
   complication: "Complication",
   follow_up_visit: "Follow-up Visit",
+  wound_assessment: "Wound Assessment",
 };
 
 export const FOLLOW_UP_INTERVAL_LABELS: Record<FollowUpInterval, string> = {

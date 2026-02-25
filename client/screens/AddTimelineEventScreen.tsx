@@ -28,6 +28,8 @@ import { SectionHeader } from "@/components/SectionHeader";
 import { Button } from "@/components/Button";
 import { MediaCapture } from "@/components/MediaCapture";
 import { PROMEntryForm } from "@/components/PROMEntryForm";
+import { WoundAssessment } from "@/types/wound";
+import { WoundAssessmentForm } from "@/components/WoundAssessmentForm";
 import { saveTimelineEvent } from "@/lib/storage";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 
@@ -89,6 +91,9 @@ export default function AddTimelineEventScreen() {
   const [complicationGrade, setComplicationGrade] =
     useState<ClavienDindoGrade>("none");
   const [complicationManagement, setComplicationManagement] = useState("");
+  const [woundAssessmentData, setWoundAssessmentData] = useState<WoundAssessment>({
+    dressings: [],
+  });
 
   const getSubtitle = () => {
     switch (eventType) {
@@ -102,6 +107,8 @@ export default function AddTimelineEventScreen() {
         return "Document a complication";
       case "follow_up_visit":
         return "Record a follow-up visit";
+      case "wound_assessment":
+        return "Document wound status, dressings applied, and healing progress";
       default:
         return "Record a post-operative event";
     }
@@ -188,6 +195,10 @@ export default function AddTimelineEventScreen() {
         event.followUpInterval = followUpInterval;
       }
 
+      if (eventType === "wound_assessment") {
+        event.woundAssessmentData = woundAssessmentData;
+      }
+
       await saveTimelineEvent(event);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       navigation.goBack();
@@ -253,6 +264,8 @@ export default function AddTimelineEventScreen() {
         return "calendar";
       case "note":
         return "file-text";
+      case "wound_assessment":
+        return "thermometer";
       default:
         return "file";
     }
@@ -357,6 +370,15 @@ export default function AddTimelineEventScreen() {
             onChangeText={setNote}
             placeholder="Document the follow-up findings..."
             multiline
+          />
+        </View>
+      ) : null}
+
+      {eventType === "wound_assessment" ? (
+        <View style={styles.section}>
+          <WoundAssessmentForm
+            value={woundAssessmentData}
+            onChange={setWoundAssessmentData}
           />
         </View>
       ) : null}

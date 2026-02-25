@@ -48,6 +48,14 @@ The application is built with a strong emphasis on privacy, local processing, an
 - **Complete Password Management**: Change password and Forgot Password flow with email-based reset tokens.
 - **App Store Legal Compliance**: Accessible Privacy Policy, Terms of Service, and Open Source Licenses.
 
+### Wound Episode Tracker
+Serial wound assessment documentation as a timeline event type (`wound_assessment`).
+- **WoundAssessmentForm** (`client/components/WoundAssessmentForm.tsx`): Progressive-disclosure form with 11 sections — dimensions (auto-area), TIME classification (Tissue/Infection/Moisture/Edge), surrounding skin, dressing catalogue (40+ products grouped by category), healing trend, intervention notes, clinician note, next review date.
+- **WoundAssessmentCard** (`client/components/WoundAssessmentCard.tsx`): Compact timeline card with header badge, dimensions, tissue/exudate/edge details, infection signs (red highlight), dressings list, healing trend (colour-coded), and clinician note.
+- **WoundDimensionChart** (`client/components/WoundDimensionChart.tsx`): SVG line chart (react-native-svg) showing wound area (cm²) over time; renders only when >= 2 wound assessments with area data exist.
+- **Types** (`client/types/wound.ts`): WoundAssessment, WoundDressingEntry, DressingProduct, TIME classification types, label records, DRESSING_CATALOGUE (40+ products with SNOMED CT codes where applicable — Kerecis Omega3 Wound/Burn/Marigen Scaffold, Integra DRT, BTM PolyNovo, etc.).
+- **Integration**: Extends `TimelineEvent` with `woundAssessmentData?: WoundAssessment`; patched into AddTimelineEventScreen (event type grid + form) and CaseDetailScreen (card rendering + chart above timeline).
+
 ### Infection Documentation Module
 Comprehensive infection case documentation with serial episode tracking.
 - **InfectionOverlay**: Attachable overlay for any case specialty.
