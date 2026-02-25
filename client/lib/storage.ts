@@ -2,6 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Case, TimelineEvent, CountryCode, ComplicationEntry } from "@/types/case";
 import { encryptData, decryptData } from "./encryption";
 import * as Crypto from "expo-crypto";
+import { migrateCase } from "./migration";
 
 const CASE_INDEX_KEY = "@surgical_logbook_case_index";
 const CASE_PREFIX = "@surgical_logbook_case_";
@@ -192,7 +193,7 @@ export async function getCase(id: string): Promise<Case | null> {
     if (!encrypted) return null;
     
     const decrypted = await decryptData(encrypted);
-    return JSON.parse(decrypted);
+    return migrateCase(JSON.parse(decrypted));
   } catch (error) {
     console.error("Error reading case:", error);
     return null;

@@ -46,6 +46,8 @@ import {
   TIMELINE_EVENT_TYPE_LABELS,
   PROM_QUESTIONNAIRE_LABELS,
   FOLLOW_UP_INTERVAL_LABELS,
+  getAllProcedures,
+  getPrimaryDiagnosisName,
 } from "@/types/case";
 import { getCase, getTimelineEvents, deleteCase, updateCase, markNoComplications } from "@/lib/storage";
 import { SpecialtyBadge } from "@/components/SpecialtyBadge";
@@ -220,8 +222,9 @@ export default function CaseDetailScreen() {
       "squamous cell",
     ];
     
-    const procedureName = caseData.procedures?.[0]?.procedureName?.toLowerCase() || "";
-    const diagnosisName = caseData.finalDiagnosis?.displayName?.toLowerCase() || "";
+    const allProcs = getAllProcedures(caseData);
+    const procedureName = allProcs[0]?.procedureName?.toLowerCase() || "";
+    const diagnosisName = getPrimaryDiagnosisName(caseData)?.toLowerCase() || "";
     
     return skinLesionKeywords.some(
       keyword => procedureName.includes(keyword) || diagnosisName.includes(keyword)
@@ -343,10 +346,10 @@ export default function CaseDetailScreen() {
     }
   };
 
-  const hasProcedures = caseData.procedures && caseData.procedures.length > 0;
+  const hasProcedures = caseData.diagnosisGroups?.some(g => g.procedures.length > 0);
   const hasPatientDemographics = caseData.gender || caseData.ethnicity;
   const hasAdmissionDetails = caseData.admissionDate || caseData.dischargeDate || caseData.admissionUrgency || (caseData.unplannedReadmission && caseData.unplannedReadmission !== "no");
-  const hasDiagnoses = caseData.preManagementDiagnosis || caseData.finalDiagnosis || caseData.pathologicalDiagnosis;
+  const hasDiagnoses = caseData.diagnosisGroups?.some(g => g.diagnosis);
   const hasComorbidities = caseData.comorbidities && caseData.comorbidities.length > 0;
   const hasOperativeFactors = caseData.woundInfectionRisk || caseData.anaestheticType || caseData.prophylaxis;
   const hasOutcomes = caseData.unplannedICU || caseData.returnToTheatre || caseData.outcome || caseData.mortalityClassification || caseData.discussedAtMDM;
@@ -368,7 +371,7 @@ export default function CaseDetailScreen() {
             {userMember ? <RoleBadge role={userMember.role} /> : null}
           </View>
           <ThemedText type="h2" style={styles.procedureType}>
-            {caseData.preManagementDiagnosis?.displayName || caseData.procedureType}
+            {getPrimaryDiagnosisName(caseData) || caseData.procedureType}
           </ThemedText>
           
           {caseData.procedureCode ? (
@@ -411,131 +414,149 @@ export default function CaseDetailScreen() {
         {hasProcedures ? (
           <>
             <SectionHeader title="Procedures Performed" />
-            {caseData.procedures?.map((proc, idx) => (
-              <View 
-                key={proc.id} 
-                style={[styles.procedureCard, { backgroundColor: theme.backgroundDefault }]}
-              >
-                <View style={styles.procedureHeader}>
-                  <View style={[styles.procedureNumber, { backgroundColor: theme.link + "20" }]}>
-                    <ThemedText style={[styles.procedureNumberText, { color: theme.link }]}>
-                      {idx + 1}
-                    </ThemedText>
-                  </View>
-                  <View style={styles.procedureInfo}>
-                    <ThemedText style={styles.procedureName}>
-                      {proc.procedureName || "Unnamed Procedure"}
-                    </ThemedText>
-                    {proc.specialty ? (
-                      <ThemedText style={[styles.procedureSpecialty, { color: theme.textSecondary }]}>
-                        {SPECIALTY_LABELS[proc.specialty]}
-                      </ThemedText>
-                    ) : null}
-                  </View>
-                  <RoleBadge role={proc.surgeonRole} />
-                </View>
-                {proc.snomedCtCode ? (
-                  <View style={[styles.procedureSnomedRow, { borderTopColor: theme.border }]}>
-                    <ThemedText style={[styles.procedureSnomedLabel, { color: theme.textTertiary }]}>
-                      SNOMED CT: {proc.snomedCtCode}
-                    </ThemedText>
-                    {proc.snomedCtDisplay ? (
-                      <ThemedText style={[styles.procedureSnomedDisplay, { color: theme.textSecondary }]}>
-                        {proc.snomedCtDisplay}
-                      </ThemedText>
-                    ) : null}
-                  </View>
-                ) : null}
-                {proc.notes ? (
-                  <ThemedText style={[styles.procedureNotes, { color: theme.textSecondary }]}>
-                    {proc.notes}
-                  </ThemedText>
-                ) : null}
-                {proc.clinicalDetails ? (
-                  <View style={[styles.procedureClinicalDetails, { borderTopColor: theme.border }]}>
-                    {proc.tags?.includes("free_flap") && (proc.clinicalDetails as FreeFlapDetails) ? (
-                      <>
-                        {(proc.clinicalDetails as FreeFlapDetails).harvestSide ? (
-                          <DetailRow 
-                            label="Harvest Side" 
-                            value={(proc.clinicalDetails as FreeFlapDetails).harvestSide === "left" ? "Left" : "Right"} 
-                          />
-                        ) : null}
-                        {(proc.clinicalDetails as FreeFlapDetails).indication ? (
-                          <DetailRow 
-                            label="Indication" 
-                            value={INDICATION_LABELS[(proc.clinicalDetails as FreeFlapDetails).indication!]} 
-                          />
-                        ) : null}
-                        {(proc.clinicalDetails as FreeFlapDetails).recipientSiteRegion ? (
-                          <DetailRow 
-                            label="Recipient Site" 
-                            value={(proc.clinicalDetails as FreeFlapDetails).recipientSiteRegion?.replace(/_/g, " ")} 
-                          />
-                        ) : null}
-                        {(proc.clinicalDetails as FreeFlapDetails).ischemiaTimeMinutes ? (
-                          <DetailRow 
-                            label="Ischemia Time" 
-                            value={(proc.clinicalDetails as FreeFlapDetails).ischemiaTimeMinutes} 
-                            unit="min"
-                          />
-                        ) : null}
-                        {(proc.clinicalDetails as FreeFlapDetails).flapWidthCm || (proc.clinicalDetails as FreeFlapDetails).flapLengthCm ? (
-                          <DetailRow 
-                            label="Flap Dimensions" 
-                            value={`${(proc.clinicalDetails as FreeFlapDetails).flapWidthCm || "?"} x ${(proc.clinicalDetails as FreeFlapDetails).flapLengthCm || "?"} cm`} 
-                          />
-                        ) : null}
-                        {(proc.clinicalDetails as FreeFlapDetails).anastomoses && (proc.clinicalDetails as FreeFlapDetails).anastomoses!.length > 0 ? (
-                          <View style={styles.anastomosesList}>
-                            <ThemedText style={[styles.anastomosesTitle, { color: theme.textSecondary }]}>
-                              Anastomoses:
+            {caseData.diagnosisGroups?.map((group, gIdx) => {
+              if (group.procedures.length === 0) return null;
+              const showGroupHeader = caseData.diagnosisGroups.length > 1;
+              return (
+                <View key={group.id}>
+                  {showGroupHeader ? (
+                    <View style={styles.groupHeader}>
+                      <SpecialtyBadge specialty={group.specialty} size="small" />
+                      {group.diagnosis ? (
+                        <ThemedText style={[styles.groupDiagnosisLabel, { color: theme.textSecondary }]}>
+                          {group.diagnosis.displayName}
+                        </ThemedText>
+                      ) : null}
+                    </View>
+                  ) : null}
+                  {group.procedures.map((proc, idx) => (
+                    <View 
+                      key={proc.id} 
+                      style={[styles.procedureCard, { backgroundColor: theme.backgroundDefault }]}
+                    >
+                      <View style={styles.procedureHeader}>
+                        <View style={[styles.procedureNumber, { backgroundColor: theme.link + "20" }]}>
+                          <ThemedText style={[styles.procedureNumberText, { color: theme.link }]}>
+                            {idx + 1}
+                          </ThemedText>
+                        </View>
+                        <View style={styles.procedureInfo}>
+                          <ThemedText style={styles.procedureName}>
+                            {proc.procedureName || "Unnamed Procedure"}
+                          </ThemedText>
+                          {proc.specialty ? (
+                            <ThemedText style={[styles.procedureSpecialty, { color: theme.textSecondary }]}>
+                              {SPECIALTY_LABELS[proc.specialty]}
                             </ThemedText>
-                            {(proc.clinicalDetails as FreeFlapDetails).anastomoses!.map((a, aIdx) => (
-                              <ThemedText key={a.id || aIdx} style={styles.anastomosisItem}>
-                                {a.vesselType === "artery" ? "\u2764\uFE0F " : "\uD83D\uDCA7 "}
-                                {a.recipientVesselName || "Unknown vessel"}
-                                {a.couplingMethod ? ` (${ANASTOMOSIS_LABELS[a.couplingMethod as keyof typeof ANASTOMOSIS_LABELS] || a.couplingMethod})` : ""}
-                              </ThemedText>
-                            ))}
-                          </View>
-                        ) : null}
-                      </>
-                    ) : null}
-                    {proc.specialty === "hand_surgery" && proc.clinicalDetails ? (
-                      <>
-                        <DetailRow 
-                          label="Injury Mechanism" 
-                          value={(proc.clinicalDetails as any).injuryMechanism} 
-                        />
-                        <DetailRow 
-                          label="Fixation Material" 
-                          value={(proc.clinicalDetails as any).fixationMaterial?.replace(/_/g, " ")} 
-                        />
-                        <DetailRow 
-                          label="Fracture Site" 
-                          value={(proc.clinicalDetails as any).fractureSite} 
-                        />
-                      </>
-                    ) : null}
-                    {proc.specialty === "body_contouring" && proc.clinicalDetails ? (
-                      <>
-                        <DetailRow 
-                          label="Resection Weight" 
-                          value={(proc.clinicalDetails as any).resectionWeightGrams} 
-                          unit="g"
-                        />
-                        <DetailRow 
-                          label="Drain Output" 
-                          value={(proc.clinicalDetails as any).drainOutputMl} 
-                          unit="ml"
-                        />
-                      </>
-                    ) : null}
-                  </View>
-                ) : null}
-              </View>
-            ))}
+                          ) : null}
+                        </View>
+                        <RoleBadge role={proc.surgeonRole} />
+                      </View>
+                      {proc.snomedCtCode ? (
+                        <View style={[styles.procedureSnomedRow, { borderTopColor: theme.border }]}>
+                          <ThemedText style={[styles.procedureSnomedLabel, { color: theme.textTertiary }]}>
+                            SNOMED CT: {proc.snomedCtCode}
+                          </ThemedText>
+                          {proc.snomedCtDisplay ? (
+                            <ThemedText style={[styles.procedureSnomedDisplay, { color: theme.textSecondary }]}>
+                              {proc.snomedCtDisplay}
+                            </ThemedText>
+                          ) : null}
+                        </View>
+                      ) : null}
+                      {proc.notes ? (
+                        <ThemedText style={[styles.procedureNotes, { color: theme.textSecondary }]}>
+                          {proc.notes}
+                        </ThemedText>
+                      ) : null}
+                      {proc.clinicalDetails ? (
+                        <View style={[styles.procedureClinicalDetails, { borderTopColor: theme.border }]}>
+                          {proc.tags?.includes("free_flap") && (proc.clinicalDetails as FreeFlapDetails) ? (
+                            <>
+                              {(proc.clinicalDetails as FreeFlapDetails).harvestSide ? (
+                                <DetailRow 
+                                  label="Harvest Side" 
+                                  value={(proc.clinicalDetails as FreeFlapDetails).harvestSide === "left" ? "Left" : "Right"} 
+                                />
+                              ) : null}
+                              {(proc.clinicalDetails as FreeFlapDetails).indication ? (
+                                <DetailRow 
+                                  label="Indication" 
+                                  value={INDICATION_LABELS[(proc.clinicalDetails as FreeFlapDetails).indication!]} 
+                                />
+                              ) : null}
+                              {(proc.clinicalDetails as FreeFlapDetails).recipientSiteRegion ? (
+                                <DetailRow 
+                                  label="Recipient Site" 
+                                  value={(proc.clinicalDetails as FreeFlapDetails).recipientSiteRegion?.replace(/_/g, " ")} 
+                                />
+                              ) : null}
+                              {(proc.clinicalDetails as FreeFlapDetails).ischemiaTimeMinutes ? (
+                                <DetailRow 
+                                  label="Ischemia Time" 
+                                  value={(proc.clinicalDetails as FreeFlapDetails).ischemiaTimeMinutes} 
+                                  unit="min"
+                                />
+                              ) : null}
+                              {(proc.clinicalDetails as FreeFlapDetails).flapWidthCm || (proc.clinicalDetails as FreeFlapDetails).flapLengthCm ? (
+                                <DetailRow 
+                                  label="Flap Dimensions" 
+                                  value={`${(proc.clinicalDetails as FreeFlapDetails).flapWidthCm || "?"} x ${(proc.clinicalDetails as FreeFlapDetails).flapLengthCm || "?"} cm`} 
+                                />
+                              ) : null}
+                              {(proc.clinicalDetails as FreeFlapDetails).anastomoses && (proc.clinicalDetails as FreeFlapDetails).anastomoses!.length > 0 ? (
+                                <View style={styles.anastomosesList}>
+                                  <ThemedText style={[styles.anastomosesTitle, { color: theme.textSecondary }]}>
+                                    Anastomoses:
+                                  </ThemedText>
+                                  {(proc.clinicalDetails as FreeFlapDetails).anastomoses!.map((a, aIdx) => (
+                                    <ThemedText key={a.id || aIdx} style={styles.anastomosisItem}>
+                                      {a.vesselType === "artery" ? "\u2764\uFE0F " : "\uD83D\uDCA7 "}
+                                      {a.recipientVesselName || "Unknown vessel"}
+                                      {a.couplingMethod ? ` (${ANASTOMOSIS_LABELS[a.couplingMethod as keyof typeof ANASTOMOSIS_LABELS] || a.couplingMethod})` : ""}
+                                    </ThemedText>
+                                  ))}
+                                </View>
+                              ) : null}
+                            </>
+                          ) : null}
+                          {proc.specialty === "hand_surgery" && proc.clinicalDetails ? (
+                            <>
+                              <DetailRow 
+                                label="Injury Mechanism" 
+                                value={(proc.clinicalDetails as any).injuryMechanism} 
+                              />
+                              <DetailRow 
+                                label="Fixation Material" 
+                                value={(proc.clinicalDetails as any).fixationMaterial?.replace(/_/g, " ")} 
+                              />
+                              <DetailRow 
+                                label="Fracture Site" 
+                                value={(proc.clinicalDetails as any).fractureSite} 
+                              />
+                            </>
+                          ) : null}
+                          {proc.specialty === "body_contouring" && proc.clinicalDetails ? (
+                            <>
+                              <DetailRow 
+                                label="Resection Weight" 
+                                value={(proc.clinicalDetails as any).resectionWeightGrams} 
+                                unit="g"
+                              />
+                              <DetailRow 
+                                label="Drain Output" 
+                                value={(proc.clinicalDetails as any).drainOutputMl} 
+                                unit="ml"
+                              />
+                            </>
+                          ) : null}
+                        </View>
+                      ) : null}
+                    </View>
+                  ))}
+                </View>
+              );
+            })}
           </>
         ) : null}
 
@@ -617,53 +638,71 @@ export default function CaseDetailScreen() {
         {hasDiagnoses ? (
           <>
             <SectionHeader title="Diagnoses" />
-            <View style={[styles.card, { backgroundColor: theme.backgroundDefault }]}>
-              {caseData.preManagementDiagnosis ? (
-                <View style={styles.diagnosisItem}>
-                  <ThemedText style={[styles.diagnosisLabel, { color: theme.textSecondary }]}>
-                    Pre-Management Diagnosis
-                  </ThemedText>
-                  <ThemedText style={styles.diagnosisValue}>
-                    {caseData.preManagementDiagnosis.displayName}
-                  </ThemedText>
-                  {caseData.preManagementDiagnosis.snomedCtCode ? (
-                    <ThemedText style={[styles.snomedCode, { color: theme.textTertiary }]}>
-                      SNOMED CT: {caseData.preManagementDiagnosis.snomedCtCode}
-                    </ThemedText>
+            {caseData.diagnosisGroups?.map((group, gIdx) => {
+              if (!group.diagnosis && !group.pathologicalDiagnosis && (!group.fractures || group.fractures.length === 0)) return null;
+              const showGroupLabel = caseData.diagnosisGroups.length > 1;
+              return (
+                <View key={group.id} style={[styles.card, { backgroundColor: theme.backgroundDefault, marginBottom: Spacing.sm }]}>
+                  {showGroupLabel ? (
+                    <View style={styles.groupHeader}>
+                      <SpecialtyBadge specialty={group.specialty} size="small" />
+                    </View>
+                  ) : null}
+                  {group.diagnosis ? (
+                    <View style={styles.diagnosisItem}>
+                      <ThemedText style={[styles.diagnosisLabel, { color: theme.textSecondary }]}>
+                        Diagnosis
+                      </ThemedText>
+                      <ThemedText style={styles.diagnosisValue}>
+                        {group.diagnosis.displayName}
+                      </ThemedText>
+                      {group.diagnosis.snomedCtCode ? (
+                        <ThemedText style={[styles.snomedCode, { color: theme.textTertiary }]}>
+                          SNOMED CT: {group.diagnosis.snomedCtCode}
+                        </ThemedText>
+                      ) : null}
+                    </View>
+                  ) : null}
+                  {group.diagnosisStagingSelections && Object.keys(group.diagnosisStagingSelections).length > 0 ? (
+                    <View style={styles.diagnosisItem}>
+                      <ThemedText style={[styles.diagnosisLabel, { color: theme.textSecondary }]}>
+                        Staging
+                      </ThemedText>
+                      {Object.entries(group.diagnosisStagingSelections).map(([key, val]) => (
+                        <DetailRow key={key} label={key} value={val} />
+                      ))}
+                    </View>
+                  ) : null}
+                  {group.fractures && group.fractures.length > 0 ? (
+                    <View style={styles.diagnosisItem}>
+                      <ThemedText style={[styles.diagnosisLabel, { color: theme.textSecondary }]}>
+                        Fractures
+                      </ThemedText>
+                      {group.fractures.map((f) => (
+                        <ThemedText key={f.id} style={styles.diagnosisValue}>
+                          {f.boneName} - {f.aoCode}
+                        </ThemedText>
+                      ))}
+                    </View>
+                  ) : null}
+                  {group.pathologicalDiagnosis ? (
+                    <View style={styles.diagnosisItem}>
+                      <ThemedText style={[styles.diagnosisLabel, { color: theme.textSecondary }]}>
+                        Pathological Diagnosis
+                      </ThemedText>
+                      <ThemedText style={styles.diagnosisValue}>
+                        {group.pathologicalDiagnosis.displayName}
+                      </ThemedText>
+                      {group.pathologicalDiagnosis.snomedCtCode ? (
+                        <ThemedText style={[styles.snomedCode, { color: theme.textTertiary }]}>
+                          SNOMED CT: {group.pathologicalDiagnosis.snomedCtCode}
+                        </ThemedText>
+                      ) : null}
+                    </View>
                   ) : null}
                 </View>
-              ) : null}
-              {caseData.finalDiagnosis ? (
-                <View style={styles.diagnosisItem}>
-                  <ThemedText style={[styles.diagnosisLabel, { color: theme.textSecondary }]}>
-                    Final Diagnosis
-                  </ThemedText>
-                  <ThemedText style={styles.diagnosisValue}>
-                    {caseData.finalDiagnosis.displayName}
-                  </ThemedText>
-                  {caseData.finalDiagnosis.snomedCtCode ? (
-                    <ThemedText style={[styles.snomedCode, { color: theme.textTertiary }]}>
-                      SNOMED CT: {caseData.finalDiagnosis.snomedCtCode}
-                    </ThemedText>
-                  ) : null}
-                </View>
-              ) : null}
-              {caseData.pathologicalDiagnosis ? (
-                <View style={styles.diagnosisItem}>
-                  <ThemedText style={[styles.diagnosisLabel, { color: theme.textSecondary }]}>
-                    Pathological Diagnosis
-                  </ThemedText>
-                  <ThemedText style={styles.diagnosisValue}>
-                    {caseData.pathologicalDiagnosis.displayName}
-                  </ThemedText>
-                  {caseData.pathologicalDiagnosis.snomedCtCode ? (
-                    <ThemedText style={[styles.snomedCode, { color: theme.textTertiary }]}>
-                      SNOMED CT: {caseData.pathologicalDiagnosis.snomedCtCode}
-                    </ThemedText>
-                  ) : null}
-                </View>
-              ) : null}
-            </View>
+              );
+            })}
           </>
         ) : null}
 
@@ -1402,6 +1441,17 @@ const styles = StyleSheet.create({
   fabText: {
     fontSize: 15,
     fontWeight: "600",
+  },
+  groupHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+    marginBottom: Spacing.sm,
+    marginTop: Spacing.md,
+  },
+  groupDiagnosisLabel: {
+    fontSize: 14,
+    flex: 1,
   },
   procedureCard: {
     borderRadius: BorderRadius.md,

@@ -1,4 +1,4 @@
-import { Case, Specialty, Role, FreeFlapDetails, ClavienDindoGrade } from "@/types/case";
+import { Case, Specialty, Role, FreeFlapDetails, ClavienDindoGrade, getAllProcedures, getCaseSpecialties } from "@/types/case";
 import { INFECTION_SYNDROME_LABELS, InfectionSyndrome } from "@/types/infection";
 
 export type TimePeriod = "all_time" | "this_year" | "last_6_months" | "last_12_months" | "custom";
@@ -116,8 +116,9 @@ function isWithinTimePeriod(dateString: string, timePeriod: TimePeriod, customSt
 }
 
 function getPrimaryRole(caseData: Case): Role {
-  if (caseData.procedures && caseData.procedures.length > 0) {
-    return caseData.procedures[0].surgeonRole;
+  const procs = getAllProcedures(caseData);
+  if (procs.length > 0) {
+    return procs[0].surgeonRole;
   }
   if (caseData.teamMembers && caseData.teamMembers.length > 0) {
     const primary = caseData.teamMembers.find(m => m.role === "PS");
@@ -130,8 +131,11 @@ function getPrimaryRole(caseData: Case): Role {
 
 export function filterCases(cases: Case[], filters: StatisticsFilters): Case[] {
   return cases.filter(c => {
-    if (filters.specialty !== "all" && c.specialty !== filters.specialty) {
-      return false;
+    if (filters.specialty !== "all") {
+      const caseSpecialties = getCaseSpecialties(c);
+      if (!caseSpecialties.includes(filters.specialty)) {
+        return false;
+      }
     }
     
     if (!isWithinTimePeriod(c.procedureDate, filters.timePeriod, filters.customStartDate, filters.customEndDate)) {
@@ -217,7 +221,7 @@ export function calculateFreeFlapStatistics(cases: Case[]): FreeFlapStatistics {
   const base = calculateBaseStatistics(cases);
   
   const freeFlapCases = cases.filter(c => 
-    c.procedures?.some(p => p.tags?.includes("free_flap")) ||
+    getAllProcedures(c).some(p => p.tags?.includes("free_flap")) ||
     c.specialty === "orthoplastic" ||
     c.specialty === "head_neck" ||
     c.specialty === "breast"
@@ -247,12 +251,11 @@ export function calculateFreeFlapStatistics(cases: Case[]): FreeFlapStatistics {
   
   const ischemiaTimesMinutes = freeFlapCases
     .map(c => {
-      if (c.procedures) {
-        for (const proc of c.procedures) {
-          const details = proc.clinicalDetails as FreeFlapDetails | undefined;
-          if (details?.ischemiaTimeMinutes) {
-            return details.ischemiaTimeMinutes;
-          }
+      const procs = getAllProcedures(c);
+      for (const proc of procs) {
+        const details = proc.clinicalDetails as FreeFlapDetails | undefined;
+        if (details?.ischemiaTimeMinutes) {
+          return details.ischemiaTimeMinutes;
         }
       }
       const details = c.clinicalDetails as FreeFlapDetails | undefined;
@@ -276,8 +279,9 @@ export function calculateFreeFlapStatistics(cases: Case[]): FreeFlapStatistics {
   const indicationMap = new Map<string, number>();
   freeFlapCases.forEach(c => {
     let indication = "Unknown";
-    if (c.procedures) {
-      for (const proc of c.procedures) {
+    const procs = getAllProcedures(c);
+    if (procs.length > 0) {
+      for (const proc of procs) {
         const details = proc.clinicalDetails as FreeFlapDetails | undefined;
         if (details?.indication) {
           indication = details.indication;
@@ -325,12 +329,12 @@ export function calculateHandSurgeryStatistics(cases: Case[]): HandSurgeryStatis
   
   const nerveRepairCount = handSurgeryCases.filter(c => 
     c.procedureType?.toLowerCase().includes("nerve") ||
-    c.procedures?.some(p => p.tags?.includes("nerve_repair"))
+    getAllProcedures(c).some(p => p.tags?.includes("nerve_repair"))
   ).length;
   
   const tendonRepairCount = handSurgeryCases.filter(c => 
     c.procedureType?.toLowerCase().includes("tendon") ||
-    c.procedures?.some(p => p.tags?.includes("tendon_repair"))
+    getAllProcedures(c).some(p => p.tags?.includes("tendon_repair"))
   ).length;
   
   return {
@@ -347,12 +351,12 @@ export function calculateOrthoplasticStatistics(cases: Case[]): OrthoplasticStat
   const orthoplasticCases = cases.filter(c => c.specialty === "orthoplastic");
   
   const freeFlapCount = orthoplasticCases.filter(c => 
-    c.procedures?.some(p => p.tags?.includes("free_flap")) ||
+    getAllProcedures(c).some(p => p.tags?.includes("free_flap")) ||
     c.procedureType?.toLowerCase().includes("free flap")
   ).length;
   
   const ischemiaTimesMinutes = orthoplasticCases
-    .flatMap(c => c.procedures || [])
+    .flatMap(c => getAllProcedures(c))
     .map(p => {
       const details = p.clinicalDetails as FreeFlapDetails | undefined;
       return details?.ischemiaTimeMinutes;
@@ -412,14 +416,12 @@ export function calculateBodyContouringStatistics(cases: Case[]): BodyContouring
   
   const resectionWeights: number[] = [];
   bodyContouringCases.forEach(c => {
-    if (c.procedures) {
-      c.procedures.forEach(proc => {
-        const details = proc.clinicalDetails as { resectionWeightGrams?: number } | undefined;
-        if (details?.resectionWeightGrams) {
-          resectionWeights.push(details.resectionWeightGrams);
-        }
-      });
-    }
+    getAllProcedures(c).forEach(proc => {
+      const details = proc.clinicalDetails as { resectionWeightGrams?: number } | undefined;
+      if (details?.resectionWeightGrams) {
+        resectionWeights.push(details.resectionWeightGrams);
+      }
+    });
   });
   
   const averageResectionWeightGrams = resectionWeights.length > 0

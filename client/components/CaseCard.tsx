@@ -10,7 +10,7 @@ import * as Haptics from "expo-haptics";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { BorderRadius, Spacing, Shadows } from "@/constants/theme";
-import { Case, SPECIALTY_LABELS } from "@/types/case";
+import { Case, SPECIALTY_LABELS, getPrimaryDiagnosisName } from "@/types/case";
 import { RoleBadge } from "@/components/RoleBadge";
 import { SpecialtyBadge } from "@/components/SpecialtyBadge";
 
@@ -55,11 +55,7 @@ export function CaseCard({ caseData, onPress }: CaseCardProps) {
     (m) => m.id === caseData.ownerId
   )?.role || "PS";
 
-  // Use diagnosis as title, fall back to procedure type
-  const caseTitle = 
-    caseData.preManagementDiagnosis?.displayName || 
-    caseData.finalDiagnosis?.displayName || 
-    caseData.procedureType;
+  const caseTitle = getPrimaryDiagnosisName(caseData) || caseData.procedureType;
 
   return (
     <AnimatedPressable

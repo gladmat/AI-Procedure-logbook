@@ -21,7 +21,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import {
   Case,
-  CaseProcedure,
+  DiagnosisGroup,
   Specialty,
   SPECIALTY_LABELS,
   PROCEDURE_TYPES,
@@ -47,7 +47,6 @@ import {
   DischargeOutcome,
   MortalityClassification,
   SnomedCodedItem,
-  Diagnosis,
   Prophylaxis,
   GENDER_LABELS,
   ADMISSION_URGENCY_LABELS,
@@ -61,6 +60,7 @@ import {
   ASA_GRADE_LABELS,
   COMMON_COMORBIDITIES,
   ETHNICITY_OPTIONS,
+  OperativeMediaItem,
 } from "@/types/case";
 import { InfectionOverlay } from "@/types/infection";
 import { FormField, SelectField, PickerField, DatePickerField } from "@/components/FormField";
@@ -74,26 +74,9 @@ import { findSnomedProcedure, getProcedureCodeForCountry, getCountryCodeFromProf
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { RecipientSiteSelector } from "@/components/RecipientSiteSelector";
 import { AnastomosisEntryCard } from "@/components/AnastomosisEntryCard";
-import { ProcedureEntryCard } from "@/components/ProcedureEntryCard";
-import { SnomedSearchPicker } from "@/components/SnomedSearchPicker";
 import { useAuth } from "@/contexts/AuthContext";
-import { getDiagnosisStaging, DiagnosisStagingConfig, searchSnomedDiagnoses, SnomedSearchResult } from "@/lib/snomedApi";
-import { DiagnosisClinicalFields } from "@/components/DiagnosisClinicalFields";
-import { FractureEntry, DiagnosisClinicalDetails } from "@/types/case";
-import { FractureClassificationWizard } from "@/components/FractureClassificationWizard";
 import { OperativeMediaSection } from "@/components/OperativeMediaSection";
-import { getAoToSnomedSuggestion } from "@/data/aoToSnomedMapping";
-import { OperativeMediaItem } from "@/types/case";
-import { DiagnosisPicker } from "@/components/DiagnosisPicker";
-import { ProcedureSuggestions } from "@/components/ProcedureSuggestions";
-import {
-  hasDiagnosisPicklist,
-  getActiveProcedureIds,
-  evaluateSuggestions,
-  findDiagnosisById,
-} from "@/lib/diagnosisPicklists";
-import type { DiagnosisPicklistEntry, StagingSelections } from "@/types/diagnosis";
-import { findPicklistEntry } from "@/lib/procedurePicklist";
+import { DiagnosisGroupEditor } from "@/components/DiagnosisGroupEditor";
 
 type RouteParams = RouteProp<RootStackParamList, "CaseForm">;
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -256,27 +239,26 @@ export default function CaseFormScreen() {
     []
   );
 
-  const buildDefaultProcedures = useCallback((): CaseProcedure[] => ([
+  const [diagnosisGroups, setDiagnosisGroups] = useState<DiagnosisGroup[]>([
     {
       id: uuidv4(),
       sequenceOrder: 1,
-      procedureName: PROCEDURE_TYPES[specialty]?.[0] || "",
-      specialty: specialty,
-      surgeonRole: "PS",
+      specialty,
+      procedures: [{
+        id: uuidv4(),
+        sequenceOrder: 1,
+        procedureName: PROCEDURE_TYPES[specialty]?.[0] || "",
+        specialty,
+        surgeonRole: "PS",
+      }],
     },
-  ]), [specialty]);
-
-  // Multi-procedure support
-  const [procedures, setProcedures] = useState<CaseProcedure[]>(buildDefaultProcedures);
+  ]);
 
   // RACS MALT Patient Demographics
   const [gender, setGender] = useState<Gender | "">("");
   const [age, setAge] = useState<string>("");
   const [ethnicity, setEthnicity] = useState("");
   
-  // Procedure Category (high-level classification)
-  const [procedureCategory, setProcedureCategory] = useState<string>("");
-
   // RACS MALT Admission Details
   const [admissionDate, setAdmissionDate] = useState("");
   const [dischargeDate, setDischargeDate] = useState("");
@@ -285,28 +267,7 @@ export default function CaseFormScreen() {
   const [injuryDate, setInjuryDate] = useState("");
   const [unplannedReadmission, setUnplannedReadmission] = useState<UnplannedReadmissionReason>("no");
 
-  // RACS MALT Primary Diagnosis (SNOMED CT coded)
-  const [primaryDiagnosis, setPrimaryDiagnosis] = useState<{ conceptId: string; term: string } | null>(null);
-  const [diagnosisStaging, setDiagnosisStaging] = useState<DiagnosisStagingConfig | null>(null);
-  const [stagingValues, setStagingValues] = useState<Record<string, string>>({});
-  const [fractures, setFractures] = useState<FractureEntry[]>([]);
-  const [diagnosisClinicalDetails, setDiagnosisClinicalDetails] = useState<DiagnosisClinicalDetails>({});
-  const [isFractureCase, setIsFractureCase] = useState(false);
   const [operativeMedia, setOperativeMedia] = useState<OperativeMediaItem[]>([]);
-  const [showFractureWizardFromCheckbox, setShowFractureWizardFromCheckbox] = useState(false);
-  const [snomedSuggestion, setSnomedSuggestion] = useState<{ searchTerm: string; displayName: string } | null>(null);
-  
-  const [selectedDiagnosis, setSelectedDiagnosis] = useState<DiagnosisPicklistEntry | null>(null);
-  const [selectedSuggestionIds, setSelectedSuggestionIds] = useState<Set<string>>(new Set());
-  
-  // Legacy diagnosis field for backwards compatibility
-  const [diagnosis, setDiagnosis] = useState("");
-  
-  // Check if diagnosis contains fracture
-  const isFractureDiagnosis = useMemo(() => {
-    const diagnosisTerm = primaryDiagnosis?.term?.toLowerCase() || diagnosis.toLowerCase();
-    return diagnosisTerm.includes("fracture");
-  }, [primaryDiagnosis, diagnosis]);
 
   // RACS MALT Co-morbidities
   const [selectedComorbidities, setSelectedComorbidities] = useState<SnomedCodedItem[]>([]);
@@ -345,11 +306,7 @@ export default function CaseFormScreen() {
     return durationMins;
   };
 
-  const showInjuryDate = admissionUrgency === "acute" || specialty === "hand_surgery" || specialty === "orthoplastic";
-
-  const hasFractureSubcategory = specialty === "hand_surgery" && procedures.some(
-    (p) => p.subcategory === "Fracture & Joint Fixation"
-  );
+  const showInjuryDate = admissionUrgency === "acute" || diagnosisGroups.some(g => g.specialty === "hand_surgery" || g.specialty === "orthoplastic");
 
   useEffect(() => {
     if (!showInjuryDate) {
@@ -358,34 +315,11 @@ export default function CaseFormScreen() {
   }, [showInjuryDate]);
 
   useEffect(() => {
-    if (!hasFractureSubcategory) {
-      setFractures([]);
-      setIsFractureCase(false);
-    }
-  }, [hasFractureSubcategory]);
-
-  useEffect(() => {
     if (stayType === "day_case" && procedureDate) {
       setAdmissionDate(procedureDate);
       setDischargeDate(procedureDate);
     }
   }, [stayType, procedureDate]);
-
-  // Fetch staging configuration when diagnosis changes
-  useEffect(() => {
-    const fetchStaging = async () => {
-      if (primaryDiagnosis) {
-        const staging = await getDiagnosisStaging(primaryDiagnosis.conceptId, primaryDiagnosis.term);
-        setDiagnosisStaging(staging);
-        // Reset staging values when diagnosis changes
-        setStagingValues({});
-      } else {
-        setDiagnosisStaging(null);
-        setStagingValues({});
-      }
-    };
-    fetchStaging();
-  }, [primaryDiagnosis]);
 
   useEffect(() => {
     const loadDraft = async () => {
@@ -411,7 +345,7 @@ export default function CaseFormScreen() {
       setClinicalDetails((draft.clinicalDetails as Record<string, any>) ?? getDefaultClinicalDetails(specialty));
       setRecipientSiteRegion((draft.clinicalDetails as FreeFlapDetails | undefined)?.recipientSiteRegion);
       setAnastomoses((draft.clinicalDetails as FreeFlapDetails | undefined)?.anastomoses ?? []);
-      setProcedures(draft.procedures ?? buildDefaultProcedures());
+      if (draft.diagnosisGroups) setDiagnosisGroups(draft.diagnosisGroups);
       setGender(draft.gender ?? "");
       setEthnicity(draft.ethnicity ?? "");
       setAdmissionDate(draft.admissionDate ?? "");
@@ -421,14 +355,6 @@ export default function CaseFormScreen() {
       setInjuryDate(draft.injuryDate ?? "");
       setUnplannedReadmission(draft.unplannedReadmission ?? "no");
       setIsUnplannedReadmission((draft.unplannedReadmission ?? "no") !== "no");
-      setDiagnosis(draft.finalDiagnosis?.displayName ?? "");
-      if (draft.finalDiagnosis?.snomedCtCode) {
-        setPrimaryDiagnosis({
-          conceptId: draft.finalDiagnosis.snomedCtCode,
-          term: draft.finalDiagnosis.displayName,
-        });
-      }
-      setDiagnosisClinicalDetails(draft.finalDiagnosis?.clinicalDetails ?? {});
       setSelectedComorbidities(draft.comorbidities ?? []);
       setWoundInfectionRisk(draft.woundInfectionRisk ?? "");
       setAnaestheticType(draft.anaestheticType ?? "");
@@ -445,7 +371,7 @@ export default function CaseFormScreen() {
     };
 
     loadDraft();
-  }, [buildDefaultProcedures, primaryFacility, specialty]);
+  }, [primaryFacility, specialty]);
 
   // Load existing case for edit mode
   useEffect(() => {
@@ -464,7 +390,7 @@ export default function CaseFormScreen() {
         setProcedureDate(caseData.procedureDate);
         setFacility(caseData.facility);
         setProcedureType(caseData.procedureType);
-        if (caseData.procedures) setProcedures(caseData.procedures);
+        if (caseData.diagnosisGroups) setDiagnosisGroups(caseData.diagnosisGroups);
         if (caseData.surgeryTiming?.startTime) setSurgeryStartTime(caseData.surgeryTiming.startTime);
         if (caseData.surgeryTiming?.endTime) setSurgeryEndTime(caseData.surgeryTiming.endTime);
         if (caseData.operatingTeam) setOperatingTeam(caseData.operatingTeam);
@@ -492,36 +418,8 @@ export default function CaseFormScreen() {
         if (caseData.mortalityClassification) setMortalityClassification(caseData.mortalityClassification);
         if (caseData.discussedAtMDM) setDiscussedAtMDM(caseData.discussedAtMDM);
         if (caseData.comorbidities) setSelectedComorbidities(caseData.comorbidities);
-        if (caseData.fractures) setFractures(caseData.fractures);
         if (caseData.operativeMedia) setOperativeMedia(caseData.operativeMedia);
         if (caseData.infectionOverlay) setInfectionOverlay(caseData.infectionOverlay);
-        
-        // Load diagnosis
-        if (caseData.preManagementDiagnosis || caseData.finalDiagnosis) {
-          const diag = caseData.preManagementDiagnosis || caseData.finalDiagnosis;
-          if (diag?.snomedCtCode) {
-            setPrimaryDiagnosis({ conceptId: diag.snomedCtCode, term: diag.displayName });
-          } else if (diag?.displayName) {
-            setDiagnosis(diag.displayName);
-          }
-          if (diag?.clinicalDetails) {
-            setDiagnosisClinicalDetails(diag.clinicalDetails);
-          }
-        }
-
-        if (caseData.diagnosisPicklistId) {
-          const dx = findDiagnosisById(caseData.diagnosisPicklistId);
-          if (dx) {
-            setSelectedDiagnosis(dx);
-            const procIds = (caseData.procedures || [])
-              .map((p) => p.picklistEntryId)
-              .filter(Boolean) as string[];
-            setSelectedSuggestionIds(new Set(procIds));
-          }
-        }
-        if (caseData.diagnosisStagingSelections) {
-          setStagingValues(caseData.diagnosisStagingSelections);
-        }
 
         // Load team member role
         const userMember = caseData.teamMembers?.find(m => m.name === "You");
@@ -545,7 +443,7 @@ export default function CaseFormScreen() {
       facility,
       specialty,
       procedureType,
-      procedures,
+      diagnosisGroups,
       surgeryTiming: surgeryStartTime || surgeryEndTime
         ? { startTime: surgeryStartTime || undefined, endTime: surgeryEndTime || undefined }
         : undefined,
@@ -558,13 +456,6 @@ export default function CaseFormScreen() {
       stayType: stayType || undefined,
       injuryDate: showInjuryDate && injuryDate ? injuryDate : undefined,
       unplannedReadmission: unplannedReadmission !== "no" ? unplannedReadmission : "no",
-      finalDiagnosis: primaryDiagnosis 
-        ? { 
-            snomedCtCode: primaryDiagnosis.conceptId,
-            displayName: primaryDiagnosis.term,
-            clinicalDetails: diagnosisClinicalDetails,
-          } 
-        : (diagnosis.trim() ? { displayName: diagnosis.trim() } : undefined),
       comorbidities: selectedComorbidities.length > 0 ? selectedComorbidities : undefined,
       asaScore: asaScore ? (parseInt(asaScore) as ASAScore) : undefined,
       heightCm: heightCm ? parseFloat(heightCm) : undefined,
@@ -619,7 +510,7 @@ export default function CaseFormScreen() {
     asaScore,
     calculatedBmi,
     clinicalDetails,
-    diagnosis,
+    diagnosisGroups,
     diabetes,
     dischargeDate,
     discussedAtMDM,
@@ -634,7 +525,6 @@ export default function CaseFormScreen() {
     patientIdentifier,
     procedureDate,
     procedureType,
-    procedures,
     recipientSiteRegion,
     returnToTheatre,
     returnToTheatreReason,
@@ -703,207 +593,36 @@ export default function CaseFormScreen() {
     setAnastomoses((prev) => prev.filter((a) => a.id !== id));
   };
 
-  // Procedure management functions
-  const addProcedure = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    const newProcedure: CaseProcedure = {
-      id: uuidv4(),
-      sequenceOrder: procedures.length + 1,
-      procedureName: "",
-      specialty: specialty,
-      surgeonRole: "PS",
-    };
-    setProcedures((prev) => [...prev, newProcedure]);
-  };
+  const handleDiagnosisGroupChange = useCallback((index: number, updated: DiagnosisGroup) => {
+    setDiagnosisGroups(prev => prev.map((g, i) => i === index ? updated : g));
+  }, []);
 
-  const updateProcedure = (updated: CaseProcedure) => {
-    setProcedures((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
-  };
-
-  const removeProcedure = (id: string) => {
+  const handleDeleteDiagnosisGroup = useCallback((index: number) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    setProcedures((prev) => {
-      const filtered = prev.filter((p) => p.id !== id);
-      return filtered.map((p, idx) => ({ ...p, sequenceOrder: idx + 1 }));
+    setDiagnosisGroups(prev => {
+      const filtered = prev.filter((_, i) => i !== index);
+      return filtered.map((g, i) => ({ ...g, sequenceOrder: i + 1 }));
     });
-  };
+  }, []);
 
-  const moveProcedureUp = (id: string) => {
+  const addDiagnosisGroup = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setProcedures((prev) => {
-      const idx = prev.findIndex((p) => p.id === id);
-      if (idx <= 0) return prev;
-      const newArr = [...prev];
-      [newArr[idx - 1], newArr[idx]] = [newArr[idx], newArr[idx - 1]];
-      return newArr.map((p, i) => ({ ...p, sequenceOrder: i + 1 }));
-    });
-  };
-
-  const moveProcedureDown = (id: string) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setProcedures((prev) => {
-      const idx = prev.findIndex((p) => p.id === id);
-      if (idx < 0 || idx >= prev.length - 1) return prev;
-      const newArr = [...prev];
-      [newArr[idx], newArr[idx + 1]] = [newArr[idx + 1], newArr[idx]];
-      return newArr.map((p, i) => ({ ...p, sequenceOrder: i + 1 }));
-    });
-  };
-
-  const handleFractureCheckboxToggle = (checked: boolean) => {
-    setIsFractureCase(checked);
-    if (checked) {
-      setShowFractureWizardFromCheckbox(true);
-    } else {
-      setFractures([]);
-      setSnomedSuggestion(null);
-    }
-  };
-
-  const handleFractureWizardSave = async (newFractures: FractureEntry[]) => {
-    setFractures(newFractures);
-    setShowFractureWizardFromCheckbox(false);
-    
-    if (newFractures.length > 0) {
-      const firstFracture = newFractures[0];
-      const suggestion = getAoToSnomedSuggestion(firstFracture.aoCode);
-      setSnomedSuggestion(suggestion);
-      
-      try {
-        const results = await searchSnomedDiagnoses(suggestion.searchTerm, specialty);
-        if (results.length > 0) {
-          setPrimaryDiagnosis({
-            conceptId: results[0].conceptId,
-            term: results[0].term
-          });
-        }
-      } catch (error) {
-        console.log("SNOMED lookup failed, using suggestion:", suggestion.displayName);
-      }
-    }
-  };
-
-  const handleFractureWizardClose = () => {
-    setShowFractureWizardFromCheckbox(false);
-    if (fractures.length === 0) {
-      setIsFractureCase(false);
-    }
-  };
-
-  const handleDiagnosisSelect = useCallback((dx: DiagnosisPicklistEntry) => {
-    setSelectedDiagnosis(dx);
-    setPrimaryDiagnosis({ conceptId: dx.snomedCtCode, term: dx.displayName });
-    setDiagnosis(dx.displayName);
-
-    setStagingValues({});
-
-    const activeIds = getActiveProcedureIds(dx, {});
-    setSelectedSuggestionIds(new Set(activeIds));
-
-    const newProcedures: CaseProcedure[] = activeIds.map((picklistId, idx) => {
-      const entry = findPicklistEntry(picklistId);
-      return {
+    setDiagnosisGroups(prev => [
+      ...prev,
+      {
         id: uuidv4(),
-        sequenceOrder: idx + 1,
-        procedureName: entry?.displayName || "",
+        sequenceOrder: prev.length + 1,
         specialty,
-        surgeonRole: "PS" as Role,
-        picklistEntryId: picklistId,
-        snomedCtCode: entry?.snomedCtCode,
-        snomedCtDisplay: entry?.snomedCtDisplay,
-        subcategory: entry?.subcategory,
-        tags: entry?.tags,
-      };
-    });
-    setProcedures(newProcedures.length > 0 ? newProcedures : buildDefaultProcedures());
-  }, [specialty, buildDefaultProcedures]);
-
-  const handleStagingChangeForSuggestions = useCallback((systemName: string, value: string) => {
-    const newStagingValues = { ...stagingValues, [systemName]: value };
-    setStagingValues(newStagingValues);
-
-    if (selectedDiagnosis) {
-      const evaluated = evaluateSuggestions(selectedDiagnosis, newStagingValues);
-      const activeIds = new Set(evaluated.filter((s) => s.isActive).map((s) => s.procedurePicklistId));
-      const allSuggestionIds = new Set(evaluated.map((s) => s.procedurePicklistId));
-
-      const manuallySelected = new Set<string>();
-      selectedSuggestionIds.forEach((id) => {
-        if (!allSuggestionIds.has(id) || activeIds.has(id)) {
-          manuallySelected.add(id);
-        }
-      });
-      const newSelected = new Set([...activeIds, ...manuallySelected]);
-
-      const idsToAdd = [...activeIds].filter(
-        (id) => !procedures.some((p) => p.picklistEntryId === id)
-      );
-
-      const conditionalIds = new Set(
-        evaluated.filter((s) => s.isConditional).map((s) => s.procedurePicklistId)
-      );
-      const idsToRemove = new Set(
-        [...conditionalIds].filter((id) => !activeIds.has(id) && !manuallySelected.has(id))
-      );
-
-      setProcedures((prev) => {
-        let updated = prev.filter((p) => !p.picklistEntryId || !idsToRemove.has(p.picklistEntryId));
-        if (idsToAdd.length > 0) {
-          const addedProcedures: CaseProcedure[] = idsToAdd.map((picklistId) => {
-            const entry = findPicklistEntry(picklistId);
-            return {
-              id: uuidv4(),
-              sequenceOrder: 1,
-              procedureName: entry?.displayName || "",
-              specialty,
-              surgeonRole: "PS" as Role,
-              picklistEntryId: picklistId,
-              snomedCtCode: entry?.snomedCtCode,
-              snomedCtDisplay: entry?.snomedCtDisplay,
-              subcategory: entry?.subcategory,
-              tags: entry?.tags,
-            };
-          });
-          updated = [...updated, ...addedProcedures];
-        }
-        return updated.map((p, i) => ({ ...p, sequenceOrder: i + 1 }));
-      });
-      setSelectedSuggestionIds(newSelected);
-    }
-  }, [stagingValues, selectedDiagnosis, selectedSuggestionIds, procedures, specialty]);
-
-  const handleToggleProcedureSuggestion = useCallback((procedurePicklistId: string, isSelected: boolean) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    if (isSelected) {
-      setSelectedSuggestionIds((prev) => new Set([...prev, procedurePicklistId]));
-      const entry = findPicklistEntry(procedurePicklistId);
-      if (entry && !procedures.some((p) => p.picklistEntryId === procedurePicklistId)) {
-        const newProc: CaseProcedure = {
+        procedures: [{
           id: uuidv4(),
-          sequenceOrder: procedures.length + 1,
-          procedureName: entry.displayName,
+          sequenceOrder: 1,
+          procedureName: "",
           specialty,
           surgeonRole: "PS" as Role,
-          picklistEntryId: procedurePicklistId,
-          snomedCtCode: entry.snomedCtCode,
-          snomedCtDisplay: entry.snomedCtDisplay,
-          subcategory: entry.subcategory,
-          tags: entry.tags,
-        };
-        setProcedures((prev) => [...prev, newProc]);
-      }
-    } else {
-      setSelectedSuggestionIds((prev) => {
-        const next = new Set(prev);
-        next.delete(procedurePicklistId);
-        return next;
-      });
-      setProcedures((prev) => {
-        const filtered = prev.filter((p) => p.picklistEntryId !== procedurePicklistId);
-        return filtered.map((p, i) => ({ ...p, sequenceOrder: i + 1 }));
-      });
-    }
-  }, [procedures, specialty]);
+        }],
+      },
+    ]);
+  }, [specialty]);
 
   const handleSave = async () => {
     if (!patientIdentifier.trim()) {
@@ -952,7 +671,7 @@ export default function CaseFormScreen() {
         specialty,
         procedureType,
         procedureCode,
-        procedures: procedures.length > 0 ? procedures : undefined,
+        diagnosisGroups,
         surgeryTiming,
         operatingTeam: operatingTeam.length > 0 ? operatingTeam : undefined,
         
@@ -968,31 +687,8 @@ export default function CaseFormScreen() {
         injuryDate: showInjuryDate && injuryDate ? injuryDate : undefined,
         unplannedReadmission: unplannedReadmission !== "no" ? unplannedReadmission : undefined,
         
-        // Diagnosis (single SNOMED diagnosis) - also set as preManagementDiagnosis for case title
-        preManagementDiagnosis: primaryDiagnosis 
-          ? { 
-              snomedCtCode: primaryDiagnosis.conceptId,
-              displayName: primaryDiagnosis.term,
-              clinicalDetails: diagnosisClinicalDetails,
-            } 
-          : (diagnosis.trim() ? { displayName: diagnosis.trim() } : undefined),
-        finalDiagnosis: primaryDiagnosis 
-          ? { 
-              snomedCtCode: primaryDiagnosis.conceptId,
-              displayName: primaryDiagnosis.term,
-              clinicalDetails: diagnosisClinicalDetails,
-            } 
-          : (diagnosis.trim() ? { displayName: diagnosis.trim() } : undefined),
-        
         // Co-morbidities
         comorbidities: selectedComorbidities.length > 0 ? selectedComorbidities : undefined,
-        
-        diagnosisPicklistId: selectedDiagnosis?.id || undefined,
-        diagnosisStagingSelections: Object.keys(stagingValues).length > 0 ? stagingValues : undefined,
-        procedureSuggestionSource: selectedDiagnosis ? "picklist" : "manual",
-        
-        // AO/OTA Fracture Classifications (for fracture diagnoses)
-        fractures: fractures.length > 0 ? fractures : undefined,
         
         // Operative Media
         operativeMedia: operativeMedia.length > 0 ? operativeMedia : undefined,
@@ -1141,170 +837,24 @@ export default function CaseFormScreen() {
         />
       )}
 
-      <SectionHeader title="Primary Diagnosis" subtitle={hasDiagnosisPicklist(specialty) ? "Select from structured list or search SNOMED CT" : "SNOMED CT coded diagnosis"} />
-
-      {hasDiagnosisPicklist(specialty) ? (
-        <DiagnosisPicker
-          specialty={specialty}
-          selectedDiagnosisId={selectedDiagnosis?.id}
-          onSelect={handleDiagnosisSelect}
-        />
-      ) : null}
-
-      {hasFractureSubcategory ? (
-        <View style={styles.fractureCheckboxContainer}>
-          <Pressable
-            style={styles.fractureCheckboxRow}
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              handleFractureCheckboxToggle(!isFractureCase);
-            }}
-          >
-            <View style={[
-              styles.checkbox,
-              { 
-                borderColor: isFractureCase ? theme.link : theme.border,
-                backgroundColor: isFractureCase ? theme.link : "transparent"
-              }
-            ]}>
-              {isFractureCase ? (
-                <Feather name="check" size={14} color="#FFF" />
-              ) : null}
-            </View>
-            <ThemedText style={[styles.fractureCheckboxLabel, { color: theme.text }]}>
-              Fracture Case
-            </ThemedText>
-          </Pressable>
-          {isFractureCase && fractures.length > 0 ? (
-            <View style={styles.fractureSummary}>
-              {fractures.map((f) => (
-                <View 
-                  key={f.id} 
-                  style={[styles.fractureSummaryChip, { backgroundColor: theme.backgroundTertiary }]}
-                >
-                  <ThemedText style={[styles.fractureSummaryText, { color: theme.text }]}>
-                    {f.boneName}
-                  </ThemedText>
-                  <View style={[styles.aoCodeChip, { backgroundColor: theme.link }]}>
-                    <ThemedText style={styles.aoCodeChipText}>{f.aoCode}</ThemedText>
-                  </View>
-                </View>
-              ))}
-              <Pressable
-                style={[styles.editFracturesButton, { borderColor: theme.link }]}
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  setShowFractureWizardFromCheckbox(true);
-                }}
-              >
-                <Feather name="edit-2" size={14} color={theme.link} />
-                <ThemedText style={[styles.editFracturesText, { color: theme.link }]}>
-                  Edit
-                </ThemedText>
-              </Pressable>
-            </View>
-          ) : null}
-          {isFractureCase && snomedSuggestion && primaryDiagnosis ? (
-            <View style={[styles.suggestionBanner, { backgroundColor: theme.backgroundSecondary }]}>
-              <Feather name="zap" size={16} color={theme.link} />
-              <ThemedText style={[styles.suggestionText, { color: theme.textSecondary }]}>
-                Auto-suggested from AO code
-              </ThemedText>
-            </View>
-          ) : null}
-        </View>
-      ) : null}
-
-      <SnomedSearchPicker
-        label="Search Diagnosis"
-        value={primaryDiagnosis || undefined}
-        onSelect={setPrimaryDiagnosis}
-        searchType="diagnosis"
-        specialty={specialty}
-        placeholder="Search for diagnosis (e.g., fracture, Dupuytren)..."
-      />
-
-      {diagnosisStaging && diagnosisStaging.stagingSystems.length > 0 ? (
-        <View style={styles.stagingContainer}>
-          <ThemedText style={[styles.stagingTitle, { color: theme.textSecondary }]}>
-            Classification / Staging
-          </ThemedText>
-          {diagnosisStaging.stagingSystems.map((system) => (
-            <PickerField
-              key={system.name}
-              label={system.name}
-              value={stagingValues[system.name] || ""}
-              options={system.options.map((opt) => ({
-                value: opt.value,
-                label: opt.description ? `${opt.label} - ${opt.description}` : opt.label,
-              }))}
-              onSelect={(value) => {
-                if (selectedDiagnosis) {
-                  handleStagingChangeForSuggestions(system.name, value);
-                } else {
-                  setStagingValues((prev) => ({ ...prev, [system.name]: value }));
-                }
-              }}
-              placeholder={`Select ${system.name.toLowerCase()}...`}
-            />
-          ))}
-        </View>
-      ) : null}
-
-      {selectedDiagnosis ? (
-        <ProcedureSuggestions
-          diagnosis={selectedDiagnosis}
-          stagingSelections={stagingValues}
-          selectedProcedureIds={selectedSuggestionIds}
-          onToggle={handleToggleProcedureSuggestion}
-        />
-      ) : null}
-
-      {primaryDiagnosis ? (
-        <DiagnosisClinicalFields
-          diagnosis={{
-            snomedCtCode: primaryDiagnosis.conceptId,
-            displayName: primaryDiagnosis.term,
-            clinicalDetails: diagnosisClinicalDetails,
-          }}
-          onDiagnosisChange={(updatedDiagnosis) => {
-            setDiagnosisClinicalDetails(updatedDiagnosis.clinicalDetails || {});
-          }}
-          specialty={specialty}
-          fractures={fractures}
-          onFracturesChange={setFractures}
-          showFractureClassification={hasFractureSubcategory}
-        />
-      ) : null}
-
-      <SectionHeader title="Procedures Performed" />
-      
-      <ThemedText style={[styles.sectionDescription, { color: theme.textSecondary }]}>
-        Add all procedures performed during this surgery. Each procedure can have its own specialty and SNOMED CT code.
-      </ThemedText>
-
-      {procedures.map((proc, idx) => (
-        <ProcedureEntryCard
-          key={proc.id}
-          procedure={proc}
+      {diagnosisGroups.map((group, idx) => (
+        <DiagnosisGroupEditor
+          key={group.id}
+          group={group}
           index={idx}
-          isOnlyProcedure={procedures.length === 1}
-          onUpdate={updateProcedure}
-          onDelete={() => removeProcedure(proc.id)}
-          onMoveUp={() => moveProcedureUp(proc.id)}
-          onMoveDown={() => moveProcedureDown(proc.id)}
-          canMoveUp={idx > 0}
-          canMoveDown={idx < procedures.length - 1}
+          isOnly={diagnosisGroups.length === 1}
+          onChange={(updated) => handleDiagnosisGroupChange(idx, updated)}
+          onDelete={() => handleDeleteDiagnosisGroup(idx)}
         />
       ))}
 
       <Pressable
-        style={[styles.addButton, { borderColor: theme.link }]}
-        onPress={addProcedure}
+        style={[styles.addGroupButton, { borderColor: theme.link, backgroundColor: theme.backgroundSecondary }]}
+        onPress={addDiagnosisGroup}
       >
-        <Feather name="plus" size={18} color={theme.link} />
-        <ThemedText style={[styles.addButtonText, { color: theme.link }]}>
-          Add Another Procedure
+        <Feather name="plus-circle" size={18} color={theme.link} />
+        <ThemedText style={[styles.addGroupButtonText, { color: theme.link }]}>
+          Add Diagnosis Group
         </ThemedText>
       </Pressable>
 
@@ -1846,12 +1396,6 @@ export default function CaseFormScreen() {
         </Button>
       </View>
 
-      <FractureClassificationWizard
-        visible={showFractureWizardFromCheckbox}
-        onClose={handleFractureWizardClose}
-        onSave={handleFractureWizardSave}
-        initialFractures={fractures}
-      />
     </KeyboardAwareScrollViewCompat>
   );
 }
@@ -1912,6 +1456,21 @@ const styles = StyleSheet.create({
   },
   addTeamMemberContainer: {
     marginBottom: Spacing.md,
+  },
+  addGroupButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Spacing.sm,
+    padding: Spacing.md,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    borderStyle: "dashed",
+    marginBottom: Spacing.xl,
+  },
+  addGroupButtonText: {
+    fontSize: 15,
+    fontWeight: "600",
   },
   addButton: {
     flexDirection: "row",

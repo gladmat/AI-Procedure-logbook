@@ -695,6 +695,20 @@ export interface CaseProcedure {
   notes?: string;
 }
 
+export interface DiagnosisGroup {
+  id: string;
+  sequenceOrder: number;
+  specialty: Specialty;
+  diagnosis?: Diagnosis;
+  diagnosisPicklistId?: string;
+  diagnosisStagingSelections?: Record<string, string>;
+  diagnosisClinicalDetails?: DiagnosisClinicalDetails;
+  procedureSuggestionSource?: "picklist" | "skinCancer" | "manual";
+  pathologicalDiagnosis?: Diagnosis;
+  fractures?: FractureEntry[];
+  procedures: CaseProcedure[];
+}
+
 export interface Case {
   id: string;
   patientIdentifier: string;
@@ -703,7 +717,7 @@ export interface Case {
   specialty: Specialty;
   procedureType: string;
   procedureCode?: ProcedureCode;
-  procedures?: CaseProcedure[];
+  diagnosisGroups: DiagnosisGroup[];
   surgeryTiming?: SurgeryTiming;
   operatingTeam?: OperatingTeamMember[];
   
@@ -719,20 +733,8 @@ export interface Case {
   unplannedReadmission?: UnplannedReadmissionReason;
   injuryDate?: string;
   
-  // Diagnoses (SNOMED CT coded)
-  diagnosisDate?: string;
-  preManagementDiagnosis?: Diagnosis;
-  finalDiagnosis?: Diagnosis;
-  pathologicalDiagnosis?: Diagnosis;
-  diagnosisPicklistId?: string;
-  diagnosisStagingSelections?: Record<string, string>;
-  procedureSuggestionSource?: "picklist" | "skinCancer" | "manual";
-  
   // Co-morbidities (SNOMED CT coded)
   comorbidities?: SnomedCodedItem[];
-  
-  // AO/OTA Fracture Classifications (for fracture diagnoses)
-  fractures?: FractureEntry[];
   
   // Risk Factors
   asaScore?: ASAScore;
@@ -1241,6 +1243,19 @@ export const ASA_GRADE_LABELS: Record<ASAScore, string> = {
   5: "V - Moribund Patient",
   6: "VI - Brain-Dead Organ Donor",
 };
+
+export function getAllProcedures(c: Case): CaseProcedure[] {
+  return c.diagnosisGroups.flatMap(g => g.procedures);
+}
+
+export function getCaseSpecialties(c: Case): Specialty[] {
+  const specialties = new Set(c.diagnosisGroups.map(g => g.specialty));
+  return Array.from(specialties);
+}
+
+export function getPrimaryDiagnosisName(c: Case): string | undefined {
+  return c.diagnosisGroups[0]?.diagnosis?.displayName;
+}
 
 export const COMMON_COMORBIDITIES: SnomedCodedItem[] = [
   { snomedCtCode: "84114007", displayName: "Acquired Brain Injury" },

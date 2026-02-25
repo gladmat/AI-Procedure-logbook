@@ -28,6 +28,7 @@ The application is built with a strong emphasis on privacy, local processing, an
 - **Flexible JSON Payload**: `clinical_details` uses a flexible JSON structure for diverse surgical specialties.
 - **Core Case Fields**: Includes patient demographics, diagnoses, operative factors, SNOMED CT codes, and outcomes.
 - **RACS MALT Data Model**: Comprehensive implementation of RACS MALT requirements.
+- **Multi-Diagnosis Group Architecture**: Each Case has `diagnosisGroups: DiagnosisGroup[]` instead of flat diagnosis/procedures fields. Each DiagnosisGroup bundles a specialty, diagnosis, staging, fractures, and procedures. Enables multi-specialty cases (e.g., hand surgery + orthoplastic). Old cases are auto-migrated on load via `client/lib/migration.ts`. Helper functions: `getAllProcedures(c)`, `getCaseSpecialties(c)`, `getPrimaryDiagnosisName(c)` in `client/types/case.ts`.
 
 ### Key Features
 - **Standardized Facility Selection**: Curated hospital list with user-managed "My Hospitals".
