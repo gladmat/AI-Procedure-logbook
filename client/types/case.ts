@@ -717,6 +717,7 @@ export interface Case {
   admissionUrgency?: AdmissionUrgency;
   stayType?: StayType;
   unplannedReadmission?: UnplannedReadmissionReason;
+  injuryDate?: string;
   
   // Diagnoses (SNOMED CT coded)
   diagnosisDate?: string;

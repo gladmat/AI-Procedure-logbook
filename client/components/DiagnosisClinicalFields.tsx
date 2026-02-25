@@ -37,6 +37,7 @@ interface DiagnosisClinicalFieldsProps {
   specialty?: Specialty;
   fractures?: FractureEntry[];
   onFracturesChange?: (fractures: FractureEntry[]) => void;
+  showFractureClassification?: boolean;
 }
 
 export function DiagnosisClinicalFields({
@@ -45,13 +46,13 @@ export function DiagnosisClinicalFields({
   specialty,
   fractures = [],
   onFracturesChange,
+  showFractureClassification = false,
 }: DiagnosisClinicalFieldsProps) {
   const { theme } = useTheme();
   const [showFractureWizard, setShowFractureWizard] = useState(false);
 
   const clinicalDetails = diagnosis.clinicalDetails || {};
   const isHandSurgery = specialty === "hand_surgery";
-  const hasFractureDiagnosis = diagnosis.displayName?.toLowerCase().includes("fracture");
 
   const updateClinicalDetails = (updates: Partial<DiagnosisClinicalDetails>) => {
     onDiagnosisChange({
@@ -146,7 +147,7 @@ export function DiagnosisClinicalFields({
         </View>
       )}
 
-      {hasFractureDiagnosis && onFracturesChange && (
+      {showFractureClassification && onFracturesChange && (
         <View style={styles.fractureSection}>
           <View style={styles.headerRow}>
             <View style={styles.headerLeft}>

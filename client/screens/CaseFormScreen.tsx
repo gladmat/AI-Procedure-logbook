@@ -282,6 +282,7 @@ export default function CaseFormScreen() {
   const [dischargeDate, setDischargeDate] = useState("");
   const [admissionUrgency, setAdmissionUrgency] = useState<AdmissionUrgency | "">("");
   const [stayType, setStayType] = useState<StayType | "">("");
+  const [injuryDate, setInjuryDate] = useState("");
   const [unplannedReadmission, setUnplannedReadmission] = useState<UnplannedReadmissionReason>("no");
 
   // RACS MALT Primary Diagnosis (SNOMED CT coded)
@@ -344,6 +345,25 @@ export default function CaseFormScreen() {
     return durationMins;
   };
 
+  const showInjuryDate = admissionUrgency === "acute" || specialty === "hand_surgery" || specialty === "orthoplastic";
+
+  const hasFractureSubcategory = specialty === "hand_surgery" && procedures.some(
+    (p) => p.subcategory === "Fracture & Joint Fixation"
+  );
+
+  useEffect(() => {
+    if (!showInjuryDate) {
+      setInjuryDate("");
+    }
+  }, [showInjuryDate]);
+
+  useEffect(() => {
+    if (!hasFractureSubcategory) {
+      setFractures([]);
+      setIsFractureCase(false);
+    }
+  }, [hasFractureSubcategory]);
+
   useEffect(() => {
     if (stayType === "day_case" && procedureDate) {
       setAdmissionDate(procedureDate);
@@ -398,6 +418,7 @@ export default function CaseFormScreen() {
       setDischargeDate(draft.dischargeDate ?? "");
       setAdmissionUrgency(draft.admissionUrgency ?? "");
       setStayType(draft.stayType ?? "");
+      setInjuryDate(draft.injuryDate ?? "");
       setUnplannedReadmission(draft.unplannedReadmission ?? "no");
       setIsUnplannedReadmission((draft.unplannedReadmission ?? "no") !== "no");
       setDiagnosis(draft.finalDiagnosis?.displayName ?? "");
@@ -453,6 +474,7 @@ export default function CaseFormScreen() {
         if (caseData.dischargeDate) setDischargeDate(caseData.dischargeDate);
         if (caseData.admissionUrgency) setAdmissionUrgency(caseData.admissionUrgency);
         if (caseData.stayType) setStayType(caseData.stayType);
+        if (caseData.injuryDate) setInjuryDate(caseData.injuryDate);
         if (caseData.unplannedReadmission) setUnplannedReadmission(caseData.unplannedReadmission);
         if (caseData.asaScore) setAsaScore(String(caseData.asaScore));
         if (caseData.heightCm) setHeightCm(String(caseData.heightCm));
@@ -534,6 +556,7 @@ export default function CaseFormScreen() {
       dischargeDate: dischargeDate || undefined,
       admissionUrgency: admissionUrgency || undefined,
       stayType: stayType || undefined,
+      injuryDate: showInjuryDate && injuryDate ? injuryDate : undefined,
       unplannedReadmission: unplannedReadmission !== "no" ? unplannedReadmission : "no",
       finalDiagnosis: primaryDiagnosis 
         ? { 
@@ -587,6 +610,8 @@ export default function CaseFormScreen() {
   }, [
     admissionUrgency,
     stayType,
+    injuryDate,
+    showInjuryDate,
     admissionDate,
     anaestheticType,
     anastomoses,
@@ -940,6 +965,7 @@ export default function CaseFormScreen() {
         dischargeDate: dischargeDate || undefined,
         admissionUrgency: admissionUrgency || undefined,
         stayType: stayType || undefined,
+        injuryDate: showInjuryDate && injuryDate ? injuryDate : undefined,
         unplannedReadmission: unplannedReadmission !== "no" ? unplannedReadmission : undefined,
         
         // Diagnosis (single SNOMED diagnosis) - also set as preManagementDiagnosis for case title
@@ -1125,7 +1151,7 @@ export default function CaseFormScreen() {
         />
       ) : null}
 
-      {specialty === "hand_surgery" ? (
+      {hasFractureSubcategory ? (
         <View style={styles.fractureCheckboxContainer}>
           <Pressable
             style={styles.fractureCheckboxRow}
@@ -1247,6 +1273,7 @@ export default function CaseFormScreen() {
           specialty={specialty}
           fractures={fractures}
           onFracturesChange={setFractures}
+          showFractureClassification={hasFractureSubcategory}
         />
       ) : null}
 
@@ -1399,6 +1426,19 @@ export default function CaseFormScreen() {
           />
         </View>
       </View>
+
+      {showInjuryDate ? (
+        <View style={styles.row}>
+          <View style={styles.halfField}>
+            <DatePickerField
+              label="Day of Injury"
+              value={injuryDate}
+              onChange={setInjuryDate}
+              placeholder="Select date..."
+            />
+          </View>
+        </View>
+      ) : null}
 
       <Pressable
         style={styles.checkboxRow}
