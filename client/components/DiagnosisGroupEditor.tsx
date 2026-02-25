@@ -34,6 +34,7 @@ import {
 import type { DiagnosisPicklistEntry } from "@/types/diagnosis";
 import { findPicklistEntry } from "@/lib/procedurePicklist";
 import { SectionHeader } from "@/components/SectionHeader";
+import { DiagnosisSuggestions } from "@/components/DiagnosisSuggestions";
 
 interface DiagnosisGroupEditorProps {
   group: DiagnosisGroup;
@@ -260,6 +261,66 @@ export function DiagnosisGroupEditor({ group, index, isOnly, onChange, onDelete 
     }
   }, [procedures, groupSpecialty]);
 
+  const procedurePicklistIds = useMemo(
+    () => procedures
+      .map((p) => p.picklistEntryId)
+      .filter((id): id is string => !!id),
+    [procedures]
+  );
+
+  const showDiagnosisSuggestions =
+    procedurePicklistIds.length > 0 &&
+    !selectedDiagnosis &&
+    !primaryDiagnosis;
+
+  const handleReverseDiagnosisSelect = useCallback((dx: DiagnosisPicklistEntry) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+    setSelectedDiagnosis(dx);
+    setPrimaryDiagnosis({ conceptId: dx.snomedCtCode, term: dx.displayName });
+    setDiagnosis(dx.displayName);
+    setStagingValues({});
+
+    const activeIds = getActiveProcedureIds(dx, {});
+
+    setProcedures((prev) => {
+      const existingPicklistIds = new Set(
+        prev
+          .map((p) => p.picklistEntryId)
+          .filter((id): id is string => !!id)
+      );
+
+      const newProcedures: CaseProcedure[] = [];
+      for (const picklistId of activeIds) {
+        if (!existingPicklistIds.has(picklistId)) {
+          const entry = findPicklistEntry(picklistId);
+          if (entry) {
+            newProcedures.push({
+              id: uuidv4(),
+              sequenceOrder: prev.length + newProcedures.length + 1,
+              procedureName: entry.displayName,
+              specialty: groupSpecialty,
+              surgeonRole: "PS" as Role,
+              picklistEntryId: picklistId,
+              snomedCtCode: entry.snomedCtCode,
+              snomedCtDisplay: entry.snomedCtDisplay,
+              subcategory: entry.subcategory,
+              tags: entry.tags,
+            });
+          }
+        }
+      }
+
+      const allIds = new Set([...existingPicklistIds, ...activeIds]);
+      setSelectedSuggestionIds(allIds);
+
+      if (newProcedures.length > 0) {
+        return [...prev, ...newProcedures];
+      }
+      return prev;
+    });
+  }, [groupSpecialty]);
+
   const addProcedure = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     const newProcedure: CaseProcedure = {
@@ -478,6 +539,14 @@ export function DiagnosisGroupEditor({ group, index, isOnly, onChange, onDelete 
         specialty={groupSpecialty}
         placeholder="Search for diagnosis (e.g., fracture, Dupuytren)..."
       />
+
+      {showDiagnosisSuggestions ? (
+        <DiagnosisSuggestions
+          procedurePicklistIds={procedurePicklistIds}
+          specialty={groupSpecialty}
+          onSelect={handleReverseDiagnosisSelect}
+        />
+      ) : null}
 
       {diagnosisStaging && diagnosisStaging.stagingSystems.length > 0 ? (
         <View style={styles.stagingContainer}>

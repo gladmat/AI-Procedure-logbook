@@ -291,3 +291,109 @@ export function getAllSuggestionProcedureIds(
 ): string[] {
   return diagnosis.suggestedProcedures.map((s) => s.procedurePicklistId);
 }
+
+export interface ReverseDiagnosisSuggestion {
+  diagnosis: DiagnosisPicklistEntry;
+  isDefaultForDiagnosis: boolean;
+  isConditionalForDiagnosis: boolean;
+  conditionDescription?: string;
+}
+
+let _reverseIndex: Map<string, ReverseDiagnosisSuggestion[]> | null = null;
+
+function getReverseIndex(): Map<string, ReverseDiagnosisSuggestion[]> {
+  if (!_reverseIndex) {
+    _reverseIndex = new Map();
+    for (const dx of ALL_DIAGNOSES) {
+      for (const suggestion of dx.suggestedProcedures) {
+        const existing = _reverseIndex.get(suggestion.procedurePicklistId) || [];
+        existing.push({
+          diagnosis: dx,
+          isDefaultForDiagnosis: suggestion.isDefault,
+          isConditionalForDiagnosis: !!suggestion.isConditional,
+          conditionDescription: suggestion.conditionDescription,
+        });
+        _reverseIndex.set(suggestion.procedurePicklistId, existing);
+      }
+    }
+  }
+  return _reverseIndex;
+}
+
+export function getDiagnosesForProcedure(
+  procedurePicklistId: string,
+  specialty?: Specialty,
+  limit: number = 8
+): ReverseDiagnosisSuggestion[] {
+  const reverseIndex = getReverseIndex();
+  const matches = reverseIndex.get(procedurePicklistId);
+  if (!matches || matches.length === 0) return [];
+
+  const deduped = new Map<string, ReverseDiagnosisSuggestion>();
+  for (const match of matches) {
+    const existing = deduped.get(match.diagnosis.id);
+    if (!existing || (match.isDefaultForDiagnosis && !existing.isDefaultForDiagnosis)) {
+      deduped.set(match.diagnosis.id, match);
+    }
+  }
+
+  const results = Array.from(deduped.values());
+
+  results.sort((a, b) => {
+    const aSpecMatch = specialty && a.diagnosis.specialty === specialty ? 1 : 0;
+    const bSpecMatch = specialty && b.diagnosis.specialty === specialty ? 1 : 0;
+    if (aSpecMatch !== bSpecMatch) return bSpecMatch - aSpecMatch;
+
+    const aDefault = a.isDefaultForDiagnosis ? 1 : 0;
+    const bDefault = b.isDefaultForDiagnosis ? 1 : 0;
+    if (aDefault !== bDefault) return bDefault - aDefault;
+
+    const aConditional = a.isConditionalForDiagnosis ? 0 : 1;
+    const bConditional = b.isConditionalForDiagnosis ? 0 : 1;
+    return bConditional - aConditional;
+  });
+
+  return results.slice(0, limit);
+}
+
+export function getDiagnosesForProcedures(
+  procedurePicklistIds: string[],
+  specialty?: Specialty,
+  limit: number = 8
+): ReverseDiagnosisSuggestion[] {
+  if (procedurePicklistIds.length === 0) return [];
+  if (procedurePicklistIds.length === 1) {
+    return getDiagnosesForProcedure(procedurePicklistIds[0], specialty, limit);
+  }
+
+  const diagnosisCoverage = new Map<string, { suggestion: ReverseDiagnosisSuggestion; matchCount: number }>();
+
+  for (const procId of procedurePicklistIds) {
+    const matches = getDiagnosesForProcedure(procId, specialty, 100);
+    for (const match of matches) {
+      const existing = diagnosisCoverage.get(match.diagnosis.id);
+      if (existing) {
+        existing.matchCount += 1;
+        if (match.isDefaultForDiagnosis) {
+          existing.suggestion = match;
+        }
+      } else {
+        diagnosisCoverage.set(match.diagnosis.id, { suggestion: match, matchCount: 1 });
+      }
+    }
+  }
+
+  const results = Array.from(diagnosisCoverage.values());
+
+  results.sort((a, b) => {
+    if (b.matchCount !== a.matchCount) return b.matchCount - a.matchCount;
+    const aSpec = specialty && a.suggestion.diagnosis.specialty === specialty ? 1 : 0;
+    const bSpec = specialty && b.suggestion.diagnosis.specialty === specialty ? 1 : 0;
+    if (aSpec !== bSpec) return bSpec - aSpec;
+    const aDefault = a.suggestion.isDefaultForDiagnosis ? 1 : 0;
+    const bDefault = b.suggestion.isDefaultForDiagnosis ? 1 : 0;
+    return bDefault - aDefault;
+  });
+
+  return results.slice(0, limit).map((r) => r.suggestion);
+}
