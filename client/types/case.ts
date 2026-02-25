@@ -545,9 +545,29 @@ export interface SnomedCodedItem {
 
 export type Laterality = "left" | "right";
 
+export type DigitId = "I" | "II" | "III" | "IV" | "V";
+
+export interface HandTraumaStructure {
+  category: "flexor_tendon" | "extensor_tendon" | "nerve" | "artery" | "ligament" | "other";
+  structureId: string;
+  displayName: string;
+  digit?: DigitId;
+  zone?: string;
+  side?: "radial" | "ulnar";
+  generatedProcedurePicklistId?: string;
+  generatedProcedureId?: string;
+}
+
+export interface HandTraumaDetails {
+  injuryMechanism?: string;
+  affectedDigits?: DigitId[];
+  injuredStructures?: HandTraumaStructure[];
+}
+
 export interface DiagnosisClinicalDetails {
   laterality?: Laterality;
   injuryMechanism?: string;
+  handTrauma?: HandTraumaDetails;
 }
 
 export interface Diagnosis {

@@ -685,6 +685,23 @@ export default function CaseDetailScreen() {
                       ))}
                     </View>
                   ) : null}
+                  {group.diagnosisClinicalDetails?.handTrauma?.injuredStructures && group.diagnosisClinicalDetails.handTrauma.injuredStructures.length > 0 ? (
+                    <View style={styles.diagnosisItem}>
+                      <ThemedText style={[styles.diagnosisLabel, { color: theme.textSecondary }]}>
+                        Injured Structures
+                      </ThemedText>
+                      {group.diagnosisClinicalDetails.handTrauma.affectedDigits && group.diagnosisClinicalDetails.handTrauma.affectedDigits.length > 0 ? (
+                        <ThemedText style={[styles.snomedCode, { color: theme.textTertiary, marginBottom: 4 }]}>
+                          Digits: {group.diagnosisClinicalDetails.handTrauma.affectedDigits.join(", ")}
+                        </ThemedText>
+                      ) : null}
+                      {group.diagnosisClinicalDetails.handTrauma.injuredStructures.map((s, sIdx) => (
+                        <ThemedText key={`${s.structureId}-${sIdx}`} style={styles.diagnosisValue}>
+                          {s.displayName}{s.zone ? ` (Zone ${s.zone})` : ""}
+                        </ThemedText>
+                      ))}
+                    </View>
+                  ) : null}
                   {group.pathologicalDiagnosis ? (
                     <View style={styles.diagnosisItem}>
                       <ThemedText style={[styles.diagnosisLabel, { color: theme.textSecondary }]}>

@@ -471,6 +471,33 @@ const HAND_DX_NERVE_INJURIES: DiagnosisPicklistEntry[] = [
     ],
     sortOrder: 4,
   },
+  {
+    id: "hand_dx_dbun_injury",
+    displayName: "Dorsal branch of ulnar nerve injury",
+    shortName: "DBUN injury",
+    snomedCtCode: "283019007",
+    snomedCtDisplay: "Injury of dorsal branch of ulnar nerve (disorder)",
+    specialty: "hand_surgery",
+    subcategory: "Nerve Injuries",
+    clinicalGroup: "trauma",
+    hasStaging: false,
+    searchSynonyms: ["DBUN", "dorsal ulnar", "dorsal branch", "dorsal sensory ulnar"],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hand_nerve_ulnar_repair",
+        displayName: "Ulnar nerve repair",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "hand_nerve_neuroma_excision",
+        displayName: "Neuroma excision",
+        isDefault: false,
+        sortOrder: 2,
+      },
+    ],
+    sortOrder: 5,
+  },
 ];
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -478,6 +505,24 @@ const HAND_DX_NERVE_INJURIES: DiagnosisPicklistEntry[] = [
 // ═══════════════════════════════════════════════════════════════════════════════
 
 const HAND_DX_SOFT_TISSUE: DiagnosisPicklistEntry[] = [
+  {
+    id: "hand_dx_complex_laceration",
+    displayName: "Complex hand / wrist laceration",
+    shortName: "Complex laceration",
+    snomedCtCode: "284003005",
+    snomedCtDisplay: "Open wound of hand (disorder)",
+    specialty: "hand_surgery",
+    subcategory: "Soft Tissue Injuries",
+    clinicalGroup: "trauma",
+    hasStaging: false,
+    searchSynonyms: [
+      "spaghetti wrist", "complex laceration", "multiple tendon",
+      "multiple structure", "glass injury", "knife wound",
+      "saw injury", "skill saw", "table saw",
+    ],
+    suggestedProcedures: [],
+    sortOrder: 0,
+  },
   {
     id: "hand_dx_fingertip_injury",
     displayName: "Fingertip injury / amputation",

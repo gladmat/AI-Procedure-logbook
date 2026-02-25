@@ -35,6 +35,7 @@ import type { DiagnosisPicklistEntry } from "@/types/diagnosis";
 import { findPicklistEntry } from "@/lib/procedurePicklist";
 import { SectionHeader } from "@/components/SectionHeader";
 import { DiagnosisSuggestions } from "@/components/DiagnosisSuggestions";
+import { HandTraumaStructurePicker } from "@/components/hand-trauma/HandTraumaStructurePicker";
 
 interface DiagnosisGroupEditorProps {
   group: DiagnosisGroup;
@@ -598,6 +599,18 @@ export function DiagnosisGroupEditor({ group, index, isOnly, onChange, onDelete 
           fractures={fractures}
           onFracturesChange={setFractures}
           showFractureClassification={hasFractureSubcategory}
+        />
+      ) : null}
+
+      {groupSpecialty === "hand_surgery" && selectedDiagnosis?.clinicalGroup === "trauma" ? (
+        <HandTraumaStructurePicker
+          value={diagnosisClinicalDetails.handTrauma || {}}
+          onChange={(handTrauma) =>
+            setDiagnosisClinicalDetails((prev) => ({ ...prev, handTrauma }))
+          }
+          selectedDiagnosis={selectedDiagnosis}
+          procedures={procedures}
+          onProceduresChange={setProcedures}
         />
       ) : null}
 
