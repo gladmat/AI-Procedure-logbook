@@ -187,7 +187,7 @@ export const SNOMED_PROCEDURES: SnomedProcedure[] = [
     },
   },
   {
-    snomedCtCode: "62480006",
+    snomedCtCode: "62961003",
     snomedCtDisplay: "Rhinoplasty",
     specialty: "aesthetics",
     commonName: "Rhinoplasty",
@@ -198,7 +198,7 @@ export const SNOMED_PROCEDURES: SnomedProcedure[] = [
     },
   },
   {
-    snomedCtCode: "41899006",
+    snomedCtCode: "75732000",
     snomedCtDisplay: "Blepharoplasty",
     specialty: "aesthetics",
     commonName: "Blepharoplasty",

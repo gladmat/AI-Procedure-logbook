@@ -475,8 +475,8 @@ const ORTHOPLASTIC_COMPLEX_RECONSTRUCTION: ProcedurePicklistEntry[] = [
   {
     id: "orth_chest_wall_reconstruction",
     displayName: "Chest wall reconstruction",
-    snomedCtCode: "122462001",
-    snomedCtDisplay: "Flap reconstruction (procedure)",
+    snomedCtCode: "234254005",
+    snomedCtDisplay: "Reconstruction of chest wall (procedure)",
     specialties: ["orthoplastic", "general"],
     subcategory: "Complex Reconstruction",
     tags: ["pedicled_flap", "complex_wound"],
@@ -485,8 +485,8 @@ const ORTHOPLASTIC_COMPLEX_RECONSTRUCTION: ProcedurePicklistEntry[] = [
   {
     id: "orth_abdominal_wall_reconstruction",
     displayName: "Abdominal wall reconstruction",
-    snomedCtCode: "122462001",
-    snomedCtDisplay: "Flap reconstruction (procedure)",
+    snomedCtCode: "234256007",
+    snomedCtDisplay: "Reconstruction of abdominal wall (procedure)",
     specialties: ["orthoplastic", "general"],
     subcategory: "Complex Reconstruction",
     tags: ["pedicled_flap", "complex_wound"],
@@ -562,8 +562,8 @@ const HAND_FRACTURE_FIXATION: ProcedurePicklistEntry[] = [
   {
     id: "hand_fx_phalanx_crif",
     displayName: "Phalangeal fracture CRIF (K-wires)",
-    snomedCtCode: "15257006", // VERIFY — may share parent
-    snomedCtDisplay: "Closed reduction of fracture of phalanx with internal fixation (procedure)",
+    snomedCtCode: "179097006",
+    snomedCtDisplay: "Closed reduction of fracture with internal fixation (procedure)",
     specialties: ["hand_surgery"],
     subcategory: "Fracture & Joint Fixation",
     tags: ["trauma"],
@@ -695,8 +695,8 @@ const HAND_TENDON_SURGERY: ProcedurePicklistEntry[] = [
   {
     id: "hand_tend_mallet_finger",
     displayName: "Mallet finger repair / splintage",
-    snomedCtCode: "239248002", // VERIFY
-    snomedCtDisplay: "Repair of mallet finger (procedure)",
+    snomedCtCode: "178730002",
+    snomedCtDisplay: "Repair of mallet deformity (procedure)",
     specialties: ["hand_surgery"],
     subcategory: "Tendon Surgery",
     tags: ["tendon_repair", "trauma"],
@@ -1418,8 +1418,8 @@ const HAND_OTHER: ProcedurePicklistEntry[] = [
   {
     id: "hand_other_flexor_sheath_washout",
     displayName: "Flexor sheath washout (septic flexor tenosynovitis)",
-    snomedCtCode: "36777000", // VERIFY
-    snomedCtDisplay: "Drainage of flexor tendon sheath of hand (procedure)",
+    snomedCtCode: "43289009",
+    snomedCtDisplay: "Drainage of tendon sheath (procedure)",
     specialties: ["hand_surgery"],
     subcategory: "Other Hand",
     tags: ["trauma"],
@@ -1505,8 +1505,8 @@ const HEAD_NECK_SKIN_CANCER: ProcedurePicklistEntry[] = [
   {
     id: "hn_skin_mohs_defect",
     displayName: "Mohs defect reconstruction",
-    snomedCtCode: "122465003", // VERIFY — Reconstruction procedure
-    snomedCtDisplay: "Reconstruction of defect after Mohs surgery (procedure)",
+    snomedCtCode: "440299008",
+    snomedCtDisplay: "Mohs micrographic surgery (procedure)",
     specialties: ["head_neck"],
     subcategory: "Skin Cancer Excision",
     tags: ["oncological"],
@@ -1651,8 +1651,8 @@ const HEAD_NECK_REGIONAL_FLAPS: ProcedurePicklistEntry[] = [
   {
     id: "hn_reg_karapandzic",
     displayName: "Karapandzic flap",
-    snomedCtCode: "122462001", // VERIFY
-    snomedCtDisplay: "Flap reconstruction of lip (procedure)",
+    snomedCtCode: "13372005",
+    snomedCtDisplay: "Reconstruction of lip (procedure)",
     specialties: ["head_neck"],
     subcategory: "Regional Flaps",
     tags: ["pedicled_flap"],
@@ -1661,8 +1661,8 @@ const HEAD_NECK_REGIONAL_FLAPS: ProcedurePicklistEntry[] = [
   {
     id: "hn_reg_estlander",
     displayName: "Estlander flap",
-    snomedCtCode: "122462001", // VERIFY
-    snomedCtDisplay: "Flap reconstruction of lip (procedure)",
+    snomedCtCode: "13372005",
+    snomedCtDisplay: "Reconstruction of lip (procedure)",
     specialties: ["head_neck"],
     subcategory: "Regional Flaps",
     tags: ["pedicled_flap"],
@@ -1989,8 +1989,8 @@ const HEAD_NECK_CLEFT_CRANIOFACIAL: ProcedurePicklistEntry[] = [
   {
     id: "hn_cleft_alveolar_bone_graft",
     displayName: "Alveolar bone graft",
-    snomedCtCode: "172735006", // VERIFY
-    snomedCtDisplay: "Alveolar bone graft (procedure)",
+    snomedCtCode: "54550001",
+    snomedCtDisplay: "Bone graft of alveolar ridge (procedure)",
     specialties: ["head_neck"],
     subcategory: "Cleft & Craniofacial",
     tags: ["elective"],
@@ -2009,8 +2009,8 @@ const HEAD_NECK_CLEFT_CRANIOFACIAL: ProcedurePicklistEntry[] = [
   {
     id: "hn_cleft_velopharyngeal_insufficiency",
     displayName: "VPI surgery (pharyngoplasty / pharyngeal flap)",
-    snomedCtCode: "172735006", // VERIFY
-    snomedCtDisplay: "Pharyngoplasty for velopharyngeal insufficiency (procedure)",
+    snomedCtCode: "41925006",
+    snomedCtDisplay: "Pharyngoplasty (procedure)",
     specialties: ["head_neck"],
     subcategory: "Cleft & Craniofacial",
     tags: ["elective"],
@@ -2343,8 +2343,8 @@ const GENERAL_MELANOMA: ProcedurePicklistEntry[] = [
   {
     id: "gen_mel_merkel_excision",
     displayName: "Merkel cell carcinoma excision",
-    snomedCtCode: "177300000", // VERIFY
-    snomedCtDisplay: "Excision of Merkel cell carcinoma (procedure)",
+    snomedCtCode: "287626001",
+    snomedCtDisplay: "Excision of malignant neoplasm of skin (procedure)",
     specialties: ["general"],
     subcategory: "Melanoma & Oncological",
     tags: ["oncological"],
@@ -2353,8 +2353,8 @@ const GENERAL_MELANOMA: ProcedurePicklistEntry[] = [
   {
     id: "gen_mel_dfsp_excision",
     displayName: "DFSP excision (dermatofibrosarcoma protuberans)",
-    snomedCtCode: "177300000", // VERIFY
-    snomedCtDisplay: "Excision of dermatofibrosarcoma protuberans (procedure)",
+    snomedCtCode: "287626001",
+    snomedCtDisplay: "Excision of malignant neoplasm of skin (procedure)",
     specialties: ["general"],
     subcategory: "Melanoma & Oncological",
     tags: ["oncological"],
@@ -2705,8 +2705,8 @@ const BREAST_AUTOLOGOUS_RECON: ProcedurePicklistEntry[] = [
   {
     id: "breast_recon_ld_implant",
     displayName: "Pedicled LD flap ± implant breast reconstruction",
-    snomedCtCode: "234296008", // VERIFY — pedicled variant
-    snomedCtDisplay: "Pedicled latissimus dorsi flap with implant (procedure)",
+    snomedCtCode: "234281001",
+    snomedCtDisplay: "Pedicled latissimus dorsi flap (procedure)",
     specialties: ["breast"],
     subcategory: "Autologous Reconstruction",
     tags: ["pedicled_flap", "oncological"],
@@ -2886,8 +2886,8 @@ const BREAST_ONCOPLASTIC: ProcedurePicklistEntry[] = [
   {
     id: "breast_onco_contralateral_symmetrisation",
     displayName: "Contralateral symmetrisation (reduction / mastopexy / augmentation)",
-    snomedCtCode: "69031006", // VERIFY
-    snomedCtDisplay: "Contralateral breast symmetrisation (procedure)",
+    snomedCtCode: "64368001",
+    snomedCtDisplay: "Reduction mammoplasty (procedure)",
     specialties: ["breast"],
     subcategory: "Oncoplastic Surgery",
     tags: ["oncological", "elective"],
@@ -2979,8 +2979,8 @@ const BREAST_AESTHETIC: ProcedurePicklistEntry[] = [
   {
     id: "breast_aes_augmentation_mastopexy",
     displayName: "Augmentation-mastopexy",
-    snomedCtCode: "69031006", // VERIFY
-    snomedCtDisplay: "Augmentation mastopexy (procedure)",
+    snomedCtCode: "392090004",
+    snomedCtDisplay: "Operative procedure on breast (procedure)",
     specialties: ["breast", "aesthetics"],
     subcategory: "Aesthetic Breast",
     tags: ["elective"],
@@ -3105,8 +3105,8 @@ const BREAST_REVISION: ProcedurePicklistEntry[] = [
   {
     id: "breast_rev_tuberous_correction",
     displayName: "Tuberous breast correction",
-    snomedCtCode: "69031006", // VERIFY
-    snomedCtDisplay: "Correction of tuberous breast deformity (procedure)",
+    snomedCtCode: "392090004",
+    snomedCtDisplay: "Operative procedure on breast (procedure)",
     specialties: ["breast"],
     subcategory: "Revision & Other",
     tags: ["elective"],
@@ -3335,8 +3335,8 @@ const BURNS_SITE_SPECIFIC: ProcedurePicklistEntry[] = [
   {
     id: "burns_site_hand",
     displayName: "Burns surgery — hand (acute / reconstruction)",
-    snomedCtCode: "36777000", // VERIFY
-    snomedCtDisplay: "Burns surgery of hand (procedure)",
+    snomedCtCode: "89658006",
+    snomedCtDisplay: "Treatment of burn (procedure)",
     specialties: ["burns"],
     subcategory: "Site-Specific Burns",
     tags: ["trauma"],
@@ -3345,8 +3345,8 @@ const BURNS_SITE_SPECIFIC: ProcedurePicklistEntry[] = [
   {
     id: "burns_site_face",
     displayName: "Burns surgery — face (acute / reconstruction)",
-    snomedCtCode: "36777000", // VERIFY
-    snomedCtDisplay: "Burns surgery of face (procedure)",
+    snomedCtCode: "89658006",
+    snomedCtDisplay: "Treatment of burn (procedure)",
     specialties: ["burns"],
     subcategory: "Site-Specific Burns",
     tags: ["trauma"],
@@ -3355,8 +3355,8 @@ const BURNS_SITE_SPECIFIC: ProcedurePicklistEntry[] = [
   {
     id: "burns_site_perineal",
     displayName: "Burns surgery — perineal",
-    snomedCtCode: "36777000", // VERIFY
-    snomedCtDisplay: "Burns surgery of perineum (procedure)",
+    snomedCtCode: "89658006",
+    snomedCtDisplay: "Treatment of burn (procedure)",
     specialties: ["burns"],
     subcategory: "Site-Specific Burns",
     tags: ["trauma"],
@@ -3365,8 +3365,8 @@ const BURNS_SITE_SPECIFIC: ProcedurePicklistEntry[] = [
   {
     id: "burns_site_paediatric",
     displayName: "Paediatric burns surgery",
-    snomedCtCode: "36777000", // VERIFY
-    snomedCtDisplay: "Burns surgery in paediatric patient (procedure)",
+    snomedCtCode: "89658006",
+    snomedCtDisplay: "Treatment of burn (procedure)",
     specialties: ["burns"],
     subcategory: "Site-Specific Burns",
     tags: ["trauma"],
@@ -3375,7 +3375,7 @@ const BURNS_SITE_SPECIFIC: ProcedurePicklistEntry[] = [
   {
     id: "burns_site_chemical",
     displayName: "Chemical burn management",
-    snomedCtCode: "36777000", // VERIFY
+    snomedCtCode: "73553004",
     snomedCtDisplay: "Treatment of chemical burn (procedure)",
     specialties: ["burns"],
     subcategory: "Site-Specific Burns",
@@ -3385,7 +3385,7 @@ const BURNS_SITE_SPECIFIC: ProcedurePicklistEntry[] = [
   {
     id: "burns_site_electrical",
     displayName: "Electrical burn management",
-    snomedCtCode: "36777000", // VERIFY
+    snomedCtCode: "409580007",
     snomedCtDisplay: "Treatment of electrical burn (procedure)",
     specialties: ["burns"],
     subcategory: "Site-Specific Burns",
@@ -3467,8 +3467,8 @@ const AESTHETICS_FACELIFT: ProcedurePicklistEntry[] = [
   {
     id: "aes_face_mini_facelift",
     displayName: "Mini facelift / short-scar facelift (MACS)",
-    snomedCtCode: "54516008", // VERIFY
-    snomedCtDisplay: "Minimal access cranial suspension lift (procedure)",
+    snomedCtCode: "54516008",
+    snomedCtDisplay: "Rhytidectomy (procedure)",
     specialties: ["aesthetics"],
     subcategory: "Facial Rejuvenation",
     tags: ["elective"],
@@ -3537,8 +3537,8 @@ const AESTHETICS_FACELIFT: ProcedurePicklistEntry[] = [
   {
     id: "aes_face_thread_lift",
     displayName: "Thread lift",
-    snomedCtCode: "54516008", // VERIFY
-    snomedCtDisplay: "Thread lift of face (procedure)",
+    snomedCtCode: "286553006",
+    snomedCtDisplay: "Plastic operation on face (procedure)",
     specialties: ["aesthetics"],
     subcategory: "Facial Rejuvenation",
     tags: ["elective"],
@@ -3626,7 +3626,7 @@ const AESTHETICS_INJECTABLES: ProcedurePicklistEntry[] = [
   {
     id: "aes_inj_botox_upper_face",
     displayName: "Botulinum toxin — upper face (glabella / forehead / crow's feet)",
-    snomedCtCode: "428191000124101", // VERIFY
+    snomedCtCode: "442695005",
     snomedCtDisplay: "Injection of botulinum toxin (procedure)",
     specialties: ["aesthetics"],
     subcategory: "Injectables",
@@ -3636,7 +3636,7 @@ const AESTHETICS_INJECTABLES: ProcedurePicklistEntry[] = [
   {
     id: "aes_inj_botox_lower_face",
     displayName: "Botulinum toxin — lower face / neck (masseter / platysma / lip)",
-    snomedCtCode: "428191000124101", // VERIFY
+    snomedCtCode: "442695005",
     snomedCtDisplay: "Injection of botulinum toxin (procedure)",
     specialties: ["aesthetics"],
     subcategory: "Injectables",
@@ -3646,8 +3646,8 @@ const AESTHETICS_INJECTABLES: ProcedurePicklistEntry[] = [
   {
     id: "aes_inj_botox_hyperhidrosis",
     displayName: "Botulinum toxin — hyperhidrosis (axillary / palmar)",
-    snomedCtCode: "428191000124101", // VERIFY
-    snomedCtDisplay: "Injection of botulinum toxin for hyperhidrosis (procedure)",
+    snomedCtCode: "442695005",
+    snomedCtDisplay: "Injection of botulinum toxin (procedure)",
     specialties: ["aesthetics"],
     subcategory: "Injectables",
     tags: ["elective"],
@@ -3656,7 +3656,7 @@ const AESTHETICS_INJECTABLES: ProcedurePicklistEntry[] = [
   {
     id: "aes_inj_filler_midface",
     displayName: "Dermal filler — midface / cheeks",
-    snomedCtCode: "13413003", // VERIFY
+    snomedCtCode: "787876008",
     snomedCtDisplay: "Injection of dermal filler (procedure)",
     specialties: ["aesthetics"],
     subcategory: "Injectables",
@@ -3666,7 +3666,7 @@ const AESTHETICS_INJECTABLES: ProcedurePicklistEntry[] = [
   {
     id: "aes_inj_filler_lips",
     displayName: "Dermal filler — lips",
-    snomedCtCode: "13413003", // VERIFY
+    snomedCtCode: "787876008",
     snomedCtDisplay: "Injection of dermal filler (procedure)",
     specialties: ["aesthetics"],
     subcategory: "Injectables",
@@ -3676,7 +3676,7 @@ const AESTHETICS_INJECTABLES: ProcedurePicklistEntry[] = [
   {
     id: "aes_inj_filler_nasolabial",
     displayName: "Dermal filler — nasolabial folds / marionette lines",
-    snomedCtCode: "13413003", // VERIFY
+    snomedCtCode: "787876008",
     snomedCtDisplay: "Injection of dermal filler (procedure)",
     specialties: ["aesthetics"],
     subcategory: "Injectables",
@@ -3686,7 +3686,7 @@ const AESTHETICS_INJECTABLES: ProcedurePicklistEntry[] = [
   {
     id: "aes_inj_filler_jawline_chin",
     displayName: "Dermal filler — jawline / chin",
-    snomedCtCode: "13413003", // VERIFY
+    snomedCtCode: "787876008",
     snomedCtDisplay: "Injection of dermal filler (procedure)",
     specialties: ["aesthetics"],
     subcategory: "Injectables",
@@ -3696,7 +3696,7 @@ const AESTHETICS_INJECTABLES: ProcedurePicklistEntry[] = [
   {
     id: "aes_inj_filler_tear_trough",
     displayName: "Dermal filler — tear trough",
-    snomedCtCode: "13413003", // VERIFY
+    snomedCtCode: "787876008",
     snomedCtDisplay: "Injection of dermal filler (procedure)",
     specialties: ["aesthetics"],
     subcategory: "Injectables",
@@ -3706,7 +3706,7 @@ const AESTHETICS_INJECTABLES: ProcedurePicklistEntry[] = [
   {
     id: "aes_inj_filler_temples",
     displayName: "Dermal filler — temples",
-    snomedCtCode: "13413003", // VERIFY
+    snomedCtCode: "787876008",
     snomedCtDisplay: "Injection of dermal filler (procedure)",
     specialties: ["aesthetics"],
     subcategory: "Injectables",
@@ -3716,7 +3716,7 @@ const AESTHETICS_INJECTABLES: ProcedurePicklistEntry[] = [
   {
     id: "aes_inj_filler_hands",
     displayName: "Dermal filler — hands",
-    snomedCtCode: "13413003", // VERIFY
+    snomedCtCode: "787876008",
     snomedCtDisplay: "Injection of dermal filler (procedure)",
     specialties: ["aesthetics"],
     subcategory: "Injectables",
@@ -3726,7 +3726,7 @@ const AESTHETICS_INJECTABLES: ProcedurePicklistEntry[] = [
   {
     id: "aes_inj_filler_dissolve",
     displayName: "Hyaluronidase injection (filler dissolution)",
-    snomedCtCode: "13413003", // VERIFY
+    snomedCtCode: "787876008",
     snomedCtDisplay: "Injection of hyaluronidase (procedure)",
     specialties: ["aesthetics"],
     subcategory: "Injectables",
@@ -4066,8 +4066,8 @@ const BODY_CONTOUR_UPPER: ProcedurePicklistEntry[] = [
   {
     id: "bc_upper_bra_line_lift",
     displayName: "Bra-line back lift (upper back excess)",
-    snomedCtCode: "177300000", // VERIFY
-    snomedCtDisplay: "Upper body lift (procedure)",
+    snomedCtCode: "119954001",
+    snomedCtDisplay: "Brachioplasty (procedure)",
     specialties: ["body_contouring"],
     subcategory: "Upper Body Contouring",
     tags: ["elective"],
@@ -4076,8 +4076,8 @@ const BODY_CONTOUR_UPPER: ProcedurePicklistEntry[] = [
   {
     id: "bc_upper_axillary_roll",
     displayName: "Axillary roll excision",
-    snomedCtCode: "177300000", // VERIFY
-    snomedCtDisplay: "Excision of axillary skin fold (procedure)",
+    snomedCtCode: "119954001",
+    snomedCtDisplay: "Brachioplasty (procedure)",
     specialties: ["body_contouring"],
     subcategory: "Upper Body Contouring",
     tags: ["elective"],
@@ -4109,8 +4109,8 @@ const BODY_CONTOUR_LOWER: ProcedurePicklistEntry[] = [
   {
     id: "bc_lower_belt_lipectomy",
     displayName: "Belt lipectomy (circumferential body lift)",
-    snomedCtCode: "302441008", // VERIFY
-    snomedCtDisplay: "Circumferential body lift (procedure)",
+    snomedCtCode: "72310004",
+    snomedCtDisplay: "Abdominoplasty (procedure)",
     specialties: ["body_contouring"],
     subcategory: "Lower Body Contouring",
     tags: ["elective"],
@@ -4119,8 +4119,8 @@ const BODY_CONTOUR_LOWER: ProcedurePicklistEntry[] = [
   {
     id: "bc_lower_body_lift",
     displayName: "Lower body lift",
-    snomedCtCode: "302441008", // VERIFY
-    snomedCtDisplay: "Lower body lift (procedure)",
+    snomedCtCode: "72310004",
+    snomedCtDisplay: "Abdominoplasty (procedure)",
     specialties: ["body_contouring"],
     subcategory: "Lower Body Contouring",
     tags: ["elective"],
@@ -4129,8 +4129,8 @@ const BODY_CONTOUR_LOWER: ProcedurePicklistEntry[] = [
   {
     id: "bc_lower_knee_lift",
     displayName: "Knee lift / periarticular contouring",
-    snomedCtCode: "177300000", // VERIFY
-    snomedCtDisplay: "Knee lift (procedure)",
+    snomedCtCode: "286553006",
+    snomedCtDisplay: "Plastic operation (procedure)",
     specialties: ["body_contouring"],
     subcategory: "Lower Body Contouring",
     tags: ["elective"],
@@ -4142,8 +4142,8 @@ const BODY_CONTOUR_BUTTOCK: ProcedurePicklistEntry[] = [
   {
     id: "bc_buttock_lift",
     displayName: "Buttock lift (excisional)",
-    snomedCtCode: "177300000", // VERIFY
-    snomedCtDisplay: "Buttock lift (procedure)",
+    snomedCtCode: "72310004",
+    snomedCtDisplay: "Abdominoplasty (procedure)",
     specialties: ["body_contouring"],
     subcategory: "Buttock Procedures",
     tags: ["elective"],
@@ -4162,8 +4162,8 @@ const BODY_CONTOUR_BUTTOCK: ProcedurePicklistEntry[] = [
   {
     id: "bc_buttock_auto_augmentation",
     displayName: "Buttock auto-augmentation (local flap / de-epithelialised)",
-    snomedCtCode: "122462001", // VERIFY
-    snomedCtDisplay: "Autologous buttock augmentation (procedure)",
+    snomedCtCode: "72310004",
+    snomedCtDisplay: "Abdominoplasty (procedure)",
     specialties: ["body_contouring"],
     subcategory: "Buttock Procedures",
     tags: ["elective"],
@@ -4185,8 +4185,8 @@ const BODY_CONTOUR_POST_BARIATRIC: ProcedurePicklistEntry[] = [
   {
     id: "bc_postbar_mons_lift",
     displayName: "Mons pubis lift / reduction",
-    snomedCtCode: "177300000", // VERIFY
-    snomedCtDisplay: "Monsplasty (procedure)",
+    snomedCtCode: "286553006",
+    snomedCtDisplay: "Plastic operation (procedure)",
     specialties: ["body_contouring"],
     subcategory: "Post-Bariatric",
     tags: ["elective"],
@@ -4248,8 +4248,8 @@ const BODY_CONTOUR_OTHER: ProcedurePicklistEntry[] = [
   {
     id: "bc_other_seroma_management",
     displayName: "Seroma aspiration / capsulectomy (post-contouring)",
-    snomedCtCode: "174295000", // VERIFY
-    snomedCtDisplay: "Aspiration of seroma (procedure)",
+    snomedCtCode: "69794004",
+    snomedCtDisplay: "Aspiration procedure (procedure)",
     specialties: ["body_contouring"],
     subcategory: "Other Body Contouring",
     tags: ["revision"],

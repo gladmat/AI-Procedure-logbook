@@ -73,7 +73,7 @@ const AES_DX_FACIAL_AGEING: DiagnosisPicklistEntry[] = [
     id: "aes_dx_upper_eyelid_dermatochalasis",
     displayName: "Upper eyelid dermatochalasis",
     shortName: "Upper bleph",
-    snomedCtCode: "422413001",
+    snomedCtCode: "53441006",
     snomedCtDisplay: "Dermatochalasis (disorder)",
     specialty: "aesthetics",
     subcategory: "Facial Ageing",
