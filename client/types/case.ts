@@ -871,7 +871,7 @@ export interface MediaAttachment {
 }
 
 // Operative media for photos/files attached directly to case record
-export type OperativeMediaType = "intraoperative_photo" | "xray" | "ct_scan" | "mri" | "diagram" | "document" | "other";
+export type OperativeMediaType = "preoperative_photo" | "intraoperative_photo" | "xray" | "ct_scan" | "mri" | "diagram" | "document" | "other";
 
 export interface OperativeMediaItem {
   id: string;
@@ -885,6 +885,7 @@ export interface OperativeMediaItem {
 }
 
 export const OPERATIVE_MEDIA_TYPE_LABELS: Record<OperativeMediaType, string> = {
+  preoperative_photo: "Preop Photo",
   intraoperative_photo: "Intraop Photo",
   xray: "X-ray",
   ct_scan: "CT Scan",

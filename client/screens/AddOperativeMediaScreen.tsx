@@ -29,6 +29,7 @@ type AddOperativeMediaRouteProp = RouteProp<RootStackParamList, "AddOperativeMed
 type AddOperativeMediaNavigationProp = NativeStackNavigationProp<RootStackParamList, "AddOperativeMedia">;
 
 const MEDIA_TYPE_OPTIONS: { value: OperativeMediaType; label: string; icon: keyof typeof Feather.glyphMap }[] = [
+  { value: "preoperative_photo", label: "Preop Photo", icon: "image" },
   { value: "intraoperative_photo", label: "Intraop Photo", icon: "camera" },
   { value: "xray", label: "X-ray", icon: "file" },
   { value: "ct_scan", label: "CT Scan", icon: "layers" },
