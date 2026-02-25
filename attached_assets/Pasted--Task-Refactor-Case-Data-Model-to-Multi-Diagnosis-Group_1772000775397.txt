@@ -1,0 +1,357 @@
+# Task: Refactor Case Data Model to Multi-Diagnosis-Group Architecture
+
+## Context
+
+The surgical logbook app currently has a flat data model: each case has ONE diagnosis and a flat list of procedures. We need to refactor to a grouped model where each case has ONE OR MORE "diagnosis groups", each bundling a diagnosis + staging + fracture classifications + procedures under a single specialty. This enables multi-specialty cases (e.g., Hand Surgery ORIF + Orthoplastic free flap in one session).
+
+**CRITICAL: Single-group cases (90%+ of all cases) must look and work identically to before. No regression.**
+
+## Step-by-step implementation
+
+### Step 1: Update type definitions in `client/types/case.ts`
+
+**Add the `DiagnosisGroup` interface** (add it before the `Case` interface):
+
+```typescript
+/**
+ * A DiagnosisGroup bundles a single clinical problem with its related procedures.
+ * Each group has its own specialty, allowing multi-specialty cases.
+ */
+export interface DiagnosisGroup {
+  id: string;
+  sequenceOrder: number;
+  specialty: Specialty;
+  diagnosis?: Diagnosis;
+  diagnosisPicklistId?: string;
+  diagnosisStagingSelections?: Record<string, string>;
+  diagnosisClinicalDetails?: DiagnosisClinicalDetails;
+  procedureSuggestionSource?: "picklist" | "skinCancer" | "manual";
+  pathologicalDiagnosis?: Diagnosis;
+  fractures?: FractureEntry[];
+  procedures: CaseProcedure[];
+}
+```
+
+**Update the `Case` interface:**
+- REMOVE these fields: `preManagementDiagnosis`, `finalDiagnosis`, `pathologicalDiagnosis`, `diagnosisPicklistId`, `diagnosisStagingSelections`, `procedureSuggestionSource`, `fractures`, `procedures`
+- ADD: `diagnosisGroups: DiagnosisGroup[];`
+- KEEP `specialty` (primary, from first group) and `procedureType` (derived, from first group's first procedure) and `procedureCode`
+- Keep all other fields exactly as they are
+
+**Add helper functions** at the bottom of the file (before styles/exports):
+
+```typescript
+/** Get all procedures across all diagnosis groups (flat list) */
+export function getAllProcedures(c: Case): CaseProcedure[] {
+  return c.diagnosisGroups.flatMap(g => g.procedures);
+}
+
+/** Get all specialties present in a case */
+export function getCaseSpecialties(c: Case): Specialty[] {
+  const specialties = new Set(c.diagnosisGroups.map(g => g.specialty));
+  return Array.from(specialties);
+}
+
+/** Get the primary diagnosis display name (from first group) */
+export function getPrimaryDiagnosisName(c: Case): string | undefined {
+  return c.diagnosisGroups[0]?.diagnosis?.displayName;
+}
+```
+
+### Step 2: Add migration utility
+
+Create `client/lib/migration.ts`:
+
+```typescript
+import { Case, DiagnosisGroup } from "@/types/case";
+import { v4 as uuidv4 } from "uuid";
+
+/**
+ * Migrates old flat-model cases to the DiagnosisGroup model.
+ * Detection: if case has no `diagnosisGroups` array, it's the old format.
+ * Called transparently when loading cases from storage.
+ */
+export function migrateCase(raw: any): Case {
+  if (Array.isArray(raw.diagnosisGroups) && raw.diagnosisGroups.length > 0) {
+    return raw as Case;
+  }
+
+  const oldDiagnosis = raw.preManagementDiagnosis || raw.finalDiagnosis;
+
+  const group: DiagnosisGroup = {
+    id: uuidv4(),
+    sequenceOrder: 1,
+    specialty: raw.specialty || "general",
+    diagnosis: oldDiagnosis
+      ? { snomedCtCode: oldDiagnosis.snomedCtCode, displayName: oldDiagnosis.displayName, date: oldDiagnosis.date }
+      : undefined,
+    diagnosisPicklistId: raw.diagnosisPicklistId || undefined,
+    diagnosisStagingSelections: raw.diagnosisStagingSelections || undefined,
+    diagnosisClinicalDetails: oldDiagnosis?.clinicalDetails || undefined,
+    procedureSuggestionSource: raw.procedureSuggestionSource || undefined,
+    pathologicalDiagnosis: raw.pathologicalDiagnosis || undefined,
+    fractures: raw.fractures || undefined,
+    procedures: raw.procedures || [],
+  };
+
+  const migrated: any = { ...raw, diagnosisGroups: [group] };
+  delete migrated.preManagementDiagnosis;
+  delete migrated.finalDiagnosis;
+  delete migrated.pathologicalDiagnosis;
+  delete migrated.diagnosisPicklistId;
+  delete migrated.diagnosisStagingSelections;
+  delete migrated.procedureSuggestionSource;
+  delete migrated.fractures;
+  delete migrated.procedures;
+
+  return migrated as Case;
+}
+```
+
+Then update `client/lib/storage.ts`:
+- Import `migrateCase` from `./migration`
+- In the `getCase()` function, after parsing the decrypted JSON, wrap the result: `return migrateCase(parsed);`
+- In any function that loads multiple cases (e.g., where cases are loaded for the dashboard), also apply `migrateCase()` to each loaded case.
+
+### Step 3: Create `client/components/DiagnosisGroupEditor.tsx`
+
+This is the core new component. It encapsulates the entire diagnosis→staging→procedures flow that currently lives in CaseFormScreen.
+
+**Extract these sections from CaseFormScreen into DiagnosisGroupEditor:**
+- Lines ~1144–1152: DiagnosisPicker
+- Lines ~1154–1216: Fracture checkbox + wizard
+- Lines ~1218–1225: SnomedSearchPicker for diagnosis
+- Lines ~1227–1252: Staging pickers
+- Lines ~1254–1261: ProcedureSuggestions toggle chips
+- Lines ~1263–1278: DiagnosisClinicalFields
+- Lines ~1280–1309: Procedures list (ProcedureEntryCard loop + "Add Another Procedure" button)
+
+**Extract these handlers from CaseFormScreen into DiagnosisGroupEditor:**
+- `handleDiagnosisSelect` (line ~793)
+- `handleStagingChangeForSuggestions` (line ~821)
+- `handleToggleProcedureSuggestion` (line ~875)
+- `buildDefaultProcedures` (line ~259)
+- `addProcedure`, `removeProcedure`, `updateProcedure`, `moveProcedureUp`, `moveProcedureDown`
+- `handleFractureCheckboxToggle`, `handleFractureWizardSave`, `handleFractureWizardClose`
+
+**Props interface:**
+```typescript
+interface DiagnosisGroupEditorProps {
+  group: DiagnosisGroup;
+  index: number;
+  isOnly: boolean;
+  onChange: (updatedGroup: DiagnosisGroup) => void;
+  onDelete: () => void;
+}
+```
+
+**Component structure:**
+1. Manage internal state for the diagnosis/procedures flow (selectedDiagnosis, primaryDiagnosis, stagingValues, procedures, fractures, etc.)
+2. Initialize internal state from `group` prop on mount
+3. Call `onChange()` with the updated DiagnosisGroup whenever state changes significantly (diagnosis selected, procedure added/removed, staging changed)
+4. **Group header card:** Show "Diagnosis Group {index + 1}" title. For groups where index > 0, add a specialty picker (dropdown of all 8 specialties) so the user can select a different specialty. For groups where `isOnly` is false, show a delete button (trash icon).
+5. Render the same sub-components in the same order as current CaseFormScreen.
+
+**Important: when specialty changes on a non-primary group**, clear the diagnosis, staging, and procedures (fresh start for the new specialty). The specialty picker should only appear on groups with index > 0 — the first group always uses the case-level specialty from the route param.
+
+**For the `onChange` callback**, assemble the DiagnosisGroup from internal state:
+```typescript
+const assembleGroup = (): DiagnosisGroup => ({
+  id: group.id,
+  sequenceOrder: group.sequenceOrder,
+  specialty: groupSpecialty,
+  diagnosis: primaryDiagnosis
+    ? { snomedCtCode: primaryDiagnosis.conceptId, displayName: primaryDiagnosis.term }
+    : (diagnosis.trim() ? { displayName: diagnosis.trim() } : undefined),
+  diagnosisPicklistId: selectedDiagnosis?.id || undefined,
+  diagnosisStagingSelections: Object.keys(stagingValues).length > 0 ? stagingValues : undefined,
+  diagnosisClinicalDetails: Object.keys(diagnosisClinicalDetails).length > 0 ? diagnosisClinicalDetails : undefined,
+  procedureSuggestionSource: selectedDiagnosis ? "picklist" : "manual",
+  fractures: fractures.length > 0 ? fractures : undefined,
+  procedures,
+});
+```
+
+Call `onChange(assembleGroup())` in a `useEffect` that watches the relevant state variables.
+
+### Step 4: Refactor CaseFormScreen
+
+**Remove state variables** that moved to DiagnosisGroupEditor:
+- `procedures`, `selectedDiagnosis`, `primaryDiagnosis`, `diagnosis`
+- `diagnosisStaging`, `stagingValues`, `selectedSuggestionIds`
+- `fractures`, `diagnosisClinicalDetails`, `isFractureCase`
+- `snomedSuggestion`, `showFractureWizardFromCheckbox`, `procedureCategory`
+
+**Remove handler functions** that moved to DiagnosisGroupEditor:
+- `handleDiagnosisSelect`, `handleStagingChangeForSuggestions`, `handleToggleProcedureSuggestion`
+- `buildDefaultProcedures`, `addProcedure`, `removeProcedure`, `updateProcedure`, `moveProcedureUp`, `moveProcedureDown`
+- `handleFractureCheckboxToggle`, `handleFractureWizardSave`, `handleFractureWizardClose`
+
+**Add new state:**
+```typescript
+const [diagnosisGroups, setDiagnosisGroups] = useState<DiagnosisGroup[]>([
+  {
+    id: uuidv4(),
+    sequenceOrder: 1,
+    specialty,
+    procedures: [{
+      id: uuidv4(),
+      sequenceOrder: 1,
+      procedureName: PROCEDURE_TYPES[specialty]?.[0] || "",
+      specialty,
+      surgeonRole: "PS",
+    }],
+  },
+]);
+```
+
+**Replace the JSX** from the current "Primary Diagnosis" SectionHeader through the end of "Procedures Performed" section (the "Add Another Procedure" button) with:
+
+```tsx
+<SectionHeader title="Diagnosis & Procedures" />
+
+{diagnosisGroups.map((group, idx) => (
+  <DiagnosisGroupEditor
+    key={group.id}
+    group={group}
+    index={idx}
+    isOnly={diagnosisGroups.length === 1}
+    onChange={(updated) => {
+      setDiagnosisGroups(prev =>
+        prev.map(g => g.id === updated.id ? updated : g)
+      );
+    }}
+    onDelete={() => {
+      setDiagnosisGroups(prev => {
+        const filtered = prev.filter(g => g.id !== group.id);
+        return filtered.map((g, i) => ({ ...g, sequenceOrder: i + 1 }));
+      });
+    }}
+  />
+))}
+
+<Pressable
+  style={[styles.addButton, { borderColor: theme.link }]}
+  onPress={() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setDiagnosisGroups(prev => [
+      ...prev,
+      {
+        id: uuidv4(),
+        sequenceOrder: prev.length + 1,
+        specialty,
+        procedures: [{
+          id: uuidv4(),
+          sequenceOrder: 1,
+          procedureName: "",
+          specialty,
+          surgeonRole: "PS",
+        }],
+      },
+    ]);
+  }}
+>
+  <Feather name="plus" size={18} color={theme.link} />
+  <ThemedText style={[styles.addButtonText, { color: theme.link }]}>
+    Add Diagnosis Group
+  </ThemedText>
+</Pressable>
+```
+
+**Update `handleSave()`:**
+In the casePayload object:
+- ADD: `diagnosisGroups,`
+- REMOVE: `preManagementDiagnosis: ...`, `finalDiagnosis: ...`, `diagnosisPicklistId: ...`, `diagnosisStagingSelections: ...`, `procedureSuggestionSource: ...`, `fractures: ...`, `procedures: ...`
+- UPDATE: `procedureType: diagnosisGroups[0]?.procedures[0]?.procedureName || "",`
+- The `snomedProcedure` and `procedureCode` logic (lines ~923-926) should use the first group's first procedure: `findSnomedProcedure(diagnosisGroups[0]?.procedures[0]?.procedureName || "", specialty)`
+
+**Update edit mode loading (`loadExistingCase`):**
+Replace the old diagnosis/procedures loading (lines ~467, ~500-524) with:
+```typescript
+if (caseData.diagnosisGroups) {
+  setDiagnosisGroups(caseData.diagnosisGroups);
+}
+```
+Remove the old lines that set `setProcedures`, `setPrimaryDiagnosis`, `setSelectedDiagnosis`, `setStagingValues`, `setFractures`, `setDiagnosis`, `setDiagnosisClinicalDetails`, `setSelectedSuggestionIds`.
+
+**Update draft auto-save:**
+Replace the old diagnosis/procedure fields in the draft object with `diagnosisGroups`. Replace the old draft loading with setting `diagnosisGroups` from the draft.
+
+**Update `showInjuryDate` derivation:**
+Change from `specialty === "hand_surgery" || specialty === "orthoplastic"` to:
+```typescript
+const showInjuryDate = admissionUrgency === "acute" || diagnosisGroups.some(g => g.specialty === "hand_surgery" || g.specialty === "orthoplastic");
+```
+
+**Update `hasFractureSubcategory`:** Remove this — it's now handled per-group inside DiagnosisGroupEditor.
+
+### Step 5: Update CaseDetailScreen
+
+**Case title (line ~371):**
+Change `caseData.preManagementDiagnosis?.displayName || caseData.procedureType` to use `getPrimaryDiagnosisName(caseData) || caseData.procedureType`. Import `getPrimaryDiagnosisName` from `@/types/case`.
+
+**Diagnosis section (lines ~621-651):**
+Replace the flat `preManagementDiagnosis` / `finalDiagnosis` display with iteration over `caseData.diagnosisGroups`. Each group should show:
+- Specialty badge
+- Diagnosis name + SNOMED code
+- Any staging selections
+- Any fracture classifications
+- Procedures in that group (with their SNOMED codes)
+
+**Procedures section (lines ~414+):**
+Replace `caseData.procedures?.map(...)` with iteration over diagnosis groups. Use `getAllProcedures(caseData)` if a flat list is needed, or iterate per-group for grouped display.
+
+**Update `hasDiagnoses` (line ~349):**
+Change to: `const hasDiagnoses = caseData.diagnosisGroups?.some(g => g.diagnosis);`
+
+**Update `hasProcedures` (line ~346):**
+Change to: `const hasProcedures = caseData.diagnosisGroups?.some(g => g.procedures.length > 0);`
+
+**Update `procedureName` and `diagnosisName` for free flap detection (lines ~223-224):**
+```typescript
+const procedureName = getAllProcedures(caseData)[0]?.procedureName?.toLowerCase() || "";
+const diagnosisName = getPrimaryDiagnosisName(caseData)?.toLowerCase() || "";
+```
+
+### Step 6: Update CaseCard
+
+**Subtitle (lines ~60-61):**
+Change from `caseData.preManagementDiagnosis?.displayName || caseData.finalDiagnosis?.displayName` to `getPrimaryDiagnosisName(caseData)`. Import `getPrimaryDiagnosisName` from `@/types/case`.
+
+### Step 7: Update statistics.ts
+
+**`filterCases` function:**
+Change the specialty filter from:
+```typescript
+if (filters.specialty !== "all" && c.specialty !== filters.specialty) { return false; }
+```
+to:
+```typescript
+if (filters.specialty !== "all") {
+  const caseSpecialties = getCaseSpecialties(c);
+  if (!caseSpecialties.includes(filters.specialty)) { return false; }
+}
+```
+Import `getCaseSpecialties` from `@/types/case`.
+
+**Anywhere `c.procedures` is referenced**, replace with `getAllProcedures(c)`. Search the file for `.procedures` to find all occurrences.
+
+### Step 8: Test
+
+1. **New single-group case:** Create a case normally. It should work identically to before — same UI flow, same saved data structure.
+2. **Add second group:** Click "Add Diagnosis Group". A new card should appear with specialty picker. Select a different specialty, pick a diagnosis, add procedures.
+3. **Save and re-open:** Save the multi-group case. Re-open in edit mode. Both groups should load correctly with all their data.
+4. **Old case migration:** Open any existing case in edit mode. It should auto-migrate and display correctly.
+5. **Dashboard filtering:** A multi-specialty case should appear under both specialty filters on the dashboard.
+6. **Case detail view:** Should show procedures grouped by diagnosis group.
+
+## Files to modify (in order)
+
+1. `client/types/case.ts` — types
+2. `client/lib/migration.ts` — NEW file
+3. `client/lib/storage.ts` — wire migration
+4. `client/components/DiagnosisGroupEditor.tsx` — NEW component
+5. `client/screens/CaseFormScreen.tsx` — major refactor
+6. `client/screens/CaseDetailScreen.tsx` — display updates
+7. `client/components/CaseCard.tsx` — minor
+8. `client/lib/statistics.ts` — filtering

@@ -1,13 +1,19 @@
 /**
  * General Plastics Diagnosis Picklist
  *
- * ~18 structured diagnoses (excluding skin cancer — handled by skinCancerDiagnoses.ts)
- * covering ~80% of general plastics non-skin-cancer cases.
+ * ~27 structured diagnoses covering ~85% of general plastics cases.
+ * Now includes skin cancer diagnoses (previously only in skinCancerDiagnoses.ts).
+ *
+ * Skin cancer entries use the same SNOMED CT codes as skinCancerDiagnoses.ts
+ * and set hasEnhancedHistology: true so the enhanced histology workflow
+ * (BCC subtypes, SCC differentiation, melanoma Breslow/AJCC staging)
+ * can be triggered from the DiagnosisPicker flow.
  *
  * Includes staging-conditional logic for:
- * - Pressure injuries (NPUAP staging — already in diagnosisStagingConfig.ts)
- * - Hidradenitis suppurativa (Hurley staging — NEW)
- * - Lymphoedema (ISL staging — NEW)
+ * - Melanoma (Breslow thickness → SLNB conditional on ≥0.8mm)
+ * - Pressure injuries (NPUAP staging — in diagnosisStagingConfig.ts)
+ * - Hidradenitis suppurativa (Hurley staging)
+ * - Lymphoedema (ISL staging)
  *
  * SNOMED CT codes are from the Clinical Finding hierarchy (<<404684003).
  * Procedure suggestion IDs reference ProcedurePicklistEntry.id values.
@@ -16,6 +22,279 @@
 import type { DiagnosisPicklistEntry } from "@/types/diagnosis";
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// SKIN CANCER — trunk / limbs (non-H&N sites)
+// H&N skin cancers are in headNeckDiagnoses.ts with site-specific reconstruction.
+// These share SNOMED codes with skinCancerDiagnoses.ts and set
+// hasEnhancedHistology: true so the histology overlay is available.
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const GEN_DX_SKIN_CANCER: DiagnosisPicklistEntry[] = [
+  {
+    id: "gen_dx_bcc",
+    displayName: "Basal cell carcinoma (BCC)",
+    shortName: "BCC",
+    snomedCtCode: "254701007",
+    snomedCtDisplay: "Basal cell carcinoma of skin (disorder)",
+    specialty: "general",
+    subcategory: "Skin Cancer",
+    clinicalGroup: "oncological",
+    hasStaging: false,
+    hasEnhancedHistology: true,
+    searchSynonyms: ["BCC", "basal cell", "rodent ulcer", "basal cell carcinoma"],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "gen_skin_bcc_excision_body",
+        displayName: "BCC excision — trunk / limbs",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "gen_skin_biopsy_punch",
+        displayName: "Skin biopsy — punch / incisional",
+        isDefault: false,
+        sortOrder: 2,
+      },
+      {
+        procedurePicklistId: "gen_skin_shave_curette",
+        displayName: "Shave excision / curettage",
+        isDefault: false,
+        sortOrder: 3,
+      },
+    ],
+    sortOrder: 1,
+  },
+  {
+    id: "gen_dx_scc",
+    displayName: "Squamous cell carcinoma (SCC)",
+    shortName: "SCC",
+    snomedCtCode: "254651007",
+    snomedCtDisplay: "Squamous cell carcinoma of skin (disorder)",
+    specialty: "general",
+    subcategory: "Skin Cancer",
+    clinicalGroup: "oncological",
+    hasStaging: false,
+    hasEnhancedHistology: true,
+    searchSynonyms: ["SCC", "squamous cell", "cutaneous SCC", "cSCC"],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "gen_skin_scc_excision_body",
+        displayName: "SCC excision — trunk / limbs",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "gen_mel_slnb_body",
+        displayName: "Sentinel lymph node biopsy (high-risk SCC)",
+        isDefault: false,
+        sortOrder: 2,
+      },
+      {
+        procedurePicklistId: "gen_skin_biopsy_punch",
+        displayName: "Skin biopsy — punch / incisional",
+        isDefault: false,
+        sortOrder: 3,
+      },
+    ],
+    sortOrder: 2,
+  },
+  {
+    id: "gen_dx_melanoma",
+    displayName: "Melanoma",
+    shortName: "Melanoma",
+    snomedCtCode: "93655004",
+    snomedCtDisplay: "Malignant melanoma of skin (disorder)",
+    specialty: "general",
+    subcategory: "Skin Cancer",
+    clinicalGroup: "oncological",
+    hasStaging: true,
+    hasEnhancedHistology: true,
+    searchSynonyms: ["melanoma", "malignant melanoma", "MM", "WLE", "wide local excision"],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "gen_mel_wle_body",
+        displayName: "Melanoma wide local excision — trunk / limbs",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "gen_mel_slnb_body",
+        displayName: "Sentinel lymph node biopsy",
+        isDefault: false,
+        isConditional: true,
+        conditionDescription: "For Breslow ≥ 0.8 mm",
+        conditionStagingMatch: {
+          stagingSystemName: "Breslow Thickness",
+          matchValues: ["0.81-1.0", "1.01-2.0", "2.01-4.0", ">4.0"],
+        },
+        sortOrder: 2,
+      },
+      {
+        procedurePicklistId: "gen_mel_clnd",
+        displayName: "Completion lymph node dissection",
+        isDefault: false,
+        sortOrder: 3,
+      },
+      {
+        procedurePicklistId: "gen_mel_in_transit_excision",
+        displayName: "In-transit metastasis excision",
+        isDefault: false,
+        sortOrder: 4,
+      },
+    ],
+    sortOrder: 3,
+  },
+  {
+    id: "gen_dx_melanoma_primary",
+    displayName: "Melanoma — primary excision biopsy",
+    shortName: "Melanoma biopsy",
+    snomedCtCode: "93655004",
+    snomedCtDisplay: "Malignant melanoma of skin (disorder)",
+    specialty: "general",
+    subcategory: "Skin Cancer",
+    clinicalGroup: "oncological",
+    hasStaging: false,
+    hasEnhancedHistology: true,
+    searchSynonyms: ["melanoma excision biopsy", "suspicious mole excision", "pigmented lesion"],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "gen_mel_excision_body",
+        displayName: "Melanoma excision — trunk / limbs (primary)",
+        isDefault: true,
+        sortOrder: 1,
+      },
+    ],
+    sortOrder: 4,
+  },
+  {
+    id: "gen_dx_merkel_cell",
+    displayName: "Merkel cell carcinoma (MCC)",
+    shortName: "MCC",
+    snomedCtCode: "253001006",
+    snomedCtDisplay: "Merkel cell carcinoma of skin (disorder)",
+    specialty: "general",
+    subcategory: "Skin Cancer",
+    clinicalGroup: "oncological",
+    hasStaging: true,
+    hasEnhancedHistology: true,
+    searchSynonyms: ["Merkel cell", "MCC", "neuroendocrine carcinoma skin"],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "gen_mel_merkel_excision",
+        displayName: "Merkel cell carcinoma excision",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "gen_mel_slnb_body",
+        displayName: "Sentinel lymph node biopsy",
+        isDefault: true,
+        sortOrder: 2,
+      },
+    ],
+    sortOrder: 5,
+  },
+  {
+    id: "gen_dx_bowens",
+    displayName: "Bowen's disease (SCC in situ)",
+    shortName: "Bowen's",
+    snomedCtCode: "92579001",
+    snomedCtDisplay: "Squamous cell carcinoma in situ of skin (disorder)",
+    specialty: "general",
+    subcategory: "Skin Cancer",
+    clinicalGroup: "oncological",
+    hasStaging: false,
+    hasEnhancedHistology: true,
+    searchSynonyms: ["Bowen's", "Bowen disease", "SCC in situ", "intraepidermal SCC"],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "gen_skin_scc_excision_body",
+        displayName: "Excision",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "gen_skin_shave_curette",
+        displayName: "Shave excision / curettage",
+        isDefault: false,
+        sortOrder: 2,
+      },
+    ],
+    sortOrder: 6,
+  },
+  {
+    id: "gen_dx_actinic_keratosis",
+    displayName: "Actinic keratosis",
+    shortName: "AK",
+    snomedCtCode: "396233003",
+    snomedCtDisplay: "Actinic keratosis (disorder)",
+    specialty: "general",
+    subcategory: "Skin Cancer",
+    clinicalGroup: "oncological",
+    hasStaging: false,
+    hasEnhancedHistology: false,
+    searchSynonyms: ["actinic keratosis", "AK", "solar keratosis", "sun spot"],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "gen_skin_shave_curette",
+        displayName: "Shave excision / curettage",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "gen_skin_biopsy_punch",
+        displayName: "Skin biopsy — punch / incisional",
+        isDefault: false,
+        sortOrder: 2,
+      },
+    ],
+    sortOrder: 7,
+  },
+  {
+    id: "gen_dx_keratoacanthoma",
+    displayName: "Keratoacanthoma",
+    shortName: "KA",
+    snomedCtCode: "78209005",
+    snomedCtDisplay: "Keratoacanthoma (disorder)",
+    specialty: "general",
+    subcategory: "Skin Cancer",
+    clinicalGroup: "oncological",
+    hasStaging: false,
+    hasEnhancedHistology: true,
+    searchSynonyms: ["keratoacanthoma", "KA", "well-differentiated SCC"],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "gen_skin_scc_excision_body",
+        displayName: "Excision",
+        isDefault: true,
+        sortOrder: 1,
+      },
+    ],
+    sortOrder: 8,
+  },
+  {
+    id: "gen_dx_dfsp",
+    displayName: "Dermatofibrosarcoma protuberans (DFSP)",
+    shortName: "DFSP",
+    snomedCtCode: "404037006",
+    snomedCtDisplay: "Dermatofibrosarcoma protuberans (disorder)",
+    specialty: "general",
+    subcategory: "Skin Cancer",
+    clinicalGroup: "oncological",
+    hasStaging: false,
+    hasEnhancedHistology: true,
+    searchSynonyms: ["DFSP", "dermatofibrosarcoma", "protuberans"],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "gen_mel_dfsp_excision",
+        displayName: "DFSP wide excision",
+        isDefault: true,
+        sortOrder: 1,
+      },
+    ],
+    sortOrder: 9,
+  },
+];
+
 // BENIGN LESIONS
 // ═══════════════════════════════════════════════════════════════════════════════
 
@@ -228,7 +507,7 @@ const GEN_DX_SCAR_WOUND: DiagnosisPicklistEntry[] = [
     searchSynonyms: ["pilonidal", "sacral sinus", "natal cleft", "pilonidal cyst"],
     suggestedProcedures: [
       {
-        procedurePicklistId: "gen_other_pilonidal",
+        procedurePicklistId: "gen_other_pilonidal_excision",
         displayName: "Pilonidal sinus excision + closure / flap",
         isDefault: true,
         sortOrder: 1,
@@ -611,6 +890,7 @@ const GEN_DX_SPECIALIST: DiagnosisPicklistEntry[] = [
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export const GENERAL_DIAGNOSES: DiagnosisPicklistEntry[] = [
+  ...GEN_DX_SKIN_CANCER,
   ...GEN_DX_BENIGN,
   ...GEN_DX_SCAR_WOUND,
   ...GEN_DX_PRESSURE,
