@@ -1,0 +1,833 @@
+# Phase 3: Hand Trauma Structure Picker
+
+## Clinical Problem
+
+Hand trauma cases are uniquely complex to log. A single laceration can injure 3–5 structures (tendons, nerves, arteries) across multiple digits, each requiring its own coded procedure. A spaghetti wrist may involve 10+ individual repairs. Currently the surgeon must manually add each procedure one at a time — slow, error-prone, and clinically unnatural.
+
+## Solution
+
+A **zone-and-digit-driven structure picker** that activates inside any hand surgery trauma DiagnosisGroup. The surgeon selects injured digits, then checks which structures are damaged. Each checked structure auto-generates a procedure entry with the correct SNOMED code and zone/structure modifiers pre-filled.
+
+**Data model impact: None.** All data flows into the existing DiagnosisGroup → procedures[] structure. The picker is purely a UI accelerator that produces the same CaseProcedure entries the surgeon would have created manually.
+
+-----
+
+## 1. Complete Structure Inventory
+
+### 1.1 Flexor Tendons — Verdan Zones
+
+|Zone|Anatomy (Digits II–V)                                   |
+|----|--------------------------------------------------------|
+|I   |Distal to FDS insertion (FDP only)                      |
+|II  |A1 pulley to FDS insertion (“no man’s land” — FDP + FDS)|
+|III |Palm / lumbrical origin                                 |
+|IV  |Carpal tunnel                                           |
+|V   |Forearm / wrist                                         |
+
+|Zone|Anatomy (Thumb)                      |
+|----|-------------------------------------|
+|T1  |Distal to IP joint (FPL)             |
+|T2  |A1 pulley to IP joint (FPL)          |
+|T3  |Thenar eminence (FPL)                |
+|—   |Zones IV and V are shared with digits|
+
+**Tendons per digit:**
+
+|Digit       |Tendons available|
+|------------|-----------------|
+|I (Thumb)   |FPL              |
+|II (Index)  |FDP, FDS         |
+|III (Middle)|FDP, FDS         |
+|IV (Ring)   |FDP, FDS         |
+|V (Little)  |FDP, FDS         |
+
+### 1.2 Extensor Tendons — Zones I–VIII (digits), TI–TV (thumb)
+
+|Zone|Anatomy (Digits II–V)  |
+|----|-----------------------|
+|I   |DIP joint (mallet)     |
+|II  |Middle phalanx         |
+|III |PIP joint (boutonnière)|
+|IV  |Proximal phalanx       |
+|V   |MCP joint              |
+|VI  |Dorsal metacarpal      |
+|VII |Wrist / retinaculum    |
+|VIII|Distal forearm         |
+
+|Zone|Anatomy (Thumb)    |
+|----|-------------------|
+|TI  |IP joint           |
+|TII |Proximal phalanx   |
+|TIII|MCP joint          |
+|TIV |Metacarpal         |
+|TV  |Wrist / retinaculum|
+
+**Extensor tendons per digit:**
+
+|Digit       |Tendons available|
+|------------|-----------------|
+|I (Thumb)   |EPL, EPB, APL    |
+|II (Index)  |EDC, EIP         |
+|III (Middle)|EDC              |
+|IV (Ring)   |EDC              |
+|V (Little)  |EDC, EDM         |
+
+### 1.3 Nerves
+
+**Digital nerves (N1–N10):**
+
+|Code|Structure                    |
+|----|-----------------------------|
+|N1  |Radial digital nerve — Thumb |
+|N2  |Ulnar digital nerve — Thumb  |
+|N3  |Radial digital nerve — Index |
+|N4  |Ulnar digital nerve — Index  |
+|N5  |Radial digital nerve — Middle|
+|N6  |Ulnar digital nerve — Middle |
+|N7  |Radial digital nerve — Ring  |
+|N8  |Ulnar digital nerve — Ring   |
+|N9  |Radial digital nerve — Little|
+|N10 |Ulnar digital nerve — Little |
+
+**Named proximal nerves:**
+
+- Median nerve
+- Ulnar nerve
+- Radial nerve / PIN / SRN
+- Dorsal branch of ulnar nerve
+
+### 1.4 Arteries
+
+**Digital arteries (A1–A10):**
+
+|Code|Structure                     |
+|----|------------------------------|
+|A1  |Radial digital artery — Thumb |
+|A2  |Ulnar digital artery — Thumb  |
+|A3  |Radial digital artery — Index |
+|A4  |Ulnar digital artery — Index  |
+|A5  |Radial digital artery — Middle|
+|A6  |Ulnar digital artery — Middle |
+|A7  |Radial digital artery — Ring  |
+|A8  |Ulnar digital artery — Ring   |
+|A9  |Radial digital artery — Little|
+|A10 |Ulnar digital artery — Little |
+
+**Named proximal arteries:**
+
+- Radial artery
+- Ulnar artery
+- Superficial palmar arch
+- Deep palmar arch
+
+### 1.5 Ligaments
+
+- PIP collateral ligament (radial or ulnar, per digit II–V)
+- MCP I (thumb) UCL
+- MCP I (thumb) RCL
+
+### 1.6 Other Structures
+
+- Bone → links to existing AO fracture wizard (already built)
+- Nail bed
+- Skin loss → triggers flap/graft procedure suggestions
+- Volar plate (PIP)
+
+-----
+
+## 2. UI Design
+
+### 2.1 Activation
+
+The structure picker appears inside `DiagnosisGroupEditor` when:
+
+- `specialty === "hand_surgery"` AND
+- `selectedDiagnosis?.clinicalGroup === "trauma"` (all hand trauma diagnoses are tagged this way)
+
+It renders **between** the DiagnosisPicker/SnomedSearchPicker and the Procedures list — right where the surgeon’s mental model shifts from “what happened” to “what I did.”
+
+### 2.2 Layout
+
+```
+┌─────────────────────────────────────────────────┐
+│  Diagnosis: Flexor tendon laceration             │
+│  [DiagnosisPicker / SnomedSearchPicker - above]  │
+├─────────────────────────────────────────────────┤
+│                                                   │
+│  INJURED STRUCTURES                               │
+│  ─────────────────                                │
+│                                                   │
+│  Affected digits:                                 │
+│  ┌────┐ ┌────┐ ┌────┐ ┌────┐ ┌────┐             │
+│  │ I  │ │ II │ │III │ │ IV │ │ V  │             │
+│  └────┘ └────┘ └────┘ └────┘ └────┘             │
+│   (toggle chips, multi-select)                    │
+│                                                   │
+│  ┌──── Flexor Tendons ────────────────────────┐  │
+│  │ Zone: [II ▼]                                │  │
+│  │                                              │  │
+│  │ Digit II:  ☑ FDP  ☑ FDS                    │  │
+│  │ Digit III: ☑ FDP  ☐ FDS                    │  │
+│  └──────────────────────────────────────────────┘  │
+│                                                   │
+│  ┌──── Extensor Tendons ──────────────────────┐  │
+│  │ Zone: [IV ▼]                                │  │
+│  │                                              │  │
+│  │ Digit III: ☑ EDC                            │  │
+│  └──────────────────────────────────────────────┘  │
+│                                                   │
+│  ┌──── Nerves ────────────────────────────────┐  │
+│  │ ☑ N3 (Radial digital — Index)              │  │
+│  │ ☑ N4 (Ulnar digital — Index)               │  │
+│  │ ☑ N5 (Radial digital — Middle)             │  │
+│  │ ☐ Median  ☐ Ulnar  ☐ Radial  ☐ DBUN       │  │
+│  └──────────────────────────────────────────────┘  │
+│                                                   │
+│  ┌──── Arteries ──────────────────────────────┐  │
+│  │ ☑ A3 (Radial digital — Index)              │  │
+│  │ ☐ Radial  ☐ Ulnar  ☐ Superficial arch     │  │
+│  └──────────────────────────────────────────────┘  │
+│                                                   │
+│  ┌──── Other ─────────────────────────────────┐  │
+│  │ ☐ Bone (→ AO wizard)  ☐ Nail bed           │  │
+│  │ ☐ Skin loss  ☐ Volar plate (PIP)           │  │
+│  │ ☐ PIP collateral ligament                  │  │
+│  │ ☐ MCP I (thumb) collateral ligament        │  │
+│  └──────────────────────────────────────────────┘  │
+│                                                   │
+│  ── Generated Procedures (5) ────────────────── │
+│  [ProcedureEntryCard: Flexor tendon repair ×3]  │
+│  [ProcedureEntryCard: Digital nerve repair ×2]  │
+│  [ProcedureEntryCard: Digital artery repair ×1] │
+│  [+ Add Another Procedure]                       │
+│                                                   │
+├─────────────────────────────────────────────────┤
+│  [Clinical fields, staging, etc. - below]        │
+└─────────────────────────────────────────────────┘
+```
+
+### 2.3 Interaction Flow
+
+**Step 1: Select affected digits**
+Toggle chips for I–V (multi-select). When digits are selected, the structure sections filter to show only relevant nerves (N codes) and arteries (A codes) for those digits.
+
+**Step 2: Expand structure categories**
+Accordion sections for Flexor Tendons, Extensor Tendons, Nerves, Arteries, Other. Initially collapsed except when the selected diagnosis implies a category (e.g., “Flexor tendon laceration” auto-expands Flexor Tendons).
+
+**Step 3: Fill in per-category details**
+
+*Flexor Tendons:*
+
+- Zone picker (dropdown: I–V for digits, T1–T3 for thumb)
+- Per-digit tendon checkboxes (auto-filtered to selected digits)
+- Zone can be mixed per digit if needed (uncommon — default to one zone for all)
+
+*Extensor Tendons:*
+
+- Zone picker (dropdown: I–VIII for digits, TI–TV for thumb)
+- Per-digit tendon checkboxes with correct tendons (EDC for all, EIP for index, EDM for little, EPL/EPB/APL for thumb)
+
+*Nerves:*
+
+- Digital nerves auto-filtered to selected digits (e.g., selecting digit II shows N3, N4)
+- Proximal nerves always visible: Median, Ulnar, Radial/PIN/SRN, Dorsal branch of ulnar nerve
+
+*Arteries:*
+
+- Digital arteries auto-filtered to selected digits
+- Proximal arteries always visible: Radial, Ulnar, Superficial arch, Deep arch
+
+*Other:*
+
+- Bone → opens existing FractureClassificationWizard
+- Nail bed → simple checkbox
+- Skin loss → checkbox, triggers soft tissue coverage procedure suggestions
+- Volar plate → per-digit PIP checkbox
+- PIP collateral ligament → per-digit checkbox with radial/ulnar side
+- MCP I collateral → UCL/RCL checkbox (visible only when digit I selected)
+
+**Step 4: Auto-generate procedures**
+Every checked structure instantly creates a CaseProcedure in the group’s procedure list. The generated procedure includes:
+
+- Correct `picklistEntryId` and SNOMED code
+- `notes` field pre-filled with structure detail (e.g., “FDP, Digit II, Zone II”)
+- Default `surgeonRole: "PS"`
+- The surgeon can edit/delete/reorder as usual
+
+### 2.4 Smart Defaults
+
+When the surgeon selects a diagnosis from the picklist, auto-expand and pre-select:
+
+|Diagnosis                       |Auto-expand     |Pre-select                       |
+|--------------------------------|----------------|---------------------------------|
+|Flexor tendon laceration        |Flexor Tendons  |— (need digit + tendon selection)|
+|Extensor tendon laceration      |Extensor Tendons|—                                |
+|Digital nerve laceration        |Nerves          |—                                |
+|Fingertip injury                |Other           |Nail bed                         |
+|Digital amputation (replantable)|All             |—                                |
+|Open fracture of hand           |Other (Bone)    |Opens AO wizard                  |
+
+### 2.5 Spaghetti Wrist Scenario
+
+Diagnosis: “Flexor tendon laceration” (or we add a new “Complex wrist laceration” diagnosis)
+
+1. Digits: ☑ I ☑ II ☑ III ☑ IV ☑ V
+1. Flexor Tendons, Zone V:
+- I: ☑ FPL
+- II: ☑ FDP ☑ FDS
+- III: ☑ FDP ☑ FDS
+- IV: ☑ FDP ☑ FDS
+- V: ☑ FDP ☑ FDS
+1. Nerves: ☑ Median ☑ Ulnar
+1. Arteries: ☑ Ulnar artery
+
+**Auto-generated procedures (12):**
+
+1. FPL tendon repair (Zone V)
+1. Flexor tendon repair — FDP II (Zone V)
+1. Flexor tendon repair — FDS II (Zone V)
+1. Flexor tendon repair — FDP III (Zone V)
+1. Flexor tendon repair — FDS III (Zone V)
+1. Flexor tendon repair — FDP IV (Zone V)
+1. Flexor tendon repair — FDS IV (Zone V)
+1. Flexor tendon repair — FDP V (Zone V)
+1. Flexor tendon repair — FDS V (Zone V)
+1. Median nerve repair
+1. Ulnar nerve repair
+1. Ulnar artery repair
+
+Each as its own ProcedureEntryCard with SNOMED code and zone details pre-filled.
+
+-----
+
+## 3. Data Model
+
+### 3.1 Expanded `HandTraumaDetails` interface
+
+Update in `client/types/case.ts`:
+
+```typescript
+export interface HandTraumaStructure {
+  /** Structure category */
+  category: "flexor_tendon" | "extensor_tendon" | "nerve" | "artery" | "ligament" | "other";
+
+  /** Specific structure identifier.
+   *  Tendons: "FDP", "FDS", "FPL", "EDC", "EIP", "EDM", "EPL", "EPB", "APL"
+   *  Nerves: "N1"–"N10", "median", "ulnar", "radial", "dbun"
+   *  Arteries: "A1"–"A10", "radial", "ulnar", "superficial_arch", "deep_arch"
+   *  Ligaments: "pip_collateral", "mcp1_ucl", "mcp1_rcl"
+   *  Other: "nail_bed", "skin_loss", "volar_plate"
+   */
+  structureId: string;
+
+  /** Human-readable name (e.g., "FDP — Digit II — Zone II") */
+  displayName: string;
+
+  /** Affected digit (I–V) if applicable */
+  digit?: "I" | "II" | "III" | "IV" | "V";
+
+  /** Zone if applicable (flexor: "I"–"V","T1"–"T3"; extensor: "I"–"VIII","TI"–"TV") */
+  zone?: string;
+
+  /** Side for collateral ligaments */
+  side?: "radial" | "ulnar";
+
+  /** The procedure picklist ID that was generated from this structure */
+  generatedProcedurePicklistId?: string;
+
+  /** The generated CaseProcedure ID (links structure to procedure) */
+  generatedProcedureId?: string;
+}
+
+export interface HandTraumaDetails {
+  injuryMechanism?: string;
+
+  /** Digits involved in the injury */
+  affectedDigits?: ("I" | "II" | "III" | "IV" | "V")[];
+
+  /** All injured structures with zone/digit detail */
+  injuredStructures?: HandTraumaStructure[];
+}
+```
+
+### 3.2 Where it lives in DiagnosisGroup
+
+The `HandTraumaDetails` is stored in `diagnosisClinicalDetails` on the DiagnosisGroup. Since `DiagnosisClinicalDetails` currently only has `laterality` and `injuryMechanism`, we extend it:
+
+```typescript
+export interface DiagnosisClinicalDetails {
+  laterality?: Laterality;
+  injuryMechanism?: string;
+
+  /** Hand trauma structure inventory (only for hand_surgery trauma cases) */
+  handTrauma?: HandTraumaDetails;
+}
+```
+
+### 3.3 Procedure generation mapping
+
+Each structure maps to a procedure picklist entry:
+
+|Structure                        |Procedure picklist ID                        |Notes field content                 |
+|---------------------------------|---------------------------------------------|------------------------------------|
+|FDP, digit II, zone II           |`hand_tend_flexor_primary`                   |“FDP — Digit II — Zone II”          |
+|FDS, digit II, zone II           |`hand_tend_flexor_primary`                   |“FDS — Digit II — Zone II”          |
+|FPL, zone T2                     |`hand_tend_fpl_repair`                       |“FPL — Zone T2”                     |
+|EDC, digit III, zone IV          |`hand_tend_extensor_primary`                 |“EDC — Digit III — Zone IV”         |
+|EIP, digit II, zone V            |`hand_tend_extensor_primary`                 |“EIP — Digit II — Zone V”           |
+|EPL, zone TIV                    |`hand_tend_extensor_primary`                 |“EPL — Zone TIV”                    |
+|N3                               |`hand_nerve_digital_repair`                  |“N3 — Radial digital nerve — Index” |
+|Median                           |`hand_nerve_median_repair`                   |—                                   |
+|Ulnar                            |`hand_nerve_ulnar_repair`                    |—                                   |
+|Radial/PIN/SRN                   |`hand_nerve_radial_repair`                   |—                                   |
+|DBUN                             |`hand_nerve_ulnar_repair`*                   |“Dorsal branch of ulnar nerve”      |
+|A3                               |`hand_vasc_digital_artery_repair`**          |“A3 — Radial digital artery — Index”|
+|Radial artery                    |`hand_vasc_radial_artery_repair`**           |—                                   |
+|Ulnar artery                     |`hand_vasc_ulnar_artery_repair`**            |—                                   |
+|Nail bed                         |`hand_cov_nail_bed_repair`                   |—                                   |
+|Skin loss                        |— (manual selection from coverage procedures)|—                                   |
+|Bone                             |— (AO wizard generates fracture entry)       |—                                   |
+|PIP collateral, radial, digit III|`hand_joint_pip_collateral_repair`**         |“PIP radial collateral — Digit III” |
+|MCP I UCL                        |`hand_joint_mcp_collateral_repair`           |“MCP I — UCL”                       |
+|MCP I RCL                        |`hand_joint_mcp_collateral_repair`           |“MCP I — RCL”                       |
+|Volar plate, digit III           |`hand_joint_volar_plate_repair`**            |“Volar plate — Digit III — PIP”     |
+
+* DBUN uses ulnar nerve repair with qualifier in notes (no separate SNOMED code for DBUN repair exists)
+** New procedure picklist entries needed — see Section 4
+
+-----
+
+## 4. New Procedure Picklist Entries Needed
+
+Add to `client/lib/procedurePicklist.ts` in the hand surgery sections:
+
+### 4.1 Vascular Repairs (new subcategory)
+
+```typescript
+const HAND_VASCULAR_PROCEDURES: ProcedurePicklistEntry[] = [
+  {
+    id: "hand_vasc_digital_artery_repair",
+    displayName: "Digital artery repair",
+    snomedCtCode: "3490005",        // VERIFY — Repair of artery of hand (procedure)
+    snomedCtDisplay: "Repair of digital artery (procedure)",
+    specialties: ["hand_surgery"],
+    subcategory: "Vascular Repair",
+    tags: ["microsurgery", "trauma"],
+    sortOrder: 1,
+  },
+  {
+    id: "hand_vasc_radial_artery_repair",
+    displayName: "Radial artery repair",
+    snomedCtCode: "27523000",       // VERIFY — Repair of radial artery
+    snomedCtDisplay: "Repair of radial artery (procedure)",
+    specialties: ["hand_surgery"],
+    subcategory: "Vascular Repair",
+    tags: ["microsurgery", "trauma"],
+    sortOrder: 2,
+  },
+  {
+    id: "hand_vasc_ulnar_artery_repair",
+    displayName: "Ulnar artery repair",
+    snomedCtCode: "74994001",       // VERIFY — Repair of ulnar artery
+    snomedCtDisplay: "Repair of ulnar artery (procedure)",
+    specialties: ["hand_surgery"],
+    subcategory: "Vascular Repair",
+    tags: ["microsurgery", "trauma"],
+    sortOrder: 3,
+  },
+  {
+    id: "hand_vasc_palmar_arch_repair",
+    displayName: "Palmar arch repair",
+    snomedCtCode: "3490005",        // VERIFY — falls back to repair of artery of hand
+    snomedCtDisplay: "Repair of palmar arterial arch (procedure)",
+    specialties: ["hand_surgery"],
+    subcategory: "Vascular Repair",
+    tags: ["microsurgery", "trauma"],
+    sortOrder: 4,
+  },
+];
+```
+
+### 4.2 Additional Joint / Ligament Procedures
+
+```typescript
+{
+  id: "hand_joint_pip_collateral_repair",
+  displayName: "PIP collateral ligament repair",
+  snomedCtCode: "239227006",       // VERIFY — Repair of collateral ligament of finger joint
+  snomedCtDisplay: "Repair of collateral ligament of finger joint (procedure)",
+  specialties: ["hand_surgery"],
+  subcategory: "Joint Procedures",
+  tags: ["trauma"],
+  sortOrder: 15,
+},
+{
+  id: "hand_joint_volar_plate_repair",
+  displayName: "Volar plate repair (PIP)",
+  snomedCtCode: "239227006",       // VERIFY — may share code with collateral repair
+  snomedCtDisplay: "Repair of volar plate of proximal interphalangeal joint (procedure)",
+  specialties: ["hand_surgery"],
+  subcategory: "Joint Procedures",
+  tags: ["trauma"],
+  sortOrder: 16,
+},
+```
+
+### 4.3 DBUN Diagnosis Entry
+
+Add to `client/lib/diagnosisPicklists/handSurgeryDiagnoses.ts` in HAND_DX_NERVE_INJURIES:
+
+```typescript
+{
+  id: "hand_dx_dbun_injury",
+  displayName: "Dorsal branch of ulnar nerve injury",
+  shortName: "DBUN injury",
+  snomedCtCode: "283019007",       // Falls under ulnar nerve injury
+  snomedCtDisplay: "Injury of dorsal branch of ulnar nerve (disorder)",
+  specialty: "hand_surgery",
+  subcategory: "Nerve Injuries",
+  clinicalGroup: "trauma",
+  hasStaging: false,
+  searchSynonyms: ["DBUN", "dorsal ulnar", "dorsal branch", "dorsal sensory ulnar"],
+  suggestedProcedures: [
+    {
+      procedurePicklistId: "hand_nerve_ulnar_repair",
+      displayName: "Ulnar nerve repair",
+      isDefault: true,
+      sortOrder: 1,
+    },
+    {
+      procedurePicklistId: "hand_nerve_neuroma_excision",
+      displayName: "Neuroma excision ± TMR / RPNI",
+      isDefault: false,
+      sortOrder: 2,
+    },
+  ],
+  sortOrder: 5,
+},
+```
+
+### 4.4 Compound Injury Diagnosis Entry
+
+Add to `client/lib/diagnosisPicklists/handSurgeryDiagnoses.ts`:
+
+```typescript
+{
+  id: "hand_dx_complex_laceration",
+  displayName: "Complex hand / wrist laceration",
+  shortName: "Complex laceration",
+  snomedCtCode: "284003005",       // Open wound of hand (disorder)
+  snomedCtDisplay: "Open wound of hand (disorder)",
+  specialty: "hand_surgery",
+  subcategory: "Soft Tissue Injuries",
+  clinicalGroup: "trauma",
+  hasStaging: false,
+  searchSynonyms: [
+    "spaghetti wrist", "complex laceration", "multiple tendon",
+    "multiple structure", "glass injury", "knife wound",
+    "saw injury", "skill saw", "table saw"
+  ],
+  suggestedProcedures: [],  // No default — structure picker drives procedure generation
+  sortOrder: 0,  // Top of soft tissue group
+},
+```
+
+-----
+
+## 5. Component Architecture
+
+### 5.1 New files
+
+```
+client/components/hand-trauma/
+├── HandTraumaStructurePicker.tsx    ← Main container component
+├── DigitSelector.tsx                ← Toggle chips for digits I–V
+├── FlexorTendonSection.tsx          ← Zone picker + per-digit tendon checkboxes
+├── ExtensorTendonSection.tsx        ← Zone picker + per-digit tendon checkboxes
+├── NerveSection.tsx                 ← Digital N1–N10 + proximal nerves
+├── ArterySection.tsx                ← Digital A1–A10 + proximal arteries
+├── LigamentSection.tsx              ← PIP collateral + MCP I collateral
+├── OtherStructuresSection.tsx       ← Bone, nail bed, skin loss, volar plate
+└── structureConfig.ts               ← Static data: digit→nerve mapping, digit→artery mapping,
+                                        digit→tendon mapping, structure→procedure mapping
+```
+
+### 5.2 `HandTraumaStructurePicker` props
+
+```typescript
+interface HandTraumaStructurePickerProps {
+  /** Current hand trauma details (from diagnosisClinicalDetails.handTrauma) */
+  value: HandTraumaDetails;
+
+  /** Callback when structures change */
+  onChange: (details: HandTraumaDetails) => void;
+
+  /** Currently selected diagnosis (to determine smart defaults) */
+  selectedDiagnosis?: DiagnosisPicklistEntry | null;
+
+  /** Current procedures in the group (so we can diff and generate/remove) */
+  procedures: CaseProcedure[];
+
+  /** Callback to update procedure list when structures change */
+  onProceduresChange: (procedures: CaseProcedure[]) => void;
+
+  /** The specialty (always hand_surgery when this renders, but passed for consistency) */
+  specialty: Specialty;
+}
+```
+
+### 5.3 Integration with DiagnosisGroupEditor
+
+Inside `DiagnosisGroupEditor.tsx`, after the diagnosis picker and before the procedures list:
+
+```tsx
+{groupSpecialty === "hand_surgery" && selectedDiagnosis?.clinicalGroup === "trauma" && (
+  <HandTraumaStructurePicker
+    value={diagnosisClinicalDetails?.handTrauma || { affectedDigits: [], injuredStructures: [] }}
+    onChange={(handTrauma) => {
+      setDiagnosisClinicalDetails(prev => ({ ...prev, handTrauma }));
+    }}
+    selectedDiagnosis={selectedDiagnosis}
+    procedures={procedures}
+    onProceduresChange={setProcedures}
+    specialty={groupSpecialty}
+  />
+)}
+```
+
+### 5.4 Procedure generation logic
+
+The `HandTraumaStructurePicker` manages a **bidirectional sync** between `injuredStructures[]` and `procedures[]`:
+
+**When a structure is checked:**
+
+1. Add a `HandTraumaStructure` entry to `injuredStructures`
+1. Look up the mapping in `structureConfig.ts` to get the procedure picklist entry
+1. Create a new `CaseProcedure` with:
+- `id`: new UUID
+- `procedureName`: from picklist entry `displayName`
+- `picklistEntryId`: from mapping
+- `snomedCtCode` / `snomedCtDisplay`: from picklist entry
+- `notes`: structure detail string (e.g., “FDP — Digit II — Zone II”)
+- `specialty`: “hand_surgery”
+- `surgeonRole`: “PS”
+- `tags`: from picklist entry (includes “trauma”)
+1. Link via `generatedProcedureId` on the structure
+1. Call `onProceduresChange` with updated array
+
+**When a structure is unchecked:**
+
+1. Find the `HandTraumaStructure` entry
+1. Use `generatedProcedureId` to find and remove the corresponding CaseProcedure
+1. Remove the structure entry
+1. Call `onProceduresChange` with updated array
+
+**Important: manually added procedures are never touched.** The picker only manages procedures it generated (tracked via `generatedProcedureId`). The surgeon can still add/edit/remove any procedure manually.
+
+### 5.5 `structureConfig.ts` — static data
+
+```typescript
+// Digit to nerve code mapping
+export const DIGIT_NERVE_MAP: Record<string, { radial: string; ulnar: string }> = {
+  "I":   { radial: "N1",  ulnar: "N2" },
+  "II":  { radial: "N3",  ulnar: "N4" },
+  "III": { radial: "N5",  ulnar: "N6" },
+  "IV":  { radial: "N7",  ulnar: "N8" },
+  "V":   { radial: "N9",  ulnar: "N10" },
+};
+
+// Digit to artery code mapping
+export const DIGIT_ARTERY_MAP: Record<string, { radial: string; ulnar: string }> = {
+  "I":   { radial: "A1",  ulnar: "A2" },
+  "II":  { radial: "A3",  ulnar: "A4" },
+  "III": { radial: "A5",  ulnar: "A6" },
+  "IV":  { radial: "A7",  ulnar: "A8" },
+  "V":   { radial: "A9",  ulnar: "A10" },
+};
+
+// Digit to available flexor tendons
+export const DIGIT_FLEXOR_MAP: Record<string, string[]> = {
+  "I":   ["FPL"],
+  "II":  ["FDP", "FDS"],
+  "III": ["FDP", "FDS"],
+  "IV":  ["FDP", "FDS"],
+  "V":   ["FDP", "FDS"],
+};
+
+// Digit to available extensor tendons
+export const DIGIT_EXTENSOR_MAP: Record<string, string[]> = {
+  "I":   ["EPL", "EPB", "APL"],
+  "II":  ["EDC", "EIP"],
+  "III": ["EDC"],
+  "IV":  ["EDC"],
+  "V":   ["EDC", "EDM"],
+};
+
+// Flexor zones by digit type
+export const FLEXOR_ZONES_DIGIT = ["I", "II", "III", "IV", "V"];
+export const FLEXOR_ZONES_THUMB = ["T1", "T2", "T3"];
+// Zones IV and V are shared (carpal tunnel, forearm)
+
+// Extensor zones by digit type
+export const EXTENSOR_ZONES_DIGIT = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII"];
+export const EXTENSOR_ZONES_THUMB = ["TI", "TII", "TIII", "TIV", "TV"];
+
+// Structure → procedure picklist mapping
+export const STRUCTURE_PROCEDURE_MAP: Record<string, string> = {
+  // Flexor tendons
+  "FDP":  "hand_tend_flexor_primary",
+  "FDS":  "hand_tend_flexor_primary",
+  "FPL":  "hand_tend_fpl_repair",
+
+  // Extensor tendons
+  "EDC":  "hand_tend_extensor_primary",
+  "EIP":  "hand_tend_extensor_primary",
+  "EDM":  "hand_tend_extensor_primary",
+  "EPL":  "hand_tend_extensor_primary",
+  "EPB":  "hand_tend_extensor_primary",
+  "APL":  "hand_tend_extensor_primary",
+
+  // Digital nerves
+  "N1": "hand_nerve_digital_repair", "N2": "hand_nerve_digital_repair",
+  "N3": "hand_nerve_digital_repair", "N4": "hand_nerve_digital_repair",
+  "N5": "hand_nerve_digital_repair", "N6": "hand_nerve_digital_repair",
+  "N7": "hand_nerve_digital_repair", "N8": "hand_nerve_digital_repair",
+  "N9": "hand_nerve_digital_repair", "N10": "hand_nerve_digital_repair",
+
+  // Proximal nerves
+  "median":   "hand_nerve_median_repair",
+  "ulnar":    "hand_nerve_ulnar_repair",
+  "radial":   "hand_nerve_radial_repair",
+  "dbun":     "hand_nerve_ulnar_repair",  // DBUN uses ulnar nerve repair
+
+  // Digital arteries
+  "A1": "hand_vasc_digital_artery_repair", "A2": "hand_vasc_digital_artery_repair",
+  "A3": "hand_vasc_digital_artery_repair", "A4": "hand_vasc_digital_artery_repair",
+  "A5": "hand_vasc_digital_artery_repair", "A6": "hand_vasc_digital_artery_repair",
+  "A7": "hand_vasc_digital_artery_repair", "A8": "hand_vasc_digital_artery_repair",
+  "A9": "hand_vasc_digital_artery_repair", "A10": "hand_vasc_digital_artery_repair",
+
+  // Proximal arteries
+  "radial_artery":      "hand_vasc_radial_artery_repair",
+  "ulnar_artery":       "hand_vasc_ulnar_artery_repair",
+  "superficial_arch":   "hand_vasc_palmar_arch_repair",
+  "deep_arch":          "hand_vasc_palmar_arch_repair",
+
+  // Ligaments
+  "pip_collateral":     "hand_joint_pip_collateral_repair",
+  "mcp1_ucl":           "hand_joint_mcp_collateral_repair",
+  "mcp1_rcl":           "hand_joint_mcp_collateral_repair",
+
+  // Other
+  "nail_bed":           "hand_cov_nail_bed_repair",
+  "volar_plate":        "hand_joint_volar_plate_repair",
+  // "skin_loss" → no auto-procedure, opens coverage suggestion picker
+  // "bone" → opens AO fracture wizard (already integrated)
+};
+
+// Human-readable labels for nerve codes
+export const NERVE_LABELS: Record<string, string> = {
+  N1: "Radial digital nerve — Thumb",
+  N2: "Ulnar digital nerve — Thumb",
+  N3: "Radial digital nerve — Index",
+  N4: "Ulnar digital nerve — Index",
+  N5: "Radial digital nerve — Middle",
+  N6: "Ulnar digital nerve — Middle",
+  N7: "Radial digital nerve — Ring",
+  N8: "Ulnar digital nerve — Ring",
+  N9: "Radial digital nerve — Little",
+  N10: "Ulnar digital nerve — Little",
+  median: "Median nerve",
+  ulnar: "Ulnar nerve",
+  radial: "Radial nerve / PIN / SRN",
+  dbun: "Dorsal branch of ulnar nerve",
+};
+
+// Human-readable labels for artery codes
+export const ARTERY_LABELS: Record<string, string> = {
+  A1: "Radial digital artery — Thumb",
+  A2: "Ulnar digital artery — Thumb",
+  A3: "Radial digital artery — Index",
+  A4: "Ulnar digital artery — Index",
+  A5: "Radial digital artery — Middle",
+  A6: "Ulnar digital artery — Middle",
+  A7: "Radial digital artery — Ring",
+  A8: "Ulnar digital artery — Ring",
+  A9: "Radial digital artery — Little",
+  A10: "Ulnar digital artery — Little",
+  radial_artery: "Radial artery",
+  ulnar_artery: "Ulnar artery",
+  superficial_arch: "Superficial palmar arch",
+  deep_arch: "Deep palmar arch",
+};
+```
+
+-----
+
+## 6. Implementation Sequence
+
+### Prerequisites
+
+- Phase 2 (DiagnosisGroup refactor) must be complete — the structure picker lives inside DiagnosisGroupEditor.
+
+### Order
+
+1. **Types** — expand `HandTraumaDetails` and `DiagnosisClinicalDetails` in `client/types/case.ts`
+1. **New procedure entries** — add vascular repairs, PIP collateral, volar plate to `procedurePicklist.ts`
+1. **New diagnosis entries** — add DBUN injury and complex laceration to `handSurgeryDiagnoses.ts`
+1. **Static config** — create `client/components/hand-trauma/structureConfig.ts`
+1. **Sub-components** — build DigitSelector, FlexorTendonSection, ExtensorTendonSection, NerveSection, ArterySection, LigamentSection, OtherStructuresSection
+1. **Main component** — build `HandTraumaStructurePicker.tsx` with procedure generation logic
+1. **Integration** — wire into DiagnosisGroupEditor
+1. **Test** — log a spaghetti wrist, a simple digital laceration, a skill-saw multi-digit injury
+
+-----
+
+## 7. CaseDetailScreen Display
+
+When viewing a case with hand trauma structures, the detail screen should show the structure inventory as a compact summary:
+
+```
+Injured Structures:
+  Digits II, III
+  Flexor: FDP II (Zone II), FDS II (Zone II), FDP III (Zone II)
+  Nerves: N3, N4, N5
+  Arteries: A3
+```
+
+This is rendered from `diagnosisClinicalDetails.handTrauma.injuredStructures[]` — no new data needed.
+
+-----
+
+## 8. Acceptance Criteria
+
+1. Structure picker appears for all hand_surgery trauma diagnoses
+1. Digit selection filters available digital nerves and arteries correctly
+1. Flexor zone picker shows correct tendon options per digit (FPL for thumb, FDP+FDS for II–V)
+1. Extensor zone picker shows correct tendon options per digit (EPL/EPB/APL for thumb, EDC+EIP for index, etc.)
+1. Checking a structure immediately generates a procedure in the procedures list
+1. Unchecking a structure removes the auto-generated procedure
+1. Manually added procedures are not affected by structure picker changes
+1. Spaghetti wrist scenario generates 10+ correctly coded procedures in under 30 seconds
+1. Simple digital laceration (1 tendon, 1 nerve, 1 artery) logs in under 15 seconds
+1. Generated procedures have correct SNOMED codes and descriptive notes fields
+1. AO fracture wizard integrates correctly when “Bone” is checked
+1. Data persists correctly through save/load cycle
+1. Case detail view shows structured injury summary
+
+-----
+
+## Appendix: SNOMED Codes to Verify
+
+These SNOMED CT codes need verification against the browser (https://browser.ihtsdotools.org/):
+
+|Procedure                     |Proposed code|Status|
+|------------------------------|-------------|------|
+|Digital artery repair         |3490005      |VERIFY|
+|Radial artery repair          |27523000     |VERIFY|
+|Ulnar artery repair           |74994001     |VERIFY|
+|Palmar arch repair            |3490005      |VERIFY|
+|PIP collateral ligament repair|239227006    |VERIFY|
+|Volar plate repair (PIP)      |239227006    |VERIFY|
+|DBUN injury (disorder)        |283019007    |VERIFY|
+|Complex laceration of hand    |284003005    |VERIFY|
