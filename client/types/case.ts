@@ -691,6 +691,34 @@ export interface SkinLesionExcisionDetails {
 
 export type ClinicalDetails = FreeFlapDetails | HandTraumaDetails | HandSurgeryDetails | BodyContouringDetails | SkinLesionExcisionDetails | Record<string, unknown>;
 
+// ─── Multi-Lesion Session Types ─────────────────────────────────────────────
+
+export type LesionPathologyType = "bcc" | "scc" | "melanoma" | "benign" | "other";
+
+export type LesionReconstruction =
+  | "primary_closure"
+  | "local_flap"
+  | "skin_graft"
+  | "secondary_healing"
+  | "other";
+
+export interface LesionInstance {
+  id: string;
+  site: string;
+  pathologyType?: LesionPathologyType;
+  procedurePicklistId?: string;
+  procedureName?: string;
+  reconstruction?: LesionReconstruction;
+  lengthMm?: number;
+  widthMm?: number;
+  peripheralMarginMm?: number;
+  deepMarginMm?: number;
+  marginStatus?: "clear" | "involved" | "pending";
+  histologyConfirmed?: boolean;
+  snomedSiteCode?: string;
+  snomedSiteDisplay?: string;
+}
+
 export interface ProcedureCode {
   snomedCtCode: string;
   snomedCtDisplay: string;
@@ -728,6 +756,8 @@ export interface DiagnosisGroup {
   pathologicalDiagnosis?: Diagnosis;
   fractures?: FractureEntry[];
   procedures: CaseProcedure[];
+  isMultiLesion?: boolean;
+  lesionInstances?: LesionInstance[];
 }
 
 export interface Case {
@@ -1279,6 +1309,18 @@ export function getCaseSpecialties(c: Case): Specialty[] {
 
 export function getPrimaryDiagnosisName(c: Case): string | undefined {
   return c.diagnosisGroups[0]?.diagnosis?.displayName;
+}
+
+export function getAllLesionInstances(c: Case): LesionInstance[] {
+  return c.diagnosisGroups.flatMap(g => g.lesionInstances ?? []);
+}
+
+export function getExcisionCount(c: Case): number {
+  const lesionCount = getAllLesionInstances(c).length;
+  const nonLesionProcedures = c.diagnosisGroups
+    .filter(g => !g.isMultiLesion)
+    .flatMap(g => g.procedures).length;
+  return lesionCount + nonLesionProcedures;
 }
 
 export const COMMON_COMORBIDITIES: SnomedCodedItem[] = [

@@ -56,6 +56,14 @@ Serial wound assessment documentation as a timeline event type (`wound_assessmen
 - **Types** (`client/types/wound.ts`): WoundAssessment, WoundDressingEntry, DressingProduct, TIME classification types, label records, DRESSING_CATALOGUE (40+ products with SNOMED CT codes where applicable — Kerecis Omega3 Wound/Burn/Marigen Scaffold, Integra DRT, BTM PolyNovo, etc.).
 - **Integration**: Extends `TimelineEvent` with `woundAssessmentData?: WoundAssessment`; patched into AddTimelineEventScreen (event type grid + form) and CaseDetailScreen (card rendering + chart above timeline).
 
+### Multi-Lesion Session
+Supports logging 3–6 skin lesion excisions from one operative session as discrete, auditable entries within a single diagnosis group.
+- **Types** (`client/types/case.ts`): `LesionInstance`, `LesionPathologyType`, `LesionReconstruction` — each instance captures site, pathology type, reconstruction method, dimensions, margins, margin status, and optional SNOMED CT site modifier.
+- **DiagnosisGroup extension**: `isMultiLesion?: boolean` and `lesionInstances?: LesionInstance[]` fields. Old cases without these fields load without errors (backward compatible).
+- **MultiLesionEditor** (`client/components/MultiLesionEditor.tsx`): Collapsible row-per-lesion UI with quick-pick anatomical sites, pathology type selector, reconstruction picker, dimension/margin inputs, margin status, and swipe-to-delete. "Add" appends blank row; "Duplicate last" copies prior row.
+- **Toggle**: Appears in `DiagnosisGroupEditor` when `hasEnhancedHistology` or specialty is `general`/`head_neck`. When on, replaces standard procedure list with MultiLesionEditor; when off, standard procedure entry is restored.
+- **Helpers**: `getAllLesionInstances(case)` returns all lesion instances across groups; `getExcisionCount(case)` counts discrete excisions (lesion instances + procedures from non-multi-lesion groups).
+
 ### Infection Documentation Module
 Comprehensive infection case documentation with serial episode tracking.
 - **InfectionOverlay**: Attachable overlay for any case specialty.

@@ -36,6 +36,8 @@ import { findPicklistEntry } from "@/lib/procedurePicklist";
 import { SectionHeader } from "@/components/SectionHeader";
 import { DiagnosisSuggestions } from "@/components/DiagnosisSuggestions";
 import { HandTraumaStructurePicker } from "@/components/hand-trauma/HandTraumaStructurePicker";
+import { MultiLesionEditor } from "@/components/MultiLesionEditor";
+import type { LesionInstance, LesionPathologyType } from "@/types/case";
 
 interface DiagnosisGroupEditorProps {
   group: DiagnosisGroup;
@@ -64,6 +66,8 @@ export function DiagnosisGroupEditor({ group, index, isOnly, onChange, onDelete 
   const [isFractureCase, setIsFractureCase] = useState(group.fractures ? group.fractures.length > 0 : false);
   const [showFractureWizardFromCheckbox, setShowFractureWizardFromCheckbox] = useState(false);
   const [snomedSuggestion, setSnomedSuggestion] = useState<{ searchTerm: string; displayName: string } | null>(null);
+  const [isMultiLesion, setIsMultiLesion] = useState<boolean>(group.isMultiLesion ?? false);
+  const [lesionInstances, setLesionInstances] = useState<LesionInstance[]>(group.lesionInstances ?? []);
 
   useEffect(() => {
     if (initializedRef.current) return;
@@ -130,11 +134,14 @@ export function DiagnosisGroupEditor({ group, index, isOnly, onChange, onDelete 
       procedureSuggestionSource: selectedDiagnosis ? "picklist" : "manual",
       fractures: fractures.length > 0 ? fractures : undefined,
       procedures,
+      isMultiLesion,
+      lesionInstances: isMultiLesion ? lesionInstances : undefined,
     };
     onChangeRef.current(assembled);
   }, [
     groupSpecialty, primaryDiagnosis, diagnosis, selectedDiagnosis,
     stagingValues, diagnosisClinicalDetails, fractures, procedures,
+    isMultiLesion, lesionInstances,
     group.id, group.sequenceOrder,
   ]);
 
@@ -428,6 +435,18 @@ export function DiagnosisGroupEditor({ group, index, isOnly, onChange, onDelete 
     label,
   }));
 
+  function deriveDefaultPathologyType(
+    dx: DiagnosisPicklistEntry | null,
+  ): LesionPathologyType {
+    if (!dx) return "bcc";
+    const id = dx.id.toLowerCase();
+    if (id.includes("melanoma")) return "melanoma";
+    if (id.includes("scc")) return "scc";
+    if (id.includes("bcc")) return "bcc";
+    if (id.includes("benign") || id.includes("naevus") || id.includes("cyst")) return "benign";
+    return "bcc";
+  }
+
   return (
     <View style={[styles.groupContainer, !isOnly ? { borderColor: theme.border } : undefined]}>
       {!isOnly ? (
@@ -620,30 +639,94 @@ export function DiagnosisGroupEditor({ group, index, isOnly, onChange, onDelete 
         Add all procedures performed during this surgery. Each procedure can have its own specialty and SNOMED CT code.
       </ThemedText>
 
-      {procedures.map((proc, idx) => (
-        <ProcedureEntryCard
-          key={proc.id}
-          procedure={proc}
-          index={idx}
-          isOnlyProcedure={procedures.length === 1}
-          onUpdate={updateProcedure}
-          onDelete={() => removeProcedure(proc.id)}
-          onMoveUp={() => moveProcedureUp(proc.id)}
-          onMoveDown={() => moveProcedureDown(proc.id)}
-          canMoveUp={idx > 0}
-          canMoveDown={idx < procedures.length - 1}
-        />
-      ))}
+      {(selectedDiagnosis?.hasEnhancedHistology || groupSpecialty === "general" || groupSpecialty === "head_neck") ? (
+        <View style={{ marginBottom: Spacing.md }}>
+          <Pressable
+            onPress={() => {
+              const newValue = !isMultiLesion;
+              setIsMultiLesion(newValue);
+              if (newValue && lesionInstances.length === 0) {
+                setLesionInstances([
+                  {
+                    id: uuidv4(),
+                    site: "",
+                    pathologyType: deriveDefaultPathologyType(selectedDiagnosis),
+                    reconstruction: "primary_closure",
+                    marginStatus: "pending",
+                    histologyConfirmed: false,
+                  },
+                ]);
+              }
+            }}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 10,
+              paddingVertical: 10,
+              paddingHorizontal: 14,
+              borderRadius: BorderRadius.sm,
+              borderWidth: 1,
+              borderColor: isMultiLesion ? theme.link : theme.border,
+              backgroundColor: isMultiLesion ? theme.link + "10" : theme.backgroundDefault,
+            }}
+          >
+            <Feather
+              name={isMultiLesion ? "check-square" : "square"}
+              size={18}
+              color={isMultiLesion ? theme.link : theme.textSecondary}
+            />
+            <View style={{ flex: 1 }}>
+              <ThemedText
+                style={{
+                  fontSize: 14,
+                  fontWeight: "600",
+                  color: isMultiLesion ? theme.link : theme.text,
+                }}
+              >
+                Multiple lesions in this session
+              </ThemedText>
+              <ThemedText style={{ fontSize: 12, color: theme.textSecondary, marginTop: 2 }}>
+                Log each excision site separately
+              </ThemedText>
+            </View>
+          </Pressable>
+        </View>
+      ) : null}
 
-      <Pressable
-        style={[styles.addButton, { borderColor: theme.link }]}
-        onPress={addProcedure}
-      >
-        <Feather name="plus" size={18} color={theme.link} />
-        <ThemedText style={[styles.addButtonText, { color: theme.link }]}>
-          Add Another Procedure
-        </ThemedText>
-      </Pressable>
+      {isMultiLesion ? (
+        <MultiLesionEditor
+          lesions={lesionInstances}
+          onChange={setLesionInstances}
+          defaultPathologyType={deriveDefaultPathologyType(selectedDiagnosis)}
+        />
+      ) : (
+        <>
+          {procedures.map((proc, idx) => (
+            <ProcedureEntryCard
+              key={proc.id}
+              procedure={proc}
+              index={idx}
+              isOnlyProcedure={procedures.length === 1}
+              onUpdate={updateProcedure}
+              onDelete={() => removeProcedure(proc.id)}
+              onMoveUp={() => moveProcedureUp(proc.id)}
+              onMoveDown={() => moveProcedureDown(proc.id)}
+              canMoveUp={idx > 0}
+              canMoveDown={idx < procedures.length - 1}
+            />
+          ))}
+
+          <Pressable
+            style={[styles.addButton, { borderColor: theme.link }]}
+            onPress={addProcedure}
+          >
+            <Feather name="plus" size={18} color={theme.link} />
+            <ThemedText style={[styles.addButtonText, { color: theme.link }]}>
+              Add Another Procedure
+            </ThemedText>
+          </Pressable>
+        </>
+      )}
 
       <FractureClassificationWizard
         visible={showFractureWizardFromCheckbox}
