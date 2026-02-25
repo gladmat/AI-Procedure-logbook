@@ -486,8 +486,7 @@ export function ProcedureClinicalDetails({
   const isFreeFlapProcedure = picklistEntry
     ? !!picklistEntry.hasFreeFlap
     : procedureType.toLowerCase().includes("free flap") ||
-      procedureType.toLowerCase().includes("free tissue") ||
-      ["orthoplastic", "head_neck"].includes(specialty);
+      procedureType.toLowerCase().includes("free tissue");
   
   if (isFreeFlapProcedure) {
     const existingDetails = clinicalDetails as FreeFlapDetails || {};
