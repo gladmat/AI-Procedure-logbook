@@ -1,0 +1,529 @@
+# Wound Episode Module — Replit Implementation Prompt
+
+## Overview
+
+You are implementing a **Wound Episode Tracker** module for the AI Surgical Logbook app. This adds the ability to document serial wound assessments (dimensions, wound bed status, dressings applied) as a new type of timeline event on a case.
+
+The work involves:
+
+1. Adding a new file: `client/types/wound.ts`
+1. Adding a new component: `client/components/WoundAssessmentForm.tsx`
+1. Adding a new component: `client/components/WoundAssessmentCard.tsx`
+1. Adding a new component: `client/components/WoundDimensionChart.tsx`
+1. Patching: `client/types/case.ts` (3 small additions)
+1. Patching: `client/screens/AddTimelineEventScreen.tsx` (6 additions)
+1. Patching: `client/screens/CaseDetailScreen.tsx` (3 additions)
+
+All new files are provided in full. Patches are surgical — do not rewrite existing files unless instructed.
+
+-----
+
+## STEP 1: Create `client/types/wound.ts`
+
+Create this file with the following content exactly as provided:
+
+```typescript
+// ============================================================
+// Wound Episode Module — Types
+// client/types/wound.ts
+// ============================================================
+
+// --- TIME Classification ---
+export type WoundBedTissue =
+  | "necrotic_black"
+  | "necrotic_yellow"
+  | "granulating"
+  | "epithelialising"
+  | "mixed";
+
+export type ExudateAmount = "none" | "low" | "moderate" | "heavy";
+
+export type ExudateType =
+  | "serous"
+  | "serosanguinous"
+  | "haemosanguinous"
+  | "purulent";
+
+export type WoundEdgeStatus =
+  | "attached"
+  | "non_attached"
+  | "rolled_under"
+  | "hyperkeratotic"
+  | "macerated";
+
+export type WoundSurroundingSkin =
+  | "intact"
+  | "macerated"
+  | "erythematous"
+  | "dry_scaly"
+  | "eczematous"
+  | "callused";
+
+export type InfectionSign =
+  | "increased_exudate"
+  | "erythema"
+  | "warmth"
+  | "oedema"
+  | "malodour"
+  | "delayed_healing"
+  | "pain_or_tenderness"
+  | "wound_breakdown";
+
+export type HealingTrend = "improving" | "static" | "deteriorating";
+
+export type DressingCategory =
+  | "surgical_procedure"
+  | "npwt"
+  | "biological"
+  | "antimicrobial"
+  | "absorbent_foam"
+  | "simple"
+  | "other";
+
+export interface DressingProduct {
+  id: string;
+  name: string;
+  category: DressingCategory;
+  manufacturer?: string;
+  notes?: string;
+  snomedCtCode?: string;
+  snomedCtDisplay?: string;
+}
+
+export interface WoundDressingEntry {
+  productId: string;
+  productName: string;
+  category: DressingCategory;
+  quantity?: number;
+  sizeDescription?: string;
+  notes?: string;
+}
+
+export interface WoundAssessment {
+  lengthCm?: number;
+  widthCm?: number;
+  depthCm?: number;
+  areaCm2?: number;
+  tissueType?: WoundBedTissue;
+  exudateAmount?: ExudateAmount;
+  exudateType?: ExudateType;
+  edgeStatus?: WoundEdgeStatus;
+  surroundingSkin?: WoundSurroundingSkin;
+  infectionSigns?: InfectionSign[];
+  dressings: WoundDressingEntry[];
+  interventionNotes?: string;
+  healingTrend?: HealingTrend;
+  clinicianNote?: string;
+  nextReviewDate?: string;
+}
+
+export const WOUND_BED_TISSUE_LABELS: Record<WoundBedTissue, string> = {
+  necrotic_black: "Necrotic (Black eschar)",
+  necrotic_yellow: "Sloughy (Yellow necrosis)",
+  granulating: "Granulating (Red)",
+  epithelialising: "Epithelialising (Pink)",
+  mixed: "Mixed",
+};
+
+export const EXUDATE_AMOUNT_LABELS: Record<ExudateAmount, string> = {
+  none: "None",
+  low: "Low",
+  moderate: "Moderate",
+  heavy: "Heavy",
+};
+
+export const EXUDATE_TYPE_LABELS: Record<ExudateType, string> = {
+  serous: "Serous (clear)",
+  serosanguinous: "Serosanguinous (pink)",
+  haemosanguinous: "Haemosanguinous (bloody)",
+  purulent: "Purulent (infected)",
+};
+
+export const WOUND_EDGE_STATUS_LABELS: Record<WoundEdgeStatus, string> = {
+  attached: "Attached",
+  non_attached: "Non-attached",
+  rolled_under: "Rolled under (epibole)",
+  hyperkeratotic: "Hyperkeratotic / callused",
+  macerated: "Macerated",
+};
+
+export const SURROUNDING_SKIN_LABELS: Record<WoundSurroundingSkin, string> = {
+  intact: "Intact",
+  macerated: "Macerated",
+  erythematous: "Erythematous",
+  dry_scaly: "Dry / scaly",
+  eczematous: "Eczematous",
+  callused: "Callused",
+};
+
+export const INFECTION_SIGN_LABELS: Record<InfectionSign, string> = {
+  increased_exudate: "Increased exudate",
+  erythema: "Erythema",
+  warmth: "Warmth",
+  oedema: "Oedema",
+  malodour: "Malodour",
+  delayed_healing: "Delayed healing",
+  pain_or_tenderness: "Pain / tenderness",
+  wound_breakdown: "Wound breakdown",
+};
+
+export const HEALING_TREND_LABELS: Record<HealingTrend, string> = {
+  improving: "Improving",
+  static: "Static",
+  deteriorating: "Deteriorating",
+};
+
+export const DRESSING_CATEGORY_LABELS: Record<DressingCategory, string> = {
+  surgical_procedure: "Surgical Procedure",
+  npwt: "NPWT / VAC",
+  biological: "Biological / Advanced",
+  antimicrobial: "Antimicrobial",
+  absorbent_foam: "Absorbent / Foam",
+  simple: "Simple Dressing",
+  other: "Other",
+};
+
+export const DRESSING_CATALOGUE: DressingProduct[] = [
+  // Surgical Procedures
+  { id: "surgical_debridement", name: "Surgical debridement", category: "surgical_procedure", snomedCtCode: "228401002", snomedCtDisplay: "Surgical wound debridement (procedure)" },
+  { id: "vac_application", name: "VAC application (new)", category: "surgical_procedure", snomedCtCode: "229070002", snomedCtDisplay: "Application of vacuum dressing (procedure)" },
+  { id: "vac_change", name: "VAC change", category: "surgical_procedure", snomedCtCode: "229070002", snomedCtDisplay: "Application of vacuum dressing (procedure)" },
+  { id: "kerecis_application", name: "Kerecis application", category: "surgical_procedure", snomedCtCode: "182531007", snomedCtDisplay: "Application of biological dressing (procedure)" },
+  { id: "stsg_application", name: "Split-thickness skin graft", category: "surgical_procedure", snomedCtCode: "15220000", snomedCtDisplay: "Split-thickness skin graft (procedure)" },
+  { id: "ftsg_application", name: "Full-thickness skin graft", category: "surgical_procedure", snomedCtCode: "59550006", snomedCtDisplay: "Full-thickness skin graft (procedure)" },
+  // NPWT
+  { id: "kci_vac_ulta", name: "KCI V.A.C. Ulta", category: "npwt", manufacturer: "3M / KCI" },
+  { id: "kci_vac_veraflo", name: "KCI V.A.C. VeraFlo (instillation)", category: "npwt", manufacturer: "3M / KCI" },
+  { id: "sn_renasys", name: "Smith+Nephew RENASYS", category: "npwt", manufacturer: "Smith+Nephew" },
+  { id: "molnlycke_avance", name: "Mölnlycke AVANCE", category: "npwt", manufacturer: "Mölnlycke" },
+  { id: "pico_portable", name: "PICO (portable NPWT)", category: "npwt", manufacturer: "Smith+Nephew" },
+  // Biological / Advanced
+  { id: "kerecis_omega3_wound", name: "Kerecis Omega3 Wound", category: "biological", manufacturer: "Kerecis", notes: "Fish skin acellular dermal matrix — intact skin substitute", snomedCtCode: "406445005", snomedCtDisplay: "Biological wound dressing product (product)" },
+  { id: "kerecis_omega3_burn", name: "Kerecis Omega3 Burn", category: "biological", manufacturer: "Kerecis", notes: "Fish skin matrix optimised for burn wounds" },
+  { id: "kerecis_marigen_scaffold", name: "Kerecis Marigen Scaffold", category: "biological", manufacturer: "Kerecis", notes: "Dermal replacement / scaffold layer" },
+  { id: "integra_drt", name: "Integra Dermal Regeneration Template", category: "biological", manufacturer: "Integra LifeSciences", notes: "Bilayer matrix — requires second-stage STSG" },
+  { id: "integra_flowable", name: "Integra Flowable Wound Matrix", category: "biological", manufacturer: "Integra LifeSciences" },
+  { id: "matriderm_1mm", name: "Matriderm 1mm", category: "biological", manufacturer: "MedSkin Solutions Dr. Suwelack", notes: "Single-stage with STSG" },
+  { id: "matriderm_2mm", name: "Matriderm 2mm", category: "biological", manufacturer: "MedSkin Solutions Dr. Suwelack" },
+  { id: "btm_polynovo", name: "BTM (PolyNovo)", category: "biological", manufacturer: "PolyNovo", notes: "Biodegradable temporising matrix" },
+  { id: "pelnac", name: "Pelnac", category: "biological", manufacturer: "Gunze", notes: "Porcine collagen scaffold" },
+  { id: "oasis_wound", name: "Oasis Wound Matrix", category: "biological", manufacturer: "Smith+Nephew", notes: "Porcine small intestinal submucosa" },
+  { id: "amniofix", name: "AmnioFix", category: "biological", manufacturer: "MiMedx", notes: "Amniotic membrane allograft" },
+  // Antimicrobial
+  { id: "aquacel_ag_plus", name: "Aquacel Ag+", category: "antimicrobial", manufacturer: "ConvaTec", notes: "Silver + HMEC hydrofibre" },
+  { id: "mepilex_ag", name: "Mepilex Ag", category: "antimicrobial", manufacturer: "Mölnlycke", notes: "Silver foam" },
+  { id: "acticoat_7", name: "Acticoat 7", category: "antimicrobial", manufacturer: "Smith+Nephew", notes: "Nanocrystalline silver — 7 day wear" },
+  { id: "kerlix_amd", name: "Kerlix AMD (PHMB)", category: "antimicrobial", manufacturer: "Cardinal Health", notes: "PHMB antimicrobial gauze" },
+  { id: "iodosorb", name: "Iodosorb / Cadexomer Iodine", category: "antimicrobial", manufacturer: "Smith+Nephew" },
+  { id: "betadine_gauze", name: "Betadine-soaked gauze", category: "antimicrobial" },
+  // Absorbent / Foam
+  { id: "mepilex_border", name: "Mepilex Border", category: "absorbent_foam", manufacturer: "Mölnlycke" },
+  { id: "aquacel_extra", name: "Aquacel Extra", category: "absorbent_foam", manufacturer: "ConvaTec", notes: "High-absorbency hydrofibre" },
+  { id: "biatain_adhesive", name: "Biatain Adhesive", category: "absorbent_foam", manufacturer: "Coloplast" },
+  { id: "allevyn_adhesive", name: "Allevyn Adhesive", category: "absorbent_foam", manufacturer: "Smith+Nephew" },
+  // Simple
+  { id: "mepore", name: "Mepore", category: "simple", manufacturer: "Mölnlycke" },
+  { id: "primapore", name: "Primapore", category: "simple", manufacturer: "Smith+Nephew" },
+  { id: "jelonet", name: "Jelonet (paraffin tulle)", category: "simple", manufacturer: "Smith+Nephew" },
+  { id: "bactigras", name: "Bactigras (chlorhexidine tulle)", category: "simple", manufacturer: "Smith+Nephew" },
+  { id: "melolin", name: "Melolin (non-adherent)", category: "simple", manufacturer: "Smith+Nephew" },
+  { id: "duoderm_cgf", name: "DuoDerm CGF (hydrocolloid)", category: "simple", manufacturer: "ConvaTec" },
+  { id: "solosite_gel", name: "Solosite gel (hydrogel)", category: "simple", manufacturer: "Smith+Nephew" },
+  // Other
+  { id: "custom", name: "Other / custom", category: "other" },
+];
+
+export function getDressingsByCategory(category: DressingCategory): DressingProduct[] {
+  return DRESSING_CATALOGUE.filter((p) => p.category === category);
+}
+
+export function getDressingCategories(): DressingCategory[] {
+  const cats = new Set(DRESSING_CATALOGUE.map((p) => p.category));
+  return Array.from(cats);
+}
+```
+
+-----
+
+## STEP 2: Patch `client/types/case.ts`
+
+### 2a. Add import at the top of the file
+
+After all existing imports, add:
+
+```typescript
+import { WoundAssessment } from "@/types/wound";
+```
+
+### 2b. Add `wound_assessment` to `TimelineEventType`
+
+Find:
+
+```typescript
+export type TimelineEventType = 
+  | "note"
+  | "photo"
+  | "imaging"
+  | "prom"
+  | "complication"
+  | "follow_up_visit";
+```
+
+Replace with:
+
+```typescript
+export type TimelineEventType = 
+  | "note"
+  | "photo"
+  | "imaging"
+  | "prom"
+  | "complication"
+  | "follow_up_visit"
+  | "wound_assessment";
+```
+
+### 2c. Add `woundAssessmentData` to `TimelineEvent` interface
+
+Find:
+
+```typescript
+export interface TimelineEvent {
+  id: string;
+  caseId: string;
+  eventType: TimelineEventType;
+  note: string;
+  authorId?: string;
+  createdAt: string;
+  followUpInterval?: FollowUpInterval;
+  mediaAttachments?: MediaAttachment[];
+  promData?: PROMData;
+  complicationData?: ComplicationEntry;
+}
+```
+
+Replace with:
+
+```typescript
+export interface TimelineEvent {
+  id: string;
+  caseId: string;
+  eventType: TimelineEventType;
+  note: string;
+  authorId?: string;
+  createdAt: string;
+  followUpInterval?: FollowUpInterval;
+  mediaAttachments?: MediaAttachment[];
+  promData?: PROMData;
+  complicationData?: ComplicationEntry;
+  woundAssessmentData?: WoundAssessment;
+}
+```
+
+### 2d. Add label to `TIMELINE_EVENT_TYPE_LABELS`
+
+Find:
+
+```typescript
+export const TIMELINE_EVENT_TYPE_LABELS: Record<TimelineEventType, string> = {
+  note: "Note",
+  photo: "Photo",
+  imaging: "X-ray / Imaging",
+  prom: "PROM Score",
+  complication: "Complication",
+  follow_up_visit: "Follow-up Visit",
+};
+```
+
+Replace with:
+
+```typescript
+export const TIMELINE_EVENT_TYPE_LABELS: Record<TimelineEventType, string> = {
+  note: "Note",
+  photo: "Photo",
+  imaging: "X-ray / Imaging",
+  prom: "PROM Score",
+  complication: "Complication",
+  follow_up_visit: "Follow-up Visit",
+  wound_assessment: "Wound Assessment",
+};
+```
+
+-----
+
+## STEP 3: Create `client/components/WoundAssessmentForm.tsx`
+
+[Paste the full content of WoundAssessmentForm.tsx from the implementation package]
+
+-----
+
+## STEP 4: Create `client/components/WoundAssessmentCard.tsx`
+
+[Paste the full content of WoundAssessmentCard.tsx from the implementation package]
+
+-----
+
+## STEP 5: Create `client/components/WoundDimensionChart.tsx`
+
+[Paste the full content of WoundDimensionChart.tsx from the implementation package]
+
+**Note on react-native-svg**: This component uses `react-native-svg` which should already be in the project via Expo. If you get import errors, check that `react-native-svg` is in `package.json`. If missing, run: `npx expo install react-native-svg`
+
+-----
+
+## STEP 6: Patch `client/screens/AddTimelineEventScreen.tsx`
+
+### 6a. Add imports after existing imports:
+
+```typescript
+import { WoundAssessment } from "@/types/wound";
+import { WoundAssessmentForm } from "@/components/WoundAssessmentForm";
+```
+
+### 6b. Add state inside the component function, after other useState declarations:
+
+```typescript
+const [woundAssessmentData, setWoundAssessmentData] = useState<WoundAssessment>({
+  dressings: [],
+});
+```
+
+### 6c. Add case to `getSubtitle()` before `default`:
+
+```typescript
+      case "wound_assessment":
+        return "Document wound status, dressings applied, and healing progress";
+```
+
+### 6d. Add case to `getEventTypeIcon()` before `default`:
+
+```typescript
+      case "wound_assessment":
+        return "thermometer";
+```
+
+### 6e. Add wound data to event in `handleSave()`, immediately after the `follow_up_visit` block:
+
+```typescript
+      if (eventType === "wound_assessment") {
+        event.woundAssessmentData = woundAssessmentData;
+      }
+```
+
+### 6f. Add JSX section for wound_assessment after the “note” section in the return:
+
+```tsx
+      {eventType === "wound_assessment" ? (
+        <View style={styles.section}>
+          <WoundAssessmentForm
+            value={woundAssessmentData}
+            onChange={setWoundAssessmentData}
+          />
+        </View>
+      ) : null}
+```
+
+-----
+
+## STEP 7: Patch `client/screens/CaseDetailScreen.tsx`
+
+### 7a. Add imports after existing imports:
+
+```typescript
+import { WoundDimensionChart } from "@/components/WoundDimensionChart";
+import { WoundAssessmentCard } from "@/components/WoundAssessmentCard";
+```
+
+### 7b. Add `wound_assessment` case to `getEventTypeColor()`:
+
+Find the function and add before `default`:
+
+```typescript
+      case "wound_assessment":
+        return theme.info;
+```
+
+### 7c. Replace the timeline map block
+
+Find the section that renders `timelineEvents.map(...)`. Replace the entire map callback so that wound_assessment events use `WoundAssessmentCard` and all other events use the existing rendering. The wound chart goes above the list.
+
+The structure should be:
+
+```tsx
+<SectionHeader title="Timeline" />
+
+{/* Wound dimension chart — renders only if ≥2 wound assessments present */}
+<WoundDimensionChart events={timelineEvents} />
+
+{timelineEvents.length === 0 ? (
+  <View style={[styles.emptyTimeline, { backgroundColor: theme.backgroundDefault }]}>
+    <ThemedText style={[styles.emptyTimelineText, { color: theme.textSecondary }]}>
+      No timeline events yet
+    </ThemedText>
+  </View>
+) : (
+  <View>
+    {timelineEvents.map((event) => {
+      if (event.eventType === "wound_assessment" && event.woundAssessmentData) {
+        return (
+          <WoundAssessmentCard
+            key={event.id}
+            data={event.woundAssessmentData}
+            createdAt={event.createdAt}
+          />
+        );
+      }
+      // Original rendering for all other event types (keep existing code here)
+      return (
+        <View key={event.id} style={styles.timelineEvent}>
+          <View style={[styles.timelineDot, { backgroundColor: getEventTypeColor(event.eventType, theme) }]} />
+          <View style={styles.timelineContent}>
+            {/* ALL existing content preserved here exactly as it was */}
+          </View>
+        </View>
+      );
+    })}
+  </View>
+)}
+```
+
+**CRITICAL**: Do not delete any existing timeline event rendering code. Only wrap it with the wound_assessment conditional guard. All existing event types (photo, note, prom, complication, follow_up_visit, imaging) must continue to work exactly as before.
+
+-----
+
+## Verification Checklist
+
+After all changes, verify:
+
+- [ ] `client/types/wound.ts` exists and has no TypeScript errors
+- [ ] `client/types/case.ts` TypeScript compiles — `TimelineEventType` includes `wound_assessment`, `TimelineEvent` has `woundAssessmentData?: WoundAssessment`, label map has all 7 entries
+- [ ] `client/components/WoundAssessmentForm.tsx` exists with no errors
+- [ ] `client/components/WoundAssessmentCard.tsx` exists with no errors
+- [ ] `client/components/WoundDimensionChart.tsx` exists with no errors
+- [ ] `AddTimelineEventScreen` compiles — `wound_assessment` appears in event type grid, form renders when selected
+- [ ] `CaseDetailScreen` compiles — imports resolve, chart renders above timeline
+- [ ] App builds without errors: `npx expo start` or `npm run build`
+
+## If `react-native-svg` is Missing
+
+Run: `npx expo install react-native-svg`
+
+The `WoundDimensionChart` component can be made optional — if svg is unavailable, simply don’t render the chart (the rest of the module will still work).
+
+-----
+
+## Notes for the Developer
+
+**Why this architecture?**
+
+- Wound assessments extend the existing `TimelineEvent` type rather than introducing a parallel data model. This means storage, sync, and export all work automatically.
+- The dressing catalogue is a static TypeScript array rather than a database table — it’s versioned with the app and can be updated via app releases. This avoids complex seeding logic.
+- The WoundDimensionChart only renders when ≥2 assessments exist, so it doesn’t clutter cases with a single wound entry.
+
+**Kerecis specifics:**
+
+- Three Kerecis products are included: `Omega3 Wound`, `Omega3 Burn`, and `Marigen Scaffold` — covering the distinct clinical applications.
+- SNOMED CT code `406445005` (Biological wound dressing product) is used for Kerecis application. This is the appropriate parent concept; a more specific code for fish skin matrix does not yet exist in SNOMED CT as of 2025.
+- The `interventionNotes` field is where lot numbers, sheet sizes, and technique details should be documented.
+
+**Extending the catalogue:**
+To add a new product, append a `DressingProduct` entry to `DRESSING_CATALOGUE` in `client/types/wound.ts`. No other changes needed.
