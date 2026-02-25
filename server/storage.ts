@@ -30,7 +30,8 @@ export interface IStorage {
   getUserFacilities(userId: string): Promise<UserFacility[]>;
   createUserFacility(facility: InsertUserFacility): Promise<UserFacility>;
   updateUserFacility(id: string, facility: Partial<InsertUserFacility>): Promise<UserFacility | undefined>;
-  deleteUserFacility(id: string): Promise<boolean>;
+  // IMPROVEMENT: IDOR fix — requires userId to enforce ownership at query level
+  deleteUserFacility(id: string, userId: string): Promise<boolean>;
   
   getSnomedRefs(category?: string, anatomicalRegion?: string, specialty?: string): Promise<SnomedRef[]>;
   getSnomedRefByCode(snomedCtCode: string): Promise<SnomedRef | undefined>;
@@ -146,14 +147,17 @@ export class DatabaseStorage implements IStorage {
     return updated || undefined;
   }
 
-  async deleteUserFacility(id: string): Promise<boolean> {
-    const result = await db.delete(userFacilities).where(eq(userFacilities.id, id));
-    return true;
+  // IMPROVEMENT: IDOR fix — deletes only if BOTH id and userId match,
+  // preventing any user from deleting another user's facility by guessing the id.
+  async deleteUserFacility(id: string, userId: string): Promise<boolean> {
+    const result = await db
+      .delete(userFacilities)
+      .where(and(eq(userFacilities.id, id), eq(userFacilities.userId, userId)))
+      .returning();
+    return result.length > 0;
   }
 
   async getSnomedRefs(category?: string, anatomicalRegion?: string, specialty?: string): Promise<SnomedRef[]> {
-    let query = db.select().from(snomedRef).where(eq(snomedRef.isActive, true));
-    
     const conditions = [eq(snomedRef.isActive, true)];
     
     if (category) {
@@ -234,7 +238,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteFlap(id: string): Promise<boolean> {
-    const result = await db.delete(flaps).where(eq(flaps.id, id));
+    await db.delete(flaps).where(eq(flaps.id, id));
     return true;
   }
 

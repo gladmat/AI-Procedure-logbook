@@ -84,11 +84,18 @@ const authenticateToken = async (req: AuthenticatedRequest, res: Response, next:
 };
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // ──────────────────────────────────────────────────────────────────────────
+  // Health check
+  // Consumer: Mobile client, uptime monitors
+  // ──────────────────────────────────────────────────────────────────────────
   app.get("/api/health", (req: Request, res: Response) => {
     res.json({ status: "ok", timestamp: new Date().toISOString() });
   });
 
+  // ──────────────────────────────────────────────────────────────────────────
   // Auth Routes
+  // Consumer: Mobile client (signup, login, password management)
+  // ──────────────────────────────────────────────────────────────────────────
   app.post("/api/auth/signup", async (req: Request, res: Response) => {
     try {
       const clientIp = req.ip || req.socket.remoteAddress || "unknown";
@@ -191,7 +198,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Change Password Route
   app.post("/api/auth/change-password", authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { currentPassword, newPassword } = req.body;
@@ -224,18 +230,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Password Reset Request Route
   app.post("/api/auth/request-password-reset", async (req: Request, res: Response) => {
-    console.log("Password reset request received");
     try {
       const clientIp = req.ip || req.socket.remoteAddress || "unknown";
       if (!checkAuthRateLimit(clientIp)) {
-        console.log("Password reset rate limited for IP:", clientIp);
         return res.status(429).json({ error: "Too many requests. Please try again later." });
       }
 
       const { email } = req.body;
-      console.log("Password reset requested for email:", email ? "provided" : "missing");
       
       if (!email) {
         return res.status(400).json({ error: "Email is required" });
@@ -262,7 +264,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const emailResult = await sendPasswordResetEmail(email, token);
       
       if (!emailResult.success) {
-        console.error(`Failed to send password reset email to ${email}:`, emailResult.error);
+        console.error("Failed to send password reset email:", emailResult.error);
       }
 
       res.json({ success: true, message: "If an account exists, reset instructions will be sent" });
@@ -272,7 +274,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Password Reset Validation Route
   app.post("/api/auth/reset-password", async (req: Request, res: Response) => {
     try {
       const { token, newPassword } = req.body;
@@ -311,7 +312,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ──────────────────────────────────────────────────────────────────────────
   // Profile Routes
+  // Consumer: Mobile client (onboarding, settings)
+  // Ownership: Implicit — always scoped to authenticated user
+  // ──────────────────────────────────────────────────────────────────────────
   app.get("/api/profile", authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
       const profile = await storage.getProfile(req.userId!);
@@ -337,7 +342,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ──────────────────────────────────────────────────────────────────────────
   // Facilities Routes
+  // Consumer: Mobile client (onboarding, settings)
+  // Ownership: Scoped to authenticated user via userId filter
+  // ──────────────────────────────────────────────────────────────────────────
   app.get("/api/facilities", authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
       const facilities = await storage.getUserFacilities(req.userId!);
@@ -351,7 +360,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/facilities", authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { facilityName, isPrimary, facilityId } = req.body;
-      console.log("Creating facility - received:", { facilityName, isPrimary, facilityId });
       if (!facilityName) {
         return res.status(400).json({ error: "Facility name required" });
       }
@@ -362,7 +370,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         facilityId: facilityId || null,
         isPrimary: isPrimary ?? false 
       });
-      console.log("Created facility - returning:", facility);
       res.json(facility);
     } catch (error) {
       console.error("Facility create error:", error);
@@ -370,9 +377,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // IMPROVEMENT: IDOR fix — pass userId to enforce ownership at the query level
   app.delete("/api/facilities/:id", authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
-      await storage.deleteUserFacility(req.params.id);
+      const deleted = await storage.deleteUserFacility(req.params.id, req.userId!);
+      if (!deleted) {
+        return res.status(404).json({ error: "Facility not found" });
+      }
       res.json({ success: true });
     } catch (error) {
       console.error("Facility delete error:", error);
@@ -380,7 +391,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ──────────────────────────────────────────────────────────────────────────
   // Device Key Routes (E2EE scaffolding)
+  // Consumer: Mobile client (planned — key registration for end-to-end encryption)
+  // Status: Active — scaffolding for E2EE feature, used during device registration
+  // ──────────────────────────────────────────────────────────────────────────
   app.post("/api/keys/device", authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { deviceId, publicKey, label } = req.body;
@@ -407,6 +422,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Consumer: Mobile client (planned — list registered device keys)
+  // Status: Active — E2EE scaffolding
   app.get("/api/keys/me", authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
       const keys = await storage.getUserDeviceKeys(req.userId!);
@@ -417,6 +434,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Consumer: Mobile client (planned — revoke a device key)
+  // Status: Active — E2EE scaffolding
   app.post("/api/keys/revoke", authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { deviceId } = req.body;
@@ -432,7 +451,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ──────────────────────────────────────────────────────────────────────────
   // SNOMED Reference Data API
+  // Consumer: Mobile client (procedure entry — flap types, vessels, regions, etc.)
+  // These endpoints serve the curated SNOMED CT reference picklists for case entry UI.
+  // ──────────────────────────────────────────────────────────────────────────
   app.get("/api/snomed-ref", authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { category, anatomicalRegion, specialty } = req.query;
@@ -527,36 +550,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Seed Data Endpoint (run once to populate reference data)
-  app.post("/api/seed-snomed-ref", authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
-    try {
-      // Protect seed endpoint in production
-      const seedHeader = req.header("x-seed-token");
-      const seedToken = process.env.SEED_TOKEN;
-      const isProduction = process.env.NODE_ENV === "production";
+  // ──────────────────────────────────────────────────────────────────────────
+  // Seed Data Endpoint
+  // Consumer: Developer-only (run once to populate SNOMED reference data)
+  // IMPROVEMENT #1: Environment-gated — disabled entirely unless ENABLE_SEED=true
+  // ──────────────────────────────────────────────────────────────────────────
+  if (process.env.ENABLE_SEED === "true") {
+    app.post("/api/seed-snomed-ref", authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+      try {
+        // Additional seed token protection
+        const seedHeader = req.header("x-seed-token");
+        const seedToken = process.env.SEED_TOKEN;
 
-      if (isProduction && !seedToken) {
-        return res.status(403).json({ error: "Seed token not configured" });
-      }
-      if (seedToken && seedHeader !== seedToken) {
-        return res.status(403).json({ error: "Forbidden" });
-      }
+        if (seedToken && seedHeader !== seedToken) {
+          return res.status(403).json({ error: "Forbidden" });
+        }
 
-      // Check if data already exists
-      const existing = await storage.getSnomedRefs();
-      if (existing.length > 0) {
-        return res.json({ message: "Data already seeded", count: existing.length });
+        // Check if data already exists
+        const existing = await storage.getSnomedRefs();
+        if (existing.length > 0) {
+          return res.json({ message: "Data already seeded", count: existing.length });
+        }
+        
+        const created = await storage.bulkCreateSnomedRefs(allSeedData);
+        res.json({ message: "Seed data created successfully", count: created.length });
+      } catch (error) {
+        console.error("Error seeding SNOMED refs:", error);
+        res.status(500).json({ error: "Failed to seed reference data" });
       }
-      
-      const created = await storage.bulkCreateSnomedRefs(allSeedData);
-      res.json({ message: "Seed data created successfully", count: created.length });
-    } catch (error) {
-      console.error("Error seeding SNOMED refs:", error);
-      res.status(500).json({ error: "Failed to seed reference data" });
-    }
-  });
+    });
+  }
 
-  // Flaps CRUD API - all routes require authentication and ownership verification
+  // ──────────────────────────────────────────────────────────────────────────
+  // Flaps CRUD API
+  // Consumer: Mobile client (free flap case entry — flap details)
+  // Ownership: Verified via procedure → user ownership chain
+  // ──────────────────────────────────────────────────────────────────────────
   app.get("/api/procedures/:procedureId/flaps", authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { procedureId } = req.params;
@@ -646,7 +675,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Anastomoses CRUD API - all routes require authentication and ownership verification
+  // ──────────────────────────────────────────────────────────────────────────
+  // Anastomoses CRUD API
+  // Consumer: Mobile client (free flap case entry — anastomosis details)
+  // Ownership: Verified via anastomosis → flap → procedure → user chain
+  // ──────────────────────────────────────────────────────────────────────────
   app.get("/api/flaps/:flapId/anastomoses", authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { flapId } = req.params;
@@ -736,7 +769,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // SNOMED CT Search API (using Snowstorm)
+  // ──────────────────────────────────────────────────────────────────────────
+  // SNOMED CT Live Search API (using Ontoserver FHIR endpoint)
+  // Consumer: Mobile client (procedure/diagnosis search during case entry)
+  // These hit the external Ontoserver for free-text SNOMED CT lookups.
+  // ──────────────────────────────────────────────────────────────────────────
   app.get("/api/snomed/procedures", authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { q, specialty, limit } = req.query;
@@ -779,6 +816,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Consumer: Mobile client (planned — concept detail view / cross-reference)
+  // Status: Active — used for displaying full SNOMED CT concept metadata
   app.get("/api/snomed/concepts/:conceptId", authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { conceptId } = req.params;
@@ -795,7 +834,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ──────────────────────────────────────────────────────────────────────────
   // Diagnosis Staging Configuration API
+  // Consumer: Mobile client (diagnosis entry — dynamic staging forms)
+  // Returns staging system definitions (TNM, Clark, Breslow, etc.) for a diagnosis.
+  // ──────────────────────────────────────────────────────────────────────────
   app.get("/api/staging/diagnosis", authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { snomedCode, diagnosisName } = req.query;
@@ -812,6 +855,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Consumer: Mobile client (planned — staging reference browser)
+  // Status: Active — returns all configured staging systems for reference
   app.get("/api/staging/all", authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
       const configs = getAllStagingConfigs();

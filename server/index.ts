@@ -54,17 +54,44 @@ function setupCors(app: express.Application) {
   });
 }
 
+// --- IMPROVEMENT #2: Route-level body size limits ---
+// Different route groups get appropriate payload limits instead of a blanket 50MB.
+// Auth/profile routes need minimal payloads; only specific endpoints (if any) should allow large bodies.
 function setupBodyParsing(app: express.Application) {
+  // Strict limit for auth routes (login, signup, password reset) — no reason for large payloads
+  const authJsonParser = express.json({ limit: "1kb" });
+  const authUrlencodedParser = express.urlencoded({ extended: false, limit: "1kb" });
+
+  // Moderate limit for profile/facility/general API routes
+  const apiJsonParser = express.json({ limit: "256kb" });
+  const apiUrlencodedParser = express.urlencoded({ extended: false, limit: "256kb" });
+
+  // Larger limit for seed data and any future bulk import endpoints
+  const bulkJsonParser = express.json({
+    limit: "5mb",
+    verify: (req, _res, buf) => {
+      req.rawBody = buf;
+    },
+  });
+  const bulkUrlencodedParser = express.urlencoded({ extended: false, limit: "5mb" });
+
+  // Apply route-specific limits (most restrictive first, fallback last)
+  app.use("/api/auth", authJsonParser, authUrlencodedParser);
+  app.use("/api/seed-snomed-ref", bulkJsonParser, bulkUrlencodedParser);
+
+  // Default API limit for everything else under /api
+  app.use("/api", apiJsonParser, apiUrlencodedParser);
+
+  // Fallback for non-API routes (landing page, Expo manifest, etc.)
   app.use(
     express.json({
-      limit: "50mb",
+      limit: "256kb",
       verify: (req, _res, buf) => {
         req.rawBody = buf;
       },
     }),
   );
-
-  app.use(express.urlencoded({ extended: false, limit: "50mb" }));
+  app.use(express.urlencoded({ extended: false, limit: "256kb" }));
 }
 
 function setupRequestLogging(app: express.Application) {
