@@ -184,6 +184,7 @@ export default function CaseFormScreen() {
   const { facilities, profile } = useAuth();
   
   const draftLoadedRef = useRef(false);
+  const savedRef = useRef(false);
   const editModeLoadedRef = useRef(false);
   const scrollViewRef = useRef<any>(null);
   const scrollPositionRef = useRef(0);
@@ -434,7 +435,7 @@ export default function CaseFormScreen() {
 
 
   useEffect(() => {
-    if (!draftLoadedRef.current) return;
+    if (!draftLoadedRef.current || savedRef.current || isEditMode) return;
 
     const draft: CaseDraft = {
       id: "draft",
@@ -494,7 +495,9 @@ export default function CaseFormScreen() {
     };
 
     const timeout = setTimeout(() => {
-      saveCaseDraft(specialty, draft);
+      if (!savedRef.current) {
+        saveCaseDraft(specialty, draft);
+      }
     }, 500);
 
     return () => clearTimeout(timeout);
@@ -742,6 +745,7 @@ export default function CaseFormScreen() {
         await updateCase(existingCase.id, casePayload);
       } else {
         await saveCase(casePayload);
+        savedRef.current = true;
         await clearCaseDraft(specialty);
       }
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
