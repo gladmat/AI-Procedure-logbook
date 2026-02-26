@@ -131,6 +131,19 @@ Comprehensive infection case documentation with serial episode tracking.
 ### Edit Mode (CaseFormScreen)
 - **Clinical details round-trip**: Edit mode restores `clinicalDetails`, `recipientSiteRegion`, and `anastomoses` from existing case data.
 - **Save payload**: Uses actual `clinicalDetails` state (not `{} as any`), preserving all clinical data through edits.
+- **Draft isolation**: Draft loading is skipped entirely in edit mode (`isEditMode` guard) to prevent race conditions.
+- **Unconditional setters**: All field setters use `?? ""` / `?? defaultValue` instead of conditional `if`, ensuring cleared fields persist correctly.
+
+### DatePickerField (FormField.tsx)
+- **Clear button**: Moved to sibling Pressable (not nested inside date button) to prevent event bubbling that reopened the picker after clearing.
+
+### Case Detail Display (CaseDetailScreen)
+- **Per-procedure flap details**: Enhanced to show perforatorCount, elevationPlane, composition, isFlowThrough, skinIsland.
+- **Legacy section removed**: Old top-level `caseData.clinicalDetails` display section deleted (read from wrong data path).
+
+### Diagnosis Group Editor
+- **Collapsible groups**: Multi-diagnosis groups collapse to a compact summary card (specialty + diagnosis + procedure count). Auto-expanded when no diagnosis selected.
+- **Free flap initialization**: Auto-created free flap procedures from diagnosis suggestions now include initialized `clinicalDetails` (flapType, SNOMED codes, harvest side, indication, empty anastomoses).
 
 ### Anastomosis UI (AnastomosisEntryCard)
 - **Segmented buttons**: Technique (vein) and Configuration fields use segmented button groups instead of PickerField dropdowns.

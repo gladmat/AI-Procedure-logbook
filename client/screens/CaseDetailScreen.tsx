@@ -330,8 +330,6 @@ export default function CaseDetailScreen() {
     (m) => m.id === caseData.ownerId || m.userId === caseData.ownerId
   );
 
-  const flapDetails = caseData.clinicalDetails as FreeFlapDetails;
-
   const formatDuration = (minutes: number | undefined): string | undefined => {
     if (!minutes) return undefined;
     const hours = Math.floor(minutes / 60);
@@ -524,6 +522,33 @@ export default function CaseDetailScreen() {
                                   ))}
                                 </View>
                               ) : null}
+                              {(proc.clinicalDetails as FreeFlapDetails).perforatorCount ? (
+                                <DetailRow 
+                                  label="Perforator Count" 
+                                  value={(proc.clinicalDetails as FreeFlapDetails).perforatorCount} 
+                                />
+                              ) : null}
+                              {(proc.clinicalDetails as FreeFlapDetails).elevationPlane ? (
+                                <DetailRow 
+                                  label="Elevation Plane" 
+                                  value={(proc.clinicalDetails as FreeFlapDetails).elevationPlane === "subfascial" ? "Subfascial" : (proc.clinicalDetails as FreeFlapDetails).elevationPlane === "suprafascial" ? "Suprafascial" : (proc.clinicalDetails as FreeFlapDetails).elevationPlane} 
+                                />
+                              ) : null}
+                              {(proc.clinicalDetails as FreeFlapDetails).composition ? (
+                                <DetailRow 
+                                  label="Composition" 
+                                  value={(proc.clinicalDetails as FreeFlapDetails).composition} 
+                                />
+                              ) : null}
+                              {(proc.clinicalDetails as FreeFlapDetails).isFlowThrough ? (
+                                <DetailRow label="Flow-Through" value="Yes" />
+                              ) : null}
+                              {(proc.clinicalDetails as FreeFlapDetails).skinIsland !== undefined ? (
+                                <DetailRow 
+                                  label="Skin Island" 
+                                  value={(proc.clinicalDetails as FreeFlapDetails).skinIsland ? "Yes" : "No"} 
+                                />
+                              ) : null}
                             </>
                           ) : null}
                           {proc.specialty === "hand_surgery" && proc.clinicalDetails ? (
@@ -583,6 +608,7 @@ export default function CaseDetailScreen() {
                     source={{ uri: media.localUri }}
                     style={styles.mediaImage}
                     resizeMode="cover"
+                    onError={() => console.warn("Media file missing:", media.localUri)}
                   />
                   <View style={[styles.mediaTypeBadge, { backgroundColor: theme.link }]}>
                     <ThemedText style={styles.mediaTypeBadgeText}>
@@ -1114,24 +1140,6 @@ export default function CaseDetailScreen() {
           </View>
         )}
 
-        {flapDetails?.harvestSide || flapDetails?.indication || flapDetails?.ischemiaTimeMinutes ? (
-          <>
-            <SectionHeader title="Clinical Details" />
-            <View style={[styles.card, { backgroundColor: theme.backgroundDefault }]}>
-              <DetailRow label="Harvest Side" value={flapDetails.harvestSide === "left" ? "Left" : "Right"} />
-              <DetailRow label="Indication" value={flapDetails.indication ? INDICATION_LABELS[flapDetails.indication] : undefined} />
-              <DetailRow label="Recipient Artery" value={flapDetails.recipientArteryName} />
-              <DetailRow label="Recipient Vein" value={flapDetails.recipientVeinName} />
-              <DetailRow label="Anastomosis" value={flapDetails.anastomosisType ? ANASTOMOSIS_LABELS[flapDetails.anastomosisType] : undefined} />
-              <DetailRow label="Ischemia Time" value={flapDetails.ischemiaTimeMinutes} unit="min" />
-              <DetailRow label="Coupler Size" value={flapDetails.couplerSizeMm} unit="mm" />
-              <DetailRow label="Flap Dimensions" value={flapDetails.flapWidthCm && flapDetails.flapLengthCm ? `${flapDetails.flapWidthCm} x ${flapDetails.flapLengthCm}` : undefined} unit="cm" />
-              <DetailRow label="Perforator Count" value={flapDetails.perforatorCount} />
-              <DetailRow label="Elevation Plane" value={flapDetails.elevationPlane === "subfascial" ? "Subfascial" : flapDetails.elevationPlane === "suprafascial" ? "Suprafascial" : undefined} />
-            </View>
-          </>
-        ) : null}
-
         <SectionHeader title="Timeline" />
         <WoundDimensionChart events={timelineEvents} />
         {timelineEvents.length === 0 ? (
@@ -1184,6 +1192,7 @@ export default function CaseDetailScreen() {
                           source={{ uri: media.localUri }}
                           style={styles.mediaThumbnail}
                           resizeMode="cover"
+                          onError={() => console.warn("Media file missing:", media.localUri)}
                         />
                       ))}
                     </ScrollView>

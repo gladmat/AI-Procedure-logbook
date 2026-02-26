@@ -324,6 +324,10 @@ export default function CaseFormScreen() {
 
   useEffect(() => {
     const loadDraft = async () => {
+      if (isEditMode) {
+        draftLoadedRef.current = true;
+        return;
+      }
       const draft = await getCaseDraft(specialty);
       if (!draft) {
         draftLoadedRef.current = true;
@@ -391,36 +395,37 @@ export default function CaseFormScreen() {
         setProcedureDate(caseData.procedureDate);
         setFacility(caseData.facility);
         setProcedureType(caseData.procedureType);
-        if (caseData.diagnosisGroups) setDiagnosisGroups(caseData.diagnosisGroups);
-        if (caseData.surgeryTiming?.startTime) setSurgeryStartTime(caseData.surgeryTiming.startTime);
-        if (caseData.surgeryTiming?.endTime) setSurgeryEndTime(caseData.surgeryTiming.endTime);
-        if (caseData.operatingTeam) setOperatingTeam(caseData.operatingTeam);
-        if (caseData.gender) setGender(caseData.gender);
-        if (caseData.ethnicity) setEthnicity(caseData.ethnicity);
-        if (caseData.admissionDate) setAdmissionDate(caseData.admissionDate);
-        if (caseData.dischargeDate) setDischargeDate(caseData.dischargeDate);
-        if (caseData.admissionUrgency) setAdmissionUrgency(caseData.admissionUrgency);
-        if (caseData.stayType) setStayType(caseData.stayType);
-        if (caseData.injuryDate) setInjuryDate(caseData.injuryDate);
-        if (caseData.unplannedReadmission) setUnplannedReadmission(caseData.unplannedReadmission);
-        if (caseData.asaScore) setAsaScore(String(caseData.asaScore));
-        if (caseData.heightCm) setHeightCm(String(caseData.heightCm));
-        if (caseData.weightKg) setWeightKg(String(caseData.weightKg));
-        if (caseData.smoker) setSmoker(caseData.smoker);
-        if (caseData.diabetes !== undefined) setDiabetes(caseData.diabetes);
-        if (caseData.woundInfectionRisk) setWoundInfectionRisk(caseData.woundInfectionRisk);
-        if (caseData.anaestheticType) setAnaestheticType(caseData.anaestheticType);
-        if (caseData.prophylaxis?.antibiotics) setAntibioticProphylaxis(caseData.prophylaxis.antibiotics);
-        if (caseData.prophylaxis?.dvtPrevention) setDvtProphylaxis(caseData.prophylaxis.dvtPrevention);
-        if (caseData.unplannedICU) setUnplannedICU(caseData.unplannedICU);
-        if (caseData.returnToTheatre) setReturnToTheatre(caseData.returnToTheatre);
-        if (caseData.returnToTheatreReason) setReturnToTheatreReason(caseData.returnToTheatreReason);
-        if (caseData.outcome) setOutcome(caseData.outcome);
-        if (caseData.mortalityClassification) setMortalityClassification(caseData.mortalityClassification);
-        if (caseData.discussedAtMDM) setDiscussedAtMDM(caseData.discussedAtMDM);
-        if (caseData.comorbidities) setSelectedComorbidities(caseData.comorbidities);
-        if (caseData.operativeMedia) setOperativeMedia(caseData.operativeMedia);
-        if (caseData.infectionOverlay) setInfectionOverlay(caseData.infectionOverlay);
+        setDiagnosisGroups(caseData.diagnosisGroups || diagnosisGroups);
+        setSurgeryStartTime(caseData.surgeryTiming?.startTime ?? "");
+        setSurgeryEndTime(caseData.surgeryTiming?.endTime ?? "");
+        setOperatingTeam(caseData.operatingTeam ?? []);
+        setGender(caseData.gender ?? "");
+        setEthnicity(caseData.ethnicity ?? "");
+        setAdmissionDate(caseData.admissionDate ?? "");
+        setDischargeDate(caseData.dischargeDate ?? "");
+        setAdmissionUrgency(caseData.admissionUrgency ?? "");
+        setStayType(caseData.stayType ?? "");
+        setInjuryDate(caseData.injuryDate ?? "");
+        setUnplannedReadmission(caseData.unplannedReadmission ?? "no");
+        setIsUnplannedReadmission((caseData.unplannedReadmission ?? "no") !== "no");
+        setAsaScore(caseData.asaScore ? String(caseData.asaScore) : "");
+        setHeightCm(caseData.heightCm ? String(caseData.heightCm) : "");
+        setWeightKg(caseData.weightKg ? String(caseData.weightKg) : "");
+        setSmoker(caseData.smoker ?? "");
+        setDiabetes(caseData.diabetes ?? null);
+        setWoundInfectionRisk(caseData.woundInfectionRisk ?? "");
+        setAnaestheticType(caseData.anaestheticType ?? "");
+        setAntibioticProphylaxis(caseData.prophylaxis?.antibiotics ?? false);
+        setDvtProphylaxis(caseData.prophylaxis?.dvtPrevention ?? false);
+        setUnplannedICU(caseData.unplannedICU ?? "no");
+        setReturnToTheatre(caseData.returnToTheatre ?? false);
+        setReturnToTheatreReason(caseData.returnToTheatreReason ?? "");
+        setOutcome(caseData.outcome ?? "");
+        setMortalityClassification(caseData.mortalityClassification ?? "");
+        setDiscussedAtMDM(caseData.discussedAtMDM ?? false);
+        setSelectedComorbidities(caseData.comorbidities ?? []);
+        setOperativeMedia(caseData.operativeMedia ?? []);
+        setInfectionOverlay(caseData.infectionOverlay ?? undefined);
 
         if (caseData.clinicalDetails) {
           setClinicalDetails(caseData.clinicalDetails as Record<string, any>);
@@ -431,11 +436,14 @@ export default function CaseFormScreen() {
           if (details.anastomoses && details.anastomoses.length > 0) {
             setAnastomoses(details.anastomoses);
           }
+        } else {
+          setClinicalDetails(getDefaultClinicalDetails(specialty));
+          setRecipientSiteRegion(undefined);
+          setAnastomoses([]);
         }
 
-        // Load team member role
         const userMember = caseData.teamMembers?.find(m => m.name === "You");
-        if (userMember?.role) setRole(userMember.role);
+        if (userMember?.role) setRole(userMember.role as Role);
       } catch (error) {
         console.error("Error loading case for edit:", error);
       }

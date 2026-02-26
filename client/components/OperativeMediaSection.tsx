@@ -192,6 +192,7 @@ export function OperativeMediaSection({
                 source={{ uri: item.localUri }}
                 style={styles.previewImage}
                 resizeMode="cover"
+                onError={() => console.warn("Media file missing:", item.localUri)}
               />
               <View style={[styles.typeBadge, { backgroundColor: theme.link }]}>
                 <ThemedText style={styles.typeBadgeText}>

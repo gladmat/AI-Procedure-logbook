@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Feather } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { BorderRadius, Spacing, Typography } from "@/constants/theme";
@@ -509,42 +510,44 @@ export function DatePickerField({
         ) : null}
       </View>
       
-      <Pressable
-        style={[
-          styles.dateButton,
-          {
-            backgroundColor: disabled ? theme.backgroundDefault : theme.backgroundRoot,
-            borderColor: error ? theme.error : theme.border,
-            opacity: disabled ? 0.6 : 1,
-          },
-        ]}
-        onPress={() => !disabled && setShowPicker(true)}
-        disabled={disabled}
-      >
-        {value ? (
-          <ThemedText style={[styles.dateButtonText, { color: theme.text }]}>
-            {formatDisplayDate(value)}
-          </ThemedText>
-        ) : (
-          <ThemedText style={[styles.dateButtonText, { color: theme.textTertiary }]}>
-            {placeholder}
-          </ThemedText>
-        )}
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-          {clearable && value && !disabled ? (
-            <TouchableOpacity
-              onPress={(e) => {
-                e.stopPropagation();
-                onChange("");
-              }}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Feather name="x-circle" size={18} color={theme.textTertiary} />
-            </TouchableOpacity>
-          ) : null}
+      <View style={{ flexDirection: "row", alignItems: "center" }}>
+        <Pressable
+          style={[
+            styles.dateButton,
+            {
+              flex: 1,
+              backgroundColor: disabled ? theme.backgroundDefault : theme.backgroundRoot,
+              borderColor: error ? theme.error : theme.border,
+              opacity: disabled ? 0.6 : 1,
+            },
+          ]}
+          onPress={() => !disabled && setShowPicker(true)}
+          disabled={disabled}
+        >
+          {value ? (
+            <ThemedText style={[styles.dateButtonText, { color: theme.text }]}>
+              {formatDisplayDate(value)}
+            </ThemedText>
+          ) : (
+            <ThemedText style={[styles.dateButtonText, { color: theme.textTertiary }]}>
+              {placeholder}
+            </ThemedText>
+          )}
           <Feather name="calendar" size={20} color={theme.textSecondary} />
-        </View>
-      </Pressable>
+        </Pressable>
+        {clearable && value && !disabled ? (
+          <Pressable
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              onChange("");
+            }}
+            hitSlop={{ top: 12, bottom: 12, left: 8, right: 12 }}
+            style={{ paddingLeft: 8 }}
+          >
+            <Feather name="x-circle" size={20} color={theme.textTertiary} />
+          </Pressable>
+        ) : null}
+      </View>
 
       {error ? (
         <ThemedText style={[styles.error, { color: theme.error }]}>

@@ -32,7 +32,8 @@ import {
   findDiagnosisById,
 } from "@/lib/diagnosisPicklists";
 import type { DiagnosisPicklistEntry } from "@/types/diagnosis";
-import { findPicklistEntry } from "@/lib/procedurePicklist";
+import { findPicklistEntry, PICKLIST_TO_FLAP_TYPE } from "@/lib/procedurePicklist";
+import { FLAP_SNOMED_MAP, type FreeFlapDetails } from "@/types/case";
 import { SectionHeader } from "@/components/SectionHeader";
 import { DiagnosisSuggestions } from "@/components/DiagnosisSuggestions";
 import { HandTraumaStructurePicker } from "@/components/hand-trauma/HandTraumaStructurePicker";
@@ -68,6 +69,7 @@ export function DiagnosisGroupEditor({ group, index, isOnly, onChange, onDelete 
   const [snomedSuggestion, setSnomedSuggestion] = useState<{ searchTerm: string; displayName: string } | null>(null);
   const [isMultiLesion, setIsMultiLesion] = useState<boolean>(group.isMultiLesion ?? false);
   const [lesionInstances, setLesionInstances] = useState<LesionInstance[]>(group.lesionInstances ?? []);
+  const [isExpanded, setIsExpanded] = useState<boolean>(!group.diagnosis?.displayName);
 
   useEffect(() => {
     if (initializedRef.current) return;
@@ -166,6 +168,21 @@ export function DiagnosisGroupEditor({ group, index, isOnly, onChange, onDelete 
 
     const newProcedures: CaseProcedure[] = activeIds.map((picklistId, idx) => {
       const entry = findPicklistEntry(picklistId);
+      let clinicalDetails: FreeFlapDetails | undefined = undefined;
+      if (entry?.hasFreeFlap) {
+        const mappedFlapType = PICKLIST_TO_FLAP_TYPE[picklistId];
+        if (mappedFlapType) {
+          const snomedEntry = FLAP_SNOMED_MAP[mappedFlapType];
+          clinicalDetails = {
+            flapType: mappedFlapType,
+            flapSnomedCode: snomedEntry?.code,
+            flapSnomedDisplay: snomedEntry?.display,
+            harvestSide: "left",
+            indication: "trauma",
+            anastomoses: [],
+          } as FreeFlapDetails;
+        }
+      }
       return {
         id: uuidv4(),
         sequenceOrder: idx + 1,
@@ -177,6 +194,7 @@ export function DiagnosisGroupEditor({ group, index, isOnly, onChange, onDelete 
         snomedCtDisplay: entry?.snomedCtDisplay,
         subcategory: entry?.subcategory,
         tags: entry?.tags,
+        clinicalDetails,
       };
     });
     setProcedures(newProcedures.length > 0 ? newProcedures : buildDefaultProcedures());
@@ -447,6 +465,38 @@ export function DiagnosisGroupEditor({ group, index, isOnly, onChange, onDelete 
     return "bcc";
   }
 
+  if (!isExpanded && !isOnly) {
+    return (
+      <Pressable
+        onPress={() => {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          setIsExpanded(true);
+        }}
+        style={[
+          styles.collapsedGroupCard,
+          { backgroundColor: theme.backgroundElevated, borderColor: theme.border },
+        ]}
+      >
+        <View style={styles.collapsedGroupHeader}>
+          <View style={[styles.orderBadge, { backgroundColor: theme.link + "20" }]}>
+            <ThemedText style={[styles.orderText, { color: theme.link }]}>
+              {index + 1}
+            </ThemedText>
+          </View>
+          <View style={{ flex: 1 }}>
+            <ThemedText style={{ fontWeight: "600", fontSize: 15 }}>
+              {SPECIALTY_LABELS[groupSpecialty]}
+            </ThemedText>
+            <ThemedText style={{ color: theme.textSecondary, fontSize: 13, marginTop: 2 }}>
+              {group.diagnosis?.displayName || "No diagnosis"} · {procedures.length} procedure{procedures.length !== 1 ? "s" : ""}
+            </ThemedText>
+          </View>
+          <Feather name="chevron-down" size={20} color={theme.textSecondary} />
+        </View>
+      </Pressable>
+    );
+  }
+
   return (
     <View style={[styles.groupContainer, !isOnly ? { borderColor: theme.border } : undefined]}>
       {!isOnly ? (
@@ -454,7 +504,16 @@ export function DiagnosisGroupEditor({ group, index, isOnly, onChange, onDelete 
           <ThemedText style={[styles.groupTitle, { color: theme.textSecondary }]}>
             Diagnosis Group {index + 1}
           </ThemedText>
-          {!isOnly ? (
+          <View style={{ flexDirection: "row", alignItems: "center", gap: Spacing.sm }}>
+            <Pressable
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setIsExpanded(false);
+              }}
+              hitSlop={8}
+            >
+              <Feather name="chevron-up" size={20} color={theme.textSecondary} />
+            </Pressable>
             <Pressable
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -464,7 +523,7 @@ export function DiagnosisGroupEditor({ group, index, isOnly, onChange, onDelete 
             >
               <Feather name="trash-2" size={18} color={theme.error} />
             </Pressable>
-          ) : null}
+          </View>
         </View>
       ) : null}
 
@@ -862,5 +921,27 @@ const styles = StyleSheet.create({
   addButtonText: {
     fontSize: 14,
     fontWeight: "500",
+  },
+  collapsedGroupCard: {
+    borderWidth: 1,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.md,
+    marginBottom: Spacing.md,
+  },
+  collapsedGroupHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+  },
+  orderBadge: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  orderText: {
+    fontSize: 14,
+    fontWeight: "700",
   },
 });
