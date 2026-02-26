@@ -76,6 +76,7 @@ Comprehensive infection case documentation with serial episode tracking.
 - **Infection Statistics**: Dashboard card showing counts, averages, and breakdowns.
 
 ### Free Flap / Orthoplastic Documentation
+- **Picklist-to-Flap Mapping** (`client/lib/procedurePicklist.ts`): `PICKLIST_TO_FLAP_TYPE` maps picklist entry IDs to `FreeFlap` enum values. When a surgeon selects a specific flap from the picklist (e.g., "Free ALT flap"), `flapType` is auto-populated and the clinical details form shows a locked confirmation badge instead of the full 18-flap picker. Generic/unmapped entries still show the full picker.
 - **FreeFlapPicker Component**: Selectable list of 18 free flaps.
 - **Config-Driven Elevation Planes**: Per-flap configurable elevation planes.
 - **Flap-Specific Conditional Fields**: Config-driven field rendering via `flapFieldConfig.ts` for detailed clinical parameters (~100 typed fields).

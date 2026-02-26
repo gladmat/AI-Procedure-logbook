@@ -12,7 +12,7 @@ import { FreeFlapPicker } from "@/components/FreeFlapPicker";
 import { FlapSpecificFields } from "@/components/FlapSpecificFields";
 import { SectionHeader } from "@/components/SectionHeader";
 import { v4 as uuidv4 } from "uuid";
-import { findPicklistEntry } from "@/lib/procedurePicklist";
+import { findPicklistEntry, PICKLIST_TO_FLAP_TYPE } from "@/lib/procedurePicklist";
 import {
   type Specialty,
   type AnatomicalRegion,
@@ -29,11 +29,15 @@ import {
   INDICATION_LABELS,
   FLAP_SNOMED_MAP,
   RECIPIENT_SITE_SNOMED_MAP,
+  FREE_FLAP_LABELS,
+  ELEVATION_PLANE_LABELS,
 } from "@/types/case";
+import { FLAP_ELEVATION_PLANES } from "@/data/flapFieldConfig";
 
 interface FreeFlapClinicalFieldsProps {
   clinicalDetails: FreeFlapDetails;
   procedureType: string;
+  picklistEntryId?: string;
   onUpdate: (details: FreeFlapDetails) => void;
 }
 
@@ -115,9 +119,15 @@ const DEFAULT_DONOR_VESSELS: Record<FreeFlap, { artery: string; vein: string }> 
 export function FreeFlapClinicalFields({
   clinicalDetails,
   procedureType,
+  picklistEntryId,
   onUpdate,
 }: FreeFlapClinicalFieldsProps) {
   const { theme } = useTheme();
+
+  const presetFlapType = picklistEntryId
+    ? PICKLIST_TO_FLAP_TYPE[picklistEntryId]
+    : undefined;
+  const flapIsLocked = !!presetFlapType;
   
   const anastomoses = clinicalDetails.anastomoses || [];
   const recipientSiteRegion = clinicalDetails.recipientSiteRegion;
@@ -183,15 +193,47 @@ export function FreeFlapClinicalFields({
 
   return (
     <View style={styles.container}>
-      <FreeFlapPicker
-        flapType={clinicalDetails.flapType}
-        elevationPlane={clinicalDetails.elevationPlane}
-        onFlapTypeChange={handleFlapTypeChange}
-        onElevationPlaneChange={(plane) =>
-          onUpdate({ ...clinicalDetails, elevationPlane: plane })
-        }
-        required
-      />
+      {flapIsLocked && clinicalDetails.flapType ? (
+        <View style={styles.lockedFlapSection}>
+          <View style={styles.labelRow}>
+            <ThemedText style={[styles.fieldLabel, { color: theme.textSecondary }]}>
+              Flap Type
+            </ThemedText>
+          </View>
+          <View style={[styles.lockedFlapBadge, {
+            backgroundColor: theme.link + "15",
+            borderColor: theme.link,
+          }]}>
+            <Feather name="check-circle" size={16} color={theme.link} />
+            <ThemedText style={[styles.lockedFlapText, { color: theme.link }]}>
+              {FREE_FLAP_LABELS[clinicalDetails.flapType]}
+            </ThemedText>
+          </View>
+          {(FLAP_ELEVATION_PLANES[clinicalDetails.flapType] || []).length > 0 ? (
+            <View style={{ marginTop: Spacing.md }}>
+              <PickerField
+                label="Elevation Plane"
+                value={clinicalDetails.elevationPlane || ""}
+                options={(FLAP_ELEVATION_PLANES[clinicalDetails.flapType] || []).map((plane) => ({
+                  value: plane,
+                  label: ELEVATION_PLANE_LABELS[plane],
+                }))}
+                onSelect={(value) => onUpdate({ ...clinicalDetails, elevationPlane: value as ElevationPlane })}
+              />
+            </View>
+          ) : null}
+        </View>
+      ) : (
+        <FreeFlapPicker
+          flapType={clinicalDetails.flapType}
+          elevationPlane={clinicalDetails.elevationPlane}
+          onFlapTypeChange={handleFlapTypeChange}
+          onElevationPlaneChange={(plane) =>
+            onUpdate({ ...clinicalDetails, elevationPlane: plane })
+          }
+          required
+        />
+      )}
 
       {showSkinIsland ? (
         <SelectField
@@ -500,6 +542,7 @@ export function ProcedureClinicalDetails({
       <FreeFlapClinicalFields
         clinicalDetails={freeFlapDetails}
         procedureType={procedureType}
+        picklistEntryId={picklistEntryId}
         onUpdate={onUpdate}
       />
     );
@@ -666,5 +709,28 @@ const styles = StyleSheet.create({
   },
   emptyFractureText: {
     fontSize: 14,
+  },
+  lockedFlapSection: {
+    marginBottom: Spacing.lg,
+  },
+  labelRow: {
+    marginBottom: Spacing.sm,
+  },
+  fieldLabel: {
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  lockedFlapBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.sm,
+    borderWidth: 1,
+  },
+  lockedFlapText: {
+    fontSize: 15,
+    fontWeight: "600",
   },
 });

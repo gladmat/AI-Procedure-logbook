@@ -10,14 +10,16 @@ import { ProcedureClinicalDetails } from "@/components/ProcedureClinicalDetails"
 import { ProcedureSubcategoryPicker } from "@/components/ProcedureSubcategoryPicker";
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 import { SnomedSearchPicker } from "@/components/SnomedSearchPicker";
-import { hasPicklistForSpecialty, findPicklistEntry } from "@/lib/procedurePicklist";
+import { hasPicklistForSpecialty, findPicklistEntry, PICKLIST_TO_FLAP_TYPE } from "@/lib/procedurePicklist";
 import type { ProcedurePicklistEntry } from "@/lib/procedurePicklist";
 import {
   type CaseProcedure,
   type Role,
   type Specialty,
   type ClinicalDetails,
+  type FreeFlapDetails,
   type ProcedureTag,
+  FLAP_SNOMED_MAP,
   ROLE_LABELS,
   ROLE_DESCRIPTIONS,
   SPECIALTY_LABELS,
@@ -64,6 +66,18 @@ export function ProcedureEntryCard({
   };
 
   const handlePicklistSelect = (entry: ProcedurePicklistEntry) => {
+    const mappedFlapType = PICKLIST_TO_FLAP_TYPE[entry.id];
+
+    let clinicalDetails: ClinicalDetails | undefined = undefined;
+    if (entry.hasFreeFlap && mappedFlapType) {
+      const snomedEntry = FLAP_SNOMED_MAP[mappedFlapType];
+      clinicalDetails = {
+        flapType: mappedFlapType,
+        flapSnomedCode: snomedEntry?.code,
+        flapSnomedDisplay: snomedEntry?.display,
+      } as FreeFlapDetails;
+    }
+
     onUpdate({
       ...procedure,
       procedureName: entry.displayName,
@@ -72,7 +86,7 @@ export function ProcedureEntryCard({
       tags: entry.tags,
       snomedCtCode: entry.snomedCtCode,
       snomedCtDisplay: entry.snomedCtDisplay,
-      clinicalDetails: undefined,
+      clinicalDetails,
     });
   };
 

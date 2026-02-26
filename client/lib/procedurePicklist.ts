@@ -10,7 +10,7 @@
  * not duplicate entries.
  */
 
-import type { Specialty, ProcedureTag } from "@/types/case";
+import type { Specialty, ProcedureTag, FreeFlap } from "@/types/case";
 
 export interface ProcedurePicklistEntry {
   id: string;
@@ -23,6 +23,28 @@ export interface ProcedurePicklistEntry {
   hasFreeFlap?: boolean;
   sortOrder: number;
 }
+
+export const PICKLIST_TO_FLAP_TYPE: Partial<Record<string, FreeFlap>> = {
+  orth_ff_alt: "alt",
+  orth_ff_gracilis: "gracilis",
+  orth_ff_tug: "tug",
+  orth_ff_rfff: "radial_forearm",
+  orth_ff_fibula: "fibula",
+  orth_ff_ld: "latissimus_dorsi",
+  orth_ff_msap: "medial_sural",
+  orth_ff_tdap: "tdap",
+  orth_ff_pap: "pap",
+  orth_ff_scapular: "scapular",
+  orth_ff_parascapular: "parascapular",
+  orth_ff_serratus: "serratus_anterior",
+  orth_ff_scip: "scip",
+  breast_recon_diep: "diep",
+  breast_recon_sgap: "sgap",
+  breast_recon_igap: "igap",
+  breast_recon_siea: "siea",
+  breast_recon_scip: "scip",
+  hn_fn_free_gracilis: "gracilis",
+};
 
 // ═══════════════════════════════════════════════════════════════════════════
 // ORTHOPLASTIC (~45 procedures)
