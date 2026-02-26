@@ -28,7 +28,7 @@ import type { DiagnosisPicklistEntry } from "@/types/diagnosis";
 // hasEnhancedHistology: true so the histology overlay is available.
 // ═══════════════════════════════════════════════════════════════════════════════
 
-const GEN_DX_SKIN_CANCER: DiagnosisPicklistEntry[] = [
+export const GEN_DX_SKIN_CANCER: DiagnosisPicklistEntry[] = [
   {
     id: "gen_dx_bcc",
     displayName: "Basal cell carcinoma (BCC)",

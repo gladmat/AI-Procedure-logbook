@@ -22,7 +22,7 @@ import type { DiagnosisPicklistEntry } from "@/types/diagnosis";
 // The existing skin cancer picklist in General handles non-site-specific entries.
 // ═══════════════════════════════════════════════════════════════════════════════
 
-const HN_DX_SKIN_CANCER: DiagnosisPicklistEntry[] = [
+export const HN_DX_SKIN_CANCER: DiagnosisPicklistEntry[] = [
   {
     id: "hn_dx_bcc_face",
     displayName: "BCC of face / head / neck",
