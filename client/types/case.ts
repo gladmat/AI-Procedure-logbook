@@ -623,6 +623,7 @@ export interface FreeFlapDetails {
   skinIsland?: boolean;
   recipientSite?: string;
   recipientSiteRegion?: AnatomicalRegion;
+  recipientSiteLaterality?: HarvestSide;
   recipientSiteSnomedCode?: string;
   recipientSiteSnomedDisplay?: string;
   ischemiaTimeMinutes?: number;

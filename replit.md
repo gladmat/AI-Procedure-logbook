@@ -133,6 +133,7 @@ Comprehensive infection case documentation with serial episode tracking.
 - **Save payload**: Uses actual `clinicalDetails` state (not `{} as any`), preserving all clinical data through edits.
 - **Draft isolation**: Draft loading is skipped entirely in edit mode (`isEditMode` guard) to prevent race conditions.
 - **Unconditional setters**: All field setters use `?? ""` / `?? defaultValue` instead of conditional `if`, ensuring cleared fields persist correctly.
+- **Header save ref pattern**: `handleSaveRef.current` always points to the latest `handleSave` closure, so the header button never captures stale state.
 
 ### DatePickerField (FormField.tsx)
 - **Clear button**: Moved to sibling Pressable (not nested inside date button) to prevent event bubbling that reopened the picker after clearing.
@@ -140,6 +141,11 @@ Comprehensive infection case documentation with serial episode tracking.
 ### Case Detail Display (CaseDetailScreen)
 - **Per-procedure flap details**: Enhanced to show perforatorCount, elevationPlane, composition, isFlowThrough, skinIsland.
 - **Legacy section removed**: Old top-level `caseData.clinicalDetails` display section deleted (read from wrong data path).
+- **Recipient site laterality**: Displayed as prefix to recipient site region (e.g., "Left lower leg").
+
+### Free Flap Laterality (ProcedureClinicalDetails)
+- **Recipient site laterality**: New `recipientSiteLaterality` field added to `FreeFlapDetails` type.
+- **Segmented button UI**: Both Harvest Side and Recipient Side use filled segmented buttons (matching Stay Type / Admission Urgency pattern) instead of outline pill SelectFields. Displayed side-by-side in a row.
 
 ### Diagnosis Group Editor
 - **Collapsible groups**: Multi-diagnosis groups collapse to a compact summary card (specialty + diagnosis + procedure count). Auto-expanded when no diagnosis selected.

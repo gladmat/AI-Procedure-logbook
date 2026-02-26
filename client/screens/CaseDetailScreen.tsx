@@ -492,7 +492,7 @@ export default function CaseDetailScreen() {
                               {(proc.clinicalDetails as FreeFlapDetails).recipientSiteRegion ? (
                                 <DetailRow 
                                   label="Recipient Site" 
-                                  value={(proc.clinicalDetails as FreeFlapDetails).recipientSiteRegion?.replace(/_/g, " ")} 
+                                  value={`${(proc.clinicalDetails as FreeFlapDetails).recipientSiteLaterality ? ((proc.clinicalDetails as FreeFlapDetails).recipientSiteLaterality === "left" ? "Left " : "Right ") : ""}${(proc.clinicalDetails as FreeFlapDetails).recipientSiteRegion?.replace(/_/g, " ")}`} 
                                 />
                               ) : null}
                               {(proc.clinicalDetails as FreeFlapDetails).ischemiaTimeMinutes ? (

@@ -123,21 +123,26 @@ export default function AddOperativeMediaScreen() {
   const handleConfirm = async () => {
     if (!currentUri) return;
 
-    const permanentUri = await persistMediaFile(currentUri, currentMimeType);
-    const mediaData = {
-      id: editMode && existingMediaId ? existingMediaId : uuidv4(),
-      localUri: permanentUri,
-      mimeType: currentMimeType,
-      mediaType: selectedType,
-      caption: captionInput.trim() || undefined,
-      createdAt: new Date().toISOString(),
-    };
+    try {
+      const permanentUri = await persistMediaFile(currentUri, currentMimeType);
+      const mediaData = {
+        id: editMode && existingMediaId ? existingMediaId : uuidv4(),
+        localUri: permanentUri,
+        mimeType: currentMimeType,
+        mediaType: selectedType,
+        caption: captionInput.trim() || undefined,
+        createdAt: new Date().toISOString(),
+      };
 
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    if (callbackId) {
-      executeGenericCallback(callbackId, mediaData);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      if (callbackId) {
+        executeGenericCallback(callbackId, mediaData);
+      }
+      navigation.goBack();
+    } catch (error) {
+      console.error("Error saving media:", error);
+      Alert.alert("Error", "Failed to save media. Please try again.");
     }
-    navigation.goBack();
   };
 
   return (

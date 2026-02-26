@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useRef, useCallback, MutableRefObject } from "react";
 import {
   View,
   StyleSheet,
@@ -646,6 +646,8 @@ export default function CaseFormScreen() {
     ]);
   }, [specialty]);
 
+  const handleSaveRef = useRef<() => Promise<void>>(async () => {});
+
   const handleSave = async () => {
     if (!patientIdentifier.trim()) {
       Alert.alert("Required Field", "Please enter a patient identifier");
@@ -781,12 +783,14 @@ export default function CaseFormScreen() {
     }
   };
 
+  handleSaveRef.current = handleSave;
+
   useEffect(() => {
     navigation.setOptions({
       headerTitle: isEditMode ? "Edit Case" : `${SPECIALTY_LABELS[specialty]} Case`,
       headerRight: () => (
         <HeaderButton
-          onPress={handleSave}
+          onPress={() => handleSaveRef.current()}
           disabled={saving}
           tintColor={theme.link}
         >
@@ -796,7 +800,7 @@ export default function CaseFormScreen() {
         </HeaderButton>
       ),
     });
-  }, [saving, patientIdentifier, facility, clinicalDetails, isEditMode, specialty, infectionOverlay]);
+  }, [saving, isEditMode, specialty]);
 
   const procedureOptions = (PROCEDURE_TYPES[specialty] || []).map((p) => ({
     value: p,

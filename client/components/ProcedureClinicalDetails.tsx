@@ -248,6 +248,73 @@ export function FreeFlapClinicalFields({
         />
       ) : null}
 
+      <View style={styles.row}>
+        <View style={styles.halfField}>
+          <ThemedText style={[styles.segmentedLabel, { color: theme.textSecondary }]}>
+            Harvest Side *
+          </ThemedText>
+          <View style={[styles.segmentedControl, { borderColor: theme.border, backgroundColor: theme.backgroundDefault }]}>
+            {(["left", "right"] as HarvestSide[]).map((side) => {
+              const isSelected = clinicalDetails.harvestSide === side;
+              return (
+                <Pressable
+                  key={side}
+                  style={[
+                    styles.segmentedButton,
+                    isSelected ? { backgroundColor: theme.link } : undefined,
+                  ]}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    onUpdate({ ...clinicalDetails, harvestSide: side });
+                  }}
+                >
+                  <ThemedText
+                    style={[
+                      styles.segmentedButtonText,
+                      { color: isSelected ? "#FFFFFF" : theme.textSecondary },
+                    ]}
+                  >
+                    {side === "left" ? "Left" : "Right"}
+                  </ThemedText>
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
+        <View style={styles.halfField}>
+          <ThemedText style={[styles.segmentedLabel, { color: theme.textSecondary }]}>
+            Recipient Side
+          </ThemedText>
+          <View style={[styles.segmentedControl, { borderColor: theme.border, backgroundColor: theme.backgroundDefault }]}>
+            {(["left", "right"] as HarvestSide[]).map((side) => {
+              const isSelected = clinicalDetails.recipientSiteLaterality === side;
+              return (
+                <Pressable
+                  key={side}
+                  style={[
+                    styles.segmentedButton,
+                    isSelected ? { backgroundColor: theme.link } : undefined,
+                  ]}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    onUpdate({ ...clinicalDetails, recipientSiteLaterality: side });
+                  }}
+                >
+                  <ThemedText
+                    style={[
+                      styles.segmentedButtonText,
+                      { color: isSelected ? "#FFFFFF" : theme.textSecondary },
+                    ]}
+                  >
+                    {side === "left" ? "Left" : "Right"}
+                  </ThemedText>
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
+      </View>
+
       <RecipientSiteSelector
         value={clinicalDetails.recipientSiteRegion}
         onSelect={handleRecipientSiteChange}
@@ -298,17 +365,6 @@ export function FreeFlapClinicalFields({
           </ThemedText>
         </Pressable>
       </View>
-
-      <SelectField
-        label="Harvest Side"
-        value={clinicalDetails.harvestSide || ""}
-        options={[
-          { value: "left", label: "Left" },
-          { value: "right", label: "Right" },
-        ]}
-        onSelect={(v) => onUpdate({ ...clinicalDetails, harvestSide: v as HarvestSide })}
-        required
-      />
 
       <SelectField
         label="Indication"
@@ -731,6 +787,28 @@ const styles = StyleSheet.create({
   },
   lockedFlapText: {
     fontSize: 15,
+    fontWeight: "600",
+  },
+  segmentedLabel: {
+    fontSize: 14,
+    fontWeight: "500",
+    marginBottom: Spacing.sm,
+  },
+  segmentedControl: {
+    flexDirection: "row",
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    overflow: "hidden",
+    marginBottom: Spacing.md,
+  },
+  segmentedButton: {
+    flex: 1,
+    paddingVertical: Spacing.sm + 2,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  segmentedButtonText: {
+    fontSize: 14,
     fontWeight: "600",
   },
 });
