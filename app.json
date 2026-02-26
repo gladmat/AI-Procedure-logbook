@@ -42,7 +42,14 @@
           }
         }
       ],
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Surgical Logbook needs access to your photo library to attach operative images to cases.",
+          "cameraPermission": "Surgical Logbook needs access to your camera to capture intraoperative photos."
+        }
+      ]
     ],
     "experiments": {
       "reactCompiler": true

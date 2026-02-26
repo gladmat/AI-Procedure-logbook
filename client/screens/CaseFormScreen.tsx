@@ -422,6 +422,17 @@ export default function CaseFormScreen() {
         if (caseData.operativeMedia) setOperativeMedia(caseData.operativeMedia);
         if (caseData.infectionOverlay) setInfectionOverlay(caseData.infectionOverlay);
 
+        if (caseData.clinicalDetails) {
+          setClinicalDetails(caseData.clinicalDetails as Record<string, any>);
+          const details = caseData.clinicalDetails as FreeFlapDetails;
+          if (details.recipientSiteRegion) {
+            setRecipientSiteRegion(details.recipientSiteRegion);
+          }
+          if (details.anastomoses && details.anastomoses.length > 0) {
+            setAnastomoses(details.anastomoses);
+          }
+        }
+
         // Load team member role
         const userMember = caseData.teamMembers?.find(m => m.name === "You");
         if (userMember?.role) setRole(userMember.role);
@@ -723,7 +734,11 @@ export default function CaseFormScreen() {
         // Case Status (active if no discharge date)
         caseStatus: dischargeDate ? "discharged" : "active",
         
-        clinicalDetails: {} as any,
+        clinicalDetails: {
+          ...clinicalDetails,
+          ...(recipientSiteRegion ? { recipientSiteRegion } : {}),
+          ...(anastomoses.length > 0 ? { anastomoses } : {}),
+        },
         teamMembers: isEditMode && existingCase?.teamMembers 
           ? existingCase.teamMembers 
           : [

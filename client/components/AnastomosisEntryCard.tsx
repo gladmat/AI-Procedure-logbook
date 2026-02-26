@@ -7,6 +7,8 @@ import { BorderRadius, Spacing } from "@/constants/theme";
 import { FormField, SelectField, PickerField } from "@/components/FormField";
 import {
   type AnastomosisEntry,
+  type AnastomosisType,
+  type CouplingMethod,
   type AnatomicalRegion,
   type SnomedRefItem,
   VESSEL_TYPE_LABELS,
@@ -40,6 +42,12 @@ export function AnastomosisEntryCard({
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
+    if (entry.couplingMethod === "coupler" && entry.configuration !== "end_to_end") {
+      onUpdate({ ...entry, configuration: "end_to_end" });
+    }
+  }, []);
+
+  useEffect(() => {
     if (recipientRegion) {
       setIsLoading(true);
       Promise.all([
@@ -47,7 +55,6 @@ export function AnastomosisEntryCard({
         fetchVesselsByRegion(recipientRegion, "vein"),
       ])
         .then(([arteriesData, veinsData]) => {
-          // Use server data if available, otherwise use local presets
           if (arteriesData.length > 0) {
             setArteries(arteriesData);
           } else {
@@ -72,7 +79,6 @@ export function AnastomosisEntryCard({
         })
         .catch((err) => {
           console.error("Error fetching vessels:", err);
-          // Fall back to local presets on error
           const localArteries = getRecipientVesselPresets(recipientRegion, "artery");
           const localVeins = getRecipientVesselPresets(recipientRegion, "vein");
           setArteries(localArteries.map((name) => ({
@@ -234,7 +240,6 @@ export function AnastomosisEntryCard({
         placeholder={defaultDonorVessel || "e.g., Desc. branch LCFA"}
       />
 
-      {/* Arteries are always hand-sewn, veins can choose coupler or hand-sewn */}
       {entry.vesselType === "artery" ? (
         <View style={styles.fixedValue}>
           <ThemedText style={[styles.label, { color: theme.textSecondary }]}>
@@ -245,14 +250,34 @@ export function AnastomosisEntryCard({
           </ThemedText>
         </View>
       ) : (
-        <PickerField
-          label="Technique"
-          value={entry.couplingMethod || ""}
-          options={VEIN_COUPLING_METHOD_OPTIONS}
-          onSelect={(value) =>
-            onUpdate({ ...entry, couplingMethod: value as any })
-          }
-        />
+        <View style={styles.fieldGroup}>
+          <ThemedText style={[styles.label, { color: theme.textSecondary }]}>
+            Technique
+          </ThemedText>
+          <View style={[styles.segmentedControl, { borderColor: theme.border, backgroundColor: theme.backgroundDefault }]}>
+            {VEIN_COUPLING_METHOD_OPTIONS.map((option) => {
+              const isSelected = entry.couplingMethod === option.value;
+              return (
+                <Pressable
+                  key={option.value}
+                  style={[
+                    styles.segmentedButton,
+                    isSelected ? { backgroundColor: theme.link } : undefined,
+                  ]}
+                  onPress={() => {
+                    const newMethod = option.value as CouplingMethod;
+                    const configUpdate = newMethod === "coupler" ? { configuration: "end_to_end" as AnastomosisType } : {};
+                    onUpdate({ ...entry, couplingMethod: newMethod, ...configUpdate });
+                  }}
+                >
+                  <ThemedText style={[styles.segmentedButtonText, { color: isSelected ? "#fff" : theme.textSecondary }]}>
+                    {option.label}
+                  </ThemedText>
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
       )}
 
       {entry.vesselType === "vein" && entry.couplingMethod === "coupler" ? (
@@ -266,17 +291,35 @@ export function AnastomosisEntryCard({
         />
       ) : null}
 
-      <PickerField
-        label="Configuration"
-        value={entry.configuration || ""}
-        options={Object.entries(ANASTOMOSIS_LABELS).map(([value, label]) => ({
-          value,
-          label,
-        }))}
-        onSelect={(value) =>
-          onUpdate({ ...entry, configuration: value as any })
-        }
-      />
+      <View style={styles.fieldGroup}>
+        <ThemedText style={[styles.label, { color: theme.textSecondary }]}>
+          Configuration
+        </ThemedText>
+        <View style={[styles.segmentedControl, { borderColor: theme.border, backgroundColor: theme.backgroundDefault }]}>
+          {(Object.entries(ANASTOMOSIS_LABELS) as [AnastomosisType, string][]).map(([value, label]) => {
+            const isSelected = entry.configuration === value;
+            const isLocked = entry.couplingMethod === "coupler" && value !== "end_to_end";
+            return (
+              <Pressable
+                key={value}
+                style={[
+                  styles.segmentedButton,
+                  isSelected ? { backgroundColor: theme.link } : undefined,
+                  isLocked ? { opacity: 0.35 } : undefined,
+                ]}
+                onPress={() => {
+                  if (isLocked) return;
+                  onUpdate({ ...entry, configuration: value });
+                }}
+              >
+                <ThemedText style={[styles.segmentedButtonText, { color: isSelected ? "#fff" : theme.textSecondary }]}>
+                  {label}
+                </ThemedText>
+              </Pressable>
+            );
+          })}
+        </View>
+      </View>
     </View>
   );
 }
@@ -329,5 +372,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
     borderRadius: BorderRadius.sm,
     backgroundColor: "rgba(0,0,0,0.03)",
+  },
+  fieldGroup: {
+    marginBottom: Spacing.lg,
+  },
+  segmentedControl: {
+    flexDirection: "row",
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    overflow: "hidden",
+  },
+  segmentedButton: {
+    flex: 1,
+    paddingVertical: Spacing.sm + 2,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  segmentedButtonText: {
+    fontSize: 14,
+    fontWeight: "600",
   },
 });

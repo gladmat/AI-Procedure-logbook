@@ -1,0 +1,255 @@
+Now let me look at the photo/media and case edit issues:​​​​​​​​​​​​​​​​
+
+Now let me see how the inpatient/outpatient button pattern is implemented:​​​​​​​​​​​​​​​​
+
+Now I have everything I need. Let me prepare the comprehensive Replit agent prompt:​​​​​​​​​​​​​​​​
+
+Good — no special skill needed here, this is a code fix prompt. Let me now create the Replit agent prompt document:​​​​​​​​​​​​​​​​
+
+I have all the information I need. Here’s my full analysis of the four bugs and the implementation prompt for Replit.
+
+Root Cause Analysis
+Bug 1 — Photos not working
+app.json is missing the expo-image-picker plugin. Without it, the iOS build never includes the required NSCameraUsageDescription and NSPhotoLibraryUsageDescription permission strings in Info.plist. The permission request fails silently (or the build-time config plugin is never run), so camera and gallery access never works on device/TestFlight.
+Bug 2 — Edit & Save does nothing
+Two compounding bugs in CaseFormScreen.tsx:
+	1.	Edit mode loading never restores clinicalDetails, anastomoses, or recipientSiteRegion — these stay at their initial defaults when editing a case
+	2.	The save payload hardcodes clinicalDetails: {} as any (line 726) instead of using the actual state — so every save in edit mode silently wipes all clinical details (free flap data, anastomosis records, etc.)
+The combination means: editing opens with blank clinical state, saves that blank state, appearing to do “nothing” visually but actually destroying the clinical record.
+Bug 3 — Anastomosis configuration/technique → segmented buttons
+PickerField components for Technique (vein only) and Configuration need replacing with the same segmented button (segmentedControl) pattern used for Stay Type / Admission Urgency elsewhere in CaseFormScreen.
+Bug 4 — Coupler auto-sets configuration to End-to-End
+When couplingMethod is set to "coupler", configuration should automatically be forced to "end_to_end" (couplers are mechanically end-to-end only).
+
+Replit Agent Prompt
+
+## Task: Fix 4 bugs in the Surgical Logbook app
+
+You are fixing 4 specific, well-diagnosed bugs. Make only the changes described below. Do not refactor or reorganise anything else.
+
+---
+
+### Fix 1 — Photo adding on iOS: add expo-image-picker plugin to app.json
+
+**File:** `app.json`
+
+Add the `expo-image-picker` plugin to the `plugins` array so iOS builds include camera and photo library permission strings.
+
+Replace the current `plugins` array:
+```json
+"plugins": [
+  ["expo-splash-screen", { ... }],
+  "expo-web-browser"
+]
+
+
+With:
+
+"plugins": [
+  [
+    "expo-splash-screen",
+    {
+      "image": "./assets/images/splash-icon.png",
+      "imageWidth": 200,
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff",
+      "dark": {
+        "backgroundColor": "#1A1A1A"
+      }
+    }
+  ],
+  "expo-web-browser",
+  [
+    "expo-image-picker",
+    {
+      "photosPermission": "Surgical Logbook needs access to your photo library to attach operative images to cases.",
+      "cameraPermission": "Surgical Logbook needs access to your camera to capture intraoperative photos."
+    }
+  ]
+]
+
+
+Fix 2 — Edit & Save: restore clinicalDetails on load + fix save payload
+File: client/screens/CaseFormScreen.tsx
+2a — Load clinical details in edit mode
+In the loadExistingCase function (around line 387), after setInfectionOverlay(caseData.infectionOverlay), add these lines to restore clinical state:
+
+// Restore clinical details
+if (caseData.clinicalDetails) {
+  setClinicalDetails(caseData.clinicalDetails as Record<string, any>);
+  const details = caseData.clinicalDetails as FreeFlapDetails;
+  if (details.recipientSiteRegion) {
+    setRecipientSiteRegion(details.recipientSiteRegion);
+  }
+  if (details.anastomoses && details.anastomoses.length > 0) {
+    setAnastomoses(details.anastomoses);
+  }
+}
+
+
+Make sure FreeFlapDetails is already imported (it is, from @/types/case).
+2b — Fix the save payload to use actual clinicalDetails state
+Find this line (around line 726) in handleSave:
+
+clinicalDetails: {} as any,
+
+
+Replace it with:
+
+clinicalDetails: {
+  ...clinicalDetails,
+  ...(recipientSiteRegion ? { recipientSiteRegion } : {}),
+  ...(anastomoses.length > 0 ? { anastomoses } : {}),
+},
+
+
+This mirrors exactly what the draft auto-save already does correctly at lines 478-483.
+
+Fix 3 — Anastomosis UI: replace PickerField dropdowns with segmented buttons
+File: client/components/AnastomosisEntryCard.tsx
+3a — Replace the venous Technique PickerField with a segmented button group
+Find and remove the existing PickerField for Technique on vein (around line 185):
+
+<PickerField
+  label="Technique"
+  value={entry.couplingMethod || ""}
+  options={VEIN_COUPLING_METHOD_OPTIONS}
+  onSelect={(value) =>
+    onUpdate({ ...entry, couplingMethod: value as any })
+  }
+/>
+
+
+Replace it with:
+
+<View style={styles.fieldGroup}>
+  <ThemedText style={[styles.label, { color: theme.textSecondary }]}>
+    Technique
+  </ThemedText>
+  <View style={[styles.segmentedControl, { borderColor: theme.border, backgroundColor: theme.backgroundDefault }]}>
+    {VEIN_COUPLING_METHOD_OPTIONS.map((option) => {
+      const isSelected = entry.couplingMethod === option.value;
+      return (
+        <Pressable
+          key={option.value}
+          style={[
+            styles.segmentedButton,
+            isSelected ? { backgroundColor: theme.link } : undefined,
+          ]}
+          onPress={() => {
+            const newMethod = option.value as CouplingMethod;
+            // If coupler selected, auto-set configuration to end_to_end
+            const configUpdate = newMethod === "coupler" ? { configuration: "end_to_end" as AnastomosisType } : {};
+            onUpdate({ ...entry, couplingMethod: newMethod, ...configUpdate });
+          }}
+        >
+          <ThemedText style={[styles.segmentedButtonText, { color: isSelected ? "#fff" : theme.textSecondary }]}>
+            {option.label}
+          </ThemedText>
+        </Pressable>
+      );
+    })}
+  </View>
+</View>
+
+
+3b — Replace the Configuration PickerField with a segmented button group
+Find and remove the PickerField for Configuration (near the end of the card JSX):
+
+<PickerField
+  label="Configuration"
+  value={entry.configuration || ""}
+  options={Object.entries(ANASTOMOSIS_LABELS).map(([value, label]) => ({
+    value,
+    label,
+  }))}
+  onSelect={(value) =>
+    onUpdate({ ...entry, configuration: value as any })
+  }
+/>
+
+
+Replace it with:
+
+<View style={styles.fieldGroup}>
+  <ThemedText style={[styles.label, { color: theme.textSecondary }]}>
+    Configuration
+  </ThemedText>
+  <View style={[styles.segmentedControl, { borderColor: theme.border, backgroundColor: theme.backgroundDefault }]}>
+    {(Object.entries(ANASTOMOSIS_LABELS) as [AnastomosisType, string][]).map(([value, label]) => {
+      const isSelected = entry.configuration === value;
+      // Lock to end_to_end if coupler selected
+      const isLocked = entry.couplingMethod === "coupler" && value !== "end_to_end";
+      return (
+        <Pressable
+          key={value}
+          style={[
+            styles.segmentedButton,
+            isSelected ? { backgroundColor: theme.link } : undefined,
+            isLocked ? { opacity: 0.35 } : undefined,
+          ]}
+          onPress={() => {
+            if (isLocked) return;
+            onUpdate({ ...entry, configuration: value });
+          }}
+        >
+          <ThemedText style={[styles.segmentedButtonText, { color: isSelected ? "#fff" : theme.textSecondary }]}>
+            {label}
+          </ThemedText>
+        </Pressable>
+      );
+    })}
+  </View>
+</View>
+
+
+3c — Update imports in AnastomosisEntryCard.tsx
+The PickerField import may still be needed for other fields (vessel type, coupler size). Keep that import.
+Add AnastomosisType and CouplingMethod to the type imports from @/types/case if not already present.
+3d — Add the segmented control styles to the StyleSheet in AnastomosisEntryCard.tsx
+Add to the StyleSheet.create({...}) at the bottom of the file:
+
+fieldGroup: {
+  marginBottom: Spacing.lg,
+},
+segmentedControl: {
+  flexDirection: "row",
+  borderRadius: BorderRadius.md,
+  borderWidth: 1,
+  overflow: "hidden",
+},
+segmentedButton: {
+  flex: 1,
+  paddingVertical: Spacing.sm + 2,
+  alignItems: "center",
+  justifyContent: "center",
+},
+segmentedButtonText: {
+  fontSize: 14,
+  fontWeight: "600",
+},
+
+
+Fix 4 — Coupler auto-sets configuration (already handled in Fix 3)
+The coupler → end_to_end logic is embedded in Fix 3a above:
+	∙	When the user taps Coupler: configuration is immediately forced to "end_to_end"
+	∙	In the Configuration button row: the other options (end_to_side, side_to_side) are rendered at 35% opacity and non-tappable when coupler is active
+	∙	This makes the constraint visually clear without hiding the options entirely
+
+Verification checklist
+After making these changes:
+	1.	app.json — confirm expo-image-picker plugin is present with both permission strings
+	2.	CaseFormScreen.tsx — confirm clinicalDetails, anastomoses, recipientSiteRegion are all loaded in loadExistingCase; confirm save payload uses { ...clinicalDetails, ... } not {} as any
+	3.	AnastomosisEntryCard.tsx — confirm Technique and Configuration rows are now segmented button groups; confirm CouplingMethod and AnastomosisType are imported; confirm segmented control styles exist; no TypeScript errors
+	4.	Run npx tsc --noEmit to check for type errors
+
+
+---
+
+A few notes on expected behaviour after these fixes:
+
+**On photos** — after a new EAS/TestFlight build with the `expo-image-picker` plugin, iOS will show the permission prompt properly. Existing builds compiled without the plugin won't benefit — you'll need a new build number.
+
+**On edit/save** — the fix is comprehensive: clinical details (free flap parameters, anastomoses, all `ProcedureClinicalDetails` fields) will round-trip correctly through edit mode. The current bug has been silently destroying clinical data on every edit save, so this is a data integrity fix as much as a UX one.
+
+**On the coupler logic** — the three configuration options remain visible when coupler is active (just dimmed), which is better UX than hiding them. The surgeon can see what the options would be, making it clear the constraint is intentional rather than a missing feature.​​​​​​​​​​​​​​​​

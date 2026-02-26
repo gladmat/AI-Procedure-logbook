@@ -125,8 +125,19 @@ Comprehensive infection case documentation with serial episode tracking.
 - **All intake paths covered**: `OperativeMediaSection`, `MediaCapture`, `AddOperativeMediaScreen`, and `MediaManagementScreen` all persist media before storing URIs.
 - **Web passthrough**: On web platform, temp URIs are returned as-is (no file system persistence needed).
 
+### iOS Permissions
+- **expo-image-picker plugin**: Configured in `app.json` with custom `photosPermission` and `cameraPermission` strings for iOS Info.plist.
+
+### Edit Mode (CaseFormScreen)
+- **Clinical details round-trip**: Edit mode restores `clinicalDetails`, `recipientSiteRegion`, and `anastomoses` from existing case data.
+- **Save payload**: Uses actual `clinicalDetails` state (not `{} as any`), preserving all clinical data through edits.
+
+### Anastomosis UI (AnastomosisEntryCard)
+- **Segmented buttons**: Technique (vein) and Configuration fields use segmented button groups instead of PickerField dropdowns.
+- **Coupler constraint**: Selecting "Coupler" auto-sets configuration to "End-to-End" and locks other options (dimmed at 35% opacity). Constraint also enforced on initial load via useEffect.
+
 ### Key Libraries
-- **expo-image-picker**: For selecting images from the gallery.
+- **expo-image-picker**: For selecting images from the gallery. Plugin configured in app.json for iOS permissions.
 - **expo-file-system**: For persistent media storage (copying from cache to document directory).
 - **@noble/ciphers**: XChaCha20-Poly1305 authenticated encryption.
 - **@noble/hashes**: SHA-256, scrypt, HKDF.
