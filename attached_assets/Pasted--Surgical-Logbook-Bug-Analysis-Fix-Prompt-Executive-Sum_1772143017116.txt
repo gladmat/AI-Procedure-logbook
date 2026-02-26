@@ -1,0 +1,714 @@
+# Surgical Logbook — Bug Analysis & Fix Prompt
+
+## Executive Summary
+
+Four issues analysed against the current codebase (synced with GitHub). Two are genuine bugs with clear root causes, one is an architecture/UX problem requiring a design decision, and one requires a new EAS build plus a resilience fix.
+
+-----
+
+## Issue 1: Edit/Save Not Persisting Changes (Discharge Date)
+
+### Root Cause
+
+**Two compounding problems in `CaseFormScreen.tsx`:**
+
+**A) DatePickerField clear button event bubbling.** In `FormField.tsx` (line 534–543), the clear `TouchableOpacity` is nested inside a parent `Pressable`. In React Native, `e.stopPropagation()` does not reliably prevent the parent’s `onPress` from firing. When the user taps the ✕ to clear the discharge date:
+
+1. `onChange("")` fires → state becomes `""`
+1. Parent `Pressable` also fires → `setShowPicker(true)` → iOS date picker modal opens
+1. The picker initialises with `value ? new Date(value) : new Date()` — since value is now `""`, it defaults to today
+1. The iOS spinner `DateTimePicker` can fire `onChange` on mount, setting the date right back
+
+**B) Draft loading races with edit-mode loading.** The draft-loading `useEffect` (line 326) runs unconditionally — it doesn’t check `isEditMode`. Both the draft loader and the edit-mode loader (line 378) are async. If a stale draft from a previous new-case attempt exists for the same specialty, it can load and set form state *after* the edit-mode data, silently reverting fields.
+
+**C) Conditional setters in edit-mode loading.** Lines 398–420 use `if (caseData.dischargeDate) setDischargeDate(...)`. These only SET values if they’re truthy — they never explicitly CLEAR fields to `""`. If a stale value exists from the draft loader, it persists.
+
+### Fixes Required
+
+**File: `client/components/FormField.tsx`**
+
+Replace the nested TouchableOpacity clear button (lines 533–544) with a structure that prevents event propagation:
+
+```tsx
+{clearable && value && !disabled ? (
+  <Pressable
+    onPress={() => onChange("")}
+    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+    style={{ zIndex: 10 }}
+  >
+    <Feather name="x-circle" size={18} color={theme.textTertiary} />
+  </Pressable>
+) : null}
+```
+
+And modify the parent Pressable to not fire when clear is tapped — wrap the date button press handler:
+
+```tsx
+<Pressable
+  onPress={() => {
+    if (!disabled) setShowPicker(true);
+  }}
+>
+```
+
+Change the clear button to use a separate touch area that doesn’t overlap with the parent pressable’s hit area. The cleanest approach: move the clear button OUTSIDE the date-button Pressable, into a sibling View.
+
+**File: `client/screens/CaseFormScreen.tsx`**
+
+1. **Skip draft loading in edit mode** — add `isEditMode` guard to the draft loading effect:
+
+```tsx
+// Line 326 area — change:
+useEffect(() => {
+  const loadDraft = async () => {
+    // ADD THIS CHECK:
+    if (isEditMode) {
+      draftLoadedRef.current = true;
+      return;
+    }
+    const draft = await getCaseDraft(specialty);
+    // ... rest unchanged
+```
+
+1. **Use unconditional setters in edit-mode loading** — change all conditional setters to always set values (empty string for cleared fields). Replace the block at lines 390–434 so that ALL fields are set unconditionally:
+
+```tsx
+// Instead of: if (caseData.dischargeDate) setDischargeDate(caseData.dischargeDate)
+// Use:
+setDischargeDate(caseData.dischargeDate ?? "");
+setAdmissionDate(caseData.admissionDate ?? "");
+setGender(caseData.gender ?? "");
+setEthnicity(caseData.ethnicity ?? "");
+setAdmissionUrgency(caseData.admissionUrgency ?? "");
+setStayType(caseData.stayType ?? "");
+setInjuryDate(caseData.injuryDate ?? "");
+// ... and so on for ALL fields
+```
+
+This ensures edit mode always establishes a clean state, regardless of what the draft loader may have set.
+
+-----
+
+## Issue 2: Flap Details Not Saving / Not Showing in Case Summary
+
+### Root Cause
+
+**The data model has a dual-path architecture that creates confusion:**
+
+The `Case` type has TWO places for clinical details:
+
+- `Case.clinicalDetails` — top-level (legacy, from the single-procedure era)
+- `CaseProcedure.clinicalDetails` — per-procedure (new model, inside `diagnosisGroups[].procedures[]`)
+
+When the user fills in flap details through the `ProcedureClinicalDetails` component (inside `ProcedureEntryCard` inside `DiagnosisGroupEditor`), the data goes into `CaseProcedure.clinicalDetails` within `diagnosisGroups`. This data IS saved correctly.
+
+**However, `CaseDetailScreen.tsx` has TWO display sections:**
+
+1. **Per-procedure display (lines 478–527)** — reads `proc.clinicalDetails` with condition `proc.tags?.includes("free_flap")`. This is CORRECT and shows the data properly IF the tags are present.
+1. **Old top-level display (lines 1117–1132)** — reads `caseData.clinicalDetails as FreeFlapDetails`. This reads from the TOP-LEVEL `clinicalDetails`, which does NOT contain the per-procedure flap data. It shows the legacy fields (`recipientArteryName`, `recipientVeinName`, `anastomosisType`, `couplerSizeMm`) which are NOT populated by the new per-procedure form.
+
+**Additional issue:** When diagnosis suggestions auto-create procedures (DiagnosisGroupEditor line 167–180), the `clinicalDetails` field is NOT included. The `ProcedureClinicalDetails` component adds defaults at render time (e.g., `harvestSide: "left"`, `anastomoses: []`), but these defaults are only persisted when the user interacts with any field. If the user doesn’t touch any flap field, `clinicalDetails` remains `undefined` on that procedure.
+
+### Fixes Required
+
+**File: `client/screens/CaseDetailScreen.tsx`**
+
+1. **Remove the stale old top-level clinical details section** (lines 1117–1133) — or rewire it to aggregate per-procedure data:
+
+```tsx
+// DELETE the entire block from line 1117 to 1133:
+// {flapDetails?.harvestSide || flapDetails?.indication || ...
+// This reads from the wrong data path (top-level clinicalDetails)
+```
+
+1. **Enhance the per-procedure display** (lines 478–527) to also show the fields that were only in the old section (donor vessels, coupler size, perforator count, elevation plane, flap-specific details):
+
+After the existing anastomoses block (line 525), add:
+
+```tsx
+{(proc.clinicalDetails as FreeFlapDetails).flapSpecificDetails ? (
+  <View style={styles.flapSpecificSection}>
+    {/* Render flap-specific fields based on flapType */}
+  </View>
+) : null}
+{(proc.clinicalDetails as FreeFlapDetails).perforatorCount ? (
+  <DetailRow label="Perforator Count" value={(proc.clinicalDetails as FreeFlapDetails).perforatorCount} />
+) : null}
+{(proc.clinicalDetails as FreeFlapDetails).elevationPlane ? (
+  <DetailRow 
+    label="Elevation Plane" 
+    value={(proc.clinicalDetails as FreeFlapDetails).elevationPlane === "subfascial" ? "Subfascial" : "Suprafascial"} 
+  />
+) : null}
+```
+
+**File: `client/components/DiagnosisGroupEditor.tsx`**
+
+1. **Initialize clinicalDetails when auto-creating free flap procedures from suggestions** — in `handleDiagnosisSelect` (line 167–180), add clinicalDetails initialization:
+
+```tsx
+const newProcedures: CaseProcedure[] = activeIds.map((picklistId, idx) => {
+  const entry = findPicklistEntry(picklistId);
+  const mappedFlapType = entry ? PICKLIST_TO_FLAP_TYPE[entry.id] : undefined;
+  let clinicalDetails: ClinicalDetails | undefined = undefined;
+  if (entry?.hasFreeFlap && mappedFlapType) {
+    const snomedEntry = FLAP_SNOMED_MAP[mappedFlapType];
+    clinicalDetails = {
+      flapType: mappedFlapType,
+      flapSnomedCode: snomedEntry?.code,
+      flapSnomedDisplay: snomedEntry?.display,
+      harvestSide: "left",
+      indication: "trauma",
+      anastomoses: [],
+    } as FreeFlapDetails;
+  }
+  return {
+    id: uuidv4(),
+    sequenceOrder: idx + 1,
+    procedureName: entry?.displayName || "",
+    specialty: groupSpecialty,
+    surgeonRole: "PS" as Role,
+    picklistEntryId: picklistId,
+    snomedCtCode: entry?.snomedCtCode,
+    snomedCtDisplay: entry?.snomedCtDisplay,
+    subcategory: entry?.subcategory,
+    tags: entry?.tags,
+    clinicalDetails,
+  };
+});
+```
+
+This requires importing `PICKLIST_TO_FLAP_TYPE`, `FLAP_SNOMED_MAP`, `FreeFlapDetails`, and `ClinicalDetails` from the appropriate modules.
+
+-----
+
+## Issue 3: Complex Multi-Group Case UI Too Messy
+
+### Root Cause
+
+All `DiagnosisGroupEditor` instances render inline on the same scrolling page. For a polytrauma case (e.g., GA 3b lower leg needing free flap + hand surgery), you get 2+ full diagnosis group forms, each with procedure entry cards, clinical details, flap forms, anastomosis cards — easily 3000+ pixels of content on one page.
+
+### Recommended Fix: Collapsible Accordion Groups
+
+The lowest-cost, highest-impact fix is collapsible accordion sections per diagnosis group. Each group shows a compact header (specialty badge + diagnosis name + procedure count) and expands on tap to reveal the full editor.
+
+**File: `client/components/DiagnosisGroupEditor.tsx`**
+
+Add a collapsed/expanded state with a summary header:
+
+```tsx
+const [isExpanded, setIsExpanded] = useState(!group.diagnosis); // Auto-expand new/empty groups
+
+// Render a compact header when collapsed
+if (!isExpanded) {
+  return (
+    <Pressable 
+      onPress={() => setIsExpanded(true)}
+      style={[styles.collapsedCard, { backgroundColor: theme.backgroundElevated }]}
+    >
+      <View style={styles.collapsedHeader}>
+        <SpecialtyBadge specialty={groupSpecialty} size="small" />
+        <View style={styles.collapsedInfo}>
+          <ThemedText style={styles.collapsedTitle}>
+            {group.diagnosis?.displayName || "No diagnosis selected"}
+          </ThemedText>
+          <ThemedText style={[styles.collapsedSubtitle, { color: theme.textSecondary }]}>
+            {procedures.length} procedure{procedures.length !== 1 ? "s" : ""}
+          </ThemedText>
+        </View>
+        <Feather name="chevron-down" size={20} color={theme.textSecondary} />
+      </View>
+    </Pressable>
+  );
+}
+
+// Then render the existing full editor with a collapse button in the header
+```
+
+Add a “Collapse” button in the expanded header, and add styles for the collapsed card.
+
+**Alternative (higher effort, better UX for 3+ groups):** Modal/sheet-based editing where tapping a group opens it as a full-screen modal. This is the pattern used by Epic MyChart and other clinical apps for complex multi-section forms. I’d recommend the accordion approach first for the TestFlight release, then consider modals for a future iteration.
+
+-----
+
+## Issue 4: Media Not Working
+
+### Root Cause
+
+The `expo-image-picker` plugin IS correctly added to `app.json` (confirmed in the code). The issues are:
+
+**A) Requires a new EAS build.** Plugin changes to `app.json` only take effect in a new native build. If you’re still running a TestFlight build from before the plugin was added, the iOS permission strings (`NSCameraUsageDescription`, `NSPhotoLibraryUsageDescription`) won’t be in the `Info.plist`, and the permission request will fail silently or crash.
+
+**Action:** Run `eas build --platform ios` to create a new build with the permissions, then push to TestFlight.
+
+**B) Media file persistence fragility.** The `persistMediaFile` function (in `client/lib/mediaPersistence.ts`) correctly copies photos to `FileSystem.documentDirectory + "media/"`. But the stored URIs in the case’s `operativeMedia` array are absolute file paths. If the app is reinstalled or the sandbox changes, these paths break silently — the Image component renders a blank/broken image.
+
+### Fixes Required
+
+**File: `client/components/OperativeMediaSection.tsx`**
+
+Add error handling for missing media files in the display:
+
+```tsx
+<Image
+  source={{ uri: item.localUri }}
+  style={styles.previewImage}
+  resizeMode="cover"
+  onError={() => {
+    // Could set a flag to show a broken-image placeholder
+    console.warn(`Media file not found: ${item.localUri}`);
+  }}
+/>
+```
+
+**File: `client/screens/CaseDetailScreen.tsx`**
+
+Similarly, add `onError` handling for media display in the detail view (around line 583).
+
+**Long-term recommendation:** Store media as base64 within the encrypted case data for small images (< 500KB), or implement server-side media storage with signed URLs for larger files. The current local-path approach won’t survive device transfers, backup/restore, or multi-device sync.
+
+-----
+
+## Replit Agent Prompt
+
+Copy everything below this line into Replit Agent:
+
+-----
+
+```
+## Task: Fix 4 bugs in the Surgical Logbook app
+
+You are fixing 4 well-diagnosed bugs. Follow each fix precisely. Do not refactor or reorganise anything else.
+
+---
+
+### Fix 1 — DatePickerField clear button not working properly
+
+**File:** `client/components/FormField.tsx`
+
+The clear button (✕) for the date picker fires both its own onPress AND the parent Pressable's onPress, causing the date picker to reopen immediately after clearing.
+
+**Change 1a:** Restructure the date button to separate the clear action from the open-picker action. Replace the current Pressable + inner clear button structure (around lines 512–547) with:
+
+```tsx
+<View style={{ flexDirection: "row", alignItems: "center" }}>
+  <Pressable
+    style={[
+      styles.dateButton,
+      {
+        flex: 1,
+        backgroundColor: disabled ? theme.backgroundDefault : theme.backgroundRoot,
+        borderColor: error ? theme.error : theme.border,
+        opacity: disabled ? 0.6 : 1,
+      },
+    ]}
+    onPress={() => !disabled && setShowPicker(true)}
+    disabled={disabled}
+  >
+    {value ? (
+      <ThemedText style={[styles.dateButtonText, { color: theme.text }]}>
+        {formatDisplayDate(value)}
+      </ThemedText>
+    ) : (
+      <ThemedText style={[styles.dateButtonText, { color: theme.textTertiary }]}>
+        {placeholder}
+      </ThemedText>
+    )}
+    <Feather name="calendar" size={20} color={theme.textSecondary} />
+  </Pressable>
+  {clearable && value && !disabled ? (
+    <Pressable
+      onPress={() => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        onChange("");
+      }}
+      hitSlop={{ top: 12, bottom: 12, left: 8, right: 12 }}
+      style={{ paddingLeft: 8 }}
+    >
+      <Feather name="x-circle" size={20} color={theme.textTertiary} />
+    </Pressable>
+  ) : null}
+</View>
+```
+
+**IMPORTANT:** You need to add these imports at the top of `FormField.tsx` if not already present:
+
+```tsx
+import * as Haptics from "expo-haptics";
+```
+
+The key change: the clear button is now a SIBLING of the date button Pressable, not nested inside it. This completely eliminates event bubbling issues.
+
+-----
+
+### Fix 2 — Edit mode: draft loading race condition + unconditional field restoration
+
+**File:** `client/screens/CaseFormScreen.tsx`
+
+**Change 2a:** Skip draft loading when in edit mode. In the `loadDraft` useEffect (around line 326), add an early return:
+
+Find:
+
+```tsx
+useEffect(() => {
+    const loadDraft = async () => {
+      const draft = await getCaseDraft(specialty);
+```
+
+Replace with:
+
+```tsx
+useEffect(() => {
+    const loadDraft = async () => {
+      if (isEditMode) {
+        draftLoadedRef.current = true;
+        return;
+      }
+      const draft = await getCaseDraft(specialty);
+```
+
+**Change 2b:** Use unconditional setters in edit-mode loading. Replace the entire edit-mode field restoration block (around lines 390–435) with unconditional assignments. Find the block that starts with:
+
+```tsx
+setPatientIdentifier(caseData.patientIdentifier);
+setProcedureDate(caseData.procedureDate);
+setFacility(caseData.facility);
+setProcedureType(caseData.procedureType);
+if (caseData.diagnosisGroups) setDiagnosisGroups(caseData.diagnosisGroups);
+if (caseData.surgeryTiming?.startTime) setSurgeryStartTime(caseData.surgeryTiming.startTime);
+```
+
+And replace it with (note: ALL fields use `?? ""` or `?? defaultValue` instead of conditional `if`):
+
+```tsx
+setPatientIdentifier(caseData.patientIdentifier);
+setProcedureDate(caseData.procedureDate);
+setFacility(caseData.facility);
+setProcedureType(caseData.procedureType);
+setDiagnosisGroups(caseData.diagnosisGroups || diagnosisGroups);
+setSurgeryStartTime(caseData.surgeryTiming?.startTime ?? "");
+setSurgeryEndTime(caseData.surgeryTiming?.endTime ?? "");
+setOperatingTeam(caseData.operatingTeam ?? []);
+setGender(caseData.gender ?? "");
+setEthnicity(caseData.ethnicity ?? "");
+setAdmissionDate(caseData.admissionDate ?? "");
+setDischargeDate(caseData.dischargeDate ?? "");
+setAdmissionUrgency(caseData.admissionUrgency ?? "");
+setStayType(caseData.stayType ?? "");
+setInjuryDate(caseData.injuryDate ?? "");
+setUnplannedReadmission(caseData.unplannedReadmission ?? "no");
+setIsUnplannedReadmission((caseData.unplannedReadmission ?? "no") !== "no");
+setAsaScore(caseData.asaScore ? String(caseData.asaScore) : "");
+setHeightCm(caseData.heightCm ? String(caseData.heightCm) : "");
+setWeightKg(caseData.weightKg ? String(caseData.weightKg) : "");
+setSmoker(caseData.smoker ?? "");
+setDiabetes(caseData.diabetes ?? null);
+setWoundInfectionRisk(caseData.woundInfectionRisk ?? "");
+setAnaestheticType(caseData.anaestheticType ?? "");
+setAntibioticProphylaxis(caseData.prophylaxis?.antibiotics ?? false);
+setDvtProphylaxis(caseData.prophylaxis?.dvtPrevention ?? false);
+setUnplannedICU(caseData.unplannedICU ?? "no");
+setReturnToTheatre(caseData.returnToTheatre ?? false);
+setReturnToTheatreReason(caseData.returnToTheatreReason ?? "");
+setOutcome(caseData.outcome ?? "");
+setMortalityClassification(caseData.mortalityClassification ?? "");
+setDiscussedAtMDM(caseData.discussedAtMDM ?? false);
+setSelectedComorbidities(caseData.comorbidities ?? []);
+setOperativeMedia(caseData.operativeMedia ?? []);
+setInfectionOverlay(caseData.infectionOverlay ?? undefined);
+
+if (caseData.clinicalDetails) {
+  setClinicalDetails(caseData.clinicalDetails as Record<string, any>);
+  const details = caseData.clinicalDetails as FreeFlapDetails;
+  if (details.recipientSiteRegion) {
+    setRecipientSiteRegion(details.recipientSiteRegion);
+  }
+  if (details.anastomoses && details.anastomoses.length > 0) {
+    setAnastomoses(details.anastomoses);
+  }
+} else {
+  setClinicalDetails(getDefaultClinicalDetails(specialty));
+  setRecipientSiteRegion(undefined);
+  setAnastomoses([]);
+}
+
+const userMember = caseData.teamMembers?.find(m => m.name === "You");
+if (userMember?.role) setRole(userMember.role as Role);
+```
+
+-----
+
+### Fix 3 — Flap details display in CaseDetailScreen
+
+**File:** `client/screens/CaseDetailScreen.tsx`
+
+**Change 3a:** Remove the old top-level clinical details section that reads from `caseData.clinicalDetails` (the legacy data path). Find and DELETE the entire block from around line 1117 to line 1133:
+
+```tsx
+{flapDetails?.harvestSide || flapDetails?.indication || flapDetails?.ischemiaTimeMinutes ? (
+  <>
+    <SectionHeader title="Clinical Details" />
+    <View style={[styles.card, { backgroundColor: theme.backgroundDefault }]}>
+      <DetailRow label="Harvest Side" value={...} />
+      ...
+      <DetailRow label="Elevation Plane" value={...} />
+    </View>
+  </>
+) : null}
+```
+
+Delete that entire block. The per-procedure display (lines 478–527) already handles flap details correctly.
+
+**Change 3b:** Enhance the per-procedure flap display to show ALL flap fields. After the existing anastomoses section (around line 525, after the closing `</View>` of the anastomosesList), add:
+
+```tsx
+{(proc.clinicalDetails as FreeFlapDetails).perforatorCount ? (
+  <DetailRow 
+    label="Perforator Count" 
+    value={(proc.clinicalDetails as FreeFlapDetails).perforatorCount} 
+  />
+) : null}
+{(proc.clinicalDetails as FreeFlapDetails).elevationPlane ? (
+  <DetailRow 
+    label="Elevation Plane" 
+    value={(proc.clinicalDetails as FreeFlapDetails).elevationPlane === "subfascial" ? "Subfascial" : (proc.clinicalDetails as FreeFlapDetails).elevationPlane === "suprafascial" ? "Suprafascial" : (proc.clinicalDetails as FreeFlapDetails).elevationPlane} 
+  />
+) : null}
+{(proc.clinicalDetails as FreeFlapDetails).composition ? (
+  <DetailRow 
+    label="Composition" 
+    value={(proc.clinicalDetails as FreeFlapDetails).composition} 
+  />
+) : null}
+{(proc.clinicalDetails as FreeFlapDetails).isFlowThrough ? (
+  <DetailRow label="Flow-Through" value="Yes" />
+) : null}
+{(proc.clinicalDetails as FreeFlapDetails).skinIsland !== undefined ? (
+  <DetailRow 
+    label="Skin Island" 
+    value={(proc.clinicalDetails as FreeFlapDetails).skinIsland ? "Yes" : "No"} 
+  />
+) : null}
+```
+
+**Change 3c:** Also remove the `flapDetails` variable assignment at the top of the component (around line 333) if it’s no longer used after removing the old section:
+
+Find: `const flapDetails = caseData.clinicalDetails as FreeFlapDetails;`
+
+Check if it’s used anywhere else in the file. If only used for the deleted block, remove it.
+
+-----
+
+### Fix 4 — DiagnosisGroupEditor: initialise clinicalDetails for free flap procedure suggestions
+
+**File:** `client/components/DiagnosisGroupEditor.tsx`
+
+When a diagnosis picklist entry auto-creates procedure suggestions, free flap procedures are created WITHOUT `clinicalDetails`. This means the flap form defaults (harvestSide, indication, anastomoses) are only rendered at display time and never persisted until the user interacts.
+
+**Change 4a:** Add necessary imports at the top of the file (if not already present):
+
+```tsx
+import { PICKLIST_TO_FLAP_TYPE } from "@/lib/procedurePicklist";
+import { FLAP_SNOMED_MAP, type ClinicalDetails, type FreeFlapDetails } from "@/types/case";
+```
+
+**Change 4b:** In `handleDiagnosisSelect` (around line 167), update the procedure creation to include clinicalDetails for free flap procedures. Find:
+
+```tsx
+const newProcedures: CaseProcedure[] = activeIds.map((picklistId, idx) => {
+  const entry = findPicklistEntry(picklistId);
+  return {
+    id: uuidv4(),
+    sequenceOrder: idx + 1,
+    procedureName: entry?.displayName || "",
+    specialty: groupSpecialty,
+    surgeonRole: "PS" as Role,
+    picklistEntryId: picklistId,
+    snomedCtCode: entry?.snomedCtCode,
+    snomedCtDisplay: entry?.snomedCtDisplay,
+    subcategory: entry?.subcategory,
+    tags: entry?.tags,
+  };
+});
+```
+
+Replace with:
+
+```tsx
+const newProcedures: CaseProcedure[] = activeIds.map((picklistId, idx) => {
+  const entry = findPicklistEntry(picklistId);
+  let clinicalDetails: ClinicalDetails | undefined = undefined;
+  if (entry?.hasFreeFlap) {
+    const mappedFlapType = PICKLIST_TO_FLAP_TYPE[picklistId];
+    if (mappedFlapType) {
+      const snomedEntry = FLAP_SNOMED_MAP[mappedFlapType];
+      clinicalDetails = {
+        flapType: mappedFlapType,
+        flapSnomedCode: snomedEntry?.code,
+        flapSnomedDisplay: snomedEntry?.display,
+        harvestSide: "left",
+        indication: "trauma",
+        anastomoses: [],
+      } as FreeFlapDetails;
+    }
+  }
+  return {
+    id: uuidv4(),
+    sequenceOrder: idx + 1,
+    procedureName: entry?.displayName || "",
+    specialty: groupSpecialty,
+    surgeonRole: "PS" as Role,
+    picklistEntryId: picklistId,
+    snomedCtCode: entry?.snomedCtCode,
+    snomedCtDisplay: entry?.snomedCtDisplay,
+    subcategory: entry?.subcategory,
+    tags: entry?.tags,
+    clinicalDetails,
+  };
+});
+```
+
+-----
+
+### Fix 5 — Complex case UI: collapsible diagnosis groups
+
+**File:** `client/components/DiagnosisGroupEditor.tsx`
+
+Add collapsible/expandable behaviour to diagnosis groups so complex multi-group cases don’t overwhelm the screen.
+
+**Change 5a:** Add a collapsed state. Near the top of the component (after the existing useState declarations, around line 70), add:
+
+```tsx
+const [isExpanded, setIsExpanded] = useState<boolean>(!group.diagnosis?.displayName);
+```
+
+This auto-expands groups that don’t have a diagnosis selected yet (new/empty groups).
+
+**Change 5b:** Add a collapsed summary view. At the start of the component’s return statement (before the main JSX), add a collapsed rendering path:
+
+```tsx
+if (!isExpanded) {
+  return (
+    <Pressable
+      onPress={() => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        setIsExpanded(true);
+      }}
+      style={[
+        styles.collapsedGroupCard,
+        { backgroundColor: theme.backgroundElevated, borderColor: theme.border },
+      ]}
+    >
+      <View style={styles.collapsedGroupHeader}>
+        <View style={[styles.orderBadge, { backgroundColor: theme.link + "20" }]}>
+          <ThemedText style={[styles.orderText, { color: theme.link }]}>
+            {index + 1}
+          </ThemedText>
+        </View>
+        <View style={{ flex: 1 }}>
+          <ThemedText style={{ fontWeight: "600", fontSize: 15 }}>
+            {SPECIALTY_LABELS[groupSpecialty]}
+          </ThemedText>
+          <ThemedText style={{ color: theme.textSecondary, fontSize: 13, marginTop: 2 }}>
+            {group.diagnosis?.displayName || "No diagnosis"} · {procedures.length} procedure{procedures.length !== 1 ? "s" : ""}
+          </ThemedText>
+        </View>
+        <Feather name="chevron-down" size={20} color={theme.textSecondary} />
+      </View>
+    </Pressable>
+  );
+}
+```
+
+**Change 5c:** Add a collapse button to the expanded header. Find the existing group header/title area and add a collapse button. Near the delete button in the expanded view, add:
+
+```tsx
+<Pressable
+  onPress={() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setIsExpanded(false);
+  }}
+  hitSlop={8}
+  style={{ marginRight: 8 }}
+>
+  <Feather name="chevron-up" size={20} color={theme.textSecondary} />
+</Pressable>
+```
+
+**Change 5d:** Add the collapsed card styles to the StyleSheet at the bottom of the file:
+
+```tsx
+collapsedGroupCard: {
+  borderWidth: 1,
+  borderRadius: BorderRadius.lg,
+  padding: Spacing.md,
+  marginBottom: Spacing.md,
+},
+collapsedGroupHeader: {
+  flexDirection: "row",
+  alignItems: "center",
+  gap: Spacing.sm,
+},
+```
+
+The `orderBadge` and `orderText` styles should already exist from the procedure numbering.
+
+-----
+
+### Fix 6 — Media: rebuild required + error handling
+
+**No code changes needed for the core issue** — the `expo-image-picker` plugin is correctly configured in `app.json`. Run a new EAS build:
+
+```bash
+eas build --platform ios --profile preview
+```
+
+Then install the new build on TestFlight.
+
+**File:** `client/components/OperativeMediaSection.tsx`
+
+Add error handling for broken media file references. On the `<Image>` component (around line 192), add an `onError` prop:
+
+```tsx
+<Image
+  source={{ uri: item.localUri }}
+  style={styles.previewImage}
+  resizeMode="cover"
+  onError={() => console.warn("Media file missing:", item.localUri)}
+  defaultSource={require("@/assets/images/icon.png")}
+/>
+```
+
+**Note:** `defaultSource` only works on iOS. For cross-platform, you may need a state-based fallback. But since this is iOS-first, `defaultSource` is fine for now.
+
+**File:** `client/screens/CaseDetailScreen.tsx`
+
+Similarly add `onError` handling on the media Image component (around line 583).
+
+-----
+
+### Verification checklist after all changes
+
+1. `client/components/FormField.tsx` — clear button is a sibling of the date Pressable, not nested inside it
+1. `client/screens/CaseFormScreen.tsx` — draft loading skips in edit mode; all edit-mode setters are unconditional
+1. `client/screens/CaseDetailScreen.tsx` — old top-level clinical details block is removed; per-procedure display has all flap fields
+1. `client/components/DiagnosisGroupEditor.tsx` — free flap procedures from suggestions include clinicalDetails; groups are collapsible
+1. `client/components/OperativeMediaSection.tsx` — Image has onError handling
+1. Run `npx tsc --noEmit` to check for type errors
+1. Test: create a case with a free flap procedure, fill in anastomosis details, save, reopen → flap details should appear
+1. Test: edit a case, clear the discharge date, save, reopen → discharge date should be blank, case should appear in current inpatients
+1. Test: create a multi-group case (e.g., orthoplastic + hand surgery) → groups should be collapsible
+
+```
+---
+
+## Files Changed Summary
+
+| File | Changes |
+|------|---------|
+| `client/components/FormField.tsx` | Clear button moved to sibling position |
+| `client/screens/CaseFormScreen.tsx` | Draft skip in edit mode; unconditional setters |
+| `client/screens/CaseDetailScreen.tsx` | Remove old flap section; enhance per-procedure display; media error handling |
+| `client/components/DiagnosisGroupEditor.tsx` | clinicalDetails init for free flap suggestions; collapsible groups |
+| `client/components/OperativeMediaSection.tsx` | Image error handling |
+```
