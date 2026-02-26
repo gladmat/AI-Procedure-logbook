@@ -973,6 +973,7 @@ export default function CaseFormScreen() {
             value={dischargeDate}
             onChange={setDischargeDate}
             disabled={stayType === "day_case"}
+            clearable
           />
         </View>
       </View>

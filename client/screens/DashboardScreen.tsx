@@ -253,6 +253,15 @@ export default function DashboardScreen() {
     );
   }, [cases]);
   
+  const currentInpatients = useMemo(() => {
+    return cases.filter(c =>
+      c.stayType === "inpatient" && !c.dischargeDate && !c.infectionOverlay
+    ).sort((a, b) =>
+      new Date(b.procedureDate).getTime() - new Date(a.procedureDate).getTime()
+    );
+  }, [cases]);
+
+  const [showInpatients, setShowInpatients] = useState(true);
   const [showActiveCases, setShowActiveCases] = useState(true);
   
   // Discharge modal state
@@ -496,6 +505,74 @@ export default function DashboardScreen() {
                 {activeCases.length > 5 ? (
                   <ThemedText style={[styles.moreFollowUps, { color: theme.textSecondary }]}>
                     +{activeCases.length - 5} more active cases
+                  </ThemedText>
+                ) : null}
+              </>
+            ) : null}
+          </View>
+        ) : null}
+
+        {currentInpatients.length > 0 ? (
+          <View style={styles.followUpSection}>
+            <Pressable
+              onPress={() => setShowInpatients(!showInpatients)}
+              style={styles.followUpHeader}
+            >
+              <View style={styles.followUpTitleRow}>
+                <Feather name="home" size={18} color={theme.warning} />
+                <ThemedText style={[styles.followUpTitle, { color: theme.warning }]}>
+                  Current Inpatients ({currentInpatients.length})
+                </ThemedText>
+              </View>
+              <Feather name={showInpatients ? "chevron-up" : "chevron-down"} size={20} color={theme.textSecondary} />
+            </Pressable>
+
+            {showInpatients ? (
+              <>
+                {currentInpatients.slice(0, 5).map((caseItem) => {
+                  const daysSinceAdmission = caseItem.admissionDate
+                    ? Math.floor((Date.now() - new Date(caseItem.admissionDate).getTime()) / (1000 * 60 * 60 * 24))
+                    : null;
+                  return (
+                    <View key={caseItem.id} style={[styles.followUpCard, { backgroundColor: theme.backgroundDefault }]}>
+                      <Pressable
+                        style={styles.activeCaseContent}
+                        onPress={() => handleCasePress(caseItem)}
+                      >
+                        <View style={styles.followUpCaseInfo}>
+                          <View style={{ flexDirection: "row", alignItems: "center", gap: Spacing.xs }}>
+                            {daysSinceAdmission != null ? (
+                              <View style={[styles.activeBadge, { backgroundColor: theme.warning }]}>
+                                <ThemedText style={styles.activeBadgeText}>
+                                  D{daysSinceAdmission}
+                                </ThemedText>
+                              </View>
+                            ) : null}
+                            <ThemedText style={styles.followUpCaseType} numberOfLines={1}>
+                              {caseItem.procedureType}
+                            </ThemedText>
+                          </View>
+                          <ThemedText style={[styles.followUpCaseDate, { color: theme.textSecondary }]}>
+                            {caseItem.patientIdentifier} - {caseItem.facility || "No facility"}
+                          </ThemedText>
+                        </View>
+                        <Feather name="chevron-right" size={18} color={theme.textTertiary} />
+                      </Pressable>
+                      <Pressable
+                        style={[styles.dischargeButton, { backgroundColor: theme.success }]}
+                        onPress={() => handleOpenDischargeModal(caseItem)}
+                        testID={`discharge-inpatient-${caseItem.id}`}
+                      >
+                        <Feather name="check-circle" size={14} color="#fff" />
+                        <ThemedText style={styles.dischargeButtonText}>Discharge</ThemedText>
+                      </Pressable>
+                    </View>
+                  );
+                })}
+
+                {currentInpatients.length > 5 ? (
+                  <ThemedText style={[styles.moreFollowUps, { color: theme.textSecondary }]}>
+                    +{currentInpatients.length - 5} more inpatients
                   </ThemedText>
                 ) : null}
               </>

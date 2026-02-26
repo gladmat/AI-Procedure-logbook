@@ -423,11 +423,8 @@ export function PickerField({
                     { borderBottomColor: theme.border },
                   ]}
                   onPress={() => {
-                    const selectedValue = item.value;
-                    onSelect(selectedValue);
-                    requestAnimationFrame(() => {
-                      setModalVisible(false);
-                    });
+                    onSelect(item.value);
+                    setModalVisible(false);
                   }}
                 >
                   <ThemedText
@@ -463,6 +460,7 @@ interface DatePickerFieldProps {
   required?: boolean;
   error?: string;
   disabled?: boolean;
+  clearable?: boolean;
 }
 
 export function DatePickerField({
@@ -473,6 +471,7 @@ export function DatePickerField({
   required = false,
   error,
   disabled = false,
+  clearable = false,
 }: DatePickerFieldProps) {
   const { theme } = useTheme();
   const [showPicker, setShowPicker] = useState(false);
@@ -531,7 +530,20 @@ export function DatePickerField({
             {placeholder}
           </ThemedText>
         )}
-        <Feather name="calendar" size={20} color={theme.textSecondary} />
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+          {clearable && value && !disabled ? (
+            <TouchableOpacity
+              onPress={(e) => {
+                e.stopPropagation();
+                onChange("");
+              }}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Feather name="x-circle" size={18} color={theme.textTertiary} />
+            </TouchableOpacity>
+          ) : null}
+          <Feather name="calendar" size={20} color={theme.textSecondary} />
+        </View>
       </Pressable>
 
       {error ? (
