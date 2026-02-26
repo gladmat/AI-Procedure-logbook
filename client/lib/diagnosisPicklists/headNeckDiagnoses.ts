@@ -784,6 +784,177 @@ const HN_DX_NERVE_ONCO_OTHER: DiagnosisPicklistEntry[] = [
   },
 ];
 
+const HN_DX_FACIAL_SOFT_TISSUE_TRAUMA: DiagnosisPicklistEntry[] = [
+  {
+    id: "hn_dx_facial_lac",
+    displayName: "Facial laceration",
+    shortName: "Facial lac",
+    snomedCtCode: "284009009",
+    snomedCtDisplay: "Laceration of face (disorder)",
+    specialty: "head_neck",
+    subcategory: "Facial Soft Tissue Trauma",
+    clinicalGroup: "trauma",
+    hasStaging: false,
+    searchSynonyms: ["facial laceration", "face cut", "forehead laceration", "cheek laceration", "chin laceration"],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hn_trauma_facial_lac_simple",
+        displayName: "Facial laceration repair — simple",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "hn_trauma_facial_lac_complex",
+        displayName: "Facial laceration repair — complex / layered",
+        isDefault: false,
+        sortOrder: 2,
+      },
+      {
+        procedurePicklistId: "hn_trauma_facial_wound_exploration",
+        displayName: "Facial wound exploration + debridement",
+        isDefault: false,
+        sortOrder: 3,
+      },
+    ],
+    sortOrder: 1,
+  },
+  {
+    id: "hn_dx_nasal_lac",
+    displayName: "Nasal laceration",
+    shortName: "Nasal lac",
+    snomedCtCode: "283682007",
+    snomedCtDisplay: "Laceration of nose (disorder)",
+    specialty: "head_neck",
+    subcategory: "Facial Soft Tissue Trauma",
+    clinicalGroup: "trauma",
+    hasStaging: false,
+    searchSynonyms: ["nose laceration", "nose cut", "nasal wound", "nose injury"],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hn_trauma_nasal_lac",
+        displayName: "Nasal laceration repair",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "hn_trauma_facial_lac_complex",
+        displayName: "Facial laceration repair — complex / layered",
+        isDefault: false,
+        sortOrder: 2,
+      },
+    ],
+    sortOrder: 2,
+  },
+  {
+    id: "hn_dx_lip_lac",
+    displayName: "Lip laceration",
+    shortName: "Lip lac",
+    snomedCtCode: "283679001",
+    snomedCtDisplay: "Laceration of lip (disorder)",
+    specialty: "head_neck",
+    subcategory: "Facial Soft Tissue Trauma",
+    clinicalGroup: "trauma",
+    hasStaging: false,
+    searchSynonyms: ["lip laceration", "lip cut", "vermilion border", "lip injury", "through-and-through lip"],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hn_trauma_lip_lac",
+        displayName: "Lip laceration repair",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "hn_trauma_facial_lac_complex",
+        displayName: "Facial laceration repair — complex / layered",
+        isDefault: false,
+        sortOrder: 2,
+      },
+    ],
+    sortOrder: 3,
+  },
+  {
+    id: "hn_dx_eyelid_lac",
+    displayName: "Eyelid / periorbital laceration",
+    shortName: "Eyelid lac",
+    snomedCtCode: "284003008",
+    snomedCtDisplay: "Laceration of eyelid (disorder)",
+    specialty: "head_neck",
+    subcategory: "Facial Soft Tissue Trauma",
+    clinicalGroup: "trauma",
+    hasStaging: false,
+    searchSynonyms: ["eyelid laceration", "periorbital laceration", "canalicular", "lid margin", "eyelid cut"],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hn_trauma_eyelid_lac",
+        displayName: "Eyelid / periorbital laceration repair",
+        isDefault: true,
+        sortOrder: 1,
+      },
+    ],
+    sortOrder: 4,
+  },
+  {
+    id: "hn_dx_ear_lac",
+    displayName: "Ear laceration ± cartilage involvement",
+    shortName: "Ear lac",
+    snomedCtCode: "283545005",
+    snomedCtDisplay: "Laceration of ear (disorder)",
+    specialty: "head_neck",
+    subcategory: "Facial Soft Tissue Trauma",
+    clinicalGroup: "trauma",
+    hasStaging: false,
+    searchSynonyms: ["ear laceration", "pinna laceration", "auricular laceration", "ear cartilage", "ear avulsion", "through-and-through ear"],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hn_trauma_ear_lac",
+        displayName: "Ear laceration repair ± cartilage",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "hn_trauma_facial_lac_complex",
+        displayName: "Facial laceration repair — complex / layered",
+        isDefault: false,
+        sortOrder: 2,
+      },
+    ],
+    sortOrder: 5,
+  },
+  {
+    id: "hn_dx_scalp_lac",
+    displayName: "Scalp laceration",
+    shortName: "Scalp lac",
+    snomedCtCode: "262560009",
+    snomedCtDisplay: "Laceration of scalp (disorder)",
+    specialty: "head_neck",
+    subcategory: "Facial Soft Tissue Trauma",
+    clinicalGroup: "trauma",
+    hasStaging: false,
+    searchSynonyms: ["scalp laceration", "scalp wound", "head laceration", "head cut", "scalp injury", "scalp staples"],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hn_trauma_scalp_lac",
+        displayName: "Scalp laceration repair",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "hn_trauma_facial_lac_complex",
+        displayName: "Facial laceration repair — complex / layered",
+        isDefault: false,
+        sortOrder: 2,
+      },
+      {
+        procedurePicklistId: "hn_trauma_facial_wound_exploration",
+        displayName: "Facial wound exploration + debridement",
+        isDefault: false,
+        sortOrder: 3,
+      },
+    ],
+    sortOrder: 6,
+  },
+];
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // EXPORT
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -791,6 +962,7 @@ const HN_DX_NERVE_ONCO_OTHER: DiagnosisPicklistEntry[] = [
 export const HEAD_NECK_DIAGNOSES: DiagnosisPicklistEntry[] = [
   ...HN_DX_SKIN_CANCER,
   ...HN_DX_FACIAL_FRACTURES,
+  ...HN_DX_FACIAL_SOFT_TISSUE_TRAUMA,
   ...HN_DX_CLEFT_CRANIOFACIAL,
   ...HN_DX_NERVE_ONCO_OTHER,
 ];

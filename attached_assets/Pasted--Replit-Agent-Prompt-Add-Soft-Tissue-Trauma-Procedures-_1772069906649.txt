@@ -1,0 +1,694 @@
+# Replit Agent Prompt: Add Soft Tissue Trauma Procedures & Diagnoses
+
+## Summary
+
+Add soft tissue trauma coverage to the procedure and diagnosis picklists. Currently the app handles facial fractures, hand trauma, and complex orthoplastic wounds well, but has no home for simple-to-moderate laceration repairs — the bread-and-butter of plastics on-call work. This adds:
+
+- **8 new procedures** in Head & Neck → new subcategory "Facial Soft Tissue Trauma"
+- **6 new procedures** in General → new subcategory "Soft Tissue Trauma"
+- **6 new diagnoses** in Head & Neck → new subcategory "Facial Soft Tissue Trauma"
+- **4 new diagnoses** in General → new subcategory "Soft Tissue Trauma"
+- **1 update** to existing orthoplastic pretibial laceration diagnosis (add repair procedure suggestion)
+
+Total new procedures: 14 (some cross-tagged, so will appear in multiple specialties)
+Total new diagnoses: 10
+
+---
+
+## File 1: `client/lib/procedurePicklist.ts`
+
+### 1A. Add new Head & Neck array — insert BEFORE `const HEAD_NECK_OTHER` (around line 2154)
+
+```typescript
+// ─── FACIAL SOFT TISSUE TRAUMA ──────────────────────────────────────────────
+// Laceration repairs, wound exploration — trauma without underlying fracture.
+// Separate from Site-Specific Reconstruction (which is oncological/elective).
+// Complexity split (simple vs. complex/layered) mirrors OPCS-4 S41/S42 and
+// CPT 12001-series/12031-series structure for cross-mapping.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const HEAD_NECK_FACIAL_SOFT_TISSUE_TRAUMA: ProcedurePicklistEntry[] = [
+  {
+    id: "hn_trauma_facial_lac_simple",
+    displayName: "Facial laceration repair — simple",
+    snomedCtCode: "238182008",
+    snomedCtDisplay: "Suture of skin (procedure)",
+    specialties: ["head_neck"],
+    subcategory: "Facial Soft Tissue Trauma",
+    tags: ["trauma"],
+    sortOrder: 1,
+  },
+  {
+    id: "hn_trauma_facial_lac_complex",
+    displayName: "Facial laceration repair — complex / layered",
+    snomedCtCode: "20720004",
+    snomedCtDisplay: "Wound repair (procedure)",
+    specialties: ["head_neck"],
+    subcategory: "Facial Soft Tissue Trauma",
+    tags: ["trauma"],
+    sortOrder: 2,
+  },
+  {
+    id: "hn_trauma_nasal_lac",
+    displayName: "Nasal laceration repair",
+    snomedCtCode: "238182008",
+    snomedCtDisplay: "Suture of skin (procedure)",
+    specialties: ["head_neck"],
+    subcategory: "Facial Soft Tissue Trauma",
+    tags: ["trauma"],
+    sortOrder: 3,
+  },
+  {
+    id: "hn_trauma_lip_lac",
+    displayName: "Lip laceration repair",
+    snomedCtCode: "238182008",
+    snomedCtDisplay: "Suture of skin (procedure)",
+    specialties: ["head_neck"],
+    subcategory: "Facial Soft Tissue Trauma",
+    tags: ["trauma"],
+    sortOrder: 4,
+  },
+  {
+    id: "hn_trauma_eyelid_lac",
+    displayName: "Eyelid / periorbital laceration repair",
+    snomedCtCode: "238182008",
+    snomedCtDisplay: "Suture of skin (procedure)",
+    specialties: ["head_neck"],
+    subcategory: "Facial Soft Tissue Trauma",
+    tags: ["trauma"],
+    sortOrder: 5,
+  },
+  {
+    id: "hn_trauma_ear_lac",
+    displayName: "Ear laceration repair ± cartilage",
+    snomedCtCode: "238182008",
+    snomedCtDisplay: "Suture of skin (procedure)",
+    specialties: ["head_neck"],
+    subcategory: "Facial Soft Tissue Trauma",
+    tags: ["trauma"],
+    sortOrder: 6,
+  },
+  {
+    id: "hn_trauma_scalp_lac",
+    displayName: "Scalp laceration repair",
+    snomedCtCode: "238182008",
+    snomedCtDisplay: "Suture of skin (procedure)",
+    specialties: ["head_neck", "general"],
+    subcategory: "Facial Soft Tissue Trauma",
+    tags: ["trauma"],
+    sortOrder: 7,
+  },
+  {
+    id: "hn_trauma_facial_wound_exploration",
+    displayName: "Facial wound exploration + debridement",
+    snomedCtCode: "360160003", // VERIFY
+    snomedCtDisplay: "Exploration of wound (procedure)",
+    specialties: ["head_neck"],
+    subcategory: "Facial Soft Tissue Trauma",
+    tags: ["trauma"],
+    sortOrder: 8,
+  },
+];
+```
+
+### 1B. Add new General array — insert BEFORE `const GENERAL_OTHER` (around line 2624)
+
+```typescript
+// ─── SOFT TISSUE TRAUMA ─────────────────────────────────────────────────────
+// Acute laceration/wound repairs for non-facial, non-hand sites.
+// Covers the common plastics on-call work: pretibial lacs, body lacerations,
+// degloving injuries. Simple/complex split matches OPCS-4 and CPT structure.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const GENERAL_SOFT_TISSUE_TRAUMA: ProcedurePicklistEntry[] = [
+  {
+    id: "gen_trauma_lac_simple",
+    displayName: "Laceration repair — simple (skin / subcutaneous)",
+    snomedCtCode: "238182008",
+    snomedCtDisplay: "Suture of skin (procedure)",
+    specialties: ["general"],
+    subcategory: "Soft Tissue Trauma",
+    tags: ["trauma"],
+    sortOrder: 1,
+  },
+  {
+    id: "gen_trauma_lac_complex",
+    displayName: "Laceration repair — complex / layered",
+    snomedCtCode: "20720004",
+    snomedCtDisplay: "Wound repair (procedure)",
+    specialties: ["general"],
+    subcategory: "Soft Tissue Trauma",
+    tags: ["trauma"],
+    sortOrder: 2,
+  },
+  {
+    id: "gen_trauma_pretibial_repair",
+    displayName: "Pretibial laceration repair — primary closure",
+    snomedCtCode: "238182008",
+    snomedCtDisplay: "Suture of skin (procedure)",
+    specialties: ["general", "orthoplastic"],
+    subcategory: "Soft Tissue Trauma",
+    tags: ["trauma"],
+    sortOrder: 3,
+  },
+  {
+    id: "gen_trauma_degloving",
+    displayName: "Degloving injury — primary management",
+    snomedCtCode: "20720004",
+    snomedCtDisplay: "Wound repair (procedure)",
+    specialties: ["general", "orthoplastic"],
+    subcategory: "Soft Tissue Trauma",
+    tags: ["trauma", "complex_wound"],
+    sortOrder: 4,
+  },
+  {
+    id: "gen_trauma_wound_exploration",
+    displayName: "Wound exploration + repair (non-hand)",
+    snomedCtCode: "360160003", // VERIFY
+    snomedCtDisplay: "Exploration of wound (procedure)",
+    specialties: ["general"],
+    subcategory: "Soft Tissue Trauma",
+    tags: ["trauma"],
+    sortOrder: 5,
+  },
+  {
+    id: "gen_trauma_skin_loss_closure",
+    displayName: "Traumatic skin loss — direct closure / graft",
+    snomedCtCode: "20720004",
+    snomedCtDisplay: "Wound repair (procedure)",
+    specialties: ["general"],
+    subcategory: "Soft Tissue Trauma",
+    tags: ["trauma", "skin_graft"],
+    sortOrder: 6,
+  },
+];
+```
+
+### 1C. Update the ALL_PROCEDURES spread array
+
+Find the Head & Neck section (around line 4284–4292) and add the new array. Insert `...HEAD_NECK_FACIAL_SOFT_TISSUE_TRAUMA,` between `...HEAD_NECK_FACIAL_FRACTURES,` and `...HEAD_NECK_OTHER,`:
+
+```typescript
+  ...HEAD_NECK_FACIAL_FRACTURES,
+  ...HEAD_NECK_FACIAL_SOFT_TISSUE_TRAUMA,
+  ...HEAD_NECK_OTHER,
+```
+
+Find the General section (around line 4294–4302) and add the new array. Insert `...GENERAL_SOFT_TISSUE_TRAUMA,` between `...GENERAL_HIDRADENITIS,` and `...GENERAL_GENDER_AFFIRMING,`:
+
+```typescript
+  ...GENERAL_HIDRADENITIS,
+  ...GENERAL_SOFT_TISSUE_TRAUMA,
+  ...GENERAL_GENDER_AFFIRMING,
+  ...GENERAL_OTHER,
+```
+
+---
+
+## File 2: `client/lib/diagnosisPicklists/headNeckDiagnoses.ts`
+
+### 2A. Add new diagnosis array — insert BEFORE the `// EXPORT` section
+
+```typescript
+// ═══════════════════════════════════════════════════════════════════════════════
+// FACIAL SOFT TISSUE TRAUMA
+// Laceration diagnoses by anatomical subunit — maps to specific repair procedures.
+// Separate from Facial Fractures (which are bony injuries).
+// SNOMED CT codes from the Clinical Finding hierarchy (<<404684003).
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const HN_DX_FACIAL_SOFT_TISSUE_TRAUMA: DiagnosisPicklistEntry[] = [
+  {
+    id: "hn_dx_facial_lac",
+    displayName: "Facial laceration",
+    shortName: "Facial lac",
+    snomedCtCode: "284009009",
+    snomedCtDisplay: "Laceration of face (disorder)",
+    specialty: "head_neck",
+    subcategory: "Facial Soft Tissue Trauma",
+    clinicalGroup: "trauma",
+    hasStaging: false,
+    searchSynonyms: ["facial laceration", "face cut", "forehead laceration", "cheek laceration", "chin laceration"],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hn_trauma_facial_lac_simple",
+        displayName: "Facial laceration repair — simple",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "hn_trauma_facial_lac_complex",
+        displayName: "Facial laceration repair — complex / layered",
+        isDefault: false,
+        sortOrder: 2,
+      },
+      {
+        procedurePicklistId: "hn_trauma_facial_wound_exploration",
+        displayName: "Facial wound exploration + debridement",
+        isDefault: false,
+        sortOrder: 3,
+      },
+    ],
+    sortOrder: 1,
+  },
+  {
+    id: "hn_dx_nasal_lac",
+    displayName: "Nasal laceration",
+    shortName: "Nasal lac",
+    snomedCtCode: "283682007", // VERIFY
+    snomedCtDisplay: "Laceration of nose (disorder)",
+    specialty: "head_neck",
+    subcategory: "Facial Soft Tissue Trauma",
+    clinicalGroup: "trauma",
+    hasStaging: false,
+    searchSynonyms: ["nose laceration", "nose cut", "nasal wound", "nose injury"],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hn_trauma_nasal_lac",
+        displayName: "Nasal laceration repair",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "hn_trauma_facial_lac_complex",
+        displayName: "Facial laceration repair — complex / layered",
+        isDefault: false,
+        sortOrder: 2,
+      },
+    ],
+    sortOrder: 2,
+  },
+  {
+    id: "hn_dx_lip_lac",
+    displayName: "Lip laceration",
+    shortName: "Lip lac",
+    snomedCtCode: "283679001", // VERIFY
+    snomedCtDisplay: "Laceration of lip (disorder)",
+    specialty: "head_neck",
+    subcategory: "Facial Soft Tissue Trauma",
+    clinicalGroup: "trauma",
+    hasStaging: false,
+    searchSynonyms: ["lip laceration", "lip cut", "vermilion border", "lip injury", "through-and-through lip"],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hn_trauma_lip_lac",
+        displayName: "Lip laceration repair",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "hn_trauma_facial_lac_complex",
+        displayName: "Facial laceration repair — complex / layered",
+        isDefault: false,
+        sortOrder: 2,
+      },
+    ],
+    sortOrder: 3,
+  },
+  {
+    id: "hn_dx_eyelid_lac",
+    displayName: "Eyelid / periorbital laceration",
+    shortName: "Eyelid lac",
+    snomedCtCode: "284003008", // VERIFY
+    snomedCtDisplay: "Laceration of eyelid (disorder)",
+    specialty: "head_neck",
+    subcategory: "Facial Soft Tissue Trauma",
+    clinicalGroup: "trauma",
+    hasStaging: false,
+    searchSynonyms: ["eyelid laceration", "periorbital laceration", "canalicular", "lid margin", "eyelid cut"],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hn_trauma_eyelid_lac",
+        displayName: "Eyelid / periorbital laceration repair",
+        isDefault: true,
+        sortOrder: 1,
+      },
+    ],
+    sortOrder: 4,
+  },
+  {
+    id: "hn_dx_ear_lac",
+    displayName: "Ear laceration ± cartilage involvement",
+    shortName: "Ear lac",
+    snomedCtCode: "283545005", // VERIFY
+    snomedCtDisplay: "Laceration of ear (disorder)",
+    specialty: "head_neck",
+    subcategory: "Facial Soft Tissue Trauma",
+    clinicalGroup: "trauma",
+    hasStaging: false,
+    searchSynonyms: ["ear laceration", "pinna laceration", "auricular laceration", "ear cartilage", "ear avulsion", "through-and-through ear"],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hn_trauma_ear_lac",
+        displayName: "Ear laceration repair ± cartilage",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "hn_trauma_facial_lac_complex",
+        displayName: "Facial laceration repair — complex / layered",
+        isDefault: false,
+        sortOrder: 2,
+      },
+    ],
+    sortOrder: 5,
+  },
+  {
+    id: "hn_dx_scalp_lac",
+    displayName: "Scalp laceration",
+    shortName: "Scalp lac",
+    snomedCtCode: "262560009", // VERIFY
+    snomedCtDisplay: "Laceration of scalp (disorder)",
+    specialty: "head_neck",
+    subcategory: "Facial Soft Tissue Trauma",
+    clinicalGroup: "trauma",
+    hasStaging: false,
+    searchSynonyms: ["scalp laceration", "scalp wound", "head laceration", "head cut", "scalp injury", "scalp staples"],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hn_trauma_scalp_lac",
+        displayName: "Scalp laceration repair",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "hn_trauma_facial_lac_complex",
+        displayName: "Facial laceration repair — complex / layered",
+        isDefault: false,
+        sortOrder: 2,
+      },
+      {
+        procedurePicklistId: "hn_trauma_facial_wound_exploration",
+        displayName: "Facial wound exploration + debridement",
+        isDefault: false,
+        sortOrder: 3,
+      },
+    ],
+    sortOrder: 6,
+  },
+];
+```
+
+### 2B. Update the export array in headNeckDiagnoses.ts
+
+Find the `HEAD_NECK_DIAGNOSES` export (near end of file). Add the new array:
+
+```typescript
+export const HEAD_NECK_DIAGNOSES: DiagnosisPicklistEntry[] = [
+  ...HN_DX_SKIN_CANCER,
+  ...HN_DX_FACIAL_FRACTURES,
+  ...HN_DX_FACIAL_SOFT_TISSUE_TRAUMA,
+  ...HN_DX_CLEFT_CRANIOFACIAL,
+  ...HN_DX_NERVE_ONCO_OTHER,
+];
+```
+
+---
+
+## File 3: `client/lib/diagnosisPicklists/generalDiagnoses.ts`
+
+### 3A. Add new diagnosis array — insert BEFORE the `// EXPORT` section
+
+```typescript
+// ═══════════════════════════════════════════════════════════════════════════════
+// SOFT TISSUE TRAUMA
+// Acute laceration/wound diagnoses for non-facial, non-hand body regions.
+// Covers common plastics on-call referrals: pretibial lacs, body lacerations,
+// degloving injuries, traumatic skin loss.
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const GEN_DX_SOFT_TISSUE_TRAUMA: DiagnosisPicklistEntry[] = [
+  {
+    id: "gen_dx_laceration",
+    displayName: "Laceration — trunk / extremity",
+    shortName: "Laceration",
+    snomedCtCode: "283681000",
+    snomedCtDisplay: "Laceration of skin (disorder)",
+    specialty: "general",
+    subcategory: "Soft Tissue Trauma",
+    clinicalGroup: "trauma",
+    hasStaging: false,
+    searchSynonyms: ["laceration", "cut", "wound", "skin laceration", "leg laceration", "arm laceration", "body laceration"],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "gen_trauma_lac_simple",
+        displayName: "Laceration repair — simple",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "gen_trauma_lac_complex",
+        displayName: "Laceration repair — complex / layered",
+        isDefault: false,
+        sortOrder: 2,
+      },
+      {
+        procedurePicklistId: "gen_trauma_wound_exploration",
+        displayName: "Wound exploration + repair (non-hand)",
+        isDefault: false,
+        sortOrder: 3,
+      },
+    ],
+    sortOrder: 1,
+  },
+  {
+    id: "gen_dx_pretibial_lac",
+    displayName: "Pretibial laceration",
+    shortName: "Pretibial lac",
+    snomedCtCode: "283680004",
+    snomedCtDisplay: "Laceration of pretibial skin (finding)",
+    specialty: "general",
+    subcategory: "Soft Tissue Trauma",
+    clinicalGroup: "trauma",
+    hasStaging: false,
+    searchSynonyms: ["pretibial", "shin laceration", "pretibial flap", "shin wound", "lower leg laceration"],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "gen_trauma_pretibial_repair",
+        displayName: "Pretibial laceration repair — primary closure",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "gen_trauma_lac_complex",
+        displayName: "Laceration repair — complex / layered",
+        isDefault: false,
+        sortOrder: 2,
+      },
+      {
+        procedurePicklistId: "orth_ssg_meshed",
+        displayName: "STSG — meshed",
+        isDefault: false,
+        sortOrder: 3,
+      },
+      {
+        procedurePicklistId: "orth_ssg_sheet",
+        displayName: "STSG — sheet",
+        isDefault: false,
+        sortOrder: 4,
+      },
+    ],
+    sortOrder: 2,
+  },
+  {
+    id: "gen_dx_degloving",
+    displayName: "Degloving injury",
+    shortName: "Degloving",
+    snomedCtCode: "262561008", // VERIFY
+    snomedCtDisplay: "Avulsion injury of skin (disorder)",
+    specialty: "general",
+    subcategory: "Soft Tissue Trauma",
+    clinicalGroup: "trauma",
+    hasStaging: false,
+    searchSynonyms: ["degloving", "avulsion", "skin avulsion", "degloved", "roller injury"],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "gen_trauma_degloving",
+        displayName: "Degloving injury — primary management",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "orth_debride_surgical",
+        displayName: "Surgical debridement",
+        isDefault: false,
+        sortOrder: 2,
+      },
+      {
+        procedurePicklistId: "orth_ssg_meshed",
+        displayName: "STSG — meshed",
+        isDefault: false,
+        sortOrder: 3,
+      },
+      {
+        procedurePicklistId: "orth_npwt",
+        displayName: "Negative pressure wound therapy",
+        isDefault: false,
+        sortOrder: 4,
+      },
+    ],
+    sortOrder: 3,
+  },
+  {
+    id: "gen_dx_traumatic_skin_loss",
+    displayName: "Traumatic skin loss (requiring closure / graft)",
+    shortName: "Traumatic skin loss",
+    snomedCtCode: "282026001", // VERIFY
+    snomedCtDisplay: "Traumatic loss of skin (finding)",
+    specialty: "general",
+    subcategory: "Soft Tissue Trauma",
+    clinicalGroup: "trauma",
+    hasStaging: false,
+    searchSynonyms: ["skin loss", "tissue loss", "traumatic wound", "traumatic defect", "crush injury skin"],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "gen_trauma_skin_loss_closure",
+        displayName: "Traumatic skin loss — direct closure / graft",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "orth_debride_surgical",
+        displayName: "Surgical debridement",
+        isDefault: false,
+        sortOrder: 2,
+      },
+      {
+        procedurePicklistId: "orth_ssg_meshed",
+        displayName: "STSG — meshed",
+        isDefault: false,
+        sortOrder: 3,
+      },
+      {
+        procedurePicklistId: "orth_npwt",
+        displayName: "Negative pressure wound therapy",
+        isDefault: false,
+        sortOrder: 4,
+      },
+    ],
+    sortOrder: 4,
+  },
+];
+```
+
+### 3B. Update the export array in generalDiagnoses.ts
+
+Find the `GENERAL_DIAGNOSES` export (near end of file). Add the new array between `GEN_DX_SCAR_WOUND` and `GEN_DX_PRESSURE`:
+
+```typescript
+export const GENERAL_DIAGNOSES: DiagnosisPicklistEntry[] = [
+  ...GEN_DX_SKIN_CANCER,
+  ...GEN_DX_BENIGN,
+  ...GEN_DX_SCAR_WOUND,
+  ...GEN_DX_SOFT_TISSUE_TRAUMA,
+  ...GEN_DX_PRESSURE,
+  ...GEN_DX_SPECIALIST,
+];
+```
+
+---
+
+## File 4: `client/lib/diagnosisPicklists/orthoplasticDiagnoses.ts`
+
+### 4A. Update existing pretibial laceration diagnosis — add repair procedure as first suggestion
+
+Find the entry with `id: "orth_dx_pretibial_laceration"` and update its `suggestedProcedures` array to include the new repair procedure as the default, ahead of the graft options:
+
+Replace the existing `suggestedProcedures` array in that entry with:
+
+```typescript
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "gen_trauma_pretibial_repair",
+        displayName: "Pretibial laceration repair — primary closure",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "orth_ssg_meshed",
+        displayName: "STSG — meshed",
+        isDefault: false,
+        sortOrder: 2,
+      },
+      {
+        procedurePicklistId: "orth_ssg_sheet",
+        displayName: "STSG — sheet",
+        isDefault: false,
+        sortOrder: 3,
+      },
+      {
+        procedurePicklistId: "orth_npwt",
+        displayName: "Negative pressure wound therapy",
+        isDefault: false,
+        sortOrder: 4,
+      },
+    ],
+```
+
+---
+
+## Verification Checklist
+
+After implementation, verify:
+
+1. **Procedure picklist rendering**:
+   - Open Add Case → Head & Neck → confirm "Facial Soft Tissue Trauma" subcategory appears (between "Facial Fractures" and "Other Head & Neck")
+   - Confirm all 8 H&N trauma procedures are listed
+   - Open Add Case → General → confirm "Soft Tissue Trauma" subcategory appears
+   - Confirm all 6 General trauma procedures are listed
+   - Open Add Case → Orthoplastic → confirm "Pretibial laceration repair" and "Degloving injury" appear via cross-tagging
+
+2. **Diagnosis picklist rendering**:
+   - Select Head & Neck specialty → confirm "Facial Soft Tissue Trauma" subcategory with 6 diagnoses
+   - Select General specialty → confirm "Soft Tissue Trauma" subcategory with 4 diagnoses
+   - Search "laceration" → confirm it returns results from both H&N and General
+
+3. **Procedure suggestions from diagnoses**:
+   - Select diagnosis "Nasal laceration" → confirm "Nasal laceration repair" is pre-selected as default
+   - Select diagnosis "Pretibial laceration" (General) → confirm "Pretibial laceration repair — primary closure" is default, with STSG options also offered
+   - Select diagnosis "Pretibial laceration" (Orthoplastic) → confirm it NOW shows "Pretibial laceration repair — primary closure" as default (was previously STSG only)
+
+4. **Cross-specialty tagging**:
+   - Confirm "Scalp laceration repair" appears under both Head & Neck AND General
+   - Confirm "Pretibial laceration repair" appears under both General AND Orthoplastic
+   - Confirm "Degloving injury — primary management" appears under both General AND Orthoplastic
+
+5. **Type-ahead search**:
+   - Search "nasal" → should return nasal fracture AND nasal laceration repair
+   - Search "laceration" → should return all facial laceration entries + general laceration entries
+   - Search "pretibial" → should return pretibial laceration repair
+   - Search "degloving" → should return degloving injury procedure
+
+6. **No regressions**:
+   - Existing facial fractures procedures still work
+   - Existing wound management (debridement, NPWT, delayed closure) still work
+   - Existing lip reconstruction (oncological) in Site-Specific Reconstruction unaffected
+   - Existing pretibial laceration diagnosis in orthoplastic still renders correctly with updated suggestions
+
+---
+
+## SNOMED CT Notes
+
+**Procedure codes used:**
+| Code | Display | Used For |
+|---|---|---|
+| 238182008 | Suture of skin (procedure) | Simple laceration repairs — all sites. Body site post-coordinated via case metadata. |
+| 20720004 | Wound repair (procedure) | Complex/layered repairs, degloving management, traumatic skin loss closure. |
+| 360160003 | Exploration of wound (procedure) | Wound exploration + debridement entries. **VERIFY** on SNOMED browser. |
+
+**Diagnosis codes used:**
+| Code | Display | VERIFY? |
+|---|---|---|
+| 284009009 | Laceration of face (disorder) | No — well-established concept |
+| 283682007 | Laceration of nose (disorder) | VERIFY |
+| 283679001 | Laceration of lip (disorder) | VERIFY |
+| 284003008 | Laceration of eyelid (disorder) | VERIFY |
+| 283545005 | Laceration of ear (disorder) | VERIFY |
+| 262560009 | Laceration of scalp (disorder) | VERIFY |
+| 283681000 | Laceration of skin (disorder) | No — generic laceration concept |
+| 283680004 | Laceration of pretibial skin (finding) | No — already in use in orthoplastic |
+| 262561008 | Avulsion injury of skin (disorder) | VERIFY |
+| 282026001 | Traumatic loss of skin (finding) | VERIFY |
+
+**Design rationale for using 238182008 (Suture of skin) across multiple entries:**
+All simple laceration repairs share the same core procedure — suturing skin. Body site differentiation comes from case-level metadata (diagnosis + body region), not from the procedure code. This follows the project's established pattern where skin excision procedures (e.g., "BCC excision — face" vs. "BCC excision — trunk") share the same SNOMED procedure concept with site post-coordinated. The simple/complex split uses a different concept (20720004 Wound repair) because layered closure is a fundamentally different procedure type, matching OPCS-4's S41/S42 distinction.

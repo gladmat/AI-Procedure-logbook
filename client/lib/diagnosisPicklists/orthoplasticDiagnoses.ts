@@ -422,22 +422,28 @@ const ORTH_DX_CHRONIC: DiagnosisPicklistEntry[] = [
     searchSynonyms: ["pretibial", "shin laceration", "pretibial flap", "degloving shin"],
     suggestedProcedures: [
       {
-        procedurePicklistId: "orth_ssg_meshed",
-        displayName: "STSG — meshed",
+        procedurePicklistId: "gen_trauma_pretibial_repair",
+        displayName: "Pretibial laceration repair — primary closure",
         isDefault: true,
         sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "orth_ssg_meshed",
+        displayName: "STSG — meshed",
+        isDefault: false,
+        sortOrder: 2,
       },
       {
         procedurePicklistId: "orth_ssg_sheet",
         displayName: "STSG — sheet",
         isDefault: false,
-        sortOrder: 2,
+        sortOrder: 3,
       },
       {
         procedurePicklistId: "orth_npwt",
         displayName: "Negative pressure wound therapy",
         isDefault: false,
-        sortOrder: 3,
+        sortOrder: 4,
       },
     ],
     sortOrder: 4,

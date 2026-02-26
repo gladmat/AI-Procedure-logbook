@@ -885,6 +885,159 @@ const GEN_DX_SPECIALIST: DiagnosisPicklistEntry[] = [
   },
 ];
 
+const GEN_DX_SOFT_TISSUE_TRAUMA: DiagnosisPicklistEntry[] = [
+  {
+    id: "gen_dx_laceration",
+    displayName: "Laceration — trunk / extremity",
+    shortName: "Laceration",
+    snomedCtCode: "283681000",
+    snomedCtDisplay: "Laceration of skin (disorder)",
+    specialty: "general",
+    subcategory: "Soft Tissue Trauma",
+    clinicalGroup: "trauma",
+    hasStaging: false,
+    searchSynonyms: ["laceration", "cut", "wound", "skin laceration", "leg laceration", "arm laceration", "body laceration"],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "gen_trauma_lac_simple",
+        displayName: "Laceration repair — simple",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "gen_trauma_lac_complex",
+        displayName: "Laceration repair — complex / layered",
+        isDefault: false,
+        sortOrder: 2,
+      },
+      {
+        procedurePicklistId: "gen_trauma_wound_exploration",
+        displayName: "Wound exploration + repair (non-hand)",
+        isDefault: false,
+        sortOrder: 3,
+      },
+    ],
+    sortOrder: 1,
+  },
+  {
+    id: "gen_dx_pretibial_lac",
+    displayName: "Pretibial laceration",
+    shortName: "Pretibial lac",
+    snomedCtCode: "283680004",
+    snomedCtDisplay: "Laceration of pretibial skin (finding)",
+    specialty: "general",
+    subcategory: "Soft Tissue Trauma",
+    clinicalGroup: "trauma",
+    hasStaging: false,
+    searchSynonyms: ["pretibial", "shin laceration", "pretibial flap", "shin wound", "lower leg laceration"],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "gen_trauma_pretibial_repair",
+        displayName: "Pretibial laceration repair — primary closure",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "gen_trauma_lac_complex",
+        displayName: "Laceration repair — complex / layered",
+        isDefault: false,
+        sortOrder: 2,
+      },
+      {
+        procedurePicklistId: "orth_ssg_meshed",
+        displayName: "STSG — meshed",
+        isDefault: false,
+        sortOrder: 3,
+      },
+      {
+        procedurePicklistId: "orth_ssg_sheet",
+        displayName: "STSG — sheet",
+        isDefault: false,
+        sortOrder: 4,
+      },
+    ],
+    sortOrder: 2,
+  },
+  {
+    id: "gen_dx_degloving",
+    displayName: "Degloving injury",
+    shortName: "Degloving",
+    snomedCtCode: "262561008",
+    snomedCtDisplay: "Avulsion injury of skin (disorder)",
+    specialty: "general",
+    subcategory: "Soft Tissue Trauma",
+    clinicalGroup: "trauma",
+    hasStaging: false,
+    searchSynonyms: ["degloving", "avulsion", "skin avulsion", "degloved", "roller injury"],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "gen_trauma_degloving",
+        displayName: "Degloving injury — primary management",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "orth_debride_surgical",
+        displayName: "Surgical debridement",
+        isDefault: false,
+        sortOrder: 2,
+      },
+      {
+        procedurePicklistId: "orth_ssg_meshed",
+        displayName: "STSG — meshed",
+        isDefault: false,
+        sortOrder: 3,
+      },
+      {
+        procedurePicklistId: "orth_npwt",
+        displayName: "Negative pressure wound therapy",
+        isDefault: false,
+        sortOrder: 4,
+      },
+    ],
+    sortOrder: 3,
+  },
+  {
+    id: "gen_dx_traumatic_skin_loss",
+    displayName: "Traumatic skin loss (requiring closure / graft)",
+    shortName: "Traumatic skin loss",
+    snomedCtCode: "282026001",
+    snomedCtDisplay: "Traumatic loss of skin (finding)",
+    specialty: "general",
+    subcategory: "Soft Tissue Trauma",
+    clinicalGroup: "trauma",
+    hasStaging: false,
+    searchSynonyms: ["skin loss", "tissue loss", "traumatic wound", "traumatic defect", "crush injury skin"],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "gen_trauma_skin_loss_closure",
+        displayName: "Traumatic skin loss — direct closure / graft",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "orth_debride_surgical",
+        displayName: "Surgical debridement",
+        isDefault: false,
+        sortOrder: 2,
+      },
+      {
+        procedurePicklistId: "orth_ssg_meshed",
+        displayName: "STSG — meshed",
+        isDefault: false,
+        sortOrder: 3,
+      },
+      {
+        procedurePicklistId: "orth_npwt",
+        displayName: "Negative pressure wound therapy",
+        isDefault: false,
+        sortOrder: 4,
+      },
+    ],
+    sortOrder: 4,
+  },
+];
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // EXPORT
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -893,6 +1046,7 @@ export const GENERAL_DIAGNOSES: DiagnosisPicklistEntry[] = [
   ...GEN_DX_SKIN_CANCER,
   ...GEN_DX_BENIGN,
   ...GEN_DX_SCAR_WOUND,
+  ...GEN_DX_SOFT_TISSUE_TRAUMA,
   ...GEN_DX_PRESSURE,
   ...GEN_DX_SPECIALIST,
 ];
