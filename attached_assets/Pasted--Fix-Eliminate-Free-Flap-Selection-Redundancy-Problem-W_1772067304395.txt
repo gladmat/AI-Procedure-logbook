@@ -1,0 +1,256 @@
+# Fix: Eliminate Free Flap Selection Redundancy
+
+## Problem
+When a surgeon selects a specific free flap from the procedure picklist (e.g., Orthoplastic → Free Flap Coverage → "Free ALT flap"), the clinical details form below shows a `FreeFlapPicker` component with all 18 flap types, requiring the user to pick ALT **again**. The two selections are independent — nothing bridges `picklistEntryId` to `flapType` in `FreeFlapDetails`.
+
+## Root Cause
+`ProcedureEntryCard.tsx` renders `ProcedureSubcategoryPicker` (procedure selection) and `ProcedureClinicalDetails` (clinical form) independently. When `handlePicklistSelect` fires, it sets `picklistEntryId` and `procedureName` but resets `clinicalDetails` to `undefined` — losing any opportunity to pre-populate `flapType`.
+
+## Solution: Picklist-to-FreeFlap Mapping + Conditional Picker
+
+### Step 1: Add mapping in `client/lib/procedurePicklist.ts`
+
+Add this exported constant after the existing imports/types:
+
+```typescript
+import type { FreeFlap } from "@/types/case";
+
+/**
+ * Maps picklist entry IDs to FreeFlap type values.
+ * Entries with a mapping get auto-populated flapType (no redundant picker).
+ * Entries WITHOUT a mapping (null or absent) show the full FreeFlapPicker.
+ */
+export const PICKLIST_TO_FLAP_TYPE: Partial<Record<string, FreeFlap>> = {
+  // Orthoplastic free flaps
+  orth_ff_alt: "alt",
+  orth_ff_gracilis: "gracilis",
+  orth_ff_tug: "tug",
+  orth_ff_rfff: "radial_forearm",
+  orth_ff_fibula: "fibula",
+  orth_ff_ld: "latissimus_dorsi",
+  orth_ff_msap: "medial_sural",
+  orth_ff_tdap: "tdap",
+  orth_ff_pap: "pap",
+  orth_ff_scapular: "scapular",
+  orth_ff_parascapular: "parascapular",
+  orth_ff_serratus: "serratus_anterior",
+  orth_ff_scip: "scip",
+  // orth_ff_other: intentionally absent — show picker
+
+  // Breast autologous reconstruction
+  breast_recon_diep: "diep",
+  breast_recon_sgap: "sgap",
+  breast_recon_igap: "igap",
+  breast_recon_siea: "siea",
+  breast_recon_scip: "scip",
+  // breast_recon_tram_free: no FreeFlap enum value for TRAM — show picker
+  // breast_recon_stacked: could be any combination — show picker
+
+  // Head & Neck
+  hn_fn_free_gracilis: "gracilis",
+  // hn_ff_vram, hn_ff_jejunal, hn_ff_iliac_crest: not in FreeFlap enum — show picker
+
+  // These generic entries intentionally absent — show picker:
+  // hand_cov_free_flap, burns_recon_contracture_free_flap, gen_lymph_vlnt,
+  // orth_acute_reconstruction_gustilo_iiib, hand_cov_toe_to_thumb
+};
+```
+
+### Step 2: Auto-populate flapType in `ProcedureEntryCard.tsx`
+
+In the `handlePicklistSelect` function (around line 66), after setting the picklist entry fields, check the mapping and pre-populate `clinicalDetails.flapType` if a mapping exists:
+
+```typescript
+import { PICKLIST_TO_FLAP_TYPE } from "@/lib/procedurePicklist";
+import type { FreeFlapDetails } from "@/types/case";
+import { FLAP_SNOMED_MAP } from "@/types/case";
+
+const handlePicklistSelect = (entry: ProcedurePicklistEntry) => {
+  // Check if this picklist entry maps to a specific FreeFlap type
+  const mappedFlapType = PICKLIST_TO_FLAP_TYPE[entry.id];
+  
+  let clinicalDetails: ClinicalDetails | undefined = undefined;
+  if (entry.hasFreeFlap && mappedFlapType) {
+    const snomedEntry = FLAP_SNOMED_MAP[mappedFlapType];
+    clinicalDetails = {
+      flapType: mappedFlapType,
+      flapSnomedCode: snomedEntry?.code,
+      flapSnomedDisplay: snomedEntry?.display,
+    } as FreeFlapDetails;
+  }
+
+  onUpdate({
+    ...procedure,
+    procedureName: entry.displayName,
+    picklistEntryId: entry.id,
+    subcategory: entry.subcategory,
+    tags: entry.tags,
+    snomedCtCode: entry.snomedCtCode,
+    snomedCtDisplay: entry.snomedCtDisplay,
+    clinicalDetails,
+  });
+};
+```
+
+### Step 3: Modify `FreeFlapClinicalFields` in `ProcedureClinicalDetails.tsx`
+
+The component needs to know whether the flap type was pre-populated from the picklist (locked) or needs to be chosen (unlocked). Add a `picklistEntryId` prop:
+
+```typescript
+interface FreeFlapClinicalFieldsProps {
+  clinicalDetails: FreeFlapDetails;
+  procedureType: string;
+  picklistEntryId?: string;  // ADD THIS
+  onUpdate: (details: FreeFlapDetails) => void;
+}
+```
+
+Inside `FreeFlapClinicalFields`, determine if the flap type is pre-determined:
+
+```typescript
+import { PICKLIST_TO_FLAP_TYPE } from "@/lib/procedurePicklist";
+
+export function FreeFlapClinicalFields({
+  clinicalDetails,
+  procedureType,
+  picklistEntryId,  // ADD THIS
+  onUpdate,
+}: FreeFlapClinicalFieldsProps) {
+  const { theme } = useTheme();
+  
+  // Determine if flap type was auto-set from picklist
+  const presetFlapType = picklistEntryId 
+    ? PICKLIST_TO_FLAP_TYPE[picklistEntryId] 
+    : undefined;
+  const flapIsLocked = !!presetFlapType;
+  
+  // ... rest of component
+```
+
+Then in the JSX, conditionally render either a read-only confirmation badge OR the full FreeFlapPicker:
+
+```tsx
+return (
+  <View style={styles.container}>
+    {flapIsLocked && clinicalDetails.flapType ? (
+      // Show read-only flap type confirmation instead of full picker
+      <View style={styles.lockedFlapSection}>
+        <View style={styles.labelRow}>
+          <ThemedText style={[styles.label, { color: theme.textSecondary }]}>
+            Flap Type
+          </ThemedText>
+        </View>
+        <View style={[styles.lockedFlapBadge, { 
+          backgroundColor: theme.link + "15", 
+          borderColor: theme.link 
+        }]}>
+          <Feather name="check-circle" size={16} color={theme.link} />
+          <ThemedText style={[styles.lockedFlapText, { color: theme.link }]}>
+            {FREE_FLAP_LABELS[clinicalDetails.flapType]}
+          </ThemedText>
+        </View>
+        
+        {/* Still show elevation plane picker if applicable */}
+        {clinicalDetails.flapType && (FLAP_ELEVATION_PLANES[clinicalDetails.flapType] || []).length > 0 ? (
+          <View style={{ marginTop: Spacing.md }}>
+            <PickerField
+              label="Elevation Plane"
+              value={clinicalDetails.elevationPlane || ""}
+              options={(FLAP_ELEVATION_PLANES[clinicalDetails.flapType] || []).map((plane) => ({
+                value: plane,
+                label: ELEVATION_PLANE_LABELS[plane],
+              }))}
+              onSelect={(value) => onUpdate({ ...clinicalDetails, elevationPlane: value as ElevationPlane })}
+            />
+          </View>
+        ) : null}
+      </View>
+    ) : (
+      // Show full FreeFlapPicker for generic/unmapped entries
+      <FreeFlapPicker
+        flapType={clinicalDetails.flapType}
+        elevationPlane={clinicalDetails.elevationPlane}
+        onFlapTypeChange={handleFlapTypeChange}
+        onElevationPlaneChange={(plane) =>
+          onUpdate({ ...clinicalDetails, elevationPlane: plane })
+        }
+        required
+      />
+    )}
+
+    {/* Rest of the form (skin island, recipient site, anastomoses, etc.) 
+        remains exactly the same */}
+```
+
+Add these styles:
+
+```typescript
+lockedFlapSection: {
+  marginBottom: Spacing.lg,
+},
+lockedFlapBadge: {
+  flexDirection: "row",
+  alignItems: "center",
+  gap: Spacing.sm,
+  paddingHorizontal: Spacing.lg,
+  paddingVertical: Spacing.md,
+  borderRadius: BorderRadius.sm,
+  borderWidth: 1,
+},
+lockedFlapText: {
+  fontSize: 15,
+  fontWeight: "600",
+},
+```
+
+### Step 4: Pass `picklistEntryId` through the component chain
+
+In `ProcedureClinicalDetails` (the parent component), pass `picklistEntryId` down to `FreeFlapClinicalFields`:
+
+```typescript
+// In the isFreeFlapProcedure branch (around line 499):
+return (
+  <FreeFlapClinicalFields
+    clinicalDetails={freeFlapDetails}
+    procedureType={procedureType}
+    picklistEntryId={picklistEntryId}  // ADD THIS
+    onUpdate={onUpdate}
+  />
+);
+```
+
+### Step 5: Import additions
+
+In `ProcedureClinicalDetails.tsx`, add:
+```typescript
+import { FREE_FLAP_LABELS, ELEVATION_PLANE_LABELS } from "@/types/case";
+import { FLAP_ELEVATION_PLANES } from "@/data/flapFieldConfig";
+import { PICKLIST_TO_FLAP_TYPE } from "@/lib/procedurePicklist";
+```
+
+## Files to modify
+
+1. **`client/lib/procedurePicklist.ts`** — Add `PICKLIST_TO_FLAP_TYPE` mapping export
+2. **`client/components/ProcedureEntryCard.tsx`** — Auto-populate `clinicalDetails.flapType` in `handlePicklistSelect`
+3. **`client/components/ProcedureClinicalDetails.tsx`** — Accept `picklistEntryId` prop, conditionally render locked badge vs full picker
+
+## Expected behavior after fix
+
+| Scenario | Before | After |
+|----------|--------|-------|
+| Orthoplastic → "Free ALT flap" | Shows 18-flap picker, must pick ALT again | Shows "✓ ALT (Anterolateral Thigh)" badge, elevation plane picker, then rest of form |
+| Orthoplastic → "Free flap — other" | Shows 18-flap picker | Still shows 18-flap picker (no mapping) |
+| Breast → "DIEP flap" | Shows 18-flap picker, must pick DIEP again | Shows "✓ DIEP" badge, then rest of form |
+| Breast → "Stacked flap" | Shows 18-flap picker | Still shows 18-flap picker (no mapping) |
+| H&N → Free flap (via cross-specialty tag on ALT/Gracilis etc.) | Shows 18-flap picker again | Shows locked badge for mapped flaps |
+| H&N → "Free jejunal flap" | Shows 18-flap picker | Still shows picker (jejunal not in FreeFlap enum) |
+
+## Verification
+
+1. Navigate to Add Case → Orthoplastic → Free Flap Coverage → select "Free ALT flap"
+2. Scroll to clinical details — should see "✓ ALT (Anterolateral Thigh)" badge, NOT the full picker grid
+3. Elevation plane dropdown should still appear below the badge
+4. Recipient site, anastomoses, ischemia time, flap-specific fields should all still render normally
+5. Navigate to Orthoplastic → Free Flap Coverage → "Free flap — other" — full picker should still appear
+6. Test breast pathway: "DIEP flap breast reconstruction" → should show locked DIEP badge
+7. Test breast "Stacked flap" → should show full picker
