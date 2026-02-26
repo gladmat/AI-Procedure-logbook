@@ -17,6 +17,7 @@ import { Feather } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import * as Haptics from "expo-haptics";
 import { v4 as uuidv4 } from "uuid";
+import { persistMediaFile } from "@/lib/mediaPersistence";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { useTheme } from "@/hooks/useTheme";
@@ -119,12 +120,13 @@ export default function AddOperativeMediaScreen() {
     }
   };
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (!currentUri) return;
 
+    const permanentUri = await persistMediaFile(currentUri, currentMimeType);
     const mediaData = {
       id: editMode && existingMediaId ? existingMediaId : uuidv4(),
-      localUri: currentUri,
+      localUri: permanentUri,
       mimeType: currentMimeType,
       mediaType: selectedType,
       caption: captionInput.trim() || undefined,

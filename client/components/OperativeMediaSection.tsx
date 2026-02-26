@@ -14,6 +14,7 @@ import { Feather } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import * as Haptics from "expo-haptics";
 import { v4 as uuidv4 } from "uuid";
+import { persistMediaFile } from "@/lib/mediaPersistence";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
@@ -85,7 +86,8 @@ export function OperativeMediaSection({
 
       if (!result.canceled && result.assets.length > 0) {
         const asset = result.assets[0];
-        navigateToAddMedia(asset.uri, asset.mimeType || "image/jpeg");
+        const permanentUri = await persistMediaFile(asset.uri, asset.mimeType);
+        navigateToAddMedia(permanentUri, asset.mimeType || "image/jpeg");
       }
     } catch (error) {
       console.error("Error capturing image:", error);
@@ -108,16 +110,19 @@ export function OperativeMediaSection({
       if (!result.canceled && result.assets.length > 0) {
         if (result.assets.length === 1) {
           const asset = result.assets[0];
-          navigateToAddMedia(asset.uri, asset.mimeType || "image/jpeg");
+          const permanentUri = await persistMediaFile(asset.uri, asset.mimeType);
+          navigateToAddMedia(permanentUri, asset.mimeType || "image/jpeg");
         } else {
-          const newItems: OperativeMediaItem[] = result.assets.map((asset) => ({
-            id: uuidv4(),
-            localUri: asset.uri,
-            mimeType: asset.mimeType || "image/jpeg",
-            mediaType: "intraoperative_photo" as const,
-            createdAt: new Date().toISOString(),
-          }));
-          onMediaChange([...media, ...newItems]);
+          const persistedItems = await Promise.all(
+            result.assets.map(async (asset) => ({
+              id: uuidv4(),
+              localUri: await persistMediaFile(asset.uri, asset.mimeType),
+              mimeType: asset.mimeType || "image/jpeg",
+              mediaType: "intraoperative_photo" as const,
+              createdAt: new Date().toISOString(),
+            }))
+          );
+          onMediaChange([...media, ...persistedItems]);
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         }
       }

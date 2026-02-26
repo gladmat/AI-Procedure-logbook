@@ -255,7 +255,7 @@ export default function DashboardScreen() {
   
   const currentInpatients = useMemo(() => {
     return cases.filter(c =>
-      c.stayType === "inpatient" && !c.dischargeDate && !c.infectionOverlay
+      !c.dischargeDate
     ).sort((a, b) =>
       new Date(b.procedureDate).getTime() - new Date(a.procedureDate).getTime()
     );
@@ -460,7 +460,7 @@ export default function DashboardScreen() {
               <View style={styles.followUpTitleRow}>
                 <Feather name="activity" size={18} color={theme.error} />
                 <ThemedText style={[styles.followUpTitle, { color: theme.error }]}>
-                  Active Cases ({activeCases.length})
+                  Infection Cases ({activeCases.length})
                 </ThemedText>
               </View>
               <Feather name={showActiveCases ? "chevron-up" : "chevron-down"} size={20} color={theme.textSecondary} />
@@ -504,7 +504,7 @@ export default function DashboardScreen() {
                 
                 {activeCases.length > 5 ? (
                   <ThemedText style={[styles.moreFollowUps, { color: theme.textSecondary }]}>
-                    +{activeCases.length - 5} more active cases
+                    +{activeCases.length - 5} more infection cases
                   </ThemedText>
                 ) : null}
               </>

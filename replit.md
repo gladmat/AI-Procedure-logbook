@@ -120,8 +120,14 @@ Comprehensive infection case documentation with serial episode tracking.
 - **AsyncStorage**: Primary mechanism for local data persistence on the device.
 - **Performance Indexes** (`migrations/add_performance_indexes.sql`): 8 indexes on high-frequency query paths — procedures (user_id, user_id+date), flaps (procedure_id), anastomoses (flap_id), case_procedures (case_id), password_reset_tokens (expires_at), snomed_ref (category+is_active), user_facilities (user_id). All use `IF NOT EXISTS` for idempotent execution.
 
+### Media Persistence
+- **Photo Storage**: Photos are copied from temp cache to `FileSystem.documentDirectory/media/` via `client/lib/mediaPersistence.ts` to survive OS cache purges.
+- **All intake paths covered**: `OperativeMediaSection`, `MediaCapture`, `AddOperativeMediaScreen`, and `MediaManagementScreen` all persist media before storing URIs.
+- **Web passthrough**: On web platform, temp URIs are returned as-is (no file system persistence needed).
+
 ### Key Libraries
 - **expo-image-picker**: For selecting images from the gallery.
+- **expo-file-system**: For persistent media storage (copying from cache to document directory).
 - **@noble/ciphers**: XChaCha20-Poly1305 authenticated encryption.
 - **@noble/hashes**: SHA-256, scrypt, HKDF.
 - **@noble/curves**: X25519 elliptic curve for E2EE key exchange.

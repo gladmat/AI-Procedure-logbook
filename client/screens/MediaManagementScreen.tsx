@@ -18,6 +18,7 @@ import { Feather } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import * as Haptics from "expo-haptics";
 import { v4 as uuidv4 } from "uuid";
+import { persistMediaFile } from "@/lib/mediaPersistence";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { useTheme } from "@/hooks/useTheme";
@@ -84,9 +85,10 @@ export default function MediaManagementScreen() {
 
       if (!result.canceled && result.assets.length > 0) {
         const asset = result.assets[0];
+        const permanentUri = await persistMediaFile(asset.uri, asset.mimeType);
         const newAttachment: MediaAttachment = {
           id: uuidv4(),
-          localUri: asset.uri,
+          localUri: permanentUri,
           mimeType: asset.mimeType || "image/jpeg",
           createdAt: new Date().toISOString(),
         };
@@ -111,15 +113,17 @@ export default function MediaManagementScreen() {
       });
 
       if (!result.canceled && result.assets.length > 0) {
-        const newAttachments: MediaAttachment[] = result.assets.map((asset) => ({
-          id: uuidv4(),
-          localUri: asset.uri,
-          mimeType: asset.mimeType || "image/jpeg",
-          createdAt: new Date().toISOString(),
-        }));
-        setAttachments((prev) => [...prev, ...newAttachments]);
-        if (newAttachments.length === 1) {
-          setSelectedId(newAttachments[0].id);
+        const persistedAttachments = await Promise.all(
+          result.assets.map(async (asset) => ({
+            id: uuidv4(),
+            localUri: await persistMediaFile(asset.uri, asset.mimeType),
+            mimeType: asset.mimeType || "image/jpeg",
+            createdAt: new Date().toISOString(),
+          }))
+        );
+        setAttachments((prev) => [...prev, ...persistedAttachments]);
+        if (persistedAttachments.length === 1) {
+          setSelectedId(persistedAttachments[0].id);
         }
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
