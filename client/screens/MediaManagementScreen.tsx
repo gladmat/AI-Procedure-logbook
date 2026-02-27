@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import {
   View,
   StyleSheet,
@@ -42,10 +42,11 @@ export default function MediaManagementScreen() {
   const insets = useSafeAreaInsets();
   const { executeCallback } = useMediaCallback();
 
-  const { existingAttachments, callbackId, maxAttachments = 20, context = "case" } = route.params || {};
+  const { existingAttachments, callbackId, maxAttachments = 20, context = "case", eventType } = route.params || {};
 
   const [attachments, setAttachments] = useState<MediaAttachment[]>(existingAttachments || []);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [lastSelectedCategory, setLastSelectedCategory] = useState<MediaCategory | null>(null);
   const [cameraPermission, requestCameraPermission] = ImagePicker.useCameraPermissions();
 
   const canAddMore = attachments.length < maxAttachments;
@@ -157,8 +158,23 @@ export default function MediaManagementScreen() {
 
   const handleSetCategory = (id: string, category: MediaCategory) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setLastSelectedCategory(category);
     setAttachments((prev) =>
       prev.map((a) => (a.id === id ? { ...a, category } : a))
+    );
+  };
+
+  const handleTagAll = () => {
+    if (!lastSelectedCategory) {
+      Alert.alert(
+        "Select a category first",
+        "Tap a category on any photo, then use 'Tag all' to apply it to the rest."
+      );
+      return;
+    }
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setAttachments((prev) =>
+      prev.map((a) => (!a.category ? { ...a, category: lastSelectedCategory } : a))
     );
   };
 
@@ -178,13 +194,22 @@ export default function MediaManagementScreen() {
 
   const selectedAttachment = attachments.find((a) => a.id === selectedId);
 
-  const groupedCategories = MEDIA_CATEGORY_OPTIONS.reduce((acc, option) => {
-    if (!acc[option.group]) {
-      acc[option.group] = [];
+  const sortedGroupedCategories = useMemo(() => {
+    const grouped = MEDIA_CATEGORY_OPTIONS.reduce((acc, option) => {
+      if (!acc[option.group]) acc[option.group] = [];
+      acc[option.group].push(option);
+      return acc;
+    }, {} as Record<string, typeof MEDIA_CATEGORY_OPTIONS>);
+
+    if (eventType === "discharge_photo") {
+      const order = ["Discharge", "Follow-up", "Imaging", "Operation Day", "Other"];
+      return order
+        .filter((g) => grouped[g])
+        .map((g) => [g, grouped[g]] as [string, typeof MEDIA_CATEGORY_OPTIONS]);
     }
-    acc[option.group].push(option);
-    return acc;
-  }, {} as Record<string, typeof MEDIA_CATEGORY_OPTIONS>);
+
+    return Object.entries(grouped);
+  }, [eventType]);
 
   const renderThumbnail = ({ item }: { item: MediaAttachment }) => (
     <Pressable
@@ -227,6 +252,43 @@ export default function MediaManagementScreen() {
           <ThemedText style={[styles.saveText, { color: theme.link }]}>Done</ThemedText>
         </Pressable>
       </View>
+
+      {attachments.length > 1 ? (
+        <View style={{
+          flexDirection: "row",
+          justifyContent: "flex-end",
+          paddingHorizontal: Spacing.md,
+          paddingVertical: Spacing.sm,
+          borderBottomWidth: 1,
+          borderBottomColor: theme.border,
+        }}>
+          <Pressable
+            onPress={handleTagAll}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: Spacing.xs,
+              paddingHorizontal: Spacing.md,
+              paddingVertical: Spacing.sm,
+              borderRadius: BorderRadius.sm,
+              backgroundColor: lastSelectedCategory ? theme.link + "15" : theme.backgroundElevated,
+              borderWidth: 1,
+              borderColor: lastSelectedCategory ? theme.link : theme.border,
+            }}
+          >
+            <Feather name="tag" size={14} color={lastSelectedCategory ? theme.link : theme.textTertiary} />
+            <ThemedText style={{
+              fontSize: 13,
+              color: lastSelectedCategory ? theme.link : theme.textSecondary,
+              fontWeight: "500",
+            }}>
+              {lastSelectedCategory
+                ? `Tag all untagged as: ${MEDIA_CATEGORY_LABELS[lastSelectedCategory]}`
+                : "Tag all untagged"}
+            </ThemedText>
+          </Pressable>
+        </View>
+      ) : null}
 
       <View style={styles.thumbnailStrip}>
         <FlatList
@@ -290,7 +352,7 @@ export default function MediaManagementScreen() {
             Select Category
           </ThemedText>
 
-          {Object.entries(groupedCategories).map(([groupName, options]) => (
+          {sortedGroupedCategories.map(([groupName, options]) => (
             <View key={groupName} style={styles.categoryGroup}>
               <ThemedText style={[styles.groupTitle, { color: theme.textSecondary }]}>
                 {groupName}

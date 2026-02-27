@@ -103,6 +103,8 @@ function getEventTypeIcon(eventType: TimelineEventType): keyof typeof Feather.gl
       return "file-text";
     case "wound_assessment":
       return "thermometer";
+    case "discharge_photo":
+      return "log-out";
     default:
       return "file";
   }
@@ -124,6 +126,8 @@ function getEventTypeColor(eventType: TimelineEventType, theme: Record<string, s
       return theme.textSecondary;
     case "wound_assessment":
       return theme.info;
+    case "discharge_photo":
+      return theme.success;
     default:
       return theme.link;
   }
@@ -242,6 +246,7 @@ export default function CaseDetailScreen() {
       navigation.navigate("AddTimelineEvent", { 
         caseId: caseData.id,
         isSkinLesion: isSkinLesionCase(),
+        caseDischargeDate: caseData.dischargeDate,
       });
     }
   };
@@ -1176,6 +1181,22 @@ export default function CaseDetailScreen() {
                       <ThemedText style={[styles.intervalBadge, { color: theme.textSecondary }]}>
                         {FOLLOW_UP_INTERVAL_LABELS[event.followUpInterval]}
                       </ThemedText>
+                    ) : null}
+                    {event.clinicalContext === "discharge" ? (
+                      <View style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        gap: 4,
+                        backgroundColor: theme.success + "20",
+                        paddingHorizontal: 8,
+                        paddingVertical: 2,
+                        borderRadius: 10,
+                      }}>
+                        <Feather name="log-out" size={10} color={theme.success} />
+                        <ThemedText style={{ fontSize: 11, color: theme.success, fontWeight: "500" }}>
+                          Discharge
+                        </ThemedText>
+                      </View>
                     ) : null}
                   </View>
 

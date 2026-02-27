@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { View, StyleSheet, Alert, Pressable } from "react-native";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -71,7 +71,7 @@ export default function AddTimelineEventScreen() {
   const insets = useSafeAreaInsets();
   const headerHeight = useHeaderHeight();
 
-  const { caseId, initialEventType, isSkinLesion } = route.params;
+  const { caseId, initialEventType, isSkinLesion, caseDischargeDate } = route.params;
 
   const [saving, setSaving] = useState(false);
   const [eventType, setEventType] = useState<TimelineEventType | "">(
@@ -94,6 +94,14 @@ export default function AddTimelineEventScreen() {
   const [woundAssessmentData, setWoundAssessmentData] = useState<WoundAssessment>({
     dressings: [],
   });
+  const [dischargeWoundStatus, setDischargeWoundStatus] = useState<
+    "dry_healing" | "moist" | "redness" | "breakdown" | ""
+  >("");
+
+  const isDischargeDay = useMemo(() => {
+    if (!caseDischargeDate) return false;
+    return new Date().toISOString().split("T")[0] === caseDischargeDate;
+  }, [caseDischargeDate]);
 
   const getSubtitle = () => {
     switch (eventType) {
@@ -132,6 +140,13 @@ export default function AddTimelineEventScreen() {
       }
     }
 
+    if (eventType === "discharge_photo") {
+      if (mediaAttachments.length === 0) {
+        Alert.alert("Required Field", "Please add at least one photo");
+        return false;
+      }
+    }
+
     if (eventType === "prom") {
       if (!promData.score && promData.score !== 0) {
         Alert.alert("Required Field", "Please enter a PROM score");
@@ -163,15 +178,27 @@ export default function AddTimelineEventScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     try {
+      const WOUND_STATUS_LABELS: Record<string, string> = {
+        dry_healing: "Dry & healing",
+        moist: "Moist / exudate",
+        redness: "Redness / concern",
+        breakdown: "Wound breakdown",
+      };
+
+      const dischargeNote = eventType === "discharge_photo" && dischargeWoundStatus
+        ? `Wound status: ${WOUND_STATUS_LABELS[dischargeWoundStatus]}${note.trim() ? " — " + note.trim() : ""}`
+        : note.trim();
+
       const event: TimelineEvent = {
         id: uuidv4(),
         caseId,
         eventType: eventType as TimelineEventType,
-        note: note.trim(),
+        note: dischargeNote,
         createdAt: new Date().toISOString(),
+        clinicalContext: isDischargeDay ? "discharge" : undefined,
       };
 
-      if (eventType === "photo" || eventType === "imaging") {
+      if (eventType === "photo" || eventType === "imaging" || eventType === "discharge_photo") {
         event.mediaAttachments = mediaAttachments;
       }
 
@@ -266,6 +293,8 @@ export default function AddTimelineEventScreen() {
         return "file-text";
       case "wound_assessment":
         return "thermometer";
+      case "discharge_photo":
+        return "log-out";
       default:
         return "file";
     }
@@ -283,6 +312,32 @@ export default function AddTimelineEventScreen() {
       ]}
     >
       <SectionHeader title="Add to Timeline" subtitle={getSubtitle()} />
+
+      {isDischargeDay ? (
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "flex-start",
+            gap: Spacing.sm,
+            backgroundColor: "#FFF8E1",
+            borderRadius: BorderRadius.md,
+            padding: Spacing.md,
+            marginTop: Spacing.md,
+            borderLeftWidth: 4,
+            borderLeftColor: "#F57F17",
+          }}
+        >
+          <Feather name="log-out" size={18} color="#F57F17" style={{ marginTop: 2 }} />
+          <View style={{ flex: 1 }}>
+            <ThemedText style={{ fontWeight: "600", fontSize: 14, color: "#E65100" }}>
+              Discharge day
+            </ThemedText>
+            <ThemedText style={{ fontSize: 13, color: "#795548", marginTop: 2 }}>
+              This event will be tagged to discharge. Use Discharge Photo for a quick wound record.
+            </ThemedText>
+          </View>
+        </View>
+      ) : null}
 
       <ThemedText style={[styles.label, { color: theme.textSecondary }]}>
         Entry Type
@@ -379,6 +434,68 @@ export default function AddTimelineEventScreen() {
           <WoundAssessmentForm
             value={woundAssessmentData}
             onChange={setWoundAssessmentData}
+          />
+        </View>
+      ) : null}
+
+      {eventType === "discharge_photo" ? (
+        <View style={styles.section}>
+          <ThemedText style={[styles.label, { color: theme.textSecondary }]}>
+            Wound / Site Photos
+          </ThemedText>
+          <MediaCapture
+            attachments={mediaAttachments}
+            onAttachmentsChange={setMediaAttachments}
+            mediaType="photo"
+            eventType="discharge_photo"
+          />
+
+          <ThemedText style={[styles.label, { color: theme.textSecondary }]}>
+            Wound Status
+          </ThemedText>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: Spacing.sm }}>
+            {(
+              [
+                { value: "dry_healing", label: "Dry & healing", color: "#2E7D32", bg: "#E8F5E9" },
+                { value: "moist", label: "Moist / exudate", color: "#F57F17", bg: "#FFF3E0" },
+                { value: "redness", label: "Redness / concern", color: "#E65100", bg: "#FBE9E7" },
+                { value: "breakdown", label: "Wound breakdown", color: "#B71C1C", bg: "#FFEBEE" },
+              ] as const
+            ).map((opt) => (
+              <Pressable
+                key={opt.value}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  setDischargeWoundStatus(opt.value);
+                }}
+                style={{
+                  paddingHorizontal: Spacing.md,
+                  paddingVertical: Spacing.sm,
+                  borderRadius: BorderRadius.sm,
+                  borderWidth: 1.5,
+                  borderColor: dischargeWoundStatus === opt.value ? opt.color : theme.border,
+                  backgroundColor: dischargeWoundStatus === opt.value ? opt.bg : theme.backgroundElevated,
+                }}
+              >
+                <ThemedText
+                  style={{
+                    fontSize: 14,
+                    fontWeight: dischargeWoundStatus === opt.value ? "600" : "400",
+                    color: dischargeWoundStatus === opt.value ? opt.color : theme.text,
+                  }}
+                >
+                  {opt.label}
+                </ThemedText>
+              </Pressable>
+            ))}
+          </View>
+
+          <FormField
+            label="Notes (optional)"
+            value={note}
+            onChangeText={setNote}
+            placeholder="e.g. dressings intact, no concerns, patient comfortable"
+            multiline
           />
         </View>
       ) : null}

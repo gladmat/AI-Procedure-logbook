@@ -907,7 +907,8 @@ export type TimelineEventType =
   | "prom"
   | "complication"
   | "follow_up_visit"
-  | "wound_assessment";
+  | "wound_assessment"
+  | "discharge_photo";
 
 export type FollowUpInterval = 
   | "2_weeks"
@@ -939,9 +940,15 @@ export type MediaCategory =
   | "anastomosis"
   | "closure"
   | "immediate_postop"
+  | "flap_planning"
   | "xray"
+  | "preop_xray"
+  | "intraop_xray"
+  | "postop_xray"
   | "ct_angiogram"
   | "ultrasound"
+  | "discharge_wound"
+  | "discharge_donor"
   | "followup_photo"
   | "donor_site"
   | "complication"
@@ -955,9 +962,15 @@ export const MEDIA_CATEGORY_OPTIONS: { value: MediaCategory; label: string; grou
   { value: "anastomosis", label: "Anastomosis", group: "Operation Day" },
   { value: "closure", label: "Closure", group: "Operation Day" },
   { value: "immediate_postop", label: "Immediate Post-op", group: "Operation Day" },
-  { value: "xray", label: "X-ray", group: "Imaging" },
+  { value: "flap_planning", label: "Flap Planning", group: "Operation Day" },
+  { value: "xray", label: "X-ray (generic)", group: "Imaging" },
+  { value: "preop_xray", label: "Pre-op X-ray", group: "Imaging" },
+  { value: "intraop_xray", label: "Intraop X-ray", group: "Imaging" },
+  { value: "postop_xray", label: "Post-op X-ray", group: "Imaging" },
   { value: "ct_angiogram", label: "CT/Angiogram", group: "Imaging" },
   { value: "ultrasound", label: "Ultrasound/Doppler", group: "Imaging" },
+  { value: "discharge_wound", label: "Discharge Wound", group: "Discharge" },
+  { value: "discharge_donor", label: "Discharge Donor", group: "Discharge" },
   { value: "followup_photo", label: "Follow-up Photo", group: "Follow-up" },
   { value: "donor_site", label: "Donor Site", group: "Follow-up" },
   { value: "complication", label: "Complication", group: "Follow-up" },
@@ -972,9 +985,15 @@ export const MEDIA_CATEGORY_LABELS: Record<MediaCategory, string> = {
   anastomosis: "Anastomosis",
   closure: "Closure",
   immediate_postop: "Immediate Post-op",
+  flap_planning: "Flap Planning",
   xray: "X-ray",
+  preop_xray: "Pre-op X-ray",
+  intraop_xray: "Intraop X-ray",
+  postop_xray: "Post-op X-ray",
   ct_angiogram: "CT/Angiogram",
   ultrasound: "Ultrasound/Doppler",
+  discharge_wound: "Discharge Wound",
+  discharge_donor: "Discharge Donor",
   followup_photo: "Follow-up Photo",
   donor_site: "Donor Site",
   complication: "Complication",
@@ -1024,12 +1043,19 @@ export interface TimelineEvent {
   note: string;
   authorId?: string;
   createdAt: string;
+  clinicalContext?: TimelineEventContext;
   followUpInterval?: FollowUpInterval;
   mediaAttachments?: MediaAttachment[];
   promData?: PROMData;
   complicationData?: ComplicationEntry;
   woundAssessmentData?: WoundAssessment;
 }
+
+export type TimelineEventContext =
+  | "intraoperative"
+  | "early_postop"
+  | "discharge"
+  | "outpatient_review";
 
 export const TIMELINE_EVENT_TYPE_LABELS: Record<TimelineEventType, string> = {
   note: "Note",
@@ -1039,6 +1065,7 @@ export const TIMELINE_EVENT_TYPE_LABELS: Record<TimelineEventType, string> = {
   complication: "Complication",
   follow_up_visit: "Follow-up Visit",
   wound_assessment: "Wound Assessment",
+  discharge_photo: "Discharge Photo",
 };
 
 export const FOLLOW_UP_INTERVAL_LABELS: Record<FollowUpInterval, string> = {

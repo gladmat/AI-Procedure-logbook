@@ -18,7 +18,7 @@ import { EncryptedImage } from "@/components/EncryptedImage";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
-import { MediaAttachment, MEDIA_CATEGORY_LABELS } from "@/types/case";
+import { MediaAttachment, MEDIA_CATEGORY_LABELS, TimelineEventType } from "@/types/case";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { useMediaCallback } from "@/contexts/MediaCallbackContext";
 
@@ -27,6 +27,7 @@ interface MediaCaptureProps {
   onAttachmentsChange: (attachments: MediaAttachment[]) => void;
   maxAttachments?: number;
   mediaType?: "photo" | "imaging" | "all";
+  eventType?: TimelineEventType;
 }
 
 export function MediaCapture({
@@ -34,6 +35,7 @@ export function MediaCapture({
   onAttachmentsChange,
   maxAttachments = 10,
   mediaType = "all",
+  eventType,
 }: MediaCaptureProps) {
   const { theme } = useTheme();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -51,6 +53,7 @@ export function MediaCapture({
       callbackId,
       maxAttachments,
       context: "case",
+      eventType,
     });
   };
 
