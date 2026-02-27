@@ -655,9 +655,16 @@ interface SlnbClinicalFieldsProps {
   onUpdate: (details: SlnbDetails) => void;
 }
 
+const BASIN_GRID_ROWS: { label: string; left?: SlnbBasin; right?: SlnbBasin; single?: SlnbBasin }[] = [
+  { label: "Cervical / Parotid", left: "left_cervical_parotid", right: "right_cervical_parotid" },
+  { label: "Axilla", left: "left_axilla", right: "right_axilla" },
+  { label: "Groin", left: "left_groin", right: "right_groin" },
+  { label: "Popliteal", left: "left_popliteal", right: "right_popliteal" },
+  { label: "Other", single: "other" },
+];
+
 export function SlnbClinicalFields({ clinicalDetails, onUpdate }: SlnbClinicalFieldsProps) {
   const { theme } = useTheme();
-  const [showBasinPicker, setShowBasinPicker] = useState(false);
 
   const basins = clinicalDetails.basins || [];
 
@@ -665,7 +672,6 @@ export function SlnbClinicalFields({ clinicalDetails, onUpdate }: SlnbClinicalFi
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     const newResult: SlnbBasinResult = { basin };
     onUpdate({ ...clinicalDetails, basins: [...basins, newResult] });
-    setShowBasinPicker(false);
   };
 
   const updateBasin = (index: number, result: SlnbBasinResult) => {
@@ -679,7 +685,15 @@ export function SlnbClinicalFields({ clinicalDetails, onUpdate }: SlnbClinicalFi
   };
 
   const usedBasins = new Set(basins.map((b) => b.basin));
-  const availableBasins = ALL_BASINS.filter((b) => !usedBasins.has(b));
+
+  const toggleBasin = (basin: SlnbBasin) => {
+    if (usedBasins.has(basin)) {
+      const idx = basins.findIndex((b) => b.basin === basin);
+      if (idx !== -1) removeBasin(idx);
+    } else {
+      addBasin(basin);
+    }
+  };
 
   const toggleTechnique = (field: keyof Pick<SlnbDetails, "radioisotopeUsed" | "blueDyeUsed" | "gammaProbeUsed" | "spectCtPerformed">) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -739,19 +753,77 @@ export function SlnbClinicalFields({ clinicalDetails, onUpdate }: SlnbClinicalFi
         ) : null}
       </View>
 
-      {basins.length === 0 ? (
-        <View
-          style={[
-            slnbStyles.emptyBasin,
-            { borderColor: theme.border, backgroundColor: theme.backgroundDefault },
-          ]}
-        >
-          <Feather name="map-pin" size={18} color={theme.textSecondary} />
-          <ThemedText style={[slnbStyles.emptyBasinText, { color: theme.textSecondary }]}>
-            No basins added yet
-          </ThemedText>
-        </View>
-      ) : (
+      {/* Paired left/right basin grid */}
+      <View style={slnbStyles.basinGrid}>
+        {BASIN_GRID_ROWS.map((row) => {
+          if (row.single) {
+            const isActive = usedBasins.has(row.single);
+            return (
+              <View key={row.single} style={slnbStyles.basinGridRow}>
+                <ThemedText style={[slnbStyles.basinGridLabel, { color: theme.textSecondary }]}>
+                  {row.label}
+                </ThemedText>
+                <Pressable
+                  style={[
+                    slnbStyles.basinOtherBtn,
+                    {
+                      backgroundColor: isActive ? theme.link + "18" : theme.backgroundElevated,
+                      borderColor: isActive ? theme.link : theme.border,
+                    },
+                  ]}
+                  onPress={() => toggleBasin(row.single!)}
+                >
+                  <ThemedText style={[slnbStyles.basinSideBtnText, { color: isActive ? theme.link : theme.textSecondary }]}>
+                    Other
+                  </ThemedText>
+                </Pressable>
+              </View>
+            );
+          }
+          const leftActive = row.left ? usedBasins.has(row.left) : false;
+          const rightActive = row.right ? usedBasins.has(row.right) : false;
+          return (
+            <View key={row.label} style={slnbStyles.basinGridRow}>
+              <ThemedText style={[slnbStyles.basinGridLabel, { color: theme.textSecondary }]}>
+                {row.label}
+              </ThemedText>
+              <View style={{ flexDirection: "row", gap: Spacing.xs }}>
+                <Pressable
+                  style={[
+                    slnbStyles.basinSideBtn,
+                    {
+                      backgroundColor: leftActive ? theme.link + "18" : theme.backgroundElevated,
+                      borderColor: leftActive ? theme.link : theme.border,
+                    },
+                  ]}
+                  onPress={() => row.left && toggleBasin(row.left)}
+                >
+                  <ThemedText style={[slnbStyles.basinSideBtnText, { color: leftActive ? theme.link : theme.textSecondary }]}>
+                    Left
+                  </ThemedText>
+                </Pressable>
+                <Pressable
+                  style={[
+                    slnbStyles.basinSideBtn,
+                    {
+                      backgroundColor: rightActive ? theme.link + "18" : theme.backgroundElevated,
+                      borderColor: rightActive ? theme.link : theme.border,
+                    },
+                  ]}
+                  onPress={() => row.right && toggleBasin(row.right)}
+                >
+                  <ThemedText style={[slnbStyles.basinSideBtnText, { color: rightActive ? theme.link : theme.textSecondary }]}>
+                    Right
+                  </ThemedText>
+                </Pressable>
+              </View>
+            </View>
+          );
+        })}
+      </View>
+
+      {/* Basin detail cards */}
+      {basins.length > 0 ? (
         <View style={slnbStyles.basinList}>
           {basins.map((result, index) => (
             <SlnbBasinCard
@@ -761,59 +833,6 @@ export function SlnbClinicalFields({ clinicalDetails, onUpdate }: SlnbClinicalFi
               onRemove={() => removeBasin(index)}
             />
           ))}
-        </View>
-      )}
-
-      {availableBasins.length > 0 ? (
-        <View>
-          {showBasinPicker ? (
-            <View
-              style={[
-                slnbStyles.basinPickerPanel,
-                { backgroundColor: theme.backgroundElevated, borderColor: theme.border },
-              ]}
-            >
-              <ThemedText style={[slnbStyles.basinPickerTitle, { color: theme.textSecondary }]}>
-                Select basin
-              </ThemedText>
-              {availableBasins.map((basin) => (
-                <Pressable
-                  key={basin}
-                  style={[slnbStyles.basinPickerRow, { borderBottomColor: theme.border }]}
-                  onPress={() => addBasin(basin)}
-                >
-                  <Feather name="plus-circle" size={16} color={theme.link} style={{ marginRight: 8 }} />
-                  <ThemedText style={[slnbStyles.basinPickerLabel, { color: theme.text }]}>
-                    {SLNB_BASIN_LABELS[basin]}
-                  </ThemedText>
-                </Pressable>
-              ))}
-              <Pressable
-                style={[slnbStyles.cancelBtn, { borderColor: theme.border }]}
-                onPress={() => setShowBasinPicker(false)}
-              >
-                <ThemedText style={[slnbStyles.cancelBtnText, { color: theme.textSecondary }]}>
-                  Cancel
-                </ThemedText>
-              </Pressable>
-            </View>
-          ) : (
-            <Pressable
-              style={[
-                slnbStyles.addBasinBtn,
-                { borderColor: theme.link + "50", backgroundColor: theme.link + "0D" },
-              ]}
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                setShowBasinPicker(true);
-              }}
-            >
-              <Feather name="plus" size={16} color={theme.link} />
-              <ThemedText style={[slnbStyles.addBasinBtnText, { color: theme.link }]}>
-                Add basin
-              </ThemedText>
-            </Pressable>
-          )}
         </View>
       ) : null}
     </View>
@@ -920,69 +939,37 @@ const slnbStyles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "500",
   },
-  emptyBasin: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+  basinGrid: {
     gap: Spacing.sm,
-    padding: Spacing.lg,
-    borderRadius: BorderRadius.md,
-    borderWidth: 1,
-    borderStyle: "dashed",
     marginBottom: Spacing.md,
   },
-  emptyBasinText: {
-    fontSize: 14,
-  },
-  addBasinBtn: {
+  basinGridRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    gap: Spacing.sm,
-    paddingVertical: Spacing.md,
-    borderRadius: BorderRadius.sm,
-    borderWidth: 1,
-    borderStyle: "dashed",
-    marginBottom: Spacing.sm,
+    justifyContent: "space-between",
   },
-  addBasinBtnText: {
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  basinPickerPanel: {
-    borderRadius: BorderRadius.md,
-    borderWidth: 1,
-    overflow: "hidden",
-    marginBottom: Spacing.sm,
-  },
-  basinPickerTitle: {
-    fontSize: 12,
-    fontWeight: "600",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-    paddingHorizontal: Spacing.md,
-    paddingTop: Spacing.md,
-    paddingBottom: Spacing.sm,
-  },
-  basinPickerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.md,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  basinPickerLabel: {
-    fontSize: 15,
-    fontWeight: "500",
-  },
-  cancelBtn: {
-    alignItems: "center",
-    paddingVertical: Spacing.md,
-    borderTopWidth: 1,
-  },
-  cancelBtnText: {
+  basinGridLabel: {
+    flex: 1,
     fontSize: 14,
     fontWeight: "500",
+  },
+  basinSideBtn: {
+    width: 68,
+    alignItems: "center",
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+  },
+  basinSideBtnText: {
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  basinOtherBtn: {
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+    alignItems: "center",
   },
 });
 

@@ -638,6 +638,19 @@ export function DiagnosisGroupEditor({ group, index, isOnly, onChange, onDelete 
         </View>
       ) : null}
 
+      {/* Feature 3: HandTraumaStructurePicker — trauma pathway (shown first) */}
+      {groupSpecialty === "hand_surgery" && handCaseType === "trauma" ? (
+        <HandTraumaStructurePicker
+          value={diagnosisClinicalDetails.handTrauma || {}}
+          onChange={(handTrauma) =>
+            setDiagnosisClinicalDetails((prev) => ({ ...prev, handTrauma }))
+          }
+          selectedDiagnosis={selectedDiagnosis ?? undefined}
+          procedures={procedures}
+          onProceduresChange={setProcedures}
+        />
+      ) : null}
+
       {/* Feature 3: AO Classification section (trauma pathway only) */}
       {groupSpecialty === "hand_surgery" && handCaseType === "trauma" ? (
         <View style={[styles.aoSection, { borderColor: theme.border }]}>
@@ -783,19 +796,6 @@ export function DiagnosisGroupEditor({ group, index, isOnly, onChange, onDelete 
             />
           ))}
         </View>
-      ) : null}
-
-      {/* Feature 3: HandTraumaStructurePicker — trauma pathway */}
-      {groupSpecialty === "hand_surgery" && handCaseType === "trauma" ? (
-        <HandTraumaStructurePicker
-          value={diagnosisClinicalDetails.handTrauma || {}}
-          onChange={(handTrauma) =>
-            setDiagnosisClinicalDetails((prev) => ({ ...prev, handTrauma }))
-          }
-          selectedDiagnosis={selectedDiagnosis ?? undefined}
-          procedures={procedures}
-          onProceduresChange={setProcedures}
-        />
       ) : null}
 
       {primaryDiagnosis ? (

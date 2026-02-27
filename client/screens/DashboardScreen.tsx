@@ -346,23 +346,6 @@ export default function DashboardScreen() {
     return "nerveRepairCount" in stats;
   };
 
-  if (loading) {
-    return (
-      <View
-        style={[
-          styles.container,
-          { backgroundColor: theme.backgroundRoot, paddingTop: headerHeight },
-        ]}
-      >
-        <View style={styles.skeletonContainer}>
-          <SkeletonCard height={60} />
-          <SkeletonCard height={130} />
-          <SkeletonCard height={130} />
-        </View>
-      </View>
-    );
-  }
-
   return (
     <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
       <ScrollView
@@ -939,7 +922,12 @@ export default function DashboardScreen() {
             ) : null}
           </View>
           
-          {recentCases.length > 0 ? (
+          {loading ? (
+            <View style={styles.skeletonContainer}>
+              <SkeletonCard height={130} />
+              <SkeletonCard height={130} />
+            </View>
+          ) : recentCases.length > 0 ? (
             recentCases.map((item, index) => (
               <Animated.View key={item.id} entering={FadeInDown.delay(index * 50).springify()}>
                 <CaseCard caseData={item} onPress={() => handleCasePress(item)} />

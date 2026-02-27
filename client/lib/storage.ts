@@ -173,15 +173,8 @@ export async function getCases(): Promise<Case[]> {
     const index = await getCaseIndex();
     if (index.length === 0) return [];
     
-    const cases: Case[] = [];
-    for (const entry of index) {
-      const caseData = await getCase(entry.id);
-      if (caseData) {
-        cases.push(caseData);
-      }
-    }
-    
-    return cases;
+    const results = await Promise.all(index.map((entry) => getCase(entry.id)));
+    return results.filter((c): c is Case => c !== null);
   } catch (error) {
     console.error("Error reading cases:", error);
     return [];
