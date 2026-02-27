@@ -33,7 +33,7 @@ export async function persistMediaFile(
   tempUri: string,
   mimeType?: string
 ): Promise<string> {
-  if (Platform.OS === "web") {
+  if (Platform.OS === "web" || !FileSystem.documentDirectory) {
     return tempUri;
   }
 
