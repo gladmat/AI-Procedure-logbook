@@ -6,6 +6,7 @@ import {
   Alert,
   Platform,
   Modal,
+  Animated,
 } from "react-native";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -174,6 +175,105 @@ const DEFAULT_DONOR_VESSELS: Record<string, { artery: string; vein: string }> = 
     vein: "Medial sural veins"
   },
 };
+
+function ExtendedDetailsSection({ children }: { children: React.ReactNode }) {
+  const { theme } = useTheme();
+  const [expanded, setExpanded] = useState(false);
+  const [measured, setMeasured] = useState(false);
+  const expandedRef = useRef(false);
+  const contentHeightRef = useRef(0);
+  const animatedHeight = useRef(new Animated.Value(0)).current;
+
+  const toggle = () => {
+    const nextExpanded = !expandedRef.current;
+    expandedRef.current = nextExpanded;
+    setExpanded(nextExpanded);
+    const toValue = nextExpanded ? contentHeightRef.current : 0;
+    Animated.spring(animatedHeight, {
+      toValue,
+      useNativeDriver: false,
+      tension: 80,
+      friction: 12,
+    }).start();
+  };
+
+  return (
+    <View style={extendedStyles.wrapper}>
+      <Pressable
+        onPress={() => {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          toggle();
+        }}
+        style={extendedStyles.toggleRow}
+      >
+        <View style={[extendedStyles.dividerLine, { backgroundColor: theme.border }]} />
+        <View style={[
+          extendedStyles.togglePill,
+          { backgroundColor: theme.backgroundSecondary, borderColor: theme.border },
+        ]}>
+          <ThemedText style={[extendedStyles.toggleText, { color: theme.textSecondary }]}>
+            {expanded ? "Hide extended details" : "Extended details"}
+          </ThemedText>
+          <Feather
+            name={expanded ? "chevron-up" : "chevron-down"}
+            size={14}
+            color={theme.textSecondary}
+          />
+        </View>
+        <View style={[extendedStyles.dividerLine, { backgroundColor: theme.border }]} />
+      </Pressable>
+
+      <Animated.View style={{ height: measured ? animatedHeight : undefined, overflow: "hidden" }}>
+        <View
+          onLayout={(e) => {
+            const h = e.nativeEvent.layout.height;
+            if (h > 0) {
+              contentHeightRef.current = h;
+              if (!measured) {
+                animatedHeight.setValue(0);
+                setMeasured(true);
+              } else if (expandedRef.current) {
+                animatedHeight.setValue(h);
+              }
+            }
+          }}
+        >
+          {children}
+        </View>
+      </Animated.View>
+    </View>
+  );
+}
+
+const extendedStyles = StyleSheet.create({
+  wrapper: {
+    marginTop: Spacing.sm,
+  },
+  toggleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 14,
+    paddingHorizontal: 4,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+  },
+  togglePill: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    marginHorizontal: 12,
+    borderWidth: 1,
+    gap: 6,
+  },
+  toggleText: {
+    fontSize: 13,
+    fontWeight: "600",
+  },
+});
 
 export default function CaseFormScreen() {
   const { theme } = useTheme();
@@ -1132,6 +1232,8 @@ export default function CaseFormScreen() {
         })}
       </View>
 
+      <ExtendedDetailsSection>
+
       <SectionHeader title="Surgery Timing" subtitle="Optional but recommended" />
 
       <View style={styles.row}>
@@ -1451,6 +1553,7 @@ export default function CaseFormScreen() {
         <ThemedText style={styles.checkboxLabel}>Discussed at MDM</ThemedText>
       </View>
 
+      </ExtendedDetailsSection>
 
       <View style={styles.buttonContainer}>
         <Button onPress={handleSave} disabled={saving}>

@@ -64,8 +64,7 @@ export function DiagnosisGroupEditor({ group, index, isOnly, onChange, onDelete 
   const [selectedSuggestionIds, setSelectedSuggestionIds] = useState<Set<string>>(new Set());
   const [procedures, setProcedures] = useState<CaseProcedure[]>(group.procedures);
   const [fractures, setFractures] = useState<FractureEntry[]>(group.fractures || []);
-  const [isFractureCase, setIsFractureCase] = useState(group.fractures ? group.fractures.length > 0 : false);
-  const [showFractureWizardFromCheckbox, setShowFractureWizardFromCheckbox] = useState(false);
+  const [showFractureWizard, setShowFractureWizard] = useState(false);
   const [snomedSuggestion, setSnomedSuggestion] = useState<{ searchTerm: string; displayName: string } | null>(null);
   const [isMultiLesion, setIsMultiLesion] = useState<boolean>(group.isMultiLesion ?? false);
   const [lesionInstances, setLesionInstances] = useState<LesionInstance[]>(group.lesionInstances ?? []);
@@ -100,7 +99,6 @@ export function DiagnosisGroupEditor({ group, index, isOnly, onChange, onDelete 
   useEffect(() => {
     if (!hasFractureSubcategory) {
       setFractures([]);
-      setIsFractureCase(false);
     }
   }, [hasFractureSubcategory]);
 
@@ -393,19 +391,10 @@ export function DiagnosisGroupEditor({ group, index, isOnly, onChange, onDelete 
     });
   };
 
-  const handleFractureCheckboxToggle = (checked: boolean) => {
-    setIsFractureCase(checked);
-    if (checked) {
-      setShowFractureWizardFromCheckbox(true);
-    } else {
-      setFractures([]);
-      setSnomedSuggestion(null);
-    }
-  };
 
   const handleFractureWizardSave = async (newFractures: FractureEntry[]) => {
     setFractures(newFractures);
-    setShowFractureWizardFromCheckbox(false);
+    setShowFractureWizard(false);
 
     if (newFractures.length > 0) {
       const firstFracture = newFractures[0];
@@ -420,10 +409,7 @@ export function DiagnosisGroupEditor({ group, index, isOnly, onChange, onDelete 
   };
 
   const handleFractureWizardClose = () => {
-    setShowFractureWizardFromCheckbox(false);
-    if (fractures.length === 0) {
-      setIsFractureCase(false);
-    }
+    setShowFractureWizard(false);
   };
 
   const handleSpecialtyChange = (newSpecialty: string) => {
@@ -437,7 +423,6 @@ export function DiagnosisGroupEditor({ group, index, isOnly, onChange, onDelete 
     setSelectedDiagnosis(null);
     setSelectedSuggestionIds(new Set());
     setFractures([]);
-    setIsFractureCase(false);
     setSnomedSuggestion(null);
     setProcedures([{
       id: uuidv4(),
@@ -546,67 +531,12 @@ export function DiagnosisGroupEditor({ group, index, isOnly, onChange, onDelete 
         />
       ) : null}
 
-      {hasFractureSubcategory ? (
-        <View style={styles.fractureCheckboxContainer}>
-          <Pressable
-            style={styles.fractureCheckboxRow}
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              handleFractureCheckboxToggle(!isFractureCase);
-            }}
-          >
-            <View style={[
-              styles.checkbox,
-              {
-                borderColor: isFractureCase ? theme.link : theme.border,
-                backgroundColor: isFractureCase ? theme.link : "transparent"
-              }
-            ]}>
-              {isFractureCase ? (
-                <Feather name="check" size={14} color="#FFF" />
-              ) : null}
-            </View>
-            <ThemedText style={[styles.fractureCheckboxLabel, { color: theme.text }]}>
-              Fracture Case
-            </ThemedText>
-          </Pressable>
-          {isFractureCase && fractures.length > 0 ? (
-            <View style={styles.fractureSummary}>
-              {fractures.map((f) => (
-                <View
-                  key={f.id}
-                  style={[styles.fractureSummaryChip, { backgroundColor: theme.backgroundTertiary }]}
-                >
-                  <ThemedText style={[styles.fractureSummaryText, { color: theme.text }]}>
-                    {f.boneName}
-                  </ThemedText>
-                  <View style={[styles.aoCodeChip, { backgroundColor: theme.link }]}>
-                    <ThemedText style={styles.aoCodeChipText}>{f.aoCode}</ThemedText>
-                  </View>
-                </View>
-              ))}
-              <Pressable
-                style={[styles.editFracturesButton, { borderColor: theme.link }]}
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  setShowFractureWizardFromCheckbox(true);
-                }}
-              >
-                <Feather name="edit-2" size={14} color={theme.link} />
-                <ThemedText style={[styles.editFracturesText, { color: theme.link }]}>
-                  Edit
-                </ThemedText>
-              </Pressable>
-            </View>
-          ) : null}
-          {isFractureCase && snomedSuggestion && primaryDiagnosis ? (
-            <View style={[styles.suggestionBanner, { backgroundColor: theme.backgroundSecondary }]}>
-              <Feather name="zap" size={16} color={theme.link} />
-              <ThemedText style={[styles.suggestionText, { color: theme.textSecondary }]}>
-                Auto-suggested from AO code
-              </ThemedText>
-            </View>
-          ) : null}
+      {hasFractureSubcategory && snomedSuggestion && primaryDiagnosis ? (
+        <View style={[styles.suggestionBanner, { backgroundColor: theme.backgroundSecondary }]}>
+          <Feather name="zap" size={16} color={theme.link} />
+          <ThemedText style={[styles.suggestionText, { color: theme.textSecondary }]}>
+            Auto-suggested from AO code
+          </ThemedText>
         </View>
       ) : null}
 
@@ -663,6 +593,18 @@ export function DiagnosisGroupEditor({ group, index, isOnly, onChange, onDelete 
         />
       ) : null}
 
+      {groupSpecialty === "hand_surgery" && selectedDiagnosis?.clinicalGroup === "trauma" ? (
+        <HandTraumaStructurePicker
+          value={diagnosisClinicalDetails.handTrauma || {}}
+          onChange={(handTrauma) =>
+            setDiagnosisClinicalDetails((prev) => ({ ...prev, handTrauma }))
+          }
+          selectedDiagnosis={selectedDiagnosis}
+          procedures={procedures}
+          onProceduresChange={setProcedures}
+        />
+      ) : null}
+
       {primaryDiagnosis ? (
         <DiagnosisClinicalFields
           diagnosis={{
@@ -677,18 +619,7 @@ export function DiagnosisGroupEditor({ group, index, isOnly, onChange, onDelete 
           fractures={fractures}
           onFracturesChange={setFractures}
           showFractureClassification={hasFractureSubcategory}
-        />
-      ) : null}
-
-      {groupSpecialty === "hand_surgery" && selectedDiagnosis?.clinicalGroup === "trauma" ? (
-        <HandTraumaStructurePicker
-          value={diagnosisClinicalDetails.handTrauma || {}}
-          onChange={(handTrauma) =>
-            setDiagnosisClinicalDetails((prev) => ({ ...prev, handTrauma }))
-          }
-          selectedDiagnosis={selectedDiagnosis}
-          procedures={procedures}
-          onProceduresChange={setProcedures}
+          onOpenFractureWizard={() => setShowFractureWizard(true)}
         />
       ) : null}
 
@@ -788,7 +719,7 @@ export function DiagnosisGroupEditor({ group, index, isOnly, onChange, onDelete 
       )}
 
       <FractureClassificationWizard
-        visible={showFractureWizardFromCheckbox}
+        visible={showFractureWizard}
         onClose={handleFractureWizardClose}
         onSave={handleFractureWizardSave}
         initialFractures={fractures}
@@ -815,70 +746,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     textTransform: "uppercase",
     letterSpacing: 0.5,
-  },
-  fractureCheckboxContainer: {
-    marginBottom: Spacing.md,
-  },
-  fractureCheckboxRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.md,
-    paddingVertical: Spacing.sm,
-  },
-  checkbox: {
-    width: 24,
-    height: 24,
-    borderRadius: BorderRadius.xs,
-    borderWidth: 1.5,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  fractureCheckboxLabel: {
-    fontSize: 15,
-    fontWeight: "500",
-  },
-  fractureSummary: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: Spacing.sm,
-    marginTop: Spacing.sm,
-    alignItems: "center",
-  },
-  fractureSummaryChip: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.xs,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: Spacing.xs,
-    borderRadius: BorderRadius.sm,
-  },
-  fractureSummaryText: {
-    fontSize: 13,
-    fontWeight: "500",
-  },
-  aoCodeChip: {
-    paddingHorizontal: Spacing.xs,
-    paddingVertical: 2,
-    borderRadius: BorderRadius.xs,
-  },
-  aoCodeChipText: {
-    color: "#FFF",
-    fontSize: 11,
-    fontWeight: "700",
-    fontFamily: "monospace",
-  },
-  editFracturesButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: Spacing.xs,
-    borderRadius: BorderRadius.sm,
-    borderWidth: 1,
-  },
-  editFracturesText: {
-    fontSize: 12,
-    fontWeight: "500",
   },
   suggestionBanner: {
     flexDirection: "row",

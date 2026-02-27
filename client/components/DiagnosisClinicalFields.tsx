@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, StyleSheet, Pressable } from "react-native";
+import { View, StyleSheet, Pressable, TouchableOpacity } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { ThemedText } from "@/components/ThemedText";
@@ -20,7 +20,6 @@ const LATERALITY_OPTIONS: { value: Laterality; label: string }[] = [
 ];
 
 const INJURY_MECHANISM_OPTIONS = [
-  { value: "", label: "Select mechanism..." },
   { value: "fall", label: "Fall" },
   { value: "crush", label: "Crush injury" },
   { value: "saw_blade", label: "Saw/blade injury" },
@@ -31,6 +30,89 @@ const INJURY_MECHANISM_OPTIONS = [
   { value: "other", label: "Other" },
 ];
 
+interface AOTAClassificationCardProps {
+  fractures: FractureEntry[];
+  onPress: () => void;
+  onClear: () => void;
+}
+
+function AOTAClassificationCard({ fractures, onPress, onClear }: AOTAClassificationCardProps) {
+  const { theme } = useTheme();
+  const hasClassification = fractures.length > 0;
+  const firstFracture = fractures[0];
+
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      activeOpacity={0.75}
+      style={[
+        styles.aotaCard,
+        {
+          borderColor: hasClassification ? theme.link : theme.border,
+          backgroundColor: hasClassification ? theme.link + "08" : theme.backgroundDefault,
+        },
+      ]}
+    >
+      <View style={[
+        styles.aotaIconContainer,
+        { backgroundColor: hasClassification ? theme.link : theme.backgroundSecondary },
+      ]}>
+        <Feather
+          name={hasClassification ? "check" : "layers"}
+          size={16}
+          color={hasClassification ? "#FFF" : theme.textSecondary}
+        />
+      </View>
+
+      <View style={styles.aotaContent}>
+        {hasClassification ? (
+          <>
+            <View style={styles.aotaCodeRow}>
+              <ThemedText style={[styles.aotaCode, { color: theme.link }]}>
+                {firstFracture.aoCode}
+              </ThemedText>
+              {fractures.length > 1 ? (
+                <ThemedText style={[styles.aotaExtra, { color: theme.textSecondary }]}>
+                  +{fractures.length - 1} more
+                </ThemedText>
+              ) : null}
+            </View>
+            <ThemedText style={[styles.aotaDescription, { color: theme.textSecondary }]} numberOfLines={1}>
+              {firstFracture.boneName}
+              {firstFracture.details?.type ? ` · Type ${firstFracture.details.type}` : ""}
+            </ThemedText>
+          </>
+        ) : (
+          <>
+            <ThemedText style={[styles.aotaTitle, { color: theme.text }]}>
+              AO/OTA Classification
+            </ThemedText>
+            <ThemedText style={[styles.aotaSubtitle, { color: theme.textTertiary }]}>
+              Tap to classify this fracture
+            </ThemedText>
+          </>
+        )}
+      </View>
+
+      {hasClassification ? (
+        <Pressable
+          onPress={(e) => {
+            e.stopPropagation();
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            onClear();
+          }}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          style={styles.aotaClearButton}
+        >
+          <Feather name="x" size={16} color={theme.textTertiary} />
+        </Pressable>
+      ) : (
+        <Feather name="chevron-right" size={18} color={theme.textTertiary} />
+      )}
+    </TouchableOpacity>
+  );
+}
+
 interface DiagnosisClinicalFieldsProps {
   diagnosis: Diagnosis;
   onDiagnosisChange: (diagnosis: Diagnosis) => void;
@@ -38,6 +120,7 @@ interface DiagnosisClinicalFieldsProps {
   fractures?: FractureEntry[];
   onFracturesChange?: (fractures: FractureEntry[]) => void;
   showFractureClassification?: boolean;
+  onOpenFractureWizard?: () => void;
 }
 
 export function DiagnosisClinicalFields({
@@ -47,6 +130,7 @@ export function DiagnosisClinicalFields({
   fractures = [],
   onFracturesChange,
   showFractureClassification = false,
+  onOpenFractureWizard,
 }: DiagnosisClinicalFieldsProps) {
   const { theme } = useTheme();
   const [showFractureWizard, setShowFractureWizard] = useState(false);
@@ -66,9 +150,13 @@ export function DiagnosisClinicalFields({
     setShowFractureWizard(false);
   };
 
-  const removeFracture = (id: string) => {
+  const handleOpenWizard = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    onFracturesChange?.(fractures.filter((f) => f.id !== id));
+    if (onOpenFractureWizard) {
+      onOpenFractureWizard();
+    } else {
+      setShowFractureWizard(true);
+    }
   };
 
   return (
@@ -109,13 +197,35 @@ export function DiagnosisClinicalFields({
         </View>
       </View>
 
-      {isHandSurgery && (
+      {showFractureClassification && onFracturesChange ? (
+        <View style={styles.fractureSection}>
+          <ThemedText style={[styles.sectionTitle, { color: theme.text }]}>
+            Fracture Classification
+          </ThemedText>
+          <AOTAClassificationCard
+            fractures={fractures}
+            onPress={handleOpenWizard}
+            onClear={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              onFracturesChange([]);
+            }}
+          />
+          <FractureClassificationWizard
+            visible={showFractureWizard}
+            onClose={() => setShowFractureWizard(false)}
+            onSave={handleFractureSave}
+            initialFractures={fractures}
+          />
+        </View>
+      ) : null}
+
+      {isHandSurgery ? (
         <View style={styles.fieldContainer}>
           <ThemedText style={[styles.fieldLabel, { color: theme.text }]}>
             Injury Mechanism
           </ThemedText>
           <View style={styles.pickerOptions}>
-            {INJURY_MECHANISM_OPTIONS.filter(o => o.value !== "").map((option) => {
+            {INJURY_MECHANISM_OPTIONS.map((option) => {
               const isSelected = clinicalDetails.injuryMechanism === option.value;
               return (
                 <Pressable
@@ -145,79 +255,7 @@ export function DiagnosisClinicalFields({
             })}
           </View>
         </View>
-      )}
-
-      {showFractureClassification && onFracturesChange && (
-        <View style={styles.fractureSection}>
-          <View style={styles.headerRow}>
-            <View style={styles.headerLeft}>
-              <Feather name="activity" size={18} color={theme.link} />
-              <ThemedText style={[styles.sectionTitle, { color: theme.text }]}>
-                AO/OTA Fracture Classification
-              </ThemedText>
-            </View>
-            <Pressable
-              style={[styles.addButton, { backgroundColor: theme.link }]}
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                setShowFractureWizard(true);
-              }}
-            >
-              <Feather name="plus" size={16} color="#FFF" />
-              <ThemedText style={styles.addButtonText}>Add</ThemedText>
-            </Pressable>
-          </View>
-
-          <ThemedText style={[styles.subtitle, { color: theme.textSecondary }]}>
-            Classify hand fractures using the AO/OTA 2018 system
-          </ThemedText>
-
-          {fractures.length > 0 ? (
-            <View style={styles.fractureList}>
-              {fractures.map((fracture) => (
-                <View
-                  key={fracture.id}
-                  style={[styles.fractureCard, { backgroundColor: theme.backgroundTertiary }]}
-                >
-                  <View style={styles.fractureCardContent}>
-                    <ThemedText style={[styles.fractureBoneName, { color: theme.text }]}>
-                      {fracture.boneName}
-                    </ThemedText>
-                    <View style={[styles.aoCodeBadge, { backgroundColor: theme.link }]}>
-                      <ThemedText style={styles.aoCodeBadgeText}>
-                        {fracture.aoCode}
-                      </ThemedText>
-                    </View>
-                  </View>
-                  <Pressable onPress={() => removeFracture(fracture.id)} hitSlop={8}>
-                    <Feather name="x-circle" size={20} color={theme.error} />
-                  </Pressable>
-                </View>
-              ))}
-            </View>
-          ) : (
-            <Pressable
-              style={[styles.emptyCard, { borderColor: theme.border }]}
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                setShowFractureWizard(true);
-              }}
-            >
-              <Feather name="activity" size={28} color={theme.textTertiary} />
-              <ThemedText style={[styles.emptyText, { color: theme.textSecondary }]}>
-                Tap to classify fracture using AO/OTA system
-              </ThemedText>
-            </Pressable>
-          )}
-
-          <FractureClassificationWizard
-            visible={showFractureWizard}
-            onClose={() => setShowFractureWizard(false)}
-            onSave={handleFractureSave}
-            initialFractures={fractures}
-          />
-        </View>
-      )}
+      ) : null}
     </View>
   );
 }
@@ -253,13 +291,6 @@ const styles = StyleSheet.create({
   fieldContainer: {
     marginBottom: Spacing.md,
   },
-  textInput: {
-    borderWidth: 1,
-    borderRadius: BorderRadius.md,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    fontSize: 16,
-  },
   pickerOptions: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -276,83 +307,59 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   fractureSection: {
-    marginTop: Spacing.md,
-  },
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 4,
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  subtitle: {
-    fontSize: 13,
     marginBottom: Spacing.md,
   },
-  addButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.xs,
-    borderRadius: BorderRadius.sm,
-  },
-  addButtonText: {
-    color: "#FFF",
-    fontSize: 13,
-    fontWeight: "600",
-  },
-  fractureList: {
-    gap: Spacing.sm,
-  },
-  fractureCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: Spacing.md,
-    borderRadius: BorderRadius.md,
-  },
-  fractureCardContent: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.sm,
-  },
-  fractureBoneName: {
+  sectionTitle: {
     fontSize: 15,
-    fontWeight: "500",
-    flex: 1,
+    fontWeight: "600",
+    marginBottom: Spacing.sm,
   },
-  aoCodeBadge: {
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: Spacing.xs,
-    borderRadius: BorderRadius.xs,
-  },
-  aoCodeBadgeText: {
-    color: "#FFF",
-    fontSize: 13,
-    fontWeight: "700",
-    fontFamily: "monospace",
-  },
-  emptyCard: {
+  aotaCard: {
+    borderRadius: BorderRadius.md,
+    borderWidth: 1.5,
+    padding: 14,
     flexDirection: "row",
+    alignItems: "center",
+  },
+  aotaIconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
-    gap: Spacing.sm,
-    padding: Spacing.lg,
-    borderRadius: BorderRadius.md,
-    borderWidth: 1,
-    borderStyle: "dashed",
+    marginRight: 12,
   },
-  emptyText: {
+  aotaContent: {
+    flex: 1,
+  },
+  aotaCodeRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+  },
+  aotaCode: {
+    fontSize: 15,
+    fontWeight: "700",
+    letterSpacing: 0.3,
+    fontFamily: "monospace",
+  },
+  aotaExtra: {
+    fontSize: 12,
+    fontWeight: "500",
+  },
+  aotaDescription: {
+    fontSize: 12,
+    marginTop: 1,
+  },
+  aotaTitle: {
     fontSize: 14,
+    fontWeight: "600",
+  },
+  aotaSubtitle: {
+    fontSize: 12,
+    marginTop: 1,
+  },
+  aotaClearButton: {
+    padding: 4,
   },
 });
