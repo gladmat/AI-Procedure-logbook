@@ -1,0 +1,402 @@
+# Hand Surgery Fracture Form — Streamlining & Restructure
+
+## Replit Agent Prompt
+
+-----
+
+## Context
+
+The Hand Surgery case entry form (`AddCaseScreen` or equivalent, specifically the hand surgery / fracture path) has several UX problems:
+
+1. **Duplicate AO/OTA entry points** — a “Fracture Case” checkbox and a separate AO/OTA Classification section both exist; the checkbox is redundant
+1. **Poor field ordering** — digit selection appears after AO/OTA, but digit drives what AO codes are relevant
+1. **Flat, over-long form** — all fields are visible at once; 60%+ of fields are optional but appear equal-weight with required fields
+1. **AO/OTA entry is weak** — a dashed placeholder with a small `+ Add` button doesn’t communicate the clinical importance of this field
+
+This prompt covers **four targeted changes** to the fracture/hand surgery case form only. Do not modify other specialty forms, the diagnosis picker logic, or the procedure suggestion engine.
+
+-----
+
+## Change 1: Remove the “Fracture Case” Checkbox
+
+### What to do
+
+Find and delete the “Fracture Case” checkbox and its associated label. This is a boolean field that adds no clinical data — the AO/OTA classification section already serves as the fracture-specific module.
+
+### Search for
+
+Look in the hand surgery form component for any of:
+
+- `isFractureCase`
+- `fractureCase`
+- `"Fracture Case"`
+- A `CheckBox` or `Switch` component immediately after the diagnosis list and before the “Search Diagnosis” confirmation box
+
+### Steps
+
+1. Remove the JSX element (the checkbox + label + any surrounding `View`)
+1. Remove the corresponding state variable: `const [isFractureCase, setIsFractureCase] = useState(false)`
+1. Remove any conditional logic that gates other UI on `isFractureCase` — instead, show the AO/OTA section whenever the selected diagnosis category is “Fractures” (this logic likely already exists via the diagnosis category filter)
+1. Remove from form submission payload if present — or keep the field in the schema as `true` by default when diagnosis is in the Fractures category (for backward compatibility with existing saved cases)
+
+### Backward compatibility
+
+If `isFractureCase` is stored in the database and used in queries/filters elsewhere, do NOT remove it from the schema. Instead, auto-set it to `true` when the selected diagnosis category === ‘Fractures’, silently, without exposing it in the UI.
+
+-----
+
+## Change 2: Reorder Form Fields
+
+### Target field order for fracture cases
+
+The form should render fields in this exact sequence:
+
+```
+SECTION: Patient Information
+  - Patient Identifier (required)
+  - Procedure Date (required)
+  - Facility (required)
+
+SECTION: Primary Diagnosis
+  - Search / category tabs / diagnosis list (existing — keep as-is)
+  - [Selected diagnosis confirmation chip — keep as-is]
+
+SECTION: Procedure
+  - Suggested procedures (existing — keep as-is)
+
+SECTION: Laterality
+  - Left / Right chips (existing — keep as-is)
+
+SECTION: Affected Structures          ← MOVE THIS UP (currently appears after AO/OTA)
+  - Affected digit selector (I–V + thumb)
+  - Injured structures checkboxes (tendon zones, nerve, vessel, bone)
+
+SECTION: AO/OTA Fracture Classification   ← KEEP HERE (after digit selection)
+  - Smart card entry point (see Change 3)
+
+SECTION: Injury Mechanism             ← KEEP HERE
+  - Mechanism chips (Fall, Crush, Saw/blade, etc.)
+
+SECTION: Operative Media
+  - Take Photo / From Gallery (existing — keep as-is)
+
+━━━ EXTENDED DETAILS (collapsed by default) ━━━   ← NEW (see Change 4)
+
+SECTION: Surgery Timing
+SECTION: Operating Team
+SECTION: Risk Factors (ASA, Anaesthetic Type, Antibiotic/DVT prophylaxis)
+SECTION: Infection Documentation
+SECTION: Outcomes
+  - Unplanned ICU Admission
+  - Unplanned Return to Theatre
+  - Discharge Outcome
+  - Discussed at MDM
+
+BUTTON: Save Case
+```
+
+### Implementation notes
+
+- The reorder is a JSX restructure only — move the `<AffectedStructures />` (or equivalent) section above the `<AOTAClassification />` section
+- The Injury Mechanism section currently appears between Laterality and AO/OTA — move it to after AO/OTA (it’s contextual/epidemiological, not anatomical, so it belongs after the anatomical classification is done)
+- No state changes required for the reorder itself
+
+-----
+
+## Change 3: Upgrade the AO/OTA Entry Point
+
+### Current state
+
+There is a dashed-border placeholder area with a small `+ Add` button. This is visually weak and easy to miss.
+
+### New design: Smart inline card
+
+Replace the current dashed area + `+ Add` button with a single tappable card component. The card has two states:
+
+**State A — Not yet classified (default):**
+
+```
+┌─────────────────────────────────────────────────────┐
+│  ⚡  AO/OTA Classification          Optional  →     │
+│     Tap to classify this fracture                   │
+└─────────────────────────────────────────────────────┘
+```
+
+**State B — Classified:**
+
+```
+┌─────────────────────────────────────────────────────┐
+│  ✓  77-M/2.1                                   ✎   │
+│     Proximal phalanx · Simple transverse            │
+└─────────────────────────────────────────────────────┘
+```
+
+### Component code
+
+```tsx
+interface AOTACardProps {
+  classification?: {
+    code: string;
+    description: string;
+    subtype?: string;
+  } | null;
+  onPress: () => void;  // opens existing AO/OTA picker modal
+  onClear: () => void;
+}
+
+function AOTAClassificationCard({ classification, onPress, onClear }: AOTACardProps) {
+  const hasClassification = !!classification;
+
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      activeOpacity={0.75}
+      style={{
+        borderRadius: 12,
+        borderWidth: 1.5,
+        borderColor: hasClassification ? '#1A73E8' : '#CBD5E0',
+        backgroundColor: hasClassification ? '#EBF4FF' : '#F8FAFC',
+        padding: 14,
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginVertical: 4,
+      }}
+    >
+      {/* Left icon */}
+      <View style={{
+        width: 32, height: 32,
+        borderRadius: 8,
+        backgroundColor: hasClassification ? '#1A73E8' : '#E2E8F0',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 12,
+      }}>
+        <Text style={{ fontSize: 16 }}>
+          {hasClassification ? '✓' : '⚡'}
+        </Text>
+      </View>
+
+      {/* Content */}
+      <View style={{ flex: 1 }}>
+        {hasClassification ? (
+          <>
+            <Text style={{ 
+              fontSize: 15, 
+              fontWeight: '700', 
+              color: '#1A73E8',
+              letterSpacing: 0.3 
+            }}>
+              {classification.code}
+            </Text>
+            <Text style={{ fontSize: 12, color: '#5A6A7E', marginTop: 1 }}>
+              {classification.description}
+              {classification.subtype ? ` · ${classification.subtype}` : ''}
+            </Text>
+          </>
+        ) : (
+          <>
+            <Text style={{ fontSize: 14, fontWeight: '600', color: '#374151' }}>
+              AO/OTA Classification
+            </Text>
+            <Text style={{ fontSize: 12, color: '#9CA3AF', marginTop: 1 }}>
+              Tap to classify this fracture · Optional
+            </Text>
+          </>
+        )}
+      </View>
+
+      {/* Right action */}
+      {hasClassification ? (
+        <TouchableOpacity
+          onPress={(e) => { e.stopPropagation(); onClear(); }}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          style={{ padding: 4 }}
+        >
+          <Text style={{ fontSize: 18, color: '#9CA3AF' }}>✕</Text>
+        </TouchableOpacity>
+      ) : (
+        <Text style={{ fontSize: 18, color: '#CBD5E0' }}>›</Text>
+      )}
+    </TouchableOpacity>
+  );
+}
+```
+
+### Integration
+
+Replace the current AO/OTA section JSX with:
+
+```tsx
+<View style={sectionStyle}>
+  <Text style={sectionHeaderStyle}>Fracture Classification</Text>
+  <AOTAClassificationCard
+    classification={aotaClassification}
+    onPress={() => setShowAOTAPicker(true)}  // opens existing modal
+    onClear={() => setAotaClassification(null)}
+  />
+</View>
+```
+
+The existing AO/OTA picker modal (`setShowAOTAPicker` or equivalent) remains completely unchanged — only the entry point card is replaced.
+
+-----
+
+## Change 4: Progressive Disclosure — Extended Details Collapsible
+
+### What to build
+
+Add a collapsible section that wraps all non-essential fields. The divider between core and extended is visually distinct.
+
+### Fields that go INTO the collapsible (Extended Details)
+
+- Surgery Timing (Start Time / End Time)
+- Operating Team
+- Risk Factors (ASA Score, Anaesthetic Type, Antibiotic Prophylaxis, DVT Prophylaxis)
+- Infection Documentation
+- Outcomes (Unplanned ICU, Unplanned Return to Theatre, Discharge Outcome, Discussed at MDM)
+
+### Fields that stay OUTSIDE (always visible)
+
+Everything above Operative Media in the revised field order (Change 2)
+
+### Component code
+
+```tsx
+function ExtendedDetailsSection({ children }: { children: React.ReactNode }) {
+  const [expanded, setExpanded] = useState(false);
+  const animatedHeight = useRef(new Animated.Value(0)).current;
+  const [contentHeight, setContentHeight] = useState(0);
+
+  const toggle = () => {
+    const toValue = expanded ? 0 : contentHeight;
+    Animated.spring(animatedHeight, {
+      toValue,
+      useNativeDriver: false,
+      tension: 80,
+      friction: 12,
+    }).start();
+    setExpanded(!expanded);
+  };
+
+  return (
+    <View style={{ marginTop: 8 }}>
+      {/* Divider + toggle button */}
+      <TouchableOpacity
+        onPress={toggle}
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          paddingVertical: 14,
+          paddingHorizontal: 4,
+        }}
+        activeOpacity={0.7}
+      >
+        <View style={{ flex: 1, height: 1, backgroundColor: '#E2E8F0' }} />
+        <View style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          backgroundColor: '#F1F5F9',
+          borderRadius: 20,
+          paddingHorizontal: 14,
+          paddingVertical: 6,
+          marginHorizontal: 12,
+          borderWidth: 1,
+          borderColor: '#E2E8F0',
+        }}>
+          <Text style={{ 
+            fontSize: 13, 
+            fontWeight: '600', 
+            color: '#64748B',
+            marginRight: 6 
+          }}>
+            {expanded ? 'Hide extended details' : 'Extended details'}
+          </Text>
+          <Text style={{ 
+            fontSize: 11, 
+            color: '#64748B',
+            transform: [{ rotate: expanded ? '180deg' : '0deg' }]
+          }}>
+            ▼
+          </Text>
+        </View>
+        <View style={{ flex: 1, height: 1, backgroundColor: '#E2E8F0' }} />
+      </TouchableOpacity>
+
+      {/* Animated container */}
+      <Animated.View style={{ height: animatedHeight, overflow: 'hidden' }}>
+        <View
+          onLayout={(e) => {
+            const h = e.nativeEvent.layout.height;
+            if (h > 0 && contentHeight === 0) {
+              setContentHeight(h);
+            }
+          }}
+        >
+          {children}
+        </View>
+      </Animated.View>
+    </View>
+  );
+}
+```
+
+### Usage in form
+
+```tsx
+{/* — Core fields above this line — */}
+
+<OperativeMediaSection ... />
+
+<ExtendedDetailsSection>
+  <SurgeryTimingSection ... />
+  <OperatingTeamSection ... />
+  <RiskFactorsSection ... />
+  <InfectionDocumentationSection ... />
+  <OutcomesSection ... />
+</ExtendedDetailsSection>
+
+<SaveCaseButton ... />
+```
+
+### Required imports
+
+```tsx
+import { Animated } from 'react-native';
+import { useRef, useState } from 'react';
+```
+
+### Important: Save Case button
+
+The **Save Case button must remain OUTSIDE and BELOW the collapsible section** — always visible, never hidden inside Extended Details.
+
+-----
+
+## Testing Checklist
+
+- [ ] “Fracture Case” checkbox is completely gone from the UI
+- [ ] If `isFractureCase` exists in DB schema, verify it auto-sets correctly on save (no manual input required)
+- [ ] Field order matches the sequence in Change 2 exactly
+- [ ] Affected digit selector appears BEFORE AO/OTA section
+- [ ] Injury Mechanism section appears AFTER AO/OTA section
+- [ ] AO/OTA card shows unclassified state by default (grey, with prompt text)
+- [ ] Tapping AO/OTA card opens the existing classification picker modal
+- [ ] After classifying, card switches to classified state (blue, shows code + description)
+- [ ] Tapping ✕ on classified card clears the classification back to null
+- [ ] Extended Details section is collapsed by default on fresh form open
+- [ ] Tapping divider toggle expands/collapses with animation
+- [ ] All fields inside Extended Details are accessible and functional when expanded
+- [ ] Save Case button is always visible (never inside collapsible)
+- [ ] Existing saved cases with AO/OTA data render correctly in card (State B)
+- [ ] No regressions on non-fracture diagnosis paths (Tendon Injuries, Nerve Injuries, etc.)
+
+-----
+
+## Files to Modify
+
+|File                                                                        |Changes                         |
+|----------------------------------------------------------------------------|--------------------------------|
+|`client/src/screens/AddCaseHandScreen.tsx` (or equivalent hand surgery form)|All 4 changes                   |
+|`client/src/components/AOTAClassificationCard.tsx`                          |New component (create this file)|
+|`client/src/components/ExtendedDetailsSection.tsx`                          |New component (create this file)|
+
+Do not modify: diagnosis picker, procedure suggestion engine, AO/OTA picker modal, any other specialty forms, server routes, or database schema (except auto-setting `isFractureCase` if needed).

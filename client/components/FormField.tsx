@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useCallback } from "react";
 import {
   View,
   TextInput,
@@ -333,8 +333,42 @@ export function PickerField({
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
   const [modalVisible, setModalVisible] = useState(false);
+  const pendingValueRef = useRef<string | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   
   const selectedOption = options.find((o) => o.value === value);
+
+  const flushPending = useCallback(() => {
+    if (timeoutRef.current !== null) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+    if (pendingValueRef.current !== null) {
+      const selected = pendingValueRef.current;
+      pendingValueRef.current = null;
+      onSelect(selected);
+    }
+  }, [onSelect]);
+
+  const handleSelect = useCallback((itemValue: string) => {
+    pendingValueRef.current = itemValue;
+    setModalVisible(false);
+    if (timeoutRef.current !== null) {
+      clearTimeout(timeoutRef.current);
+    }
+    timeoutRef.current = setTimeout(() => {
+      timeoutRef.current = null;
+      flushPending();
+    }, 400);
+  }, [flushPending]);
+
+  const handleModalDismiss = useCallback(() => {
+    flushPending();
+  }, [flushPending]);
+
+  const handleClose = useCallback(() => {
+    setModalVisible(false);
+  }, []);
 
   return (
     <View style={styles.container}>
@@ -383,11 +417,12 @@ export function PickerField({
         visible={modalVisible}
         transparent
         animationType="slide"
-        onRequestClose={() => setModalVisible(false)}
+        onRequestClose={handleClose}
+        onDismiss={handleModalDismiss}
       >
         <Pressable 
           style={styles.modalOverlay} 
-          onPress={() => setModalVisible(false)}
+          onPress={handleClose}
         >
           <Pressable 
             style={[
@@ -405,7 +440,7 @@ export function PickerField({
               </ThemedText>
               <TouchableOpacity
                 style={styles.modalDoneButton}
-                onPress={() => setModalVisible(false)}
+                onPress={handleClose}
               >
                 <ThemedText style={[styles.modalDoneText, { color: theme.link }]}>
                   Done
@@ -423,10 +458,7 @@ export function PickerField({
                     styles.modalOption,
                     { borderBottomColor: theme.border },
                   ]}
-                  onPress={() => {
-                    onSelect(item.value);
-                    setModalVisible(false);
-                  }}
+                  onPress={() => handleSelect(item.value)}
                 >
                   <ThemedText
                     style={[
@@ -476,6 +508,7 @@ export function DatePickerField({
 }: DatePickerFieldProps) {
   const { theme } = useTheme();
   const [showPicker, setShowPicker] = useState(false);
+  const pendingDateRef = useRef<string | null>(null);
   
   const dateValue = value ? new Date(value) : new Date();
   
@@ -489,15 +522,28 @@ export function DatePickerField({
     });
   };
 
-  const handleDateChange = (event: any, selectedDate?: Date) => {
+  const handleDateChange = useCallback((event: any, selectedDate?: Date) => {
     if (Platform.OS === "android") {
       setShowPicker(false);
+      if (selectedDate) {
+        const isoDate = selectedDate.toISOString().split("T")[0];
+        onChange(isoDate);
+      }
+      return;
     }
     if (selectedDate) {
-      const isoDate = selectedDate.toISOString().split("T")[0];
-      onChange(isoDate);
+      pendingDateRef.current = selectedDate.toISOString().split("T")[0];
     }
-  };
+  }, [onChange]);
+
+  const handleDatePickerClose = useCallback(() => {
+    setShowPicker(false);
+    if (pendingDateRef.current !== null) {
+      const date = pendingDateRef.current;
+      pendingDateRef.current = null;
+      requestAnimationFrame(() => onChange(date));
+    }
+  }, [onChange]);
 
   return (
     <View style={styles.container}>
@@ -561,11 +607,11 @@ export function DatePickerField({
             visible={showPicker}
             transparent
             animationType="slide"
-            onRequestClose={() => setShowPicker(false)}
+            onRequestClose={handleDatePickerClose}
           >
             <Pressable 
               style={styles.modalOverlay}
-              onPress={() => setShowPicker(false)}
+              onPress={handleDatePickerClose}
             >
               <Pressable
                 style={[
@@ -580,7 +626,7 @@ export function DatePickerField({
                   </ThemedText>
                   <TouchableOpacity
                     style={styles.modalDoneButton}
-                    onPress={() => setShowPicker(false)}
+                    onPress={handleDatePickerClose}
                   >
                     <ThemedText style={[styles.modalDoneText, { color: theme.link }]}>
                       Done
