@@ -89,9 +89,9 @@ export function OperativeMediaSection({
         const permanentUri = await persistMediaFile(asset.uri, asset.mimeType);
         navigateToAddMedia(permanentUri, asset.mimeType || "image/jpeg");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error capturing image:", error);
-      Alert.alert("Error", "Failed to capture image. Please try again.");
+      Alert.alert("Error", `Failed to capture image: ${error?.message || "Unknown error"}`);
     }
   };
 
@@ -126,9 +126,9 @@ export function OperativeMediaSection({
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error picking image:", error);
-      Alert.alert("Error", "Failed to select images. Please try again.");
+      Alert.alert("Error", `Failed to select images: ${error?.message || "Unknown error"}`);
     }
   };
 

@@ -22,7 +22,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, Shadows } from "@/constants/theme";
-import { Case, Specialty, Role, SPECIALTY_LABELS, ROLE_LABELS } from "@/types/case";
+import { Case, Specialty, Role, SPECIALTY_LABELS, ROLE_LABELS, getPrimaryDiagnosisName } from "@/types/case";
 import { INFECTION_SYNDROME_LABELS, InfectionSyndrome } from "@/types/infection";
 import { getCases, getCasesPendingFollowUp, markNoComplications, updateCase } from "@/lib/storage";
 import { CaseCard } from "@/components/CaseCard";
@@ -549,7 +549,7 @@ export default function DashboardScreen() {
                               </View>
                             ) : null}
                             <ThemedText style={styles.followUpCaseType} numberOfLines={1}>
-                              {caseItem.procedureType}
+                              {getPrimaryDiagnosisName(caseItem) || caseItem.procedureType}
                             </ThemedText>
                           </View>
                           <ThemedText style={[styles.followUpCaseDate, { color: theme.textSecondary }]}>

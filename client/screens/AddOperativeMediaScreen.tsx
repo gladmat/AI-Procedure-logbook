@@ -139,9 +139,9 @@ export default function AddOperativeMediaScreen() {
         executeGenericCallback(callbackId, mediaData);
       }
       navigation.goBack();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error saving media:", error);
-      Alert.alert("Error", "Failed to save media. Please try again.");
+      Alert.alert("Error", `Failed to save media: ${error?.message || "Unknown error"}. Please try again.`);
     }
   };
 

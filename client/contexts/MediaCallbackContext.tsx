@@ -47,8 +47,14 @@ export function MediaCallbackProvider({ children }: { children: React.ReactNode 
   const executeGenericCallback = useCallback((callbackId: string, ...args: any[]) => {
     const callback = genericCallbacksRef.current.get(callbackId);
     if (callback) {
-      callback(...args);
+      try {
+        callback(...args);
+      } catch (error) {
+        console.error("Media callback error:", error);
+      }
       genericCallbacksRef.current.delete(callbackId);
+    } else {
+      console.warn("Media callback not found for id:", callbackId);
     }
   }, []);
 
