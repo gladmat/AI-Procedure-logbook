@@ -1,0 +1,387 @@
+# Dashboard Case Card UI Improvements — Replit Agent Prompt
+
+## Overview
+
+Implement four interconnected UI improvements to the Cases dashboard:
+
+1. **Photo thumbnail** on case cards (left side, 48×48px)
+1. **Anatomy site chip** showing laterality + body site
+1. **Post-op day indicator** on inpatient cards
+1. **Discharge button redesign** — demote it from primary action to secondary
+
+These changes touch: the case card component, the inpatient card component, and the dashboard/home screen. No schema changes are required — photos are already stored, site/laterality are already in the case record.
+
+-----
+
+## File Targets
+
+Work primarily in these files (adjust paths if slightly different in your structure):
+
+- `client/src/components/CaseCard.tsx` (or `CaseListItem.tsx`)
+- `client/src/components/InpatientCard.tsx` (or wherever inpatient rows are rendered)
+- `client/src/pages/home.tsx` (or `dashboard.tsx`, `index.tsx`)
+- `client/src/hooks/useCases.ts` (or wherever case data is fetched — ensure `photos` and `bodySite`/`laterality` fields are included in the API response)
+
+-----
+
+## Change 1: Photo Thumbnail on Case Cards
+
+### What to build
+
+Add a 48×48px rounded square thumbnail to the **left side** of every case card in both the Recent Cases list and the full case list.
+
+### Logic
+
+```typescript
+// Pseudocode for thumbnail source resolution
+const thumbnailUri = case.photos?.[0]?.thumbnailUrl 
+  ?? case.photos?.[0]?.url 
+  ?? null;
+
+// If no photo: show specialty icon placeholder
+// specialty → icon mapping (use existing icon system or emoji fallback):
+const specialtyIcons: Record<string, string> = {
+  'Hand Surgery':     '🖐',
+  'General':          '🩺',
+  'Breast':           '⚕️',
+  'Burns':            '🔥',
+  'Orthoplastic':     '🦴',
+  'Head & Neck':      '👤',
+  'Body Contouring':  '⚖️',
+  'Aesthetics':       '✨',
+};
+```
+
+### Component code
+
+In `CaseCard.tsx`, update the card layout to a **horizontal flex row**:
+
+```tsx
+// ADD this ThumbnailWidget component at top of CaseCard.tsx
+
+interface ThumbnailProps {
+  photoUrl?: string | null;
+  specialty?: string;
+}
+
+function CaseThumbnail({ photoUrl, specialty }: ThumbnailProps) {
+  const specialtyIcons: Record<string, string> = {
+    'Hand Surgery': '🖐', 'General': '🩺', 'Breast': '⚕️',
+    'Burns': '🔥', 'Orthoplastic': '🦴', 'Head & Neck': '👤',
+    'Body Contouring': '⚖️', 'Aesthetics': '✨',
+  };
+
+  const styles = StyleSheet.create({
+    container: {
+      width: 48, height: 48,
+      borderRadius: 10,
+      overflow: 'hidden',
+      marginRight: 12,
+      backgroundColor: '#F0F4F8',
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexShrink: 0,
+    },
+    image: { width: 48, height: 48 },
+    iconText: { fontSize: 22 },
+  });
+
+  if (photoUrl) {
+    return (
+      <View style={styles.container}>
+        <Image
+          source={{ uri: photoUrl }}
+          style={styles.image}
+          resizeMode="cover"
+        />
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.iconText}>
+        {specialtyIcons[specialty ?? ''] ?? '📋'}
+      </Text>
+    </View>
+  );
+}
+```
+
+Then in the card’s main row:
+
+```tsx
+// WRAP existing card content in a horizontal row:
+<View style={{ flexDirection: 'row', alignItems: 'center' }}>
+  <CaseThumbnail 
+    photoUrl={caseItem.photos?.[0]?.thumbnailUrl ?? caseItem.photos?.[0]?.url} 
+    specialty={caseItem.specialty} 
+  />
+  <View style={{ flex: 1 }}>
+    {/* existing content: ID, diagnosis, date, location */}
+  </View>
+</View>
+```
+
+### API check
+
+Ensure the cases list endpoint (`GET /api/cases` or similar) returns `photos` array with at least `{ url, thumbnailUrl }` per photo. If photos are loaded lazily, add them to the list query — only the first photo is needed, so consider adding `?includeFirstPhoto=true` param or updating the Drizzle query to left-join the first photo.
+
+-----
+
+## Change 2: Anatomy Site Chip
+
+### What to build
+
+Add a small grey chip below the diagnosis text showing: `[laterality] [body site]`
+Examples: `Left index finger` · `Right cheek` · `Bilateral breast`
+
+### Logic
+
+```typescript
+function formatSiteChip(laterality?: string, bodySite?: string): string | null {
+  if (!bodySite) return null;
+  if (!laterality || laterality === 'N/A' || laterality === 'Not applicable') {
+    return bodySite;
+  }
+  return `${laterality} · ${bodySite}`;
+}
+```
+
+### Component code
+
+Add to `CaseCard.tsx` after the diagnosis `<Text>`:
+
+```tsx
+// ADD SiteChip component:
+function SiteChip({ laterality, bodySite }: { laterality?: string; bodySite?: string }) {
+  const label = formatSiteChip(laterality, bodySite);
+  if (!label) return null;
+
+  return (
+    <View style={{
+      alignSelf: 'flex-start',
+      backgroundColor: '#EEF2F7',
+      borderRadius: 6,
+      paddingHorizontal: 7,
+      paddingVertical: 2,
+      marginTop: 3,
+    }}>
+      <Text style={{ 
+        fontSize: 11, 
+        color: '#5A6A7E', 
+        fontWeight: '500',
+        letterSpacing: 0.1 
+      }}>
+        {label}
+      </Text>
+    </View>
+  );
+}
+
+// USAGE in card:
+<SiteChip laterality={caseItem.laterality} bodySite={caseItem.bodySite} />
+```
+
+### Data check
+
+Verify that `laterality` and `bodySite` (or equivalent field name like `anatomicalSite`, `site`) are present in the case list API response. If they’re stored in a nested `clinicalDetails` object, flatten them in the card component.
+
+-----
+
+## Change 3: Post-op Day Indicator on Inpatient Cards
+
+### What to build
+
+In the **Current Inpatients** section, show a `Day N` badge next to the diagnosis, where N = days since the operation date (not admission date — use `operationDate` if available, else `createdAt`).
+
+### Logic
+
+```typescript
+function getPostOpDay(operationDate: string | Date): string {
+  const opDate = new Date(operationDate);
+  const today = new Date();
+  // Normalise both to midnight to get whole-day count
+  opDate.setHours(0, 0, 0, 0);
+  today.setHours(0, 0, 0, 0);
+  const diffMs = today.getTime() - opDate.getTime();
+  const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+  if (diffDays === 0) return 'Day 0'; // day of surgery
+  return `Day ${diffDays}`;
+}
+```
+
+### Component code
+
+In the inpatient card component, add a badge to the right of the diagnosis text:
+
+```tsx
+// ADD PostOpBadge component:
+function PostOpBadge({ operationDate }: { operationDate: string }) {
+  const label = getPostOpDay(operationDate);
+  
+  // Colour-code by stage: green early, amber mid, red prolonged
+  const days = parseInt(label.replace('Day ', ''));
+  const bgColor = days <= 3 ? '#E8F5E9' : days <= 7 ? '#FFF8E1' : '#FFEBEE';
+  const textColor = days <= 3 ? '#2E7D32' : days <= 7 ? '#F57F17' : '#C62828';
+
+  return (
+    <View style={{
+      backgroundColor: bgColor,
+      borderRadius: 6,
+      paddingHorizontal: 8,
+      paddingVertical: 2,
+      marginLeft: 8,
+    }}>
+      <Text style={{ fontSize: 11, fontWeight: '700', color: textColor }}>
+        {label}
+      </Text>
+    </View>
+  );
+}
+
+// USAGE: place inline next to the diagnosis text in the inpatient row:
+<View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+  <Text style={diagnosisTextStyle} numberOfLines={1}>
+    {inpatient.primaryDiagnosis}
+  </Text>
+  <PostOpBadge operationDate={inpatient.operationDate ?? inpatient.createdAt} />
+</View>
+```
+
+-----
+
+## Change 4: Demote the Discharge Button
+
+### Current problem
+
+The green Discharge button is visually dominant — equal weight to the case content. When a surgeon taps an inpatient card to add photos/notes, the Discharge button is in the way visually and could cause accidental taps.
+
+### What to change
+
+- Make the entire inpatient card row **tappable** (navigates to case detail)
+- Shrink the Discharge button: remove the filled green background, replace with a **small outlined button** or a **secondary icon button** (checkmark icon, smaller)
+- The button should still be clearly tappable — just not dominant
+
+### New inpatient row layout
+
+```tsx
+// REPLACE current inpatient card with:
+<TouchableOpacity 
+  style={inpatientCardStyle}
+  onPress={() => navigation.navigate('CaseDetail', { caseId: inpatient.id })}
+  activeOpacity={0.7}
+>
+  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+    {/* Left: avatar circle with D-badge (keep existing) */}
+    <View style={dBadgeStyle}>
+      <Text style={dBadgeText}>{inpatient.diagnosisCode}</Text>
+    </View>
+    
+    {/* Centre: diagnosis + facility */}
+    <View style={{ flex: 1, marginLeft: 10 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <Text style={diagnosisStyle} numberOfLines={1}>
+          {inpatient.primaryDiagnosis}
+        </Text>
+        <PostOpBadge operationDate={inpatient.operationDate ?? inpatient.createdAt} />
+      </View>
+      <Text style={facilityStyle}>{inpatient.patientId} · {inpatient.facility}</Text>
+    </View>
+
+    {/* Right: small outlined discharge button */}
+    <TouchableOpacity
+      style={{
+        borderWidth: 1.5,
+        borderColor: '#34C759',
+        borderRadius: 8,
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        marginLeft: 8,
+        flexShrink: 0,
+      }}
+      onPress={(e) => {
+        e.stopPropagation(); // prevent card tap
+        handleDischarge(inpatient.id);
+      }}
+    >
+      <Text style={{ color: '#34C759', fontSize: 12, fontWeight: '600' }}>
+        Discharge
+      </Text>
+    </TouchableOpacity>
+  </View>
+</TouchableOpacity>
+```
+
+> **Note on `e.stopPropagation()`**: In React Native, `TouchableOpacity` inside another `TouchableOpacity` handles event bubbling differently — use `onStartShouldSetResponder` or wrap with `Pressable` with `onPress` and make sure the inner button doesn’t trigger the outer navigation. Test this after implementation.
+
+-----
+
+## Change 5: Wire Up Photo API (if needed)
+
+If photos are not currently returned in list queries, add this to the server-side cases list endpoint:
+
+```typescript
+// In server/routes/cases.ts (or equivalent), update the Drizzle query:
+
+const casesWithFirstPhoto = await db
+  .select({
+    // ...all existing case fields...
+    firstPhotoUrl: sql`(
+      SELECT url FROM case_photos 
+      WHERE case_id = cases.id 
+      ORDER BY created_at ASC 
+      LIMIT 1
+    )`.as('firstPhotoUrl'),
+  })
+  .from(cases)
+  .where(/* existing filters */)
+  .orderBy(desc(cases.operationDate));
+```
+
+Or if using a separate photos table with a join:
+
+```typescript
+const result = await db
+  .select()
+  .from(cases)
+  .leftJoin(
+    casePhotos, 
+    and(
+      eq(casePhotos.caseId, cases.id),
+      // only first photo via subquery or handle in JS
+    )
+  )
+  .where(/* filters */);
+```
+
+Simplest approach: fetch first photo URL in a subquery as shown above, return it as `firstPhotoUrl` in the case list response. Update the TypeScript case list type to include `firstPhotoUrl?: string | null`.
+
+-----
+
+## Testing Checklist
+
+After implementation, verify:
+
+- [ ] Case cards with photos show thumbnail correctly (test with portrait and landscape photos)
+- [ ] Case cards without photos show specialty icon placeholder
+- [ ] Site chip appears only when `bodySite` is populated; hidden when null/empty
+- [ ] Post-op day calculates correctly: day of surgery = Day 0, next day = Day 1
+- [ ] Day badge colours: green ≤3, amber 4-7, red >7
+- [ ] Tapping inpatient card body → navigates to case detail
+- [ ] Tapping Discharge button → discharges (does NOT navigate)
+- [ ] No layout overflow on cards with long diagnosis text (use `numberOfLines={1}` + `flex: 1`)
+- [ ] Thumbnail renders correctly on both iOS and Android (test image caching)
+
+-----
+
+## Summary of Files to Modify
+
+|File                                     |Changes                                                      |
+|-----------------------------------------|-------------------------------------------------------------|
+|`client/src/components/CaseCard.tsx`     |Add CaseThumbnail, SiteChip components; update layout        |
+|`client/src/components/InpatientCard.tsx`|Add PostOpBadge; restyle Discharge button; make card tappable|
+|`server/routes/cases.ts`                 |Add firstPhotoUrl to list query (if not already present)     |
+|`shared/types.ts`                        |Add `firstPhotoUrl?: string | null` to case list type        |
+
+Do not modify: case detail screen, case creation flow, navigation structure, or any procedure/diagnosis logic.

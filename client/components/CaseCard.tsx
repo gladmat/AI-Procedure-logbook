@@ -8,11 +8,23 @@ import Animated, {
 } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
 import { ThemedText } from "@/components/ThemedText";
+import { EncryptedImage } from "@/components/EncryptedImage";
 import { useTheme } from "@/hooks/useTheme";
 import { BorderRadius, Spacing, Shadows } from "@/constants/theme";
-import { Case, SPECIALTY_LABELS, getPrimaryDiagnosisName } from "@/types/case";
+import { Case, Specialty, SPECIALTY_LABELS, getPrimaryDiagnosisName, getPrimarySiteLabel } from "@/types/case";
 import { RoleBadge } from "@/components/RoleBadge";
 import { SpecialtyBadge } from "@/components/SpecialtyBadge";
+
+const SPECIALTY_THUMB_ICONS: Record<Specialty, keyof typeof Feather.glyphMap> = {
+  hand_surgery: "tool",
+  general: "clipboard",
+  breast: "heart",
+  burns: "thermometer",
+  orthoplastic: "layers",
+  head_neck: "user",
+  body_contouring: "maximize",
+  aesthetics: "star",
+};
 
 interface CaseCardProps {
   caseData: Case;
@@ -20,6 +32,47 @@ interface CaseCardProps {
 }
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
+function CaseThumbnail({ caseData }: { caseData: Case }) {
+  const { theme } = useTheme();
+  const firstPhoto = caseData.operativeMedia?.[0];
+
+  if (firstPhoto?.localUri) {
+    return (
+      <View style={[thumbStyles.container, { backgroundColor: theme.backgroundElevated }]}>
+        <EncryptedImage
+          uri={firstPhoto.localUri}
+          style={thumbStyles.image}
+          resizeMode="cover"
+        />
+      </View>
+    );
+  }
+
+  return (
+    <View style={[thumbStyles.container, { backgroundColor: theme.link + "10" }]}>
+      <Feather
+        name={SPECIALTY_THUMB_ICONS[caseData.specialty] || "file-text"}
+        size={20}
+        color={theme.link}
+      />
+    </View>
+  );
+}
+
+function SiteChip({ caseData }: { caseData: Case }) {
+  const { theme } = useTheme();
+  const label = getPrimarySiteLabel(caseData);
+  if (!label) return null;
+
+  return (
+    <View style={[chipStyles.chip, { backgroundColor: theme.textTertiary + "15" }]}>
+      <ThemedText style={[chipStyles.chipText, { color: theme.textSecondary }]}>
+        {label}
+      </ThemedText>
+    </View>
+  );
+}
 
 export function CaseCard({ caseData, onPress }: CaseCardProps) {
   const { theme } = useTheme();
@@ -78,15 +131,22 @@ export function CaseCard({ caseData, onPress }: CaseCardProps) {
         <Feather name="chevron-right" size={20} color={theme.textTertiary} />
       </View>
 
-      <View style={styles.content}>
-        <ThemedText type="h3" style={styles.patientId}>
-          {caseData.patientIdentifier}
-        </ThemedText>
-        <ThemedText
-          style={[styles.procedureType, { color: theme.textSecondary }]}
-        >
-          {caseTitle}
-        </ThemedText>
+      <View style={styles.contentRow}>
+        <CaseThumbnail caseData={caseData} />
+        <View style={styles.contentText}>
+          <ThemedText type="h3" style={styles.patientId} numberOfLines={1}>
+            {caseData.patientIdentifier}
+          </ThemedText>
+          <View style={styles.diagnosisRow}>
+            <ThemedText
+              style={[styles.procedureType, { color: theme.textSecondary }]}
+              numberOfLines={1}
+            >
+              {caseTitle}
+            </ThemedText>
+            <SiteChip caseData={caseData} />
+          </View>
+        </View>
       </View>
 
       <View style={styles.footer}>
@@ -107,6 +167,37 @@ export function CaseCard({ caseData, onPress }: CaseCardProps) {
   );
 }
 
+const thumbStyles = StyleSheet.create({
+  container: {
+    width: 48,
+    height: 48,
+    borderRadius: 10,
+    overflow: "hidden",
+    marginRight: Spacing.md,
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+  },
+  image: {
+    width: 48,
+    height: 48,
+  },
+});
+
+const chipStyles = StyleSheet.create({
+  chip: {
+    alignSelf: "flex-start",
+    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    marginLeft: Spacing.xs,
+  },
+  chipText: {
+    fontSize: 11,
+    fontWeight: "500",
+  },
+});
+
 const styles = StyleSheet.create({
   card: {
     padding: Spacing.lg,
@@ -124,14 +215,24 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
     flexWrap: "wrap",
   },
-  content: {
+  contentRow: {
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: Spacing.md,
+  },
+  contentText: {
+    flex: 1,
+  },
+  diagnosisRow: {
+    flexDirection: "row",
+    alignItems: "center",
   },
   patientId: {
     marginBottom: Spacing.xs,
   },
   procedureType: {
     fontSize: 14,
+    flexShrink: 1,
   },
   footer: {
     flexDirection: "row",

@@ -477,7 +477,7 @@ export default function DashboardScreen() {
                       <View style={styles.followUpCaseInfo}>
                         <View style={{ flexDirection: "row", alignItems: "center", gap: Spacing.xs }}>
                           <View style={[styles.activeBadge, { backgroundColor: theme.error }]}>
-                            <ThemedText style={styles.activeBadgeText}>
+                            <ThemedText style={[styles.activeBadgeText, { color: "#fff" }]}>
                               {caseItem.infectionOverlay?.episodes?.length || 1} ep
                             </ThemedText>
                           </View>
@@ -530,24 +530,27 @@ export default function DashboardScreen() {
             {showInpatients ? (
               <>
                 {currentInpatients.slice(0, 5).map((caseItem) => {
-                  const daysSinceAdmission = caseItem.admissionDate
-                    ? Math.floor((Date.now() - new Date(caseItem.admissionDate).getTime()) / (1000 * 60 * 60 * 24))
-                    : null;
+                  const opDate = new Date(caseItem.procedureDate);
+                  const today = new Date();
+                  opDate.setHours(0, 0, 0, 0);
+                  today.setHours(0, 0, 0, 0);
+                  const postOpDays = Math.max(0, Math.round((today.getTime() - opDate.getTime()) / (1000 * 60 * 60 * 24)));
+                  const dayBg = postOpDays <= 3 ? "#E8F5E9" : postOpDays <= 7 ? "#FFF8E1" : "#FFEBEE";
+                  const dayColor = postOpDays <= 3 ? "#2E7D32" : postOpDays <= 7 ? "#F57F17" : "#C62828";
                   return (
-                    <View key={caseItem.id} style={[styles.followUpCard, { backgroundColor: theme.backgroundDefault }]}>
-                      <Pressable
-                        style={styles.activeCaseContent}
-                        onPress={() => handleCasePress(caseItem)}
-                      >
+                    <Pressable
+                      key={caseItem.id}
+                      style={[styles.followUpCard, { backgroundColor: theme.backgroundDefault }]}
+                      onPress={() => handleCasePress(caseItem)}
+                    >
+                      <View style={styles.activeCaseContent}>
                         <View style={styles.followUpCaseInfo}>
                           <View style={{ flexDirection: "row", alignItems: "center", gap: Spacing.xs }}>
-                            {daysSinceAdmission != null ? (
-                              <View style={[styles.activeBadge, { backgroundColor: theme.warning }]}>
-                                <ThemedText style={styles.activeBadgeText}>
-                                  D{daysSinceAdmission}
-                                </ThemedText>
-                              </View>
-                            ) : null}
+                            <View style={[styles.activeBadge, { backgroundColor: dayBg }]}>
+                              <ThemedText style={[styles.activeBadgeText, { color: dayColor }]}>
+                                Day {postOpDays}
+                              </ThemedText>
+                            </View>
                             <ThemedText style={styles.followUpCaseType} numberOfLines={1}>
                               {getPrimaryDiagnosisName(caseItem) || caseItem.procedureType}
                             </ThemedText>
@@ -556,17 +559,24 @@ export default function DashboardScreen() {
                             {caseItem.patientIdentifier} - {caseItem.facility || "No facility"}
                           </ThemedText>
                         </View>
-                        <Feather name="chevron-right" size={18} color={theme.textTertiary} />
-                      </Pressable>
-                      <Pressable
-                        style={[styles.dischargeButton, { backgroundColor: theme.success }]}
-                        onPress={() => handleOpenDischargeModal(caseItem)}
-                        testID={`discharge-inpatient-${caseItem.id}`}
-                      >
-                        <Feather name="check-circle" size={14} color="#fff" />
-                        <ThemedText style={styles.dischargeButtonText}>Discharge</ThemedText>
-                      </Pressable>
-                    </View>
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: Spacing.sm }}>
+                          <Pressable
+                            style={[styles.dischargeButton, { borderColor: theme.success }]}
+                            onPress={(e) => {
+                              e.stopPropagation();
+                              handleOpenDischargeModal(caseItem);
+                            }}
+                            testID={`discharge-inpatient-${caseItem.id}`}
+                          >
+                            <Feather name="check-circle" size={13} color={theme.success} />
+                            <ThemedText style={[styles.dischargeButtonText, { color: theme.success }]}>
+                              Discharge
+                            </ThemedText>
+                          </Pressable>
+                          <Feather name="chevron-right" size={18} color={theme.textTertiary} />
+                        </View>
+                      </View>
+                    </Pressable>
                   );
                 })}
 
@@ -1466,9 +1476,8 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.sm,
   },
   activeBadgeText: {
-    color: "#fff",
     fontSize: 10,
-    fontWeight: "600",
+    fontWeight: "700",
   },
   collapsedFollowUp: {
     flexDirection: "row",
@@ -1527,10 +1536,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.sm,
     paddingVertical: Spacing.xs,
     borderRadius: BorderRadius.sm,
-    marginLeft: Spacing.sm,
+    borderWidth: 1.5,
   },
   dischargeButtonText: {
-    color: "#fff",
     fontSize: 12,
     fontWeight: "600",
   },

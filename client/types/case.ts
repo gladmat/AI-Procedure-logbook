@@ -1391,6 +1391,22 @@ export function getExcisionCount(c: Case): number {
   return lesionCount + nonLesionProcedures;
 }
 
+export function getPrimaryLaterality(c: Case): Laterality | undefined {
+  return c.diagnosisGroups[0]?.diagnosisClinicalDetails?.laterality;
+}
+
+export function getPrimarySiteLabel(c: Case): string | null {
+  const group = c.diagnosisGroups[0];
+  if (!group) return null;
+  const laterality = group.diagnosisClinicalDetails?.laterality;
+  const side = laterality === "left" ? "Left" : laterality === "right" ? "Right" : null;
+  const lesionSite = group.lesionInstances?.[0]?.site;
+  if (side && lesionSite) return `${side} ${lesionSite}`;
+  if (lesionSite) return lesionSite;
+  if (side) return side;
+  return null;
+}
+
 export const COMMON_COMORBIDITIES: SnomedCodedItem[] = [
   { snomedCtCode: "84114007", displayName: "Acquired Brain Injury" },
   { snomedCtCode: "49436004", displayName: "Atrial Fibrillation (AF)" },
