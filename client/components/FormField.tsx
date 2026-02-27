@@ -567,11 +567,12 @@ export function DatePickerField({
               style={styles.modalOverlay}
               onPress={() => setShowPicker(false)}
             >
-              <View 
+              <Pressable
                 style={[
                   styles.modalContent, 
                   { backgroundColor: theme.backgroundElevated }
                 ]}
+                onPress={(e) => e.stopPropagation()}
               >
                 <View style={[styles.modalHeader, { borderBottomColor: theme.border }]}>
                   <ThemedText style={[styles.modalTitle, { color: theme.text }]}>
@@ -593,7 +594,7 @@ export function DatePickerField({
                   onChange={handleDateChange}
                   style={{ height: 200 }}
                 />
-              </View>
+              </Pressable>
             </Pressable>
           </Modal>
         ) : (

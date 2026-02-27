@@ -616,7 +616,13 @@ export default function CaseFormScreen() {
   };
 
   const handleDiagnosisGroupChange = useCallback((index: number, updated: DiagnosisGroup) => {
+    const savedPosition = scrollPositionRef.current;
     setDiagnosisGroups(prev => prev.map((g, i) => i === index ? updated : g));
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        scrollViewRef.current?.scrollTo({ y: savedPosition, animated: false });
+      });
+    });
   }, []);
 
   const handleDeleteDiagnosisGroup = useCallback((index: number) => {
