@@ -623,7 +623,6 @@ export interface FreeFlapDetails {
   skinIsland?: boolean;
   recipientSite?: string;
   recipientSiteRegion?: AnatomicalRegion;
-  recipientSiteLaterality?: HarvestSide;
   recipientSiteSnomedCode?: string;
   recipientSiteSnomedDisplay?: string;
   ischemiaTimeMinutes?: number;
@@ -690,7 +689,75 @@ export interface SkinLesionExcisionDetails {
   histologyReportCapturedAt?: string;
 }
 
-export type ClinicalDetails = FreeFlapDetails | HandTraumaDetails | HandSurgeryDetails | BodyContouringDetails | SkinLesionExcisionDetails | Record<string, unknown>;
+// ─── SLNB Basin Types ─────────────────────────────────────────────────────────
+
+/**
+ * Anatomical lymph node basin sampled during sentinel lymph node biopsy.
+ * Multiple basins can be sampled in the same operation (bilateral drainage,
+ * discordant drainage patterns common in trunk and H&N melanomas).
+ */
+export type SlnbBasin =
+  | "right_axilla"
+  | "left_axilla"
+  | "right_groin"
+  | "left_groin"
+  | "right_popliteal"
+  | "left_popliteal"
+  | "right_cervical_parotid"
+  | "left_cervical_parotid"
+  | "other";
+
+export const SLNB_BASIN_LABELS: Record<SlnbBasin, string> = {
+  right_axilla: "Right axilla",
+  left_axilla: "Left axilla",
+  right_groin: "Right groin (inguinal)",
+  left_groin: "Left groin (inguinal)",
+  right_popliteal: "Right popliteal",
+  left_popliteal: "Left popliteal",
+  right_cervical_parotid: "Right cervical / parotid",
+  left_cervical_parotid: "Left cervical / parotid",
+  other: "Other",
+};
+
+/** Per-basin pathological result */
+export interface SlnbBasinResult {
+  basin: SlnbBasin;
+  /** Total nodes removed from this basin */
+  nodesRemoved?: number;
+  /** Number of positive (metastatic) nodes */
+  nodesPositive?: number;
+  /** Size of largest metastatic deposit in mm */
+  largestDepositMm?: number;
+  /** Extranodal extension (capsular breach) */
+  extranodалExtension?: boolean;
+  /** Free text for 'other' basin or extra detail */
+  basinNote?: string;
+}
+
+/**
+ * Clinical details for sentinel lymph node biopsy procedures.
+ * Supports multi-basin documentation (bilateral axillae, axilla + groin, etc.)
+ * with per-basin node counts and pathological results.
+ *
+ * SNOMED CT post-coordination:
+ *   - Procedure: 396487001 | Sentinel lymph node biopsy (procedure)
+ *   - Site (per basin): post-coordinated using 363698007 | Finding site
+ *   - Laterality: post-coordinated using 272741003 | Laterality
+ */
+export interface SlnbDetails {
+  /** All basins sampled in this operation */
+  basins: SlnbBasinResult[];
+  /** Whether radioisotope (Tc-99m nanocolloid) mapping was used */
+  radioisotopeUsed?: boolean;
+  /** Whether blue dye was used (isosulfan blue, patent blue V, methylene blue) */
+  blueDyeUsed?: boolean;
+  /** Whether intraoperative gamma probe was used */
+  gammаProbeUsed?: boolean;
+  /** Whether SPECT/CT lymphoscintigraphy performed pre-op */
+  spectCtPerformed?: boolean;
+}
+
+export type ClinicalDetails = FreeFlapDetails | HandTraumaDetails | HandSurgeryDetails | BodyContouringDetails | SkinLesionExcisionDetails | SlnbDetails | Record<string, unknown>;
 
 // ─── Multi-Lesion Session Types ─────────────────────────────────────────────
 

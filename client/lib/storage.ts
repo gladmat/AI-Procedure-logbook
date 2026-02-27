@@ -1,6 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Case, TimelineEvent, CountryCode, ComplicationEntry } from "@/types/case";
 import { encryptData, decryptData } from "./encryption";
+import { deleteMultipleEncryptedMedia } from "./mediaStorage";
 import * as Crypto from "expo-crypto";
 import { migrateCase } from "./migration";
 
@@ -363,6 +364,12 @@ export async function recordComplications(
 
 export async function deleteCase(id: string): Promise<void> {
   try {
+    const caseData = await getCase(id);
+    if (caseData?.operativeMedia) {
+      const mediaUris = caseData.operativeMedia.map((m) => m.localUri);
+      await deleteMultipleEncryptedMedia(mediaUris);
+    }
+
     await AsyncStorage.removeItem(`${CASE_PREFIX}${id}`);
     
     const index = await getCaseIndex();
@@ -371,6 +378,10 @@ export async function deleteCase(id: string): Promise<void> {
     
     const events = await getTimelineEvents(id);
     for (const event of events) {
+      if (event.mediaAttachments) {
+        const eventMediaUris = event.mediaAttachments.map((m) => m.localUri);
+        await deleteMultipleEncryptedMedia(eventMediaUris);
+      }
       await deleteTimelineEvent(event.id);
     }
   } catch (error) {

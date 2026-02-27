@@ -3,7 +3,6 @@ import {
   View,
   StyleSheet,
   Pressable,
-  Image,
   Alert,
   Platform,
   ScrollView,
@@ -14,7 +13,8 @@ import { Feather } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import * as Haptics from "expo-haptics";
 import { v4 as uuidv4 } from "uuid";
-import { persistMediaFile } from "@/lib/mediaPersistence";
+import { saveEncryptedMedia, setPendingBase64 } from "@/lib/mediaStorage";
+import { EncryptedImage } from "@/components/EncryptedImage";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
@@ -80,14 +80,18 @@ export function OperativeMediaSection({
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       const result = await ImagePicker.launchCameraAsync({
         mediaTypes: ["images"],
-        quality: 0.8,
+        quality: 0.7,
         allowsEditing: false,
+        base64: true,
       });
 
       if (!result.canceled && result.assets.length > 0) {
         const asset = result.assets[0];
-        const permanentUri = await persistMediaFile(asset.uri, asset.mimeType);
-        navigateToAddMedia(permanentUri, asset.mimeType || "image/jpeg");
+        const mime = asset.mimeType || "image/jpeg";
+        if (asset.base64) {
+          setPendingBase64(asset.base64, mime);
+        }
+        navigateToAddMedia(asset.uri, mime);
       }
     } catch (error: any) {
       console.error("Error capturing image:", error);
@@ -102,27 +106,37 @@ export function OperativeMediaSection({
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ["images"],
-        quality: 0.8,
+        quality: 0.7,
         allowsMultipleSelection: true,
         selectionLimit: remaining,
+        base64: true,
       });
 
       if (!result.canceled && result.assets.length > 0) {
         if (result.assets.length === 1) {
           const asset = result.assets[0];
-          const permanentUri = await persistMediaFile(asset.uri, asset.mimeType);
-          navigateToAddMedia(permanentUri, asset.mimeType || "image/jpeg");
+          const mime = asset.mimeType || "image/jpeg";
+          if (asset.base64) {
+            setPendingBase64(asset.base64, mime);
+          }
+          navigateToAddMedia(asset.uri, mime);
         } else {
-          const persistedItems = await Promise.all(
-            result.assets.map(async (asset) => ({
-              id: uuidv4(),
-              localUri: await persistMediaFile(asset.uri, asset.mimeType),
-              mimeType: asset.mimeType || "image/jpeg",
-              mediaType: "intraoperative_photo" as const,
-              createdAt: new Date().toISOString(),
-            }))
+          const encryptedItems = await Promise.all(
+            result.assets.map(async (asset) => {
+              const mime = asset.mimeType || "image/jpeg";
+              const encryptedUri = asset.base64
+                ? await saveEncryptedMedia(asset.base64, mime)
+                : asset.uri;
+              return {
+                id: uuidv4(),
+                localUri: encryptedUri,
+                mimeType: asset.mimeType || "image/jpeg",
+                mediaType: "intraoperative_photo" as const,
+                createdAt: new Date().toISOString(),
+              };
+            })
           );
-          onMediaChange([...media, ...persistedItems]);
+          onMediaChange([...media, ...encryptedItems]);
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         }
       }
@@ -154,8 +168,13 @@ export function OperativeMediaSection({
       {
         text: "Remove",
         style: "destructive",
-        onPress: () => {
+        onPress: async () => {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          const item = media.find((m) => m.id === mediaId);
+          if (item) {
+            const { deleteEncryptedMedia } = await import("@/lib/mediaStorage");
+            await deleteEncryptedMedia(item.localUri);
+          }
           onMediaChange(media.filter((m) => m.id !== mediaId));
         },
       },
@@ -188,8 +207,8 @@ export function OperativeMediaSection({
               onPress={() => handleEditMedia(item)}
               style={[styles.previewItem, { backgroundColor: theme.backgroundDefault }]}
             >
-              <Image
-                source={{ uri: item.localUri }}
+              <EncryptedImage
+                uri={item.localUri}
                 style={styles.previewImage}
                 resizeMode="cover"
                 onError={() => console.warn("Media file missing:", item.localUri)}

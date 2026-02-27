@@ -120,10 +120,14 @@ Comprehensive infection case documentation with serial episode tracking.
 - **AsyncStorage**: Primary mechanism for local data persistence on the device.
 - **Performance Indexes** (`migrations/add_performance_indexes.sql`): 8 indexes on high-frequency query paths — procedures (user_id, user_id+date), flaps (procedure_id), anastomoses (flap_id), case_procedures (case_id), password_reset_tokens (expires_at), snomed_ref (category+is_active), user_facilities (user_id). All use `IF NOT EXISTS` for idempotent execution.
 
-### Media Persistence
-- **Photo Storage**: Photos are copied from temp cache to `FileSystem.documentDirectory/media/` via `client/lib/mediaPersistence.ts` to survive OS cache purges.
-- **All intake paths covered**: `OperativeMediaSection`, `MediaCapture`, `AddOperativeMediaScreen`, and `MediaManagementScreen` all persist media before storing URIs.
-- **Web passthrough**: On web platform, temp URIs are returned as-is (no file system persistence needed).
+### Encrypted Media Storage
+- **Encrypted Photo Storage**: Photos are encrypted with XChaCha20-Poly1305 and stored in AsyncStorage as individual entries (`@surgical_logbook_media_[uuid]`). No filesystem dependency — works on all platforms including TestFlight standalone builds.
+- **Image Picker base64**: All image picker calls use `base64: true` to get image data directly without filesystem operations.
+- **URI scheme**: Encrypted media stored with `encrypted-media:[uuid]` URIs in case data. `EncryptedImage` component handles async decryption with in-memory caching.
+- **Backward compatibility**: `EncryptedImage` passes through non-encrypted URIs (legacy `file://` paths) directly.
+- **All intake paths covered**: `OperativeMediaSection`, `MediaCapture`, `AddOperativeMediaScreen`, and `MediaManagementScreen` all encrypt media via `client/lib/mediaStorage.ts`.
+- **Cleanup on delete**: `deleteCase()` in storage.ts removes associated encrypted media entries. Individual photo removal also cleans up.
+- **Pending base64 pattern**: For the AddOperativeMedia navigation flow, base64 data is held in a module-level store (`setPendingBase64`/`consumePendingBase64`) to avoid passing large strings through navigation params.
 
 ### iOS Permissions
 - **expo-image-picker plugin**: Configured in `app.json` with custom `photosPermission` and `cameraPermission` strings for iOS Info.plist.
@@ -156,8 +160,7 @@ Comprehensive infection case documentation with serial episode tracking.
 - **Coupler constraint**: Selecting "Coupler" auto-sets configuration to "End-to-End" and locks other options (dimmed at 35% opacity). Constraint also enforced on initial load via useEffect.
 
 ### Key Libraries
-- **expo-image-picker**: For selecting images from the gallery. Plugin configured in app.json for iOS permissions.
-- **expo-file-system**: For persistent media storage (copying from cache to document directory).
+- **expo-image-picker**: For selecting images from the gallery (with `base64: true`). Plugin configured in app.json for iOS permissions.
 - **@noble/ciphers**: XChaCha20-Poly1305 authenticated encryption.
 - **@noble/hashes**: SHA-256, scrypt, HKDF.
 - **@noble/curves**: X25519 elliptic curve for E2EE key exchange.

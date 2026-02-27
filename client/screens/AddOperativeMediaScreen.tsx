@@ -17,7 +17,13 @@ import { Feather } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import * as Haptics from "expo-haptics";
 import { v4 as uuidv4 } from "uuid";
-import { persistMediaFile } from "@/lib/mediaPersistence";
+import {
+  saveEncryptedMedia,
+  consumePendingBase64,
+  setPendingBase64,
+  isEncryptedMediaUri,
+} from "@/lib/mediaStorage";
+import { EncryptedImage } from "@/components/EncryptedImage";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { useTheme } from "@/hooks/useTheme";
@@ -93,12 +99,18 @@ export default function AddOperativeMediaScreen() {
     try {
       const result = await ImagePicker.launchCameraAsync({
         mediaTypes: ["images"],
-        quality: 0.8,
+        quality: 0.7,
         allowsEditing: false,
+        base64: true,
       });
       if (!result.canceled && result.assets.length > 0) {
-        setCurrentUri(result.assets[0].uri);
-        setCurrentMimeType(result.assets[0].mimeType || "image/jpeg");
+        const asset = result.assets[0];
+        const mime = asset.mimeType || "image/jpeg";
+        if (asset.base64) {
+          setPendingBase64(asset.base64, mime);
+        }
+        setCurrentUri(asset.uri);
+        setCurrentMimeType(mime);
       }
     } catch (error) {
       Alert.alert("Error", "Failed to capture image.");
@@ -109,11 +121,17 @@ export default function AddOperativeMediaScreen() {
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ["images"],
-        quality: 0.8,
+        quality: 0.7,
+        base64: true,
       });
       if (!result.canceled && result.assets.length > 0) {
-        setCurrentUri(result.assets[0].uri);
-        setCurrentMimeType(result.assets[0].mimeType || "image/jpeg");
+        const asset = result.assets[0];
+        const mime = asset.mimeType || "image/jpeg";
+        if (asset.base64) {
+          setPendingBase64(asset.base64, mime);
+        }
+        setCurrentUri(asset.uri);
+        setCurrentMimeType(mime);
       }
     } catch (error) {
       Alert.alert("Error", "Failed to select image.");
@@ -124,10 +142,17 @@ export default function AddOperativeMediaScreen() {
     if (!currentUri) return;
 
     try {
-      const permanentUri = await persistMediaFile(currentUri, currentMimeType);
+      let finalUri = currentUri;
+      const pending = consumePendingBase64();
+      if (pending) {
+        finalUri = await saveEncryptedMedia(pending.base64, pending.mimeType);
+      } else if (editMode && isEncryptedMediaUri(currentUri)) {
+        finalUri = currentUri;
+      }
+
       const mediaData = {
         id: editMode && existingMediaId ? existingMediaId : uuidv4(),
-        localUri: permanentUri,
+        localUri: finalUri,
         mimeType: currentMimeType,
         mediaType: selectedType,
         caption: captionInput.trim() || undefined,
@@ -164,11 +189,19 @@ export default function AddOperativeMediaScreen() {
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.previewContainer}>
-            <Image
-              source={{ uri: currentUri }}
-              style={styles.previewImage}
-              resizeMode="contain"
-            />
+            {isEncryptedMediaUri(currentUri) ? (
+              <EncryptedImage
+                uri={currentUri}
+                style={styles.previewImage}
+                resizeMode="contain"
+              />
+            ) : (
+              <Image
+                source={{ uri: currentUri }}
+                style={styles.previewImage}
+                resizeMode="contain"
+              />
+            )}
           </View>
 
           <View style={styles.replaceRow}>

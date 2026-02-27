@@ -3,7 +3,6 @@ import {
   View,
   StyleSheet,
   Pressable,
-  Image,
   Alert,
   Platform,
   ScrollView,
@@ -14,7 +13,8 @@ import { Feather } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import * as Haptics from "expo-haptics";
 import { v4 as uuidv4 } from "uuid";
-import { persistMediaFile } from "@/lib/mediaPersistence";
+import { saveEncryptedMedia, deleteEncryptedMedia } from "@/lib/mediaStorage";
+import { EncryptedImage } from "@/components/EncryptedImage";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
@@ -90,17 +90,21 @@ export function MediaCapture({
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       const result = await ImagePicker.launchCameraAsync({
         mediaTypes: ["images"],
-        quality: 0.8,
+        quality: 0.7,
         allowsEditing: false,
+        base64: true,
       });
 
       if (!result.canceled && result.assets.length > 0) {
         const asset = result.assets[0];
-        const permanentUri = await persistMediaFile(asset.uri, asset.mimeType);
+        const mime = asset.mimeType || "image/jpeg";
+        const encryptedUri = asset.base64
+          ? await saveEncryptedMedia(asset.base64, mime)
+          : asset.uri;
         const newAttachment: MediaAttachment = {
           id: uuidv4(),
-          localUri: permanentUri,
-          mimeType: asset.mimeType || "image/jpeg",
+          localUri: encryptedUri,
+          mimeType: mime,
           createdAt: new Date().toISOString(),
         };
         onAttachmentsChange([...attachments, newAttachment]);
@@ -117,21 +121,27 @@ export function MediaCapture({
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ["images"],
-        quality: 0.8,
+        quality: 0.7,
         allowsMultipleSelection: true,
         selectionLimit: maxAttachments - attachments.length,
+        base64: true,
       });
 
       if (!result.canceled && result.assets.length > 0) {
-        const persistedAttachments = await Promise.all(
-          result.assets.map(async (asset) => ({
-            id: uuidv4(),
-            localUri: await persistMediaFile(asset.uri, asset.mimeType),
-            mimeType: asset.mimeType || "image/jpeg",
-            createdAt: new Date().toISOString(),
-          }))
+        const encryptedAttachments = await Promise.all(
+          result.assets.map(async (asset) => {
+            const mime = asset.mimeType || "image/jpeg";
+            return {
+              id: uuidv4(),
+              localUri: asset.base64
+                ? await saveEncryptedMedia(asset.base64, mime)
+                : asset.uri,
+              mimeType: mime,
+              createdAt: new Date().toISOString(),
+            };
+          })
         );
-        onAttachmentsChange([...attachments, ...persistedAttachments]);
+        onAttachmentsChange([...attachments, ...encryptedAttachments]);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
     } catch (error) {
@@ -140,7 +150,11 @@ export function MediaCapture({
     }
   };
 
-  const handleRemove = (attachmentId: string) => {
+  const handleRemove = async (attachmentId: string) => {
+    const item = attachments.find((a) => a.id === attachmentId);
+    if (item) {
+      await deleteEncryptedMedia(item.localUri);
+    }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     onAttachmentsChange(attachments.filter((a) => a.id !== attachmentId));
   };
@@ -200,8 +214,8 @@ export function MediaCapture({
                 { backgroundColor: theme.backgroundDefault },
               ]}
             >
-              <Image
-                source={{ uri: attachment.localUri }}
+              <EncryptedImage
+                uri={attachment.localUri}
                 style={styles.previewImage}
                 resizeMode="cover"
               />

@@ -26,11 +26,15 @@ import {
   type ElevationPlane,
   type FreeFlap,
   type FlapSpecificDetails,
+  type SlnbDetails,
+  type SlnbBasin,
+  type SlnbBasinResult,
   INDICATION_LABELS,
   FLAP_SNOMED_MAP,
   RECIPIENT_SITE_SNOMED_MAP,
   FREE_FLAP_LABELS,
   ELEVATION_PLANE_LABELS,
+  SLNB_BASIN_LABELS,
 } from "@/types/case";
 import { FLAP_ELEVATION_PLANES } from "@/data/flapFieldConfig";
 
@@ -248,73 +252,6 @@ export function FreeFlapClinicalFields({
         />
       ) : null}
 
-      <View style={styles.row}>
-        <View style={styles.halfField}>
-          <ThemedText style={[styles.segmentedLabel, { color: theme.textSecondary }]}>
-            Harvest Side *
-          </ThemedText>
-          <View style={[styles.segmentedControl, { borderColor: theme.border, backgroundColor: theme.backgroundDefault }]}>
-            {(["left", "right"] as HarvestSide[]).map((side) => {
-              const isSelected = clinicalDetails.harvestSide === side;
-              return (
-                <Pressable
-                  key={side}
-                  style={[
-                    styles.segmentedButton,
-                    isSelected ? { backgroundColor: theme.link } : undefined,
-                  ]}
-                  onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    onUpdate({ ...clinicalDetails, harvestSide: side });
-                  }}
-                >
-                  <ThemedText
-                    style={[
-                      styles.segmentedButtonText,
-                      { color: isSelected ? "#FFFFFF" : theme.textSecondary },
-                    ]}
-                  >
-                    {side === "left" ? "Left" : "Right"}
-                  </ThemedText>
-                </Pressable>
-              );
-            })}
-          </View>
-        </View>
-        <View style={styles.halfField}>
-          <ThemedText style={[styles.segmentedLabel, { color: theme.textSecondary }]}>
-            Recipient Side
-          </ThemedText>
-          <View style={[styles.segmentedControl, { borderColor: theme.border, backgroundColor: theme.backgroundDefault }]}>
-            {(["left", "right"] as HarvestSide[]).map((side) => {
-              const isSelected = clinicalDetails.recipientSiteLaterality === side;
-              return (
-                <Pressable
-                  key={side}
-                  style={[
-                    styles.segmentedButton,
-                    isSelected ? { backgroundColor: theme.link } : undefined,
-                  ]}
-                  onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    onUpdate({ ...clinicalDetails, recipientSiteLaterality: side });
-                  }}
-                >
-                  <ThemedText
-                    style={[
-                      styles.segmentedButtonText,
-                      { color: isSelected ? "#FFFFFF" : theme.textSecondary },
-                    ]}
-                  >
-                    {side === "left" ? "Left" : "Right"}
-                  </ThemedText>
-                </Pressable>
-              );
-            })}
-          </View>
-        </View>
-      </View>
-
       <RecipientSiteSelector
         value={clinicalDetails.recipientSiteRegion}
         onSelect={handleRecipientSiteChange}
@@ -365,6 +302,17 @@ export function FreeFlapClinicalFields({
           </ThemedText>
         </Pressable>
       </View>
+
+      <SelectField
+        label="Harvest Side"
+        value={clinicalDetails.harvestSide || ""}
+        options={[
+          { value: "left", label: "Left" },
+          { value: "right", label: "Right" },
+        ]}
+        onSelect={(v) => onUpdate({ ...clinicalDetails, harvestSide: v as HarvestSide })}
+        required
+      />
 
       <SelectField
         label="Indication"
@@ -563,12 +511,491 @@ export function BodyContouringClinicalFields({
   );
 }
 
+// ─── SLNB Basin Detail Fields ─────────────────────────────────────────────────
+
+const ALL_BASINS: SlnbBasin[] = [
+  "right_axilla",
+  "left_axilla",
+  "right_groin",
+  "left_groin",
+  "right_popliteal",
+  "left_popliteal",
+  "right_cervical_parotid",
+  "left_cervical_parotid",
+  "other",
+];
+
+interface SlnbBasinCardProps {
+  result: SlnbBasinResult;
+  onUpdate: (result: SlnbBasinResult) => void;
+  onRemove: () => void;
+}
+
+function SlnbBasinCard({ result, onUpdate, onRemove }: SlnbBasinCardProps) {
+  const { theme } = useTheme();
+
+  return (
+    <View
+      style={[
+        slnbStyles.basinCard,
+        { backgroundColor: theme.backgroundElevated, borderColor: theme.border },
+      ]}
+    >
+      <View style={slnbStyles.basinCardHeader}>
+        <View
+          style={[slnbStyles.basinBadge, { backgroundColor: theme.link + "18", borderColor: theme.link + "40" }]}
+        >
+          <ThemedText style={[slnbStyles.basinBadgeText, { color: theme.link }]}>
+            {SLNB_BASIN_LABELS[result.basin]}
+          </ThemedText>
+        </View>
+        <Pressable
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            onRemove();
+          }}
+          hitSlop={8}
+          style={slnbStyles.removeBtnHit}
+        >
+          <Feather name="x" size={16} color={theme.textSecondary} />
+        </Pressable>
+      </View>
+
+      <View style={slnbStyles.basinRow}>
+        <View style={slnbStyles.basinHalf}>
+          <FormField
+            label="Nodes removed"
+            value={result.nodesRemoved !== undefined ? String(result.nodesRemoved) : ""}
+            onChangeText={(v) => onUpdate({ ...result, nodesRemoved: v ? parseInt(v) : undefined })}
+            placeholder="0"
+            keyboardType="numeric"
+          />
+        </View>
+        <View style={slnbStyles.basinHalf}>
+          <FormField
+            label="Nodes positive"
+            value={result.nodesPositive !== undefined ? String(result.nodesPositive) : ""}
+            onChangeText={(v) => onUpdate({ ...result, nodesPositive: v ? parseInt(v) : undefined })}
+            placeholder="0"
+            keyboardType="numeric"
+          />
+        </View>
+      </View>
+
+      <FormField
+        label="Largest deposit"
+        value={result.largestDepositMm !== undefined ? String(result.largestDepositMm) : ""}
+        onChangeText={(v) => onUpdate({ ...result, largestDepositMm: v ? parseFloat(v) : undefined })}
+        placeholder="e.g., 2.5"
+        keyboardType="decimal-pad"
+        unit="mm"
+      />
+
+      {/* Extranodal extension toggle */}
+      <View style={slnbStyles.toggleRow}>
+        <ThemedText style={[slnbStyles.toggleLabel, { color: theme.textSecondary }]}>
+          Extranodal extension
+        </ThemedText>
+        <View style={slnbStyles.toggleOptions}>
+          {(["yes", "no", "unknown"] as const).map((opt) => {
+            const current =
+              result.extranodалExtension === true
+                ? "yes"
+                : result.extranodалExtension === false
+                ? "no"
+                : "unknown";
+            const isActive = current === opt;
+            return (
+              <Pressable
+                key={opt}
+                style={[
+                  slnbStyles.toggleChip,
+                  {
+                    backgroundColor: isActive ? theme.link + "20" : theme.backgroundDefault,
+                    borderColor: isActive ? theme.link : theme.border,
+                  },
+                ]}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  onUpdate({
+                    ...result,
+                    extranodалExtension:
+                      opt === "yes" ? true : opt === "no" ? false : undefined,
+                  });
+                }}
+              >
+                <ThemedText
+                  style={[
+                    slnbStyles.toggleChipText,
+                    { color: isActive ? theme.link : theme.text },
+                  ]}
+                >
+                  {opt === "yes" ? "Yes" : opt === "no" ? "No" : "Unknown"}
+                </ThemedText>
+              </Pressable>
+            );
+          })}
+        </View>
+      </View>
+
+      {result.basin === "other" ? (
+        <FormField
+          label="Basin note"
+          value={result.basinNote || ""}
+          onChangeText={(v) => onUpdate({ ...result, basinNote: v })}
+          placeholder="Describe basin / location"
+        />
+      ) : null}
+    </View>
+  );
+}
+
+interface SlnbClinicalFieldsProps {
+  clinicalDetails: SlnbDetails;
+  onUpdate: (details: SlnbDetails) => void;
+}
+
+export function SlnbClinicalFields({ clinicalDetails, onUpdate }: SlnbClinicalFieldsProps) {
+  const { theme } = useTheme();
+  const [showBasinPicker, setShowBasinPicker] = useState(false);
+
+  const basins = clinicalDetails.basins || [];
+
+  const addBasin = (basin: SlnbBasin) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const newResult: SlnbBasinResult = { basin };
+    onUpdate({ ...clinicalDetails, basins: [...basins, newResult] });
+    setShowBasinPicker(false);
+  };
+
+  const updateBasin = (index: number, result: SlnbBasinResult) => {
+    const updated = [...basins];
+    updated[index] = result;
+    onUpdate({ ...clinicalDetails, basins: updated });
+  };
+
+  const removeBasin = (index: number) => {
+    onUpdate({ ...clinicalDetails, basins: basins.filter((_, i) => i !== index) });
+  };
+
+  const usedBasins = new Set(basins.map((b) => b.basin));
+  const availableBasins = ALL_BASINS.filter((b) => !usedBasins.has(b));
+
+  const toggleTechnique = (field: keyof Pick<SlnbDetails, "radioisotopeUsed" | "blueDyeUsed" | "gammаProbeUsed" | "spectCtPerformed">) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onUpdate({ ...clinicalDetails, [field]: !clinicalDetails[field] });
+  };
+
+  const techniqueItems: { key: keyof SlnbDetails; label: string }[] = [
+    { key: "radioisotopeUsed", label: "Radioisotope (Tc-99m)" },
+    { key: "blueDyeUsed", label: "Blue dye" },
+    { key: "gammаProbeUsed", label: "Gamma probe" },
+    { key: "spectCtPerformed", label: "SPECT/CT pre-op" },
+  ];
+
+  return (
+    <View style={slnbStyles.container}>
+      {/* Technique section */}
+      <ThemedText style={[slnbStyles.sectionLabel, { color: theme.textSecondary }]}>
+        Mapping technique
+      </ThemedText>
+      <View style={slnbStyles.techniqueGrid}>
+        {techniqueItems.map(({ key, label }) => {
+          const active = !!clinicalDetails[key];
+          return (
+            <Pressable
+              key={key}
+              style={[
+                slnbStyles.techniqueChip,
+                {
+                  backgroundColor: active ? theme.link + "18" : theme.backgroundDefault,
+                  borderColor: active ? theme.link : theme.border,
+                },
+              ]}
+              onPress={() => toggleTechnique(key as any)}
+            >
+              {active ? (
+                <Feather name="check" size={13} color={theme.link} style={{ marginRight: 4 }} />
+              ) : null}
+              <ThemedText
+                style={[slnbStyles.techniqueChipText, { color: active ? theme.link : theme.text }]}
+              >
+                {label}
+              </ThemedText>
+            </Pressable>
+          );
+        })}
+      </View>
+
+      {/* Basin section */}
+      <View style={slnbStyles.basinHeader}>
+        <ThemedText style={[slnbStyles.sectionLabel, { color: theme.textSecondary }]}>
+          Basins sampled
+        </ThemedText>
+        {basins.length > 0 ? (
+          <ThemedText style={[slnbStyles.basinCount, { color: theme.link }]}>
+            {basins.length} basin{basins.length !== 1 ? "s" : ""}
+          </ThemedText>
+        ) : null}
+      </View>
+
+      {basins.length === 0 ? (
+        <View
+          style={[
+            slnbStyles.emptyBasin,
+            { borderColor: theme.border, backgroundColor: theme.backgroundDefault },
+          ]}
+        >
+          <Feather name="map-pin" size={18} color={theme.textSecondary} />
+          <ThemedText style={[slnbStyles.emptyBasinText, { color: theme.textSecondary }]}>
+            No basins added yet
+          </ThemedText>
+        </View>
+      ) : (
+        <View style={slnbStyles.basinList}>
+          {basins.map((result, index) => (
+            <SlnbBasinCard
+              key={`${result.basin}-${index}`}
+              result={result}
+              onUpdate={(updated) => updateBasin(index, updated)}
+              onRemove={() => removeBasin(index)}
+            />
+          ))}
+        </View>
+      )}
+
+      {availableBasins.length > 0 ? (
+        <View>
+          {showBasinPicker ? (
+            <View
+              style={[
+                slnbStyles.basinPickerPanel,
+                { backgroundColor: theme.backgroundElevated, borderColor: theme.border },
+              ]}
+            >
+              <ThemedText style={[slnbStyles.basinPickerTitle, { color: theme.textSecondary }]}>
+                Select basin
+              </ThemedText>
+              {availableBasins.map((basin) => (
+                <Pressable
+                  key={basin}
+                  style={[slnbStyles.basinPickerRow, { borderBottomColor: theme.border }]}
+                  onPress={() => addBasin(basin)}
+                >
+                  <Feather name="plus-circle" size={16} color={theme.link} style={{ marginRight: 8 }} />
+                  <ThemedText style={[slnbStyles.basinPickerLabel, { color: theme.text }]}>
+                    {SLNB_BASIN_LABELS[basin]}
+                  </ThemedText>
+                </Pressable>
+              ))}
+              <Pressable
+                style={[slnbStyles.cancelBtn, { borderColor: theme.border }]}
+                onPress={() => setShowBasinPicker(false)}
+              >
+                <ThemedText style={[slnbStyles.cancelBtnText, { color: theme.textSecondary }]}>
+                  Cancel
+                </ThemedText>
+              </Pressable>
+            </View>
+          ) : (
+            <Pressable
+              style={[
+                slnbStyles.addBasinBtn,
+                { borderColor: theme.link + "50", backgroundColor: theme.link + "0D" },
+              ]}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setShowBasinPicker(true);
+              }}
+            >
+              <Feather name="plus" size={16} color={theme.link} />
+              <ThemedText style={[slnbStyles.addBasinBtnText, { color: theme.link }]}>
+                Add basin
+              </ThemedText>
+            </Pressable>
+          )}
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+const slnbStyles = StyleSheet.create({
+  container: {
+    marginTop: Spacing.md,
+    paddingTop: Spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(0,0,0,0.05)",
+  },
+  sectionLabel: {
+    fontSize: 13,
+    fontWeight: "600",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginBottom: Spacing.sm,
+    marginTop: Spacing.sm,
+  },
+  techniqueGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: Spacing.sm,
+    marginBottom: Spacing.lg,
+  },
+  techniqueChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.sm,
+    borderWidth: 1,
+  },
+  techniqueChipText: {
+    fontSize: 13,
+    fontWeight: "500",
+  },
+  basinHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: Spacing.sm,
+  },
+  basinCount: {
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  basinList: {
+    gap: Spacing.md,
+    marginBottom: Spacing.md,
+  },
+  basinCard: {
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    padding: Spacing.md,
+  },
+  basinCardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: Spacing.md,
+  },
+  basinBadge: {
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.sm,
+    borderWidth: 1,
+  },
+  basinBadgeText: {
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  removeBtnHit: {
+    padding: 4,
+  },
+  basinRow: {
+    flexDirection: "row",
+    gap: Spacing.md,
+  },
+  basinHalf: {
+    flex: 1,
+  },
+  toggleRow: {
+    marginBottom: Spacing.md,
+  },
+  toggleLabel: {
+    fontSize: 14,
+    fontWeight: "500",
+    marginBottom: Spacing.sm,
+  },
+  toggleOptions: {
+    flexDirection: "row",
+    gap: Spacing.sm,
+  },
+  toggleChip: {
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.sm,
+    borderWidth: 1,
+  },
+  toggleChipText: {
+    fontSize: 13,
+    fontWeight: "500",
+  },
+  emptyBasin: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Spacing.sm,
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    borderStyle: "dashed",
+    marginBottom: Spacing.md,
+  },
+  emptyBasinText: {
+    fontSize: 14,
+  },
+  addBasinBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Spacing.sm,
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.sm,
+    borderWidth: 1,
+    borderStyle: "dashed",
+    marginBottom: Spacing.sm,
+  },
+  addBasinBtnText: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  basinPickerPanel: {
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    overflow: "hidden",
+    marginBottom: Spacing.sm,
+  },
+  basinPickerTitle: {
+    fontSize: 12,
+    fontWeight: "600",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    paddingHorizontal: Spacing.md,
+    paddingTop: Spacing.md,
+    paddingBottom: Spacing.sm,
+  },
+  basinPickerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.md,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  basinPickerLabel: {
+    fontSize: 15,
+    fontWeight: "500",
+  },
+  cancelBtn: {
+    alignItems: "center",
+    paddingVertical: Spacing.md,
+    borderTopWidth: 1,
+  },
+  cancelBtnText: {
+    fontSize: 14,
+    fontWeight: "500",
+  },
+});
+
+// ─── Procedure Clinical Details Router ───────────────────────────────────────
+
 interface ProcedureClinicalDetailsProps {
   specialty: Specialty;
   procedureType: string;
   picklistEntryId?: string;
   clinicalDetails: ClinicalDetails;
   onUpdate: (details: ClinicalDetails) => void;
+  /** Set by ProcedureEntryCard when the picklist entry has hasSlnb: true */
+  isSlnbProcedure?: boolean;
 }
 
 export function ProcedureClinicalDetails({
@@ -577,6 +1004,7 @@ export function ProcedureClinicalDetails({
   picklistEntryId,
   clinicalDetails,
   onUpdate,
+  isSlnbProcedure,
 }: ProcedureClinicalDetailsProps) {
   const { theme } = useTheme();
   
@@ -585,6 +1013,26 @@ export function ProcedureClinicalDetails({
     ? !!picklistEntry.hasFreeFlap
     : procedureType.toLowerCase().includes("free flap") ||
       procedureType.toLowerCase().includes("free tissue");
+
+  // SLNB: triggered by hasSlnb flag on picklist entry, or explicit prop
+  const isSlnb = isSlnbProcedure || (picklistEntry ? !!picklistEntry.hasSlnb : false);
+  
+  if (isSlnb) {
+    const existing = clinicalDetails as Partial<SlnbDetails>;
+    const slnbDetails: SlnbDetails = {
+      basins: existing.basins || [],
+      radioisotopeUsed: existing.radioisotopeUsed,
+      blueDyeUsed: existing.blueDyeUsed,
+      gammаProbeUsed: existing.gammаProbeUsed,
+      spectCtPerformed: existing.spectCtPerformed,
+    };
+    return (
+      <SlnbClinicalFields
+        clinicalDetails={slnbDetails}
+        onUpdate={onUpdate}
+      />
+    );
+  }
   
   if (isFreeFlapProcedure) {
     const existingDetails = clinicalDetails as FreeFlapDetails || {};
@@ -787,28 +1235,6 @@ const styles = StyleSheet.create({
   },
   lockedFlapText: {
     fontSize: 15,
-    fontWeight: "600",
-  },
-  segmentedLabel: {
-    fontSize: 14,
-    fontWeight: "500",
-    marginBottom: Spacing.sm,
-  },
-  segmentedControl: {
-    flexDirection: "row",
-    borderRadius: BorderRadius.md,
-    borderWidth: 1,
-    overflow: "hidden",
-    marginBottom: Spacing.md,
-  },
-  segmentedButton: {
-    flex: 1,
-    paddingVertical: Spacing.sm + 2,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  segmentedButtonText: {
-    fontSize: 14,
     fontWeight: "600",
   },
 });

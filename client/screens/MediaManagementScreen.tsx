@@ -2,7 +2,6 @@ import React, { useState, useCallback } from "react";
 import {
   View,
   StyleSheet,
-  Image,
   Pressable,
   Alert,
   Platform,
@@ -18,7 +17,8 @@ import { Feather } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import * as Haptics from "expo-haptics";
 import { v4 as uuidv4 } from "uuid";
-import { persistMediaFile } from "@/lib/mediaPersistence";
+import { saveEncryptedMedia, deleteEncryptedMedia } from "@/lib/mediaStorage";
+import { EncryptedImage } from "@/components/EncryptedImage";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { useTheme } from "@/hooks/useTheme";
@@ -79,17 +79,21 @@ export default function MediaManagementScreen() {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       const result = await ImagePicker.launchCameraAsync({
         mediaTypes: ["images"],
-        quality: 0.8,
+        quality: 0.7,
         allowsEditing: false,
+        base64: true,
       });
 
       if (!result.canceled && result.assets.length > 0) {
         const asset = result.assets[0];
-        const permanentUri = await persistMediaFile(asset.uri, asset.mimeType);
+        const mime = asset.mimeType || "image/jpeg";
+        const encryptedUri = asset.base64
+          ? await saveEncryptedMedia(asset.base64, mime)
+          : asset.uri;
         const newAttachment: MediaAttachment = {
           id: uuidv4(),
-          localUri: permanentUri,
-          mimeType: asset.mimeType || "image/jpeg",
+          localUri: encryptedUri,
+          mimeType: mime,
           createdAt: new Date().toISOString(),
         };
         setAttachments((prev) => [...prev, newAttachment]);
@@ -107,23 +111,29 @@ export default function MediaManagementScreen() {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ["images"],
-        quality: 0.8,
+        quality: 0.7,
         allowsMultipleSelection: true,
         selectionLimit: maxAttachments - attachments.length,
+        base64: true,
       });
 
       if (!result.canceled && result.assets.length > 0) {
-        const persistedAttachments = await Promise.all(
-          result.assets.map(async (asset) => ({
-            id: uuidv4(),
-            localUri: await persistMediaFile(asset.uri, asset.mimeType),
-            mimeType: asset.mimeType || "image/jpeg",
-            createdAt: new Date().toISOString(),
-          }))
+        const encryptedAttachments = await Promise.all(
+          result.assets.map(async (asset) => {
+            const mime = asset.mimeType || "image/jpeg";
+            return {
+              id: uuidv4(),
+              localUri: asset.base64
+                ? await saveEncryptedMedia(asset.base64, mime)
+                : asset.uri,
+              mimeType: mime,
+              createdAt: new Date().toISOString(),
+            };
+          })
         );
-        setAttachments((prev) => [...prev, ...persistedAttachments]);
-        if (persistedAttachments.length === 1) {
-          setSelectedId(persistedAttachments[0].id);
+        setAttachments((prev) => [...prev, ...encryptedAttachments]);
+        if (encryptedAttachments.length === 1) {
+          setSelectedId(encryptedAttachments[0].id);
         }
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
@@ -133,7 +143,11 @@ export default function MediaManagementScreen() {
     }
   };
 
-  const handleRemove = (id: string) => {
+  const handleRemove = async (id: string) => {
+    const item = attachments.find((a) => a.id === id);
+    if (item) {
+      await deleteEncryptedMedia(item.localUri);
+    }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setAttachments((prev) => prev.filter((a) => a.id !== id));
     if (selectedId === id) {
@@ -183,7 +197,7 @@ export default function MediaManagementScreen() {
         },
       ]}
     >
-      <Image source={{ uri: item.localUri }} style={styles.thumbnailImage} />
+      <EncryptedImage uri={item.localUri} style={styles.thumbnailImage} />
       {item.category ? (
         <View style={[styles.categoryBadge, { backgroundColor: theme.link }]}>
           <ThemedText style={styles.categoryBadgeText}>
@@ -246,8 +260,8 @@ export default function MediaManagementScreen() {
       {selectedAttachment ? (
         <ScrollView style={styles.detailSection} contentContainerStyle={styles.detailContent}>
           <View style={styles.previewContainer}>
-            <Image
-              source={{ uri: selectedAttachment.localUri }}
+            <EncryptedImage
+              uri={selectedAttachment.localUri}
               style={styles.previewImage}
               resizeMode="contain"
             />

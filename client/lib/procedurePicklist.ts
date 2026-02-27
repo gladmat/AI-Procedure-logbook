@@ -21,6 +21,8 @@ export interface ProcedurePicklistEntry {
   subcategory: string;
   tags: ProcedureTag[];
   hasFreeFlap?: boolean;
+  /** Triggers the SLNB basin detail form in ProcedureClinicalDetails */
+  hasSlnb?: boolean;
   sortOrder: number;
 }
 
@@ -1615,6 +1617,7 @@ const HEAD_NECK_SKIN_CANCER: ProcedurePicklistEntry[] = [
     specialties: ["head_neck", "general"],
     subcategory: "Skin Cancer Excision",
     tags: ["oncological"],
+    hasSlnb: true,
     sortOrder: 7,
   },
 ];
@@ -2486,6 +2489,7 @@ const GENERAL_MELANOMA: ProcedurePicklistEntry[] = [
     specialties: ["general", "head_neck"],
     subcategory: "Melanoma & Oncological",
     tags: ["oncological"],
+    hasSlnb: true,
     sortOrder: 3,
   },
   {

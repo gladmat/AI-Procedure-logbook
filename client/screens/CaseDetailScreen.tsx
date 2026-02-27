@@ -6,7 +6,6 @@ import {
   Pressable,
   Alert,
   TextInput,
-  Image,
 } from "react-native";
 import { v4 as uuidv4 } from "uuid";
 import { useNavigation, useRoute, RouteProp, useFocusEffect } from "@react-navigation/native";
@@ -19,6 +18,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { WoundDimensionChart } from "@/components/WoundDimensionChart";
 import { WoundAssessmentCard } from "@/components/WoundAssessmentCard";
+import { EncryptedImage } from "@/components/EncryptedImage";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, Shadows } from "@/constants/theme";
 import {
@@ -604,8 +604,8 @@ export default function CaseDetailScreen() {
                   key={media.id}
                   style={[styles.mediaItem, { backgroundColor: theme.backgroundDefault }]}
                 >
-                  <Image
-                    source={{ uri: media.localUri }}
+                  <EncryptedImage
+                    uri={media.localUri}
                     style={styles.mediaImage}
                     resizeMode="cover"
                     onError={() => console.warn("Media file missing:", media.localUri)}
@@ -1187,9 +1187,9 @@ export default function CaseDetailScreen() {
                       contentContainerStyle={styles.mediaThumbnailsContent}
                     >
                       {event.mediaAttachments?.map((media) => (
-                        <Image
+                        <EncryptedImage
                           key={media.id}
-                          source={{ uri: media.localUri }}
+                          uri={media.localUri}
                           style={styles.mediaThumbnail}
                           resizeMode="cover"
                           onError={() => console.warn("Media file missing:", media.localUri)}

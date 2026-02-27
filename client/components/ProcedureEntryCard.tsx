@@ -18,6 +18,7 @@ import {
   type Specialty,
   type ClinicalDetails,
   type FreeFlapDetails,
+  type SlnbDetails,
   type ProcedureTag,
   FLAP_SNOMED_MAP,
   ROLE_LABELS,
@@ -76,6 +77,12 @@ export function ProcedureEntryCard({
         flapSnomedCode: snomedEntry?.code,
         flapSnomedDisplay: snomedEntry?.display,
       } as FreeFlapDetails;
+    } else if (entry.hasSlnb) {
+      clinicalDetails = {
+        basins: [],
+        radioisotopeUsed: true, // default: most SLNBs use radioisotope
+        gammаProbeUsed: true,
+      } as SlnbDetails;
     }
 
     onUpdate({
