@@ -1191,6 +1191,15 @@ export default function CaseFormScreen() {
         />
       ) : null}
 
+      <SectionHeader title="Operative Media" subtitle="Photos, X-rays, and imaging" />
+      <OperativeMediaSection
+        media={operativeMedia}
+        onMediaChange={setOperativeMedia}
+        maxItems={20}
+      />
+
+      <ExtendedDetailsSection>
+
       <SectionHeader title="Co-morbidities" subtitle="Select all that apply" />
 
       <View style={styles.comorbidityGrid}>
@@ -1231,8 +1240,6 @@ export default function CaseFormScreen() {
           );
         })}
       </View>
-
-      <ExtendedDetailsSection>
 
       <SectionHeader title="Surgery Timing" subtitle="Optional but recommended" />
 
@@ -1319,13 +1326,6 @@ export default function CaseFormScreen() {
           </ThemedText>
         </Pressable>
       </View>
-
-      <SectionHeader title="Operative Media" subtitle="Photos, X-rays, and imaging" />
-      <OperativeMediaSection
-        media={operativeMedia}
-        onMediaChange={setOperativeMedia}
-        maxItems={20}
-      />
 
       <SectionHeader title="Risk Factors" subtitle="Optional patient details" />
 
