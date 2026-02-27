@@ -616,11 +616,11 @@ export default function CaseFormScreen() {
   };
 
   const handleDiagnosisGroupChange = useCallback((index: number, updated: DiagnosisGroup) => {
-    const savedPosition = scrollPositionRef.current;
+    const pos = scrollPositionRef.current;
     setDiagnosisGroups(prev => prev.map((g, i) => i === index ? updated : g));
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
-        scrollViewRef.current?.scrollTo({ y: savedPosition, animated: false });
+        scrollViewRef.current?.scrollTo({ y: pos, animated: false });
       });
     });
   }, []);
@@ -822,6 +822,18 @@ export default function CaseFormScreen() {
     scrollPositionRef.current = event.nativeEvent.contentOffset.y;
   }, []);
 
+  const withScrollRestore = useCallback(<T extends any[]>(fn: (...args: T) => void) => {
+    return (...args: T) => {
+      const pos = scrollPositionRef.current;
+      fn(...args);
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          scrollViewRef.current?.scrollTo({ y: pos, animated: false });
+        });
+      });
+    };
+  }, []);
+
   return (
     <KeyboardAwareScrollViewCompat
       ref={scrollViewRef}
@@ -850,7 +862,7 @@ export default function CaseFormScreen() {
       <DatePickerField
         label="Procedure Date"
         value={procedureDate}
-        onChange={setProcedureDate}
+        onChange={withScrollRestore(setProcedureDate)}
         placeholder="Select date..."
         required
       />
@@ -860,7 +872,7 @@ export default function CaseFormScreen() {
           label="Facility"
           value={facility}
           options={facilities.map(f => ({ value: f.facilityName, label: f.facilityName }))}
-          onSelect={setFacility}
+          onSelect={withScrollRestore(setFacility)}
           placeholder="Select facility..."
           required
         />
@@ -903,7 +915,7 @@ export default function CaseFormScreen() {
             label="Gender"
             value={gender}
             options={Object.entries(GENDER_LABELS).map(([value, label]) => ({ value, label }))}
-            onSelect={(v) => setGender(v as Gender)}
+            onSelect={withScrollRestore((v: string) => setGender(v as Gender))}
           />
         </View>
         <View style={styles.halfField}>
@@ -923,7 +935,7 @@ export default function CaseFormScreen() {
             label="Ethnicity"
             value={ethnicity}
             options={ETHNICITY_OPTIONS}
-            onSelect={setEthnicity}
+            onSelect={withScrollRestore(setEthnicity)}
           />
         </View>
       </View>
@@ -1000,7 +1012,7 @@ export default function CaseFormScreen() {
           <DatePickerField
             label="Admission Date"
             value={admissionDate}
-            onChange={setAdmissionDate}
+            onChange={withScrollRestore(setAdmissionDate)}
             disabled={stayType === "day_case"}
           />
         </View>
@@ -1008,7 +1020,7 @@ export default function CaseFormScreen() {
           <DatePickerField
             label="Discharge Date"
             value={dischargeDate}
-            onChange={setDischargeDate}
+            onChange={withScrollRestore(setDischargeDate)}
             disabled={stayType === "day_case"}
             clearable
           />
@@ -1021,7 +1033,7 @@ export default function CaseFormScreen() {
             <DatePickerField
               label="Day of Injury"
               value={injuryDate}
-              onChange={setInjuryDate}
+              onChange={withScrollRestore(setInjuryDate)}
               placeholder="Select date..."
             />
           </View>
@@ -1063,7 +1075,7 @@ export default function CaseFormScreen() {
           options={Object.entries(UNPLANNED_READMISSION_LABELS)
             .filter(([value]) => value !== "no")
             .map(([value, label]) => ({ value, label: label.replace("Yes - ", "") }))}
-          onSelect={(v) => setUnplannedReadmission(v as UnplannedReadmissionReason)}
+          onSelect={withScrollRestore((v: string) => setUnplannedReadmission(v as UnplannedReadmissionReason))}
         />
       ) : null}
 
@@ -1179,7 +1191,7 @@ export default function CaseFormScreen() {
               label="Role"
               value={newTeamMemberRole}
               options={TEAM_ROLES}
-              onSelect={(v) => setNewTeamMemberRole(v as OperatingTeamRole)}
+              onSelect={withScrollRestore((v: string) => setNewTeamMemberRole(v as OperatingTeamRole))}
             />
           </View>
         </View>
@@ -1207,7 +1219,7 @@ export default function CaseFormScreen() {
         label="ASA Score"
         value={asaScore}
         options={Object.entries(ASA_GRADE_LABELS).map(([value, label]) => ({ value, label }))}
-        onSelect={setAsaScore}
+        onSelect={withScrollRestore(setAsaScore)}
       />
 
       <View style={styles.row}>
@@ -1291,14 +1303,14 @@ export default function CaseFormScreen() {
         label="Wound Infection Risk"
         value={woundInfectionRisk}
         options={Object.entries(WOUND_INFECTION_RISK_LABELS).map(([value, label]) => ({ value, label }))}
-        onSelect={(v) => setWoundInfectionRisk(v as WoundInfectionRisk)}
+        onSelect={withScrollRestore((v: string) => setWoundInfectionRisk(v as WoundInfectionRisk))}
       />
 
       <PickerField
         label="Anaesthetic Type"
         value={anaestheticType}
         options={Object.entries(ANAESTHETIC_TYPE_LABELS).map(([value, label]) => ({ value, label }))}
-        onSelect={(v) => setAnaestheticType(v as AnaestheticType)}
+        onSelect={withScrollRestore((v: string) => setAnaestheticType(v as AnaestheticType))}
       />
 
       <View style={styles.checkboxRow}>
@@ -1346,7 +1358,7 @@ export default function CaseFormScreen() {
       <SectionHeader title="Infection Documentation" subtitle="Add if this case involves infection" />
       <InfectionOverlayForm
         value={infectionOverlay}
-        onChange={setInfectionOverlay}
+        onChange={withScrollRestore(setInfectionOverlay)}
         collapsed={infectionCollapsed}
         onToggleCollapse={() => setInfectionCollapsed(!infectionCollapsed)}
       />
@@ -1357,7 +1369,7 @@ export default function CaseFormScreen() {
         label="Unplanned ICU Admission"
         value={unplannedICU}
         options={Object.entries(UNPLANNED_ICU_LABELS).map(([value, label]) => ({ value, label }))}
-        onSelect={(v) => setUnplannedICU(v as UnplannedICUReason)}
+        onSelect={withScrollRestore((v: string) => setUnplannedICU(v as UnplannedICUReason))}
       />
 
       <View style={styles.checkboxRow}>
@@ -1394,7 +1406,7 @@ export default function CaseFormScreen() {
         label="Discharge Outcome"
         value={outcome}
         options={Object.entries(DISCHARGE_OUTCOME_LABELS).map(([value, label]) => ({ value, label }))}
-        onSelect={(v) => setOutcome(v as DischargeOutcome)}
+        onSelect={withScrollRestore((v: string) => setOutcome(v as DischargeOutcome))}
       />
 
       {outcome === "died" ? (
@@ -1402,7 +1414,7 @@ export default function CaseFormScreen() {
           label="Mortality Classification"
           value={mortalityClassification}
           options={Object.entries(MORTALITY_CLASSIFICATION_LABELS).map(([value, label]) => ({ value, label }))}
-          onSelect={(v) => setMortalityClassification(v as MortalityClassification)}
+          onSelect={withScrollRestore((v: string) => setMortalityClassification(v as MortalityClassification))}
         />
       ) : null}
 

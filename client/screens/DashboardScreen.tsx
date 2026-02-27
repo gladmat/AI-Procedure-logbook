@@ -974,7 +974,7 @@ export default function DashboardScreen() {
           style={styles.modalOverlay} 
           onPress={() => setShowFacilityPicker(false)}
         >
-          <View style={[styles.modalContent, { backgroundColor: theme.backgroundDefault }]}>
+          <Pressable style={[styles.modalContent, { backgroundColor: theme.backgroundDefault }]} onPress={(e) => e.stopPropagation()}>
             <ThemedText style={styles.modalTitle}>Select Facility</ThemedText>
             <ScrollView style={styles.modalScroll}>
               <Pressable
@@ -1015,7 +1015,7 @@ export default function DashboardScreen() {
                 </Pressable>
               ))}
             </ScrollView>
-          </View>
+          </Pressable>
         </Pressable>
       </Modal>
 
@@ -1029,7 +1029,7 @@ export default function DashboardScreen() {
           style={styles.modalOverlay} 
           onPress={() => setShowRolePicker(false)}
         >
-          <View style={[styles.modalContent, { backgroundColor: theme.backgroundDefault }]}>
+          <Pressable style={[styles.modalContent, { backgroundColor: theme.backgroundDefault }]} onPress={(e) => e.stopPropagation()}>
             <ThemedText style={styles.modalTitle}>Select Role</ThemedText>
             <ScrollView style={styles.modalScroll}>
               {(["all", "PS", "PP", "AS", "ONS", "SS", "SNS", "A"] as const).map((role) => (
@@ -1053,7 +1053,7 @@ export default function DashboardScreen() {
                 </Pressable>
               ))}
             </ScrollView>
-          </View>
+          </Pressable>
         </Pressable>
       </Modal>
 
