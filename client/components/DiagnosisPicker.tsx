@@ -19,23 +19,43 @@ interface DiagnosisPickerProps {
   specialty: Specialty;
   selectedDiagnosisId?: string;
   onSelect: (diagnosis: DiagnosisPicklistEntry) => void;
+  clinicalGroupFilter?: "trauma" | "non-trauma";
+}
+
+function matchesGroupFilter(
+  dx: DiagnosisPicklistEntry,
+  filter: "trauma" | "non-trauma" | undefined
+): boolean {
+  if (!filter) return true;
+  if (filter === "trauma") return dx.clinicalGroup === "trauma";
+  return dx.clinicalGroup !== "trauma";
 }
 
 export function DiagnosisPicker({
   specialty,
   selectedDiagnosisId,
   onSelect,
+  clinicalGroupFilter,
 }: DiagnosisPickerProps) {
   const { theme } = useTheme();
   const [searchQuery, setSearchQuery] = useState("");
 
-  const subcategories = getDiagnosisSubcategories(specialty);
+  const allSubcategories = getDiagnosisSubcategories(specialty);
+
+  // Filter tabs to only show those with at least one matching diagnosis
+  const subcategories = useMemo(() => {
+    if (!clinicalGroupFilter) return allSubcategories;
+    return allSubcategories.filter((subcat) => {
+      const dxInSubcat = getDiagnosesForSubcategory(specialty, subcat);
+      return dxInSubcat.some((dx) => matchesGroupFilter(dx, clinicalGroupFilter));
+    });
+  }, [allSubcategories, clinicalGroupFilter, specialty]);
 
   const initialSubcat = () => {
     if (selectedDiagnosisId) {
       const all = getDiagnosesForSpecialty(specialty);
       const entry = all.find((e) => e.id === selectedDiagnosisId);
-      if (entry) return entry.subcategory;
+      if (entry && subcategories.includes(entry.subcategory)) return entry.subcategory;
     }
     return subcategories[0] ?? "";
   };
@@ -43,14 +63,22 @@ export function DiagnosisPicker({
   const [activeSubcategory, setActiveSubcategory] = useState<string>(initialSubcat);
 
   const isSearching = searchQuery.length >= 2;
-  const searchResults = useMemo(
-    () => (isSearching ? searchDiagnoses(searchQuery, specialty) : []),
-    [searchQuery, specialty, isSearching]
-  );
 
-  const diagnosesInSubcat = isSearching
-    ? searchResults
-    : getDiagnosesForSubcategory(specialty, activeSubcategory);
+  const searchResults = useMemo(() => {
+    if (!isSearching) return [];
+    const results = searchDiagnoses(searchQuery, specialty);
+    return clinicalGroupFilter
+      ? results.filter((dx) => matchesGroupFilter(dx, clinicalGroupFilter))
+      : results;
+  }, [searchQuery, specialty, isSearching, clinicalGroupFilter]);
+
+  const diagnosesInSubcat = useMemo(() => {
+    if (isSearching) return searchResults;
+    const raw = getDiagnosesForSubcategory(specialty, activeSubcategory);
+    return clinicalGroupFilter
+      ? raw.filter((dx) => matchesGroupFilter(dx, clinicalGroupFilter))
+      : raw;
+  }, [isSearching, searchResults, specialty, activeSubcategory, clinicalGroupFilter]);
 
   if (!hasDiagnosisPicklist(specialty)) {
     return null;

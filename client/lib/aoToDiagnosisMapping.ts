@@ -82,7 +82,7 @@ export const AO_DIAGNOSIS_MAPPINGS: AODiagnosisMapping[] = [
   {
     aoFamilyCode: "72", // Scaphoid
     boneName: "Scaphoid",
-    diagnosisPicklistId: "hand_dx_scaphoid_fracture",
+    diagnosisPicklistId: "hand_dx_scaphoid_fx",
     // No refinements needed — scaphoid fracture is a specific diagnosis
   },
   {
@@ -110,18 +110,18 @@ export const AO_DIAGNOSIS_MAPPINGS: AODiagnosisMapping[] = [
   {
     aoFamilyCode: "77",
     boneName: "Metacarpal",
-    diagnosisPicklistId: "hand_dx_metacarpal_fracture",
+    diagnosisPicklistId: "hand_dx_metacarpal_fx",
     refinements: [
       {
         // Thumb metacarpal, base, partial articular → Bennett's
         condition: { finger: "1", segment: "1", type: "B" },
-        overrideDiagnosisId: "hand_dx_bennett_fracture",
+        overrideDiagnosisId: "hand_dx_bennett_fx",
         description: "Thumb MC base, partial articular → Bennett's fracture",
       },
       {
         // Thumb metacarpal, base, complete articular → Rolando's
         condition: { finger: "1", segment: "1", type: "C" },
-        overrideDiagnosisId: "hand_dx_rolando_fracture",
+        overrideDiagnosisId: "hand_dx_rolando_fx",
         description: "Thumb MC base, complete articular → Rolando's fracture",
       },
     ],
@@ -152,7 +152,7 @@ export const AO_DIAGNOSIS_MAPPINGS: AODiagnosisMapping[] = [
   {
     aoFamilyCode: "78",
     boneName: "Phalanx",
-    diagnosisPicklistId: "hand_dx_phalanx_fracture",
+    diagnosisPicklistId: "hand_dx_phalanx_fx",
     procedureHints: [
       {
         // Articular fractures → ORIF preferred

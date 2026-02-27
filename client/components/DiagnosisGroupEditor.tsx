@@ -39,6 +39,8 @@ import { DiagnosisSuggestions } from "@/components/DiagnosisSuggestions";
 import { HandTraumaStructurePicker } from "@/components/hand-trauma/HandTraumaStructurePicker";
 import { MultiLesionEditor } from "@/components/MultiLesionEditor";
 import type { LesionInstance, LesionPathologyType } from "@/types/case";
+import { SelectedDiagnosisCard } from "@/components/SelectedDiagnosisCard";
+import { resolveAOToDiagnosis, applyProcedureHints, type AOProcedureHint } from "@/lib/aoToDiagnosisMapping";
 
 interface DiagnosisGroupEditorProps {
   group: DiagnosisGroup;
@@ -70,6 +72,18 @@ export function DiagnosisGroupEditor({ group, index, isOnly, onChange, onDelete 
   const [lesionInstances, setLesionInstances] = useState<LesionInstance[]>(group.lesionInstances ?? []);
   const [isExpanded, setIsExpanded] = useState<boolean>(!group.diagnosis?.displayName);
 
+  // Feature 1: collapse diagnosis picklist after selection
+  const [isDiagnosisPickerCollapsed, setIsDiagnosisPickerCollapsed] = useState<boolean>(!!group.diagnosisPicklistId);
+
+  // Feature 2: procedure filtering
+  const [showAllProcedures, setShowAllProcedures] = useState<boolean>(false);
+
+  // Feature 3: hand surgery trauma/elective branching
+  const [handCaseType, setHandCaseType] = useState<"trauma" | "elective" | null>(null);
+  const [isDiagnosisFromAO, setIsDiagnosisFromAO] = useState<boolean>(false);
+  const [aoSourceLabel, setAoSourceLabel] = useState<string | undefined>(undefined);
+  const [aoHints, setAoHints] = useState<AOProcedureHint[]>([]);
+
   useEffect(() => {
     if (initializedRef.current) return;
     initializedRef.current = true;
@@ -88,6 +102,11 @@ export function DiagnosisGroupEditor({ group, index, isOnly, onChange, onDelete 
           .map(p => p.picklistEntryId)
           .filter(Boolean) as string[];
         setSelectedSuggestionIds(new Set(procIds));
+
+        // Infer hand case type from loaded diagnosis
+        if (group.specialty === "hand_surgery") {
+          setHandCaseType(dx.clinicalGroup === "trauma" ? "trauma" : "elective");
+        }
       }
     }
   }, [group]);
@@ -155,13 +174,22 @@ export function DiagnosisGroupEditor({ group, index, isOnly, onChange, onDelete 
     },
   ]), [groupSpecialty]);
 
-  const handleDiagnosisSelect = useCallback((dx: DiagnosisPicklistEntry) => {
+  const handleDiagnosisSelect = useCallback((dx: DiagnosisPicklistEntry, hints: AOProcedureHint[] = []) => {
     setSelectedDiagnosis(dx);
     setPrimaryDiagnosis({ conceptId: dx.snomedCtCode, term: dx.displayName });
     setDiagnosis(dx.displayName);
     setStagingValues({});
+    setIsDiagnosisPickerCollapsed(true);
+    setShowAllProcedures(false);
 
-    const activeIds = getActiveProcedureIds(dx, {});
+    // Apply AO procedure hints if provided (promote/demote defaults)
+    const effectiveSuggestions = hints.length > 0 && dx.suggestedProcedures
+      ? applyProcedureHints(dx.suggestedProcedures, hints)
+      : dx.suggestedProcedures;
+    const effectiveDx = hints.length > 0
+      ? { ...dx, suggestedProcedures: effectiveSuggestions }
+      : dx;
+    const activeIds = getActiveProcedureIds(effectiveDx, {});
     setSelectedSuggestionIds(new Set(activeIds));
 
     const newProcedures: CaseProcedure[] = activeIds.map((picklistId, idx) => {
@@ -304,6 +332,8 @@ export function DiagnosisGroupEditor({ group, index, isOnly, onChange, onDelete 
     setPrimaryDiagnosis({ conceptId: dx.snomedCtCode, term: dx.displayName });
     setDiagnosis(dx.displayName);
     setStagingValues({});
+    setIsDiagnosisPickerCollapsed(true);
+    setShowAllProcedures(false);
 
     const activeIds = getActiveProcedureIds(dx, {});
 
@@ -398,6 +428,30 @@ export function DiagnosisGroupEditor({ group, index, isOnly, onChange, onDelete 
 
     if (newFractures.length > 0) {
       const firstFracture = newFractures[0];
+
+      // Try new AO → diagnosis mapping first (hand surgery)
+      if (groupSpecialty === "hand_surgery" && firstFracture.aoCode) {
+        const familyCode = firstFracture.details?.familyCode ?? firstFracture.aoCode.slice(0, 2);
+        const resolution = resolveAOToDiagnosis({
+          familyCode,
+          finger: firstFracture.details?.finger,
+          segment: firstFracture.details?.segment,
+          type: firstFracture.details?.type,
+        });
+
+        if (resolution) {
+          const dx = findDiagnosisById(resolution.diagnosisPicklistId);
+          if (dx) {
+            setIsDiagnosisFromAO(true);
+            setAoSourceLabel(resolution.matchedRefinement ?? "AO classification");
+            setAoHints(resolution.procedureHints);
+            handleDiagnosisSelect(dx, resolution.procedureHints);
+            return;
+          }
+        }
+      }
+
+      // Fallback: old AO → SNOMED suggestion lookup
       const suggestion = getAoToSnomedSuggestion(firstFracture.aoCode);
       setSnomedSuggestion(suggestion);
 
@@ -424,6 +478,12 @@ export function DiagnosisGroupEditor({ group, index, isOnly, onChange, onDelete 
     setSelectedSuggestionIds(new Set());
     setFractures([]);
     setSnomedSuggestion(null);
+    setIsDiagnosisPickerCollapsed(false);
+    setShowAllProcedures(false);
+    setHandCaseType(null);
+    setIsDiagnosisFromAO(false);
+    setAoSourceLabel(undefined);
+    setAoHints([]);
     setProcedures([{
       id: uuidv4(),
       sequenceOrder: 1,
@@ -432,6 +492,19 @@ export function DiagnosisGroupEditor({ group, index, isOnly, onChange, onDelete 
       surgeonRole: "PS",
     }]);
   };
+
+  const clearDiagnosis = useCallback(() => {
+    setSelectedDiagnosis(null);
+    setPrimaryDiagnosis(null);
+    setDiagnosis("");
+    setStagingValues({});
+    setIsDiagnosisPickerCollapsed(false);
+    setShowAllProcedures(false);
+    setIsDiagnosisFromAO(false);
+    setAoSourceLabel(undefined);
+    setAoHints([]);
+    setSnomedSuggestion(null);
+  }, []);
 
   const specialtyOptions = Object.entries(SPECIALTY_LABELS).map(([value, label]) => ({
     value,
@@ -521,17 +594,154 @@ export function DiagnosisGroupEditor({ group, index, isOnly, onChange, onDelete 
         />
       ) : null}
 
+      {/* Feature 3: Hand surgery case type selector */}
+      {groupSpecialty === "hand_surgery" ? (
+        <View style={styles.caseTypeSelectorContainer}>
+          <ThemedText style={[styles.caseTypeLabel, { color: theme.textSecondary }]}>
+            Case Type
+          </ThemedText>
+          <View style={styles.caseTypeButtons}>
+            {(["trauma", "elective"] as const).map((type) => {
+              const isActive = handCaseType === type;
+              return (
+                <Pressable
+                  key={type}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    if (handCaseType !== type) {
+                      clearDiagnosis();
+                      setAoHints([]);
+                    }
+                    setHandCaseType(type);
+                  }}
+                  style={[
+                    styles.caseTypeButton,
+                    {
+                      backgroundColor: isActive ? theme.link : theme.backgroundDefault,
+                      borderColor: isActive ? theme.link : theme.border,
+                    },
+                  ]}
+                  testID={`button-case-type-${type}`}
+                >
+                  <ThemedText
+                    style={[
+                      styles.caseTypeButtonText,
+                      { color: isActive ? theme.buttonText : theme.textSecondary },
+                    ]}
+                  >
+                    {type === "trauma" ? "Trauma" : "Elective"}
+                  </ThemedText>
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
+      ) : null}
+
+      {/* Feature 3: AO Classification section (trauma pathway only) */}
+      {groupSpecialty === "hand_surgery" && handCaseType === "trauma" ? (
+        <View style={[styles.aoSection, { borderColor: theme.border }]}>
+          <ThemedText style={[styles.aoSectionLabel, { color: theme.textSecondary }]}>
+            AO Classification{" "}
+            <ThemedText style={{ color: theme.textTertiary, fontWeight: "400" }}>(optional)</ThemedText>
+          </ThemedText>
+          {fractures.length > 0 ? (
+            <View style={styles.aoSummaryRow}>
+              <Feather name="check-circle" size={14} color={theme.link} />
+              <ThemedText style={[styles.aoSummaryText, { color: theme.textSecondary }]}>
+                {fractures.length} fracture{fractures.length !== 1 ? "s" : ""} classified
+              </ThemedText>
+              <Pressable
+                onPress={() => {
+                  setFractures([]);
+                  if (isDiagnosisFromAO) {
+                    clearDiagnosis();
+                  }
+                }}
+                hitSlop={8}
+              >
+                <Feather name="x" size={16} color={theme.textTertiary} />
+              </Pressable>
+            </View>
+          ) : (
+            <Pressable
+              style={[styles.aoOpenButton, { borderColor: theme.link + "60" }]}
+              onPress={() => setShowFractureWizard(true)}
+              testID="button-open-ao-classifier"
+            >
+              <Feather name="layers" size={16} color={theme.link} />
+              <ThemedText style={[styles.aoOpenButtonText, { color: theme.link }]}>
+                Open AO Classifier
+              </ThemedText>
+            </Pressable>
+          )}
+        </View>
+      ) : null}
+
       <SectionHeader title="Primary Diagnosis" subtitle={hasDiagnosisPicklist(groupSpecialty) ? "Select from structured list or search SNOMED CT" : "SNOMED CT coded diagnosis"} />
 
+      {/* Feature 1: collapsed card OR full picker */}
       {hasDiagnosisPicklist(groupSpecialty) ? (
-        <DiagnosisPicker
+        isDiagnosisPickerCollapsed && selectedDiagnosis ? (
+          <SelectedDiagnosisCard
+            diagnosis={selectedDiagnosis}
+            onClear={clearDiagnosis}
+            sourceLabel={isDiagnosisFromAO ? aoSourceLabel : undefined}
+          />
+        ) : (
+          <DiagnosisPicker
+            specialty={groupSpecialty}
+            selectedDiagnosisId={selectedDiagnosis?.id}
+            onSelect={handleDiagnosisSelect}
+            clinicalGroupFilter={
+              groupSpecialty === "hand_surgery" && handCaseType === "trauma"
+                ? "trauma"
+                : groupSpecialty === "hand_surgery" && handCaseType === "elective"
+                ? "non-trauma"
+                : undefined
+            }
+          />
+        )
+      ) : null}
+
+      {/* SNOMED-only specialties: collapse when selected */}
+      {!hasDiagnosisPicklist(groupSpecialty) ? (
+        isDiagnosisPickerCollapsed && primaryDiagnosis ? (
+          <SelectedDiagnosisCard
+            diagnosis={{ displayName: primaryDiagnosis.term, snomedCtCode: primaryDiagnosis.conceptId }}
+            onClear={clearDiagnosis}
+          />
+        ) : (
+          <SnomedSearchPicker
+            label="Search Diagnosis"
+            value={primaryDiagnosis || undefined}
+            onSelect={(val) => {
+              setPrimaryDiagnosis(val);
+              if (val) setIsDiagnosisPickerCollapsed(true);
+            }}
+            searchType="diagnosis"
+            specialty={groupSpecialty}
+            placeholder="Search for diagnosis (e.g., fracture, Dupuytren)..."
+          />
+        )
+      ) : null}
+
+      {/* For specialties with picklist: still show SNOMED search below picker (unless collapsed) */}
+      {hasDiagnosisPicklist(groupSpecialty) && !isDiagnosisPickerCollapsed ? (
+        <SnomedSearchPicker
+          label="Search Diagnosis"
+          value={primaryDiagnosis || undefined}
+          onSelect={(val) => {
+            setPrimaryDiagnosis(val);
+            if (val) setIsDiagnosisPickerCollapsed(true);
+          }}
+          searchType="diagnosis"
           specialty={groupSpecialty}
-          selectedDiagnosisId={selectedDiagnosis?.id}
-          onSelect={handleDiagnosisSelect}
+          placeholder="Search for diagnosis (e.g., fracture, Dupuytren)..."
         />
       ) : null}
 
-      {hasFractureSubcategory && snomedSuggestion && primaryDiagnosis ? (
+      {hasFractureSubcategory && snomedSuggestion && primaryDiagnosis && !isDiagnosisFromAO ? (
         <View style={[styles.suggestionBanner, { backgroundColor: theme.backgroundSecondary }]}>
           <Feather name="zap" size={16} color={theme.link} />
           <ThemedText style={[styles.suggestionText, { color: theme.textSecondary }]}>
@@ -539,15 +749,6 @@ export function DiagnosisGroupEditor({ group, index, isOnly, onChange, onDelete 
           </ThemedText>
         </View>
       ) : null}
-
-      <SnomedSearchPicker
-        label="Search Diagnosis"
-        value={primaryDiagnosis || undefined}
-        onSelect={setPrimaryDiagnosis}
-        searchType="diagnosis"
-        specialty={groupSpecialty}
-        placeholder="Search for diagnosis (e.g., fracture, Dupuytren)..."
-      />
 
       {showDiagnosisSuggestions ? (
         <DiagnosisSuggestions
@@ -584,22 +785,14 @@ export function DiagnosisGroupEditor({ group, index, isOnly, onChange, onDelete 
         </View>
       ) : null}
 
-      {selectedDiagnosis ? (
-        <ProcedureSuggestions
-          diagnosis={selectedDiagnosis}
-          stagingSelections={stagingValues}
-          selectedProcedureIds={selectedSuggestionIds}
-          onToggle={handleToggleProcedureSuggestion}
-        />
-      ) : null}
-
-      {groupSpecialty === "hand_surgery" && selectedDiagnosis?.clinicalGroup === "trauma" ? (
+      {/* Feature 3: HandTraumaStructurePicker — trauma pathway */}
+      {groupSpecialty === "hand_surgery" && handCaseType === "trauma" ? (
         <HandTraumaStructurePicker
           value={diagnosisClinicalDetails.handTrauma || {}}
           onChange={(handTrauma) =>
             setDiagnosisClinicalDetails((prev) => ({ ...prev, handTrauma }))
           }
-          selectedDiagnosis={selectedDiagnosis}
+          selectedDiagnosis={selectedDiagnosis ?? undefined}
           procedures={procedures}
           onProceduresChange={setProcedures}
         />
@@ -689,34 +882,77 @@ export function DiagnosisGroupEditor({ group, index, isOnly, onChange, onDelete 
           onChange={setLesionInstances}
           defaultPathologyType={deriveDefaultPathologyType(selectedDiagnosis)}
         />
-      ) : (
-        <>
-          {procedures.map((proc, idx) => (
-            <ProcedureEntryCard
-              key={proc.id}
-              procedure={proc}
-              index={idx}
-              isOnlyProcedure={procedures.length === 1}
-              onUpdate={updateProcedure}
-              onDelete={() => removeProcedure(proc.id)}
-              onMoveUp={() => moveProcedureUp(proc.id)}
-              onMoveDown={() => moveProcedureDown(proc.id)}
-              canMoveUp={idx > 0}
-              canMoveDown={idx < procedures.length - 1}
-            />
-          ))}
+      ) : (() => {
+        // Feature 2: procedure filtering
+        const hasSuggestedProcedures = (selectedDiagnosis?.suggestedProcedures?.length ?? 0) > 0;
+        const showFiltered = hasSuggestedProcedures && !showAllProcedures;
 
-          <Pressable
-            style={[styles.addButton, { borderColor: theme.link }]}
-            onPress={addProcedure}
-          >
-            <Feather name="plus" size={18} color={theme.link} />
-            <ThemedText style={[styles.addButtonText, { color: theme.link }]}>
-              Add Another Procedure
-            </ThemedText>
-          </Pressable>
-        </>
-      )}
+        return (
+          <>
+            {selectedDiagnosis ? (
+              <ProcedureSuggestions
+                diagnosis={selectedDiagnosis}
+                stagingSelections={stagingValues}
+                selectedProcedureIds={selectedSuggestionIds}
+                onToggle={handleToggleProcedureSuggestion}
+              />
+            ) : null}
+
+            {showFiltered ? (
+              <Pressable
+                style={styles.showAllProceduresLink}
+                onPress={() => setShowAllProcedures(true)}
+                testID="button-show-all-procedures"
+              >
+                <Feather name="chevron-down" size={16} color={theme.link} />
+                <ThemedText style={[styles.showAllProceduresText, { color: theme.link }]}>
+                  Show all procedures
+                </ThemedText>
+              </Pressable>
+            ) : (
+              <>
+                {showAllProcedures ? (
+                  <Pressable
+                    style={styles.showAllProceduresLink}
+                    onPress={() => setShowAllProcedures(false)}
+                    testID="button-show-fewer-procedures"
+                  >
+                    <Feather name="chevron-up" size={16} color={theme.textSecondary} />
+                    <ThemedText style={[styles.showAllProceduresText, { color: theme.textSecondary }]}>
+                      Show fewer procedures
+                    </ThemedText>
+                  </Pressable>
+                ) : null}
+
+                {procedures.map((proc, idx) => (
+                  <ProcedureEntryCard
+                    key={proc.id}
+                    procedure={proc}
+                    index={idx}
+                    isOnlyProcedure={procedures.length === 1}
+                    onUpdate={updateProcedure}
+                    onDelete={() => removeProcedure(proc.id)}
+                    onMoveUp={() => moveProcedureUp(proc.id)}
+                    onMoveDown={() => moveProcedureDown(proc.id)}
+                    canMoveUp={idx > 0}
+                    canMoveDown={idx < procedures.length - 1}
+                  />
+                ))}
+
+                <Pressable
+                  style={[styles.addButton, { borderColor: theme.link }]}
+                  onPress={addProcedure}
+                >
+                  <Feather name="plus" size={18} color={theme.link} />
+                  <ThemedText style={[styles.addButtonText, { color: theme.link }]}>
+                    Add Another Procedure
+                  </ThemedText>
+                </Pressable>
+              </>
+            )}
+          </>
+        );
+      })()}
 
       <FractureClassificationWizard
         visible={showFractureWizard}
@@ -786,6 +1022,77 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.lg,
   },
   addButtonText: {
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  showAllProceduresLink: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.xs,
+    paddingVertical: Spacing.sm,
+    marginBottom: Spacing.sm,
+  },
+  showAllProceduresText: {
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  caseTypeSelectorContainer: {
+    marginBottom: Spacing.md,
+  },
+  caseTypeLabel: {
+    fontSize: 12,
+    fontWeight: "600",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginBottom: Spacing.sm,
+  },
+  caseTypeButtons: {
+    flexDirection: "row",
+    gap: Spacing.sm,
+  },
+  caseTypeButton: {
+    flex: 1,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+    alignItems: "center",
+  },
+  caseTypeButtonText: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  aoSection: {
+    borderWidth: 1,
+    borderRadius: BorderRadius.sm,
+    padding: Spacing.md,
+    marginBottom: Spacing.md,
+    gap: Spacing.sm,
+  },
+  aoSectionLabel: {
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  aoSummaryRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+  },
+  aoSummaryText: {
+    flex: 1,
+    fontSize: 13,
+  },
+  aoOpenButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Spacing.sm,
+    padding: Spacing.sm,
+    borderRadius: BorderRadius.sm,
+    borderWidth: 1,
+    borderStyle: "dashed",
+  },
+  aoOpenButtonText: {
     fontSize: 14,
     fontWeight: "500",
   },
