@@ -1,0 +1,166 @@
+# SLNB Basin Detail — Integration Test Prompt
+
+## Context
+
+Four files were recently updated to add sentinel lymph node biopsy (SLNB) basin detail
+documentation to the surgical logbook. The changes introduce a new `SlnbClinicalFields`
+component that appears automatically when an SLNB procedure is selected from the picklist.
+
+**Files changed:**
+
+- `client/types/case.ts` — new `SlnbBasin`, `SlnbBasinResult`, `SlnbDetails` types; `SlnbDetails` added to `ClinicalDetails` union
+- `client/lib/procedurePicklist.ts` — `hasSlnb?: boolean` added to `ProcedurePicklistEntry`; `hasSlnb: true` set on `gen_mel_slnb_body` and `hn_skin_slnb`
+- `client/components/ProcedureClinicalDetails.tsx` — new `SlnbClinicalFields` component + routing logic
+- `client/components/ProcedureEntryCard.tsx` — `SlnbDetails` import + default initialisation on picklist selection
+
+## Tasks
+
+### 1. TypeScript Compilation Check
+
+Run a TypeScript type-check across the project. There should be zero errors related to
+the new SLNB types:
+
+```bash
+npx tsc --noEmit
+```
+
+If errors appear in the four changed files, fix them before proceeding. Common issues to
+watch for:
+
+- The field names `extranodалExtension` and `gammаProbeUsed` in `case.ts` may contain
+  Cyrillic characters (а instead of a) introduced as a copy-paste artefact. If TypeScript
+  reports mismatched property names between the type definition and component usage, do a
+  find-and-replace across all four files:
+  - Replace Cyrillic `а` (U+0430) with Latin `a` (U+0061) in both field names
+  - Affected fields: `extranodалExtension` → `extranodal​Extension`, `gammаProbeUsed` → `gammaProbeUsed`
+  - Update every occurrence in `case.ts`, `ProcedureClinicalDetails.tsx`, and `ProcedureEntryCard.tsx`
+
+### 2. Runtime Smoke Test — Happy Path
+
+Start the app and perform the following manual test flow to verify the feature renders
+and saves correctly end-to-end.
+
+**Test A — Trunk/limbs melanoma SLNB**
+
+1. Navigate to **Add Case**
+1. Set specialty to **General**
+1. In the Diagnosis section, select **Melanoma** from the diagnosis picker
+1. Set Breslow thickness to **1.01–2.0 mm** (T2 range — SLNB conditional suggestion should fire)
+1. In the Procedures section, confirm that **“Sentinel lymph node biopsy — trunk / limbs”**
+   appears as a suggested procedure
+1. Add the procedure to the case
+1. Confirm that below the procedure notes field, the **SLNB clinical details form**
+   appears, containing:
+- A “Mapping technique” row with four toggle chips:
+  **Radioisotope (Tc-99m)**, **Blue dye**, **Gamma probe**, **SPECT/CT pre-op**
+- Radioisotope and Gamma probe should be pre-selected (default true)
+- A “Basins sampled” section with an **“Add basin”** button
+- An empty state message (“No basins added yet”) if no basins are present
+1. Tap **“Add basin”** → confirm the basin picker panel appears with all 9 options:
+   Right axilla, Left axilla, Right groin (inguinal), Left groin (inguinal),
+   Right popliteal, Left popliteal, Right cervical / parotid, Left cervical / parotid, Other
+1. Select **Right axilla** → confirm a basin card appears with:
+- A blue badge showing “Right axilla”
+- Fields for **Nodes removed**, **Nodes positive**, **Largest deposit (mm)**
+- An **Extranodal extension** toggle (Yes / No / Unknown)
+- No “Basin note” field (that only appears for “Other”)
+1. Enter: Nodes removed = **3**, Nodes positive = **1**, Largest deposit = **2.5**,
+   Extranodal extension = **No**
+1. Tap **“Add basin”** again → select **Left axilla**
+1. Confirm the first basin (Right axilla) still shows the values entered in step 10
+1. Leave Left axilla fields blank
+1. Confirm “Right axilla” no longer appears in the basin picker (already used — deduplication)
+1. Tap **“Add basin”** → select **Other** → confirm a **“Basin note”** free-text field
+   appears below the extranodal toggle
+1. Enter basin note: “Left epitrochlear”
+1. Remove the “Other” basin by tapping the ✕ button → confirm it disappears
+1. Save the case
+1. Open the saved case → navigate to the procedure detail
+1. Confirm the SLNB clinical details are persisted and display correctly
+
+**Test B — Head/neck SLNB**
+
+1. Add a new case, specialty **Head & Neck**
+1. Select diagnosis **Melanoma of head / neck**
+1. Add procedure **“Sentinel lymph node biopsy — head / neck”** (id: `hn_skin_slnb`)
+1. Confirm the same SLNB clinical details form appears (identical to Test A)
+1. Add **Right cervical / parotid** and **Left cervical / parotid** basins
+1. Enter node counts for each basin
+1. Save and verify persistence
+
+**Test C — Toggle behaviour**
+
+1. In an active SLNB procedure card, tap **Blue dye** chip → confirm it activates
+1. Tap it again → confirm it deactivates (toggle behaviour)
+1. Tap **Radioisotope** to deactivate it → confirm it deactivates
+1. Confirm state updates without page reload
+
+### 3. Regression Test — Existing Procedure Types Not Affected
+
+Verify that the SLNB changes have not broken existing clinical detail forms:
+
+**Free flap regression:**
+
+1. Add a case with a **DIEP flap** procedure (Breast specialty)
+1. Confirm the free flap clinical details form still renders:
+   flap type (locked to DIEP), elevation plane, recipient site, anastomoses, harvest side,
+   indication, ischemia time, flap dimensions, DIEP-specific fields
+1. Save and verify persistence
+
+**Hand surgery regression:**
+
+1. Add a case with a hand surgery procedure
+1. Confirm no unexpected clinical detail form appears (HandSurgeryClinicalFields currently
+   returns null — expected behaviour, not a bug)
+
+**Body contouring regression:**
+
+1. Add a case with an abdominoplasty or liposuction procedure (Body Contouring specialty)
+1. Confirm the body contouring fields render: Resection Weight (g), Drain Output (mL)
+1. Save and verify persistence
+
+**Non-SLNB oncological procedures — confirm NO SLNB form appears:**
+
+1. Add a **Melanoma wide local excision — trunk / limbs** procedure
+1. Confirm the SLNB clinical details form does NOT appear
+1. Add a **Completion lymph node dissection** procedure
+1. Confirm the SLNB clinical details form does NOT appear
+
+### 4. Data Persistence Check
+
+1. Create a case with a fully filled SLNB procedure (2 basins, all fields populated,
+   technique chips partially toggled)
+1. Save the case
+1. Close the app completely (background kill in iOS Simulator)
+1. Reopen → navigate to the case
+1. Confirm all SLNB fields are restored exactly as entered
+1. Edit the case → change a node count → save again
+1. Reopen and confirm the edit persisted
+
+### 5. Edge Cases
+
+- **Add then remove all basins**: Add 3 basins, remove all, confirm the empty state
+  (“No basins added yet”) reappears and “Add basin” button is still available
+- **All 8 named basins added**: Add all 8 non-“Other” basins → confirm “Other” is still
+  available in the picker but all named basins are hidden
+- **Add all 9 basins**: Confirm the “Add basin” button disappears entirely once all
+  basins are used
+- **Switching procedures**: On a procedure card that has SLNB form data, change the
+  procedure to a non-SLNB procedure → confirm the SLNB form disappears and clinicalDetails
+  is reset appropriately (no stale basin data bleeding through to unrelated procedures)
+
+### 6. Fix Any Issues Found
+
+If any of the above tests fail, fix the issue before marking the task complete.
+Document what was fixed with a brief comment in the code.
+
+## Definition of Done
+
+- [ ] `tsc --noEmit` passes with zero errors
+- [ ] Test A (trunk/limbs SLNB) passes end-to-end
+- [ ] Test B (head/neck SLNB) passes end-to-end
+- [ ] Test C (toggle behaviour) passes
+- [ ] All three regression tests pass (free flap, hand, body contouring)
+- [ ] Non-SLNB oncological procedures show no SLNB form
+- [ ] Data persistence confirmed across app restart
+- [ ] All edge cases pass

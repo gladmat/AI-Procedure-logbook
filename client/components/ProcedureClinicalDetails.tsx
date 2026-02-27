@@ -599,9 +599,9 @@ function SlnbBasinCard({ result, onUpdate, onRemove }: SlnbBasinCardProps) {
         <View style={slnbStyles.toggleOptions}>
           {(["yes", "no", "unknown"] as const).map((opt) => {
             const current =
-              result.extranodалExtension === true
+              result.extranodalExtension === true
                 ? "yes"
-                : result.extranodалExtension === false
+                : result.extranodalExtension === false
                 ? "no"
                 : "unknown";
             const isActive = current === opt;
@@ -619,7 +619,7 @@ function SlnbBasinCard({ result, onUpdate, onRemove }: SlnbBasinCardProps) {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   onUpdate({
                     ...result,
-                    extranodалExtension:
+                    extranodalExtension:
                       opt === "yes" ? true : opt === "no" ? false : undefined,
                   });
                 }}
@@ -681,7 +681,7 @@ export function SlnbClinicalFields({ clinicalDetails, onUpdate }: SlnbClinicalFi
   const usedBasins = new Set(basins.map((b) => b.basin));
   const availableBasins = ALL_BASINS.filter((b) => !usedBasins.has(b));
 
-  const toggleTechnique = (field: keyof Pick<SlnbDetails, "radioisotopeUsed" | "blueDyeUsed" | "gammаProbeUsed" | "spectCtPerformed">) => {
+  const toggleTechnique = (field: keyof Pick<SlnbDetails, "radioisotopeUsed" | "blueDyeUsed" | "gammaProbeUsed" | "spectCtPerformed">) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onUpdate({ ...clinicalDetails, [field]: !clinicalDetails[field] });
   };
@@ -689,7 +689,7 @@ export function SlnbClinicalFields({ clinicalDetails, onUpdate }: SlnbClinicalFi
   const techniqueItems: { key: keyof SlnbDetails; label: string }[] = [
     { key: "radioisotopeUsed", label: "Radioisotope (Tc-99m)" },
     { key: "blueDyeUsed", label: "Blue dye" },
-    { key: "gammаProbeUsed", label: "Gamma probe" },
+    { key: "gammaProbeUsed", label: "Gamma probe" },
     { key: "spectCtPerformed", label: "SPECT/CT pre-op" },
   ];
 
@@ -1023,7 +1023,7 @@ export function ProcedureClinicalDetails({
       basins: existing.basins || [],
       radioisotopeUsed: existing.radioisotopeUsed,
       blueDyeUsed: existing.blueDyeUsed,
-      gammаProbeUsed: existing.gammаProbeUsed,
+      gammaProbeUsed: existing.gammaProbeUsed,
       spectCtPerformed: existing.spectCtPerformed,
     };
     return (

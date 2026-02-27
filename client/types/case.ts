@@ -729,7 +729,7 @@ export interface SlnbBasinResult {
   /** Size of largest metastatic deposit in mm */
   largestDepositMm?: number;
   /** Extranodal extension (capsular breach) */
-  extranodалExtension?: boolean;
+  extranodalExtension?: boolean;
   /** Free text for 'other' basin or extra detail */
   basinNote?: string;
 }
@@ -752,7 +752,7 @@ export interface SlnbDetails {
   /** Whether blue dye was used (isosulfan blue, patent blue V, methylene blue) */
   blueDyeUsed?: boolean;
   /** Whether intraoperative gamma probe was used */
-  gammаProbeUsed?: boolean;
+  gammaProbeUsed?: boolean;
   /** Whether SPECT/CT lymphoscintigraphy performed pre-op */
   spectCtPerformed?: boolean;
 }

@@ -81,7 +81,7 @@ export function ProcedureEntryCard({
       clinicalDetails = {
         basins: [],
         radioisotopeUsed: true, // default: most SLNBs use radioisotope
-        gammаProbeUsed: true,
+        gammaProbeUsed: true,
       } as SlnbDetails;
     }
 
