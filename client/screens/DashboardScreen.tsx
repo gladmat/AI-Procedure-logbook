@@ -475,7 +475,7 @@ export default function DashboardScreen() {
                       onPress={() => handleCasePress(caseItem)}
                     >
                       <View style={styles.followUpCaseInfo}>
-                        <View style={{ flexDirection: "row", alignItems: "center", gap: Spacing.xs }}>
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: Spacing.xs, flex: 1 }}>
                           <View style={[styles.activeBadge, { backgroundColor: theme.error }]}>
                             <ThemedText style={[styles.activeBadgeText, { color: "#fff" }]}>
                               {caseItem.infectionOverlay?.episodes?.length || 1} ep
@@ -545,7 +545,7 @@ export default function DashboardScreen() {
                     >
                       <View style={styles.activeCaseContent}>
                         <View style={styles.followUpCaseInfo}>
-                          <View style={{ flexDirection: "row", alignItems: "center", gap: Spacing.xs }}>
+                          <View style={{ flexDirection: "row", alignItems: "center", gap: Spacing.xs, flex: 1 }}>
                             <View style={[styles.activeBadge, { backgroundColor: dayBg }]}>
                               <ThemedText style={[styles.activeBadgeText, { color: dayColor }]}>
                                 Day {postOpDays}
@@ -1433,9 +1433,12 @@ const styles = StyleSheet.create({
     marginRight: Spacing.md,
   },
   followUpCaseInfo: {
+    flex: 1,
     gap: 2,
+    marginRight: Spacing.sm,
   },
   followUpCaseType: {
+    flex: 1,
     fontSize: 15,
     fontWeight: "500",
   },
@@ -1474,6 +1477,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: BorderRadius.sm,
+    minWidth: 52,
+    alignItems: "center",
   },
   activeBadgeText: {
     fontSize: 10,

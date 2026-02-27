@@ -1,0 +1,109 @@
+# Inpatient Card Layout Fix — Replit Agent Prompt
+
+## Problem
+
+The inpatient card row overflows horizontally when the Day badge contains a two-digit number (e.g. “Day 3”, “Day 10”). The diagnosis text is not constrained, so long diagnoses combined with variable-width badges push the chevron `›` off-screen and misalign the card.
+
+## Root Cause
+
+The inner row containing the Day badge + diagnosis text lacks proper flex constraints. The badge width varies with content, and the text has no `flex: 1` to absorb remaining space.
+
+## Fix
+
+Find the inpatient card row component — look for the JSX that renders the Day badge and diagnosis text side by side. It will look approximately like:
+
+```tsx
+// CURRENT (broken):
+<View style={{ flexDirection: 'row', alignItems: 'center' }}>
+  <PostOpBadge ... />
+  <Text>{diagnosis}</Text>
+</View>
+```
+
+Apply these two changes:
+
+### 1. Give diagnosis text `flex: 1` and `numberOfLines={1}`
+
+```tsx
+// FIXED:
+<View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+  <PostOpBadge ... />
+  <Text 
+    numberOfLines={1} 
+    ellipsizeMode="tail"
+    style={{ flex: 1, marginLeft: 8, fontSize: 15, fontWeight: '600', color: '#111827' }}
+  >
+    {diagnosis}
+  </Text>
+</View>
+```
+
+### 2. Give the PostOpBadge a fixed `minWidth` so all badges align
+
+In the `PostOpBadge` component (or wherever the Day badge View is styled), add `minWidth: 52` so “Day 1” and “Day 10” render at the same width:
+
+```tsx
+// Inside PostOpBadge styles:
+<View style={{
+  backgroundColor: bgColor,
+  borderRadius: 6,
+  paddingHorizontal: 8,
+  paddingVertical: 2,
+  marginRight: 6,       // add right margin so text doesn't butt up against badge
+  minWidth: 52,         // ADD THIS — ensures consistent badge width for Day 1–Day 99
+  alignItems: 'center', // centre the text within the fixed width
+}}>
+  <Text style={{ fontSize: 11, fontWeight: '700', color: textColor }}>
+    {label}
+  </Text>
+</View>
+```
+
+### 3. Ensure the outer card row also has `flex: 1` on the centre content column
+
+The full inpatient card row structure should be:
+
+```tsx
+<TouchableOpacity style={cardStyle} onPress={...}>
+  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+
+    {/* Centre content — must have flex: 1 */}
+    <View style={{ flex: 1, marginRight: 8 }}>
+      
+      {/* Day badge + diagnosis on same line */}
+      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <PostOpBadge operationDate={...} />
+        <Text 
+          numberOfLines={1} 
+          ellipsizeMode="tail"
+          style={{ flex: 1, fontSize: 15, fontWeight: '600', color: '#111827' }}
+        >
+          {diagnosis}
+        </Text>
+      </View>
+
+      {/* Patient ID + facility on second line */}
+      <Text style={{ fontSize: 12, color: '#6B7280', marginTop: 2 }}>
+        {patientId} · {facility}
+      </Text>
+    </View>
+
+    {/* Right side: Discharge button + chevron — must NOT have flex */}
+    <TouchableOpacity style={dischargeButtonStyle} onPress={...}>
+      <Text>Discharge</Text>
+    </TouchableOpacity>
+    <Text style={{ color: '#9CA3AF', marginLeft: 6 }}>›</Text>
+
+  </View>
+</TouchableOpacity>
+```
+
+The key constraint chain is: outer row → centre column has `flex: 1` → inner badge+text row → text has `flex: 1`. This ensures the text absorbs all remaining space and never pushes the discharge button or chevron off-screen.
+
+## Testing
+
+- [ ] “Day 1”, “Day 2”, “Day 3” badges all render at identical widths
+- [ ] Long diagnosis text (“Open fracture — lower leg (tibia / fibula)”) truncates with `…` rather than overflowing
+- [ ] Discharge button and `›` chevron are always fully visible on the right edge
+- [ ] Cards with short diagnoses (e.g. “Melanoma”) still look correct — no excess gap
+- [ ] Visually all three inpatient cards are horizontally aligned/consistent
