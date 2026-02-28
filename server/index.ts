@@ -251,6 +251,16 @@ function configureExpoAndLanding(app: express.Application) {
   log("Expo routing: Checking expo-platform header on / and /manifest");
 }
 
+function setupSecurityHeaders(app: express.Application) {
+  app.use((_req: Request, res: Response, next: NextFunction) => {
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("X-Frame-Options", "DENY");
+    res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+    res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+    next();
+  });
+}
+
 function setupErrorHandler(app: express.Application) {
   app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
     const error = err as {
@@ -260,13 +270,22 @@ function setupErrorHandler(app: express.Application) {
     };
 
     const status = error.status || error.statusCode || 500;
-    const message = error.message || "Internal Server Error";
+
+    // Only expose error messages for client errors (4xx), never for server errors (5xx)
+    const message = status < 500
+      ? (error.message || "Request error")
+      : "Internal Server Error";
+
+    if (status >= 500) {
+      console.error("Server error:", err);
+    }
 
     res.status(status).json({ message });
   });
 }
 
 (async () => {
+  setupSecurityHeaders(app);
   setupCors(app);
   setupBodyParsing(app);
   setupRequestLogging(app);

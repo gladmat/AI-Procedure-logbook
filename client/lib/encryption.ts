@@ -114,8 +114,7 @@ export async function encryptData(data: string): Promise<string> {
 
     return `${ENVELOPE_PREFIX}:${bytesToHex(nonce)}:${bytesToHex(ciphertext)}`;
   } catch (error) {
-    console.error("Encryption failed, storing unencrypted:", error);
-    return data;
+    throw new Error("Encryption failed. Data was not saved to protect your privacy.");
   }
 }
 

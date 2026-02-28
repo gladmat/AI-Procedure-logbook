@@ -42,7 +42,7 @@ async function getUncachableResendClient() {
 }
 
 const FROM_EMAIL = 'noreply@drgladysz.com';
-const APP_NAME = 'ReconLog';
+const APP_NAME = 'Surgical Logbook';
 
 function getAppDomain(): string {
   if (process.env.REPLIT_DOMAINS) {
@@ -52,7 +52,10 @@ function getAppDomain(): string {
   if (process.env.REPLIT_DEV_DOMAIN) {
     return `https://${process.env.REPLIT_DEV_DOMAIN}`;
   }
-  return 'https://drgladysz.com';
+  if (process.env.APP_DOMAIN) {
+    return process.env.APP_DOMAIN;
+  }
+  throw new Error("No app domain configured. Set REPLIT_DOMAINS, REPLIT_DEV_DOMAIN, or APP_DOMAIN.");
 }
 
 export async function sendPasswordResetEmail(
