@@ -1,50 +1,26 @@
 import { Resend } from 'resend';
 
-let connectionSettings: any;
-
-async function getCredentials() {
-  const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
-  const xReplitToken = process.env.REPL_IDENTITY 
-    ? 'repl ' + process.env.REPL_IDENTITY 
-    : process.env.WEB_REPL_RENEWAL 
-    ? 'depl ' + process.env.WEB_REPL_RENEWAL 
-    : null;
-
-  if (!xReplitToken) {
-    throw new Error('X_REPLIT_TOKEN not found for repl/depl');
-  }
-
-  connectionSettings = await fetch(
-    'https://' + hostname + '/api/v2/connection?include_secrets=true&connector_names=resend',
-    {
-      headers: {
-        'Accept': 'application/json',
-        'X_REPLIT_TOKEN': xReplitToken
-      }
-    }
-  ).then(res => res.json()).then(data => data.items?.[0]);
-
-  if (!connectionSettings || (!connectionSettings.settings.api_key)) {
-    throw new Error('Resend not connected');
-  }
-  return {
-    apiKey: connectionSettings.settings.api_key, 
-    fromEmail: connectionSettings.settings.from_email
-  };
-}
-
-async function getUncachableResendClient() {
-  const { apiKey } = await getCredentials();
-  return {
-    client: new Resend(apiKey),
-    fromEmail: connectionSettings.settings.from_email
-  };
-}
-
 const FROM_EMAIL = 'noreply@drgladysz.com';
 const APP_NAME = 'Surgical Logbook';
 
+function getResendClient(): Resend {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    throw new Error('RESEND_API_KEY environment variable must be set');
+  }
+  return new Resend(apiKey);
+}
+
 function getAppDomain(): string {
+  // Custom domain takes priority
+  if (process.env.APP_DOMAIN) {
+    return process.env.APP_DOMAIN;
+  }
+  // Railway auto-generated domain
+  if (process.env.RAILWAY_PUBLIC_DOMAIN) {
+    return `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`;
+  }
+  // Legacy Replit support
   if (process.env.REPLIT_DOMAINS) {
     const domains = process.env.REPLIT_DOMAINS.split(',');
     return `https://${domains[0].trim()}`;
@@ -52,10 +28,7 @@ function getAppDomain(): string {
   if (process.env.REPLIT_DEV_DOMAIN) {
     return `https://${process.env.REPLIT_DEV_DOMAIN}`;
   }
-  if (process.env.APP_DOMAIN) {
-    return process.env.APP_DOMAIN;
-  }
-  throw new Error("No app domain configured. Set REPLIT_DOMAINS, REPLIT_DEV_DOMAIN, or APP_DOMAIN.");
+  return 'https://logbook-api.drgladysz.com';
 }
 
 export async function sendPasswordResetEmail(
@@ -64,7 +37,7 @@ export async function sendPasswordResetEmail(
   userName?: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const { client } = await getUncachableResendClient();
+    const client = getResendClient();
     const resetUrl = `${getAppDomain()}/reset-password?token=${token}`;
     
     const greeting = userName ? `Hi ${userName}` : 'Hi';
@@ -151,8 +124,8 @@ export async function sendWelcomeEmail(
   userName: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const { client } = await getUncachableResendClient();
-    
+    const client = getResendClient();
+
     const { data, error } = await client.emails.send({
       from: `${APP_NAME} <${FROM_EMAIL}>`,
       to: email,

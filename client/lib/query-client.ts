@@ -1,19 +1,25 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
 /**
- * Gets the base URL for the Express API server (e.g., "http://localhost:3000")
- * @returns {string} The API base URL
+ * Gets the base URL for the Express API server.
+ * Uses EXPO_PUBLIC_API_URL env var if set (for local dev), otherwise defaults to production.
  */
-export function getApiUrl(): string {
-  let host = process.env.EXPO_PUBLIC_DOMAIN;
+const PRODUCTION_API_URL = "https://logbook-api.drgladysz.com";
 
-  if (!host) {
-    throw new Error("EXPO_PUBLIC_DOMAIN is not set");
+export function getApiUrl(): string {
+  // Allow override via env var for local development
+  const override = process.env.EXPO_PUBLIC_API_URL;
+  if (override) {
+    return override.replace(/\/$/, '');
   }
 
-  let url = new URL(`https://${host}`);
+  // Legacy support: EXPO_PUBLIC_DOMAIN (used by Replit/Expo dev builds)
+  const host = process.env.EXPO_PUBLIC_DOMAIN;
+  if (host) {
+    return new URL(`https://${host}`).href.replace(/\/$/, '');
+  }
 
-  return url.href.replace(/\/$/, '');
+  return PRODUCTION_API_URL;
 }
 
 async function throwIfResNotOk(res: Response) {
