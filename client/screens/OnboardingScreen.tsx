@@ -17,6 +17,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Colors, Spacing, BorderRadius, Typography } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { FacilitySelector } from "@/components/FacilitySelector";
+import { FacilityAutocomplete } from "@/components/FacilityAutocomplete";
 import { MasterFacility } from "@/data/facilities";
 
 const COUNTRIES = [
@@ -368,27 +369,16 @@ export default function OnboardingScreen() {
                 </Pressable>
                 
                 <Text style={[styles.orDivider, { color: colors.textTertiary }]}>
-                  or enter manually
+                  or search by name
                 </Text>
-                
-                <View style={styles.addFacilityRow}>
-                  <TextInput
-                    style={[styles.facilityInput, { backgroundColor: colors.backgroundSecondary, color: colors.text, borderColor: colors.border }]}
-                    value={newFacility}
-                    onChangeText={setNewFacility}
-                    placeholder="Other hospital or clinic"
-                    placeholderTextColor={colors.textTertiary}
-                    onSubmitEditing={handleAddFacility}
-                    returnKeyType="done"
-                  />
-                  <Pressable
-                    style={[styles.addButton, { backgroundColor: colors.link, opacity: newFacility.trim() ? 1 : 0.5 }]}
-                    onPress={handleAddFacility}
-                    disabled={!newFacility.trim() || isLoading}
-                  >
-                    <Feather name="plus" size={22} color="#FFF" />
-                  </Pressable>
-                </View>
+
+                <FacilityAutocomplete
+                  countryCode={countryCode}
+                  onSelect={handleSelectVerifiedFacility}
+                  selectedFacilityIds={facilities.filter(f => f.facilityId).map(f => f.facilityId!)}
+                  placeholder="Start typing hospital name..."
+                  disabled={isLoading}
+                />
               </View>
             ) : (
               <View style={styles.addFacilityRow}>

@@ -16,6 +16,7 @@ const profileUpdateSchema = insertProfileSchema
     countryOfPractice: true,
     medicalCouncilNumber: true,
     careerStage: true,
+    onboardingComplete: true,
   })
   .partial();
 const flapCreateSchema = insertFlapSchema;
