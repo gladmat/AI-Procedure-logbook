@@ -26,20 +26,32 @@ const anastomosisUpdateSchema = insertAnastomosisSchema.partial().omit({ flapId:
 const authRateLimiter = new Map<string, { count: number; resetTime: number }>();
 const AUTH_RATE_LIMIT = 10;
 const AUTH_RATE_WINDOW_MS = 60 * 1000;
+const AUTH_RATE_LIMITER_MAX_ENTRIES = 1000;
+
+function cleanupRateLimiter(): void {
+  if (authRateLimiter.size <= AUTH_RATE_LIMITER_MAX_ENTRIES) return;
+  const now = Date.now();
+  for (const [ip, entry] of authRateLimiter) {
+    if (now > entry.resetTime) {
+      authRateLimiter.delete(ip);
+    }
+  }
+}
 
 function checkAuthRateLimit(ip: string): boolean {
   const now = Date.now();
   const entry = authRateLimiter.get(ip);
-  
+
   if (!entry || now > entry.resetTime) {
     authRateLimiter.set(ip, { count: 1, resetTime: now + AUTH_RATE_WINDOW_MS });
+    cleanupRateLimiter();
     return true;
   }
-  
+
   if (entry.count >= AUTH_RATE_LIMIT) {
     return false;
   }
-  
+
   entry.count++;
   return true;
 }

@@ -235,7 +235,8 @@ export async function getCaseDraft(specialty: Case["specialty"]): Promise<CaseDr
   try {
     const data = await AsyncStorage.getItem(getCaseDraftKey(specialty));
     if (!data) return null;
-    return JSON.parse(data);
+    const decrypted = await decryptData(data);
+    return JSON.parse(decrypted);
   } catch (error) {
     console.error("Error reading case draft:", error);
     return null;
@@ -247,7 +248,8 @@ export async function saveCaseDraft(
   draft: CaseDraft
 ): Promise<void> {
   try {
-    await AsyncStorage.setItem(getCaseDraftKey(specialty), JSON.stringify(draft));
+    const encrypted = await encryptData(JSON.stringify(draft));
+    await AsyncStorage.setItem(getCaseDraftKey(specialty), encrypted);
   } catch (error) {
     console.error("Error saving case draft:", error);
     throw error;
@@ -387,7 +389,8 @@ export async function getTimelineEvents(caseId: string): Promise<TimelineEvent[]
   try {
     const data = await AsyncStorage.getItem(TIMELINE_KEY);
     if (!data) return [];
-    const allEvents: TimelineEvent[] = JSON.parse(data);
+    const decrypted = await decryptData(data);
+    const allEvents: TimelineEvent[] = JSON.parse(decrypted);
     return allEvents.filter((e) => e.caseId === caseId).sort(
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
@@ -400,9 +403,14 @@ export async function getTimelineEvents(caseId: string): Promise<TimelineEvent[]
 export async function saveTimelineEvent(event: TimelineEvent): Promise<void> {
   try {
     const data = await AsyncStorage.getItem(TIMELINE_KEY);
-    const events: TimelineEvent[] = data ? JSON.parse(data) : [];
+    let events: TimelineEvent[] = [];
+    if (data) {
+      const decrypted = await decryptData(data);
+      events = JSON.parse(decrypted);
+    }
     events.unshift(event);
-    await AsyncStorage.setItem(TIMELINE_KEY, JSON.stringify(events));
+    const encrypted = await encryptData(JSON.stringify(events));
+    await AsyncStorage.setItem(TIMELINE_KEY, encrypted);
   } catch (error) {
     console.error("Error saving timeline event:", error);
     throw error;
@@ -413,9 +421,11 @@ export async function deleteTimelineEvent(id: string): Promise<void> {
   try {
     const data = await AsyncStorage.getItem(TIMELINE_KEY);
     if (!data) return;
-    const events: TimelineEvent[] = JSON.parse(data);
+    const decrypted = await decryptData(data);
+    const events: TimelineEvent[] = JSON.parse(decrypted);
     const filtered = events.filter((e) => e.id !== id);
-    await AsyncStorage.setItem(TIMELINE_KEY, JSON.stringify(filtered));
+    const encrypted = await encryptData(JSON.stringify(filtered));
+    await AsyncStorage.setItem(TIMELINE_KEY, encrypted);
   } catch (error) {
     console.error("Error deleting timeline event:", error);
     throw error;
