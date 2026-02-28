@@ -417,6 +417,23 @@ export async function saveTimelineEvent(event: TimelineEvent): Promise<void> {
   }
 }
 
+export async function updateTimelineEvent(id: string, updates: Partial<TimelineEvent>): Promise<void> {
+  try {
+    const data = await AsyncStorage.getItem(TIMELINE_KEY);
+    if (!data) return;
+    const decrypted = await decryptData(data);
+    const events: TimelineEvent[] = JSON.parse(decrypted);
+    const index = events.findIndex((e) => e.id === id);
+    if (index < 0) return;
+    events[index] = { ...events[index], ...updates, updatedAt: new Date().toISOString() };
+    const encrypted = await encryptData(JSON.stringify(events));
+    await AsyncStorage.setItem(TIMELINE_KEY, encrypted);
+  } catch (error) {
+    console.error("Error updating timeline event:", error);
+    throw error;
+  }
+}
+
 export async function deleteTimelineEvent(id: string): Promise<void> {
   try {
     const data = await AsyncStorage.getItem(TIMELINE_KEY);

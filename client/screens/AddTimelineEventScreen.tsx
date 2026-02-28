@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect, useLayoutEffect } from "react";
 import { View, StyleSheet, Alert, Pressable } from "react-native";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -30,7 +30,7 @@ import { MediaCapture } from "@/components/MediaCapture";
 import { PROMEntryForm } from "@/components/PROMEntryForm";
 import { WoundAssessment } from "@/types/wound";
 import { WoundAssessmentForm } from "@/components/WoundAssessmentForm";
-import { saveTimelineEvent } from "@/lib/storage";
+import { saveTimelineEvent, getTimelineEvents, updateTimelineEvent } from "@/lib/storage";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 
 type RouteParams = RouteProp<RootStackParamList, "AddTimelineEvent">;
@@ -71,7 +71,9 @@ export default function AddTimelineEventScreen() {
   const insets = useSafeAreaInsets();
   const headerHeight = useHeaderHeight();
 
-  const { caseId, initialEventType, isSkinLesion, caseDischargeDate } = route.params;
+  const { caseId, initialEventType, isSkinLesion, caseDischargeDate, editEventId } = route.params;
+
+  const isEditMode = !!editEventId;
 
   const [saving, setSaving] = useState(false);
   const [eventType, setEventType] = useState<TimelineEventType | "">(
@@ -97,6 +99,40 @@ export default function AddTimelineEventScreen() {
   const [dischargeWoundStatus, setDischargeWoundStatus] = useState<
     "dry_healing" | "moist" | "redness" | "breakdown" | ""
   >("");
+  const [editingEvent, setEditingEvent] = useState<TimelineEvent | null>(null);
+
+  // Set dynamic header title
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerTitle: isEditMode ? "Edit Event" : "Add Event",
+    });
+  }, [navigation, isEditMode]);
+
+  // Load existing event data when editing
+  useEffect(() => {
+    if (!editEventId) return;
+    (async () => {
+      try {
+        const events = await getTimelineEvents(caseId);
+        const existing = events.find((e) => e.id === editEventId);
+        if (!existing) return;
+        setEditingEvent(existing);
+        setEventType(existing.eventType);
+        setNote(existing.note || "");
+        if (existing.followUpInterval) setFollowUpInterval(existing.followUpInterval);
+        if (existing.mediaAttachments) setMediaAttachments(existing.mediaAttachments);
+        if (existing.promData) setPromData(existing.promData);
+        if (existing.complicationData) {
+          setComplicationDescription(existing.complicationData.description || "");
+          setComplicationGrade(existing.complicationData.clavienDindoGrade || "none");
+          setComplicationManagement(existing.complicationData.managementNotes || "");
+        }
+        if (existing.woundAssessmentData) setWoundAssessmentData(existing.woundAssessmentData);
+      } catch (error) {
+        console.error("Error loading event for editing:", error);
+      }
+    })();
+  }, [editEventId, caseId]);
 
   const isDischargeDay = useMemo(() => {
     if (!caseDischargeDate) return false;
@@ -189,44 +225,52 @@ export default function AddTimelineEventScreen() {
         ? `Wound status: ${WOUND_STATUS_LABELS[dischargeWoundStatus]}${note.trim() ? " — " + note.trim() : ""}`
         : note.trim();
 
-      const event: TimelineEvent = {
-        id: uuidv4(),
-        caseId,
+      // Build the updates object (shared by create and update paths)
+      const updates: Partial<TimelineEvent> = {
         eventType: eventType as TimelineEventType,
         note: dischargeNote,
-        createdAt: new Date().toISOString(),
-        clinicalContext: isDischargeDay ? "discharge" : undefined,
       };
 
       if (eventType === "photo" || eventType === "imaging" || eventType === "discharge_photo") {
-        event.mediaAttachments = mediaAttachments;
+        updates.mediaAttachments = mediaAttachments;
       }
 
       if (eventType === "prom") {
-        event.promData = promData;
+        updates.promData = promData;
       }
 
       if (eventType === "complication") {
         const complication: ComplicationEntry = {
-          id: uuidv4(),
+          id: editingEvent?.complicationData?.id || uuidv4(),
           description: complicationDescription.trim(),
           clavienDindoGrade: complicationGrade,
-          dateIdentified: new Date().toISOString(),
+          dateIdentified: editingEvent?.complicationData?.dateIdentified || new Date().toISOString(),
           managementNotes: complicationManagement.trim() || undefined,
-          resolved: false,
+          resolved: editingEvent?.complicationData?.resolved ?? false,
         };
-        event.complicationData = complication;
+        updates.complicationData = complication;
       }
 
       if (eventType === "follow_up_visit" && followUpInterval) {
-        event.followUpInterval = followUpInterval;
+        updates.followUpInterval = followUpInterval;
       }
 
       if (eventType === "wound_assessment") {
-        event.woundAssessmentData = woundAssessmentData;
+        updates.woundAssessmentData = woundAssessmentData;
       }
 
-      await saveTimelineEvent(event);
+      if (isEditMode && editEventId) {
+        await updateTimelineEvent(editEventId, updates);
+      } else {
+        const event: TimelineEvent = {
+          id: uuidv4(),
+          caseId,
+          createdAt: new Date().toISOString(),
+          clinicalContext: isDischargeDay ? "discharge" : undefined,
+          ...updates,
+        } as TimelineEvent;
+        await saveTimelineEvent(event);
+      }
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       navigation.goBack();
     } catch (error) {
@@ -245,6 +289,7 @@ export default function AddTimelineEventScreen() {
         return (
           <Pressable
             key={type.value}
+            disabled={isEditMode}
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               setEventType(type.value);
@@ -311,7 +356,7 @@ export default function AddTimelineEventScreen() {
         },
       ]}
     >
-      <SectionHeader title="Add to Timeline" subtitle={getSubtitle()} />
+      <SectionHeader title={isEditMode ? "Edit Event" : "Add to Timeline"} subtitle={getSubtitle()} />
 
       {isDischargeDay ? (
         <View
@@ -516,7 +561,7 @@ export default function AddTimelineEventScreen() {
       {eventType ? (
         <View style={styles.buttonContainer}>
           <Button onPress={handleSave} disabled={saving}>
-            {saving ? "Saving..." : "Add to Timeline"}
+            {saving ? "Saving..." : isEditMode ? "Save Changes" : "Add to Timeline"}
           </Button>
         </View>
       ) : null}
