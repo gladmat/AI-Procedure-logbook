@@ -8,6 +8,7 @@ import {
   Modal,
   TextInput,
   Alert,
+  InteractionManager,
 } from "react-native";
 import DateTimePicker, { DateTimePickerEvent } from "@react-native-community/datetimepicker";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
@@ -229,7 +230,12 @@ export default function DashboardScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      loadCases();
+      // Wait for navigation/animations to complete before decrypting cases
+      // so the UI stays responsive during transitions
+      const task = InteractionManager.runAfterInteractions(() => {
+        loadCases();
+      });
+      return () => task.cancel();
     }, [])
   );
 

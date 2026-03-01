@@ -243,10 +243,22 @@ export default function CaseDetailScreen() {
 
   const handleAddEvent = () => {
     if (caseData) {
-      navigation.navigate("AddTimelineEvent", { 
+      navigation.navigate("AddTimelineEvent", {
         caseId: caseData.id,
         isSkinLesion: isSkinLesionCase(),
         caseDischargeDate: caseData.dischargeDate,
+      });
+    }
+  };
+
+  const handleEditEvent = (event: TimelineEvent) => {
+    if (caseData) {
+      navigation.navigate("AddTimelineEvent", {
+        caseId: caseData.id,
+        initialEventType: event.eventType,
+        isSkinLesion: isSkinLesionCase(),
+        caseDischargeDate: caseData.dischargeDate,
+        editEventId: event.id,
       });
     }
   };
@@ -1159,11 +1171,17 @@ export default function CaseDetailScreen() {
             {timelineEvents.map((event) => {
               if (event.eventType === "wound_assessment" && event.woundAssessmentData) {
                 return (
-                  <WoundAssessmentCard
-                    key={event.id}
-                    data={event.woundAssessmentData}
-                    createdAt={event.createdAt}
-                  />
+                  <View key={event.id}>
+                    <View style={{ flexDirection: "row", justifyContent: "flex-end", paddingRight: Spacing.md, paddingTop: Spacing.sm }}>
+                      <Pressable onPress={() => handleEditEvent(event)} hitSlop={8} style={{ padding: 4 }}>
+                        <Feather name="edit-2" size={14} color={theme.textTertiary} />
+                      </Pressable>
+                    </View>
+                    <WoundAssessmentCard
+                      data={event.woundAssessmentData}
+                      createdAt={event.createdAt}
+                    />
+                  </View>
                 );
               }
               return (
@@ -1171,33 +1189,42 @@ export default function CaseDetailScreen() {
                 <View style={[styles.timelineDot, { backgroundColor: getEventTypeColor(event.eventType, theme) }]} />
                 <View style={styles.timelineContent}>
                   <View style={styles.eventHeader}>
-                    <View style={[styles.eventTypeBadge, { backgroundColor: getEventTypeColor(event.eventType, theme) + "20" }]}>
-                      <Feather name={getEventTypeIcon(event.eventType)} size={12} color={getEventTypeColor(event.eventType, theme)} />
-                      <ThemedText style={[styles.eventTypeBadgeText, { color: getEventTypeColor(event.eventType, theme) }]}>
-                        {TIMELINE_EVENT_TYPE_LABELS[event.eventType] || event.eventType}
-                      </ThemedText>
-                    </View>
-                    {event.followUpInterval ? (
-                      <ThemedText style={[styles.intervalBadge, { color: theme.textSecondary }]}>
-                        {FOLLOW_UP_INTERVAL_LABELS[event.followUpInterval]}
-                      </ThemedText>
-                    ) : null}
-                    {event.clinicalContext === "discharge" ? (
-                      <View style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        gap: 4,
-                        backgroundColor: theme.success + "20",
-                        paddingHorizontal: 8,
-                        paddingVertical: 2,
-                        borderRadius: 10,
-                      }}>
-                        <Feather name="log-out" size={10} color={theme.success} />
-                        <ThemedText style={{ fontSize: 11, color: theme.success, fontWeight: "500" }}>
-                          Discharge
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flex: 1, flexWrap: "wrap" }}>
+                      <View style={[styles.eventTypeBadge, { backgroundColor: getEventTypeColor(event.eventType, theme) + "20" }]}>
+                        <Feather name={getEventTypeIcon(event.eventType)} size={12} color={getEventTypeColor(event.eventType, theme)} />
+                        <ThemedText style={[styles.eventTypeBadgeText, { color: getEventTypeColor(event.eventType, theme) }]}>
+                          {TIMELINE_EVENT_TYPE_LABELS[event.eventType] || event.eventType}
                         </ThemedText>
                       </View>
-                    ) : null}
+                      {event.followUpInterval ? (
+                        <ThemedText style={[styles.intervalBadge, { color: theme.textSecondary }]}>
+                          {FOLLOW_UP_INTERVAL_LABELS[event.followUpInterval]}
+                        </ThemedText>
+                      ) : null}
+                      {event.clinicalContext === "discharge" ? (
+                        <View style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          gap: 4,
+                          backgroundColor: theme.success + "20",
+                          paddingHorizontal: 8,
+                          paddingVertical: 2,
+                          borderRadius: 10,
+                        }}>
+                          <Feather name="log-out" size={10} color={theme.success} />
+                          <ThemedText style={{ fontSize: 11, color: theme.success, fontWeight: "500" }}>
+                            Discharge
+                          </ThemedText>
+                        </View>
+                      ) : null}
+                    </View>
+                    <Pressable
+                      onPress={() => handleEditEvent(event)}
+                      hitSlop={8}
+                      style={{ padding: 4 }}
+                    >
+                      <Feather name="edit-2" size={14} color={theme.textTertiary} />
+                    </Pressable>
                   </View>
 
                   {(event.mediaAttachments?.length ?? 0) > 0 ? (
@@ -1250,6 +1277,7 @@ export default function CaseDetailScreen() {
                   ) : null}
                   <ThemedText style={[styles.eventDate, { color: theme.textTertiary }]}>
                     {new Date(event.createdAt).toLocaleDateString()}
+                    {event.updatedAt ? " (edited)" : ""}
                   </ThemedText>
                 </View>
               </View>

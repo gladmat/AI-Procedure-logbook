@@ -22,27 +22,42 @@ function isHex(value: string): boolean {
   return /^[0-9a-f]+$/i.test(value) && value.length % 2 === 0;
 }
 
+let _cachedKeyHex: string | null = null;
+let _cachedKeyBytes: Uint8Array | null = null;
+
 async function getKeyHex(): Promise<string> {
+  if (_cachedKeyHex) return _cachedKeyHex;
+
   if (Platform.OS === "web") {
     const stored = await AsyncStorage.getItem(`@${ENCRYPTION_KEY_ALIAS}`);
-    if (stored && isHex(stored)) return stored;
+    if (stored && isHex(stored)) {
+      _cachedKeyHex = stored;
+      return stored;
+    }
 
     const newKey = bytesToHex(await Crypto.getRandomBytesAsync(KEY_BYTES));
     await AsyncStorage.setItem(`@${ENCRYPTION_KEY_ALIAS}`, newKey);
+    _cachedKeyHex = newKey;
     return newKey;
   }
 
   const stored = await SecureStore.getItemAsync(ENCRYPTION_KEY_ALIAS);
-  if (stored && isHex(stored)) return stored;
+  if (stored && isHex(stored)) {
+    _cachedKeyHex = stored;
+    return stored;
+  }
 
   const newKey = bytesToHex(await Crypto.getRandomBytesAsync(KEY_BYTES));
   await SecureStore.setItemAsync(ENCRYPTION_KEY_ALIAS, newKey);
+  _cachedKeyHex = newKey;
   return newKey;
 }
 
 async function getKeyBytes(): Promise<Uint8Array> {
+  if (_cachedKeyBytes) return _cachedKeyBytes;
   const keyHex = await getKeyHex();
-  return hexToBytes(keyHex);
+  _cachedKeyBytes = hexToBytes(keyHex);
+  return _cachedKeyBytes;
 }
 
 function legacyXorDecrypt(encrypted: string, key: string): string {

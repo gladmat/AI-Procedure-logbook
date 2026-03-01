@@ -1043,6 +1043,7 @@ export interface TimelineEvent {
   note: string;
   authorId?: string;
   createdAt: string;
+  updatedAt?: string;
   clinicalContext?: TimelineEventContext;
   followUpInterval?: FollowUpInterval;
   mediaAttachments?: MediaAttachment[];

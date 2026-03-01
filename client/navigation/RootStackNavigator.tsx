@@ -23,7 +23,7 @@ export type RootStackParamList = {
   CaseDetail: { caseId: string; showComplicationForm?: boolean };
   CaseForm: { specialty?: Specialty; caseId?: string };
   AddCase: undefined;
-  AddTimelineEvent: { caseId: string; initialEventType?: TimelineEventType; isSkinLesion?: boolean; caseDischargeDate?: string };
+  AddTimelineEvent: { caseId: string; initialEventType?: TimelineEventType; isSkinLesion?: boolean; caseDischargeDate?: string; editEventId?: string };
   MediaManagement: {
     existingAttachments?: MediaAttachment[];
     callbackId?: string;

@@ -10,7 +10,7 @@ import {
 import { loadEncryptedMedia, isEncryptedMediaUri } from "@/lib/mediaStorage";
 import { useTheme } from "@/hooks/useTheme";
 
-const MAX_CACHE_ENTRIES = 30;
+const MAX_CACHE_ENTRIES = 80;
 const decryptedCache = new Map<string, string>();
 const cacheOrder: string[] = [];
 
@@ -25,6 +25,35 @@ function cacheSet(key: string, value: string) {
     const oldest = cacheOrder.shift();
     if (oldest) decryptedCache.delete(oldest);
   }
+}
+
+// Concurrency-limited decryption queue to avoid saturating the JS thread
+const MAX_CONCURRENT = 2;
+let activeDecryptions = 0;
+const decryptionQueue: Array<{
+  uri: string;
+  resolve: (result: string | null) => void;
+}> = [];
+
+function processQueue() {
+  while (activeDecryptions < MAX_CONCURRENT && decryptionQueue.length > 0) {
+    const job = decryptionQueue.shift()!;
+    activeDecryptions++;
+    loadEncryptedMedia(job.uri)
+      .then((result) => job.resolve(result))
+      .catch(() => job.resolve(null))
+      .finally(() => {
+        activeDecryptions--;
+        processQueue();
+      });
+  }
+}
+
+function queueDecryption(uri: string): Promise<string | null> {
+  return new Promise((resolve) => {
+    decryptionQueue.push({ uri, resolve });
+    processQueue();
+  });
 }
 
 interface EncryptedImageProps {
@@ -73,7 +102,7 @@ export function EncryptedImage({
     setLoading(true);
     setDataUri(null);
 
-    loadEncryptedMedia(uri)
+    queueDecryption(uri)
       .then((result) => {
         if (!mountedRef.current) return;
         if (result) {

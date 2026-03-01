@@ -1,4 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { InteractionManager } from "react-native";
 import { Case, TimelineEvent, CountryCode, ComplicationEntry } from "@/types/case";
 import { encryptData, decryptData } from "./encryption";
 import { deleteMultipleEncryptedMedia } from "./mediaStorage";
@@ -163,17 +164,35 @@ async function migrateLegacyData(): Promise<boolean> {
 
 let migrationChecked = false;
 
+// Yield to the UI thread so interactions remain responsive
+function yieldToUI(): Promise<void> {
+  return new Promise((resolve) => {
+    InteractionManager.runAfterInteractions(() => resolve());
+  });
+}
+
 export async function getCases(): Promise<Case[]> {
   try {
     if (!migrationChecked) {
       await migrateLegacyData();
       migrationChecked = true;
     }
-    
+
     const index = await getCaseIndex();
     if (index.length === 0) return [];
-    
-    const results = await Promise.all(index.map((entry) => getCase(entry.id)));
+
+    // Decrypt cases in small batches, yielding to UI between batches
+    const BATCH_SIZE = 3;
+    const results: (Case | null)[] = [];
+    for (let i = 0; i < index.length; i += BATCH_SIZE) {
+      const batch = index.slice(i, i + BATCH_SIZE);
+      const batchResults = await Promise.all(batch.map((entry) => getCase(entry.id)));
+      results.push(...batchResults);
+      // Yield to the UI thread between batches so navigation/touches are processed
+      if (i + BATCH_SIZE < index.length) {
+        await yieldToUI();
+      }
+    }
     return results.filter((c): c is Case => c !== null);
   } catch (error) {
     console.error("Error reading cases:", error);
@@ -413,6 +432,23 @@ export async function saveTimelineEvent(event: TimelineEvent): Promise<void> {
     await AsyncStorage.setItem(TIMELINE_KEY, encrypted);
   } catch (error) {
     console.error("Error saving timeline event:", error);
+    throw error;
+  }
+}
+
+export async function updateTimelineEvent(id: string, updates: Partial<TimelineEvent>): Promise<void> {
+  try {
+    const data = await AsyncStorage.getItem(TIMELINE_KEY);
+    if (!data) return;
+    const decrypted = await decryptData(data);
+    const events: TimelineEvent[] = JSON.parse(decrypted);
+    const index = events.findIndex((e) => e.id === id);
+    if (index < 0) return;
+    events[index] = { ...events[index], ...updates, updatedAt: new Date().toISOString() };
+    const encrypted = await encryptData(JSON.stringify(events));
+    await AsyncStorage.setItem(TIMELINE_KEY, encrypted);
+  } catch (error) {
+    console.error("Error updating timeline event:", error);
     throw error;
   }
 }
