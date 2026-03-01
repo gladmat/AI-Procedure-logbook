@@ -303,9 +303,7 @@ export default function CaseFormScreen() {
     new Date().toISOString().split("T")[0]
   );
   const [facility, setFacility] = useState(primaryFacility);
-  const [procedureType, setProcedureType] = useState<string>(
-    PROCEDURE_TYPES[specialty]?.[0] || ""
-  );
+  const [procedureType, setProcedureType] = useState<string>("");
   const [asaScore, setAsaScore] = useState<string>("");
   const [heightCm, setHeightCm] = useState("");
   const [weightKg, setWeightKg] = useState("");
@@ -348,7 +346,7 @@ export default function CaseFormScreen() {
       procedures: [{
         id: uuidv4(),
         sequenceOrder: 1,
-        procedureName: PROCEDURE_TYPES[specialty]?.[0] || "",
+        procedureName: "",
         specialty,
         surgeonRole: "PS",
       }],
@@ -437,7 +435,7 @@ export default function CaseFormScreen() {
       setPatientIdentifier(draft.patientIdentifier ?? "");
       setProcedureDate(draft.procedureDate ?? new Date().toISOString().split("T")[0]);
       setFacility(draft.facility ?? primaryFacility);
-      setProcedureType(draft.procedureType ?? PROCEDURE_TYPES[specialty]?.[0] ?? "");
+      setProcedureType(draft.procedureType ?? "");
       setAsaScore(draft.asaScore ? String(draft.asaScore) : "");
       setHeightCm(draft.heightCm ? String(draft.heightCm) : "");
       setWeightKg(draft.weightKg ? String(draft.weightKg) : "");
@@ -763,6 +761,10 @@ export default function CaseFormScreen() {
       Alert.alert("Required Field", "Please enter the facility name");
       return;
     }
+    if (!procedureType.trim()) {
+      Alert.alert("Required Field", "Please select a procedure type");
+      return;
+    }
 
     setSaving(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -908,10 +910,13 @@ export default function CaseFormScreen() {
     });
   }, [saving, isEditMode, specialty]);
 
-  const procedureOptions = (PROCEDURE_TYPES[specialty] || []).map((p) => ({
-    value: p,
-    label: p,
-  }));
+  const procedureOptions = [
+    { value: "", label: "Select procedure type..." },
+    ...(PROCEDURE_TYPES[specialty] || []).map((p) => ({
+      value: p,
+      label: p,
+    })),
+  ];
 
   const durationMinutes = calculateDuration(surgeryStartTime, surgeryEndTime);
   const durationDisplay = durationMinutes !== undefined
