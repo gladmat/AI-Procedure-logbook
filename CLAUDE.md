@@ -4,6 +4,14 @@
 
 A full-stack Expo/React Native surgical logbook app for documenting surgical procedures, tracking post-operative outcomes, and generating analytics. Supports multiple surgical specialties with SNOMED CT coding, free flap tracking, anastomosis logging, wound assessments, and infection episode monitoring. Originally built on Replit.
 
+## v2.0 Overhaul Status
+
+- **Phase 1 ✅ COMPLETE** — Form state refactor (useReducer, split context, 7 section components, clear/reset button)
+- **Phase 2 ✅ COMPLETE** — Charcoal+Amber theme, card-based diagnosis-procedure groups, section nav bar, summary view with SNOMED codes and validation, move-up/down reordering, primary badge, specialty module consistency
+- **Phase 3 → NEXT** — Favourites/recents, inline validation, keyboard optimisation, haptic audit, duplicate case
+- **Phase 4** — Data migration, export formatting, analytics dashboard
+- **Phase 5** — TestFlight release
+
 ## Tech stack
 
 - **Frontend:** Expo 54, React Native 0.81, React 19, TypeScript, React Navigation 7, TanStack React Query 5, React Native Reanimated
@@ -38,13 +46,13 @@ npm run format         # Prettier format
 
 ```
 client/
-  App.tsx                    # Root with AuthContext + MediaCallbackContext providers
+  App.tsx                    # Root with ThemeProvider, AuthContext, ThemedNavigationContainer
   screens/
     AuthScreen.tsx           # Login/signup/password reset
     OnboardingScreen.tsx     # First-time setup (profile, facilities)
     DashboardScreen.tsx      # Case list, filtering, statistics
     CaseDetailScreen.tsx     # Full case record view
-    CaseFormScreen.tsx       # Multi-step case entry form
+    CaseFormScreen.tsx       # Case entry (~240 lines, delegates to section components)
     AddCaseScreen.tsx        # Case entry initiation workflow
     AddTimelineEventScreen.tsx  # Post-op complications/follow-ups
     AddOperativeMediaScreen.tsx # Intraoperative image capture
@@ -55,11 +63,27 @@ client/
     MainTabNavigator.tsx     # Bottom tabs: Dashboard + Settings
     DashboardStackNavigator.tsx
     SettingsStackNavigator.tsx
-  components/               # ~46 components (forms, editors, display, layout)
+  components/               # ~60 components (forms, editors, display, layout)
+    case-form/               # 9 section components extracted from CaseFormScreen
+      PatientInfoSection.tsx
+      AdmissionSection.tsx
+      DiagnosisProcedureSection.tsx
+      PatientFactorsSection.tsx
+      OperativeFactorsSection.tsx
+      OutcomesSection.tsx
+      CollapsibleFormSection.tsx  # Shared collapsible card wrapper
+      SectionNavBar.tsx          # Sticky horizontal pill navigation
+      CaseSummaryView.tsx        # Read-only review before save
   contexts/
     AuthContext.tsx           # Auth state, profile, facilities, device keys
     MediaCallbackContext.tsx  # Cross-screen media selection callbacks
-  hooks/                     # useTheme, useColorScheme, useScreenOptions
+    CaseFormContext.tsx       # Split context: CaseFormStateContext + CaseFormDispatchContext
+  hooks/
+    useTheme.ts              # ThemeProvider, persists to AsyncStorage, system/light/dark
+    useCaseForm.ts           # useReducer-based form state (SET_FIELD, LOAD_CASE, RESET_FORM)
+    useCaseDraft.ts          # Auto-save drafts (debounced + AppState background flush)
+    useColorScheme.ts        # System colour scheme detection
+    useScreenOptions.ts      # Shared navigation header options
   lib/
     auth.ts                  # JWT token management, device key registration
     storage.ts               # Local AsyncStorage for offline-first cases
@@ -103,6 +127,8 @@ migrations/                  # SQL migration files
 - **Offline-first:** Local AsyncStorage for cases; server sync via API
 - **E2EE scaffolding:** Device key registration in place; media encryption implemented
 - **Multi-specialty:** Hand surgery, orthoplastic, breast, burns, head/neck, aesthetics, general, body contouring
+- **Theme:** ThemeProvider in `client/hooks/useTheme.ts` wraps the app. `useTheme()` returns `{ theme, isDark, colorScheme, preference, toggleColorScheme, setColorScheme }`. Default is dark mode; respects system preference; user override persists to AsyncStorage. `ThemedNavigationContainer` in `App.tsx` maps theme to React Navigation's Theme prop.
+- **Case form:** `CaseFormScreen.tsx` (~240 lines) delegates to 7 section components via `CaseFormContext`. Form state is a `useReducer` in `useCaseForm.ts` with actions: `SET_FIELD`, `SET_FIELDS`, `RESET_FORM`, `LOAD_DRAFT`, `LOAD_CASE`. Draft auto-save via `useCaseDraft.ts` (debounced writes + AppState background flush). Summary view (`CaseSummaryView.tsx`) gates save with validation.
 
 ## Database tables (PostgreSQL)
 
@@ -136,6 +162,40 @@ Hand surgery, Orthoplastic, Breast, Body contouring, Burns, Head & neck, Aesthet
 - **Env vars on Railway:** `DATABASE_URL` (references Postgres service), `JWT_SECRET`, `PORT=5000`, `NODE_ENV=production`
 - **Healthcheck:** `GET /api/health`
 - **Schema push:** Use public DATABASE_URL from Postgres service with `npx drizzle-kit push`
+
+## Brand & Design System: Charcoal + Amber
+
+Dark-mode-first design with warm charcoal palette and amber as the singular accent colour. Defined in `client/constants/theme.ts`.
+
+### Colour Palette
+- **Backgrounds**: Charcoal scale — #0F1419 (root), #1A1F26 (surface), #242B33 (raised), #2E3740 (border)
+- **Text**: #F0F2F4 (primary dark), #94A3B8 (secondary dark), #64748B (tertiary dark)
+- **Accent (Amber)**: #D97706 (dark mode), #B45309 (light mode) — interactive elements ONLY
+- **Warning**: #FB923C (dark), #EA580C (light) — deliberately distinct from amber accent
+- **Error**: #DC2626 both modes
+- **Success**: #15803D (dark), #16A34A (light)
+- **buttonText**: #0F1419 — dark text on amber backgrounds for legibility
+
+### Design Rules
+- Amber accent on interactive elements only (buttons, links, selected states). Never on static text.
+- Never #000000 as background — use charcoal.950 (#0F1419)
+- Never #FFFFFF as text in dark mode — use #F0F2F4
+- Font weight for emphasis, NOT colour variation
+- Numbers in SF Pro Mono in data-dense views (summary, dashboard)
+- Card accent borders: primary group = theme.link full opacity; groups 2+ = theme.link at 60%/35% opacity
+- All cards: Shadows.card + BorderRadius.md (14px) + theme.backgroundElevated
+
+### Typography
+- display: 28/36/700, h1: 22/30/700, h2: 18/26/600, h3: 16/24/600, h4: 15/22/600
+- body: 16/24/400, small: 14/20/400, footnote: 13/18/400, caption: 12/16/400
+- mono: 14/20/500 with SF Mono (iOS) / monospace (Android) — for numerical data
+- label: 12/16/500 uppercase with 0.5 letter-spacing
+
+### Border Radius
+- xs: 6, sm: 10 (inputs/buttons), md: 14 (cards), lg: 20, xl: 28, full: 9999
+
+### Touch Targets
+- Minimum 48px (enforced via Spacing.touchTarget)
 
 ## Style conventions
 
