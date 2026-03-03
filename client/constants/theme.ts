@@ -1,28 +1,35 @@
 import { Platform } from "react-native";
 
 // ── Raw Color Scales ─────────────────────────────────────────────────────────
+// Canonical amber: #E5A00D (golden amber)
+// NOT #D97706 (burnt orange) — that was a previous draft value.
 
 export const palette = {
   charcoal: {
-    950: "#0F1419",
-    900: "#1A1F26",
-    850: "#242B33",
-    800: "#2E3740",
-    750: "#3D4753",
-    700: "#4B5563",
-    500: "#64748B",
-    400: "#94A3B8",
-    200: "#E2E8F0",
-    100: "#F1F5F9",
-    50: "#F8FAFC",
+    950: "#0C0F14",  // Deepest background — app canvas
+    900: "#161B22",  // Card/surface background
+    850: "#1C2128",  // Raised surface, active items
+    800: "#2D333B",  // Borders, dividers
+    750: "#444C56",  // Active borders, hover, emphasis
+    700: "#4B5563",  // Disabled text on dark
+    500: "#656D76",  // Placeholder text, tertiary
+    400: "#8B949E",  // Secondary text
+    300: "#AFB8C1",  // Light mode active borders
+    200: "#D0D7DE",  // Light mode borders
+    100: "#ECEEF1",  // Light mode tertiary bg
+    50: "#F6F8FA",   // Light mode surface
+    25: "#FFFFFF",   // Light mode background
   },
   amber: {
-    900: "#78350F",
-    700: "#B45309",
-    600: "#D97706",
-    500: "#F59E0B",
-    200: "#FDE68A",
-    50: "#FEF3C7",
+    900: "#78350F",  // Dark amber bg (chips/badges on dark mode)
+    800: "#92400E",  // Deep amber
+    700: "#B47E00",  // Light mode primary accent
+    600: "#E5A00D",  // ★ THE brand colour — dark mode primary accent
+    500: "#F0B429",  // Hover/emphasis states, focus rings
+    400: "#F7C948",  // Charts, highlights
+    200: "#FDE68A",  // Light amber tint
+    100: "#FEF3C7",  // Light mode amber background
+    50: "#FFFBEB",   // Lightest amber wash
   },
   white: "#FFFFFF",
   black: "#000000",
@@ -32,54 +39,74 @@ export const palette = {
 
 export const Colors = {
   light: {
-    text: "#0F1419",
-    textSecondary: "#475569",
-    textTertiary: "#94A3B8",
-    buttonText: "#0F1419",
-    tabIconDefault: "#94A3B8",
-    tabIconSelected: "#B45309",
-    link: "#B45309",
-    linkPressed: "#D97706",
-    backgroundRoot: "#F8FAFC",
+    text: "#1F2328",
+    textSecondary: "#656D76",
+    textTertiary: "#8B949E",
+    buttonText: "#FFFFFF",
+    tabIconDefault: "#8B949E",
+    tabIconSelected: "#B47E00",
+    link: "#B47E00",
+    linkPressed: "#E5A00D",
+    backgroundRoot: "#FFFFFF",
     backgroundDefault: "#FFFFFF",
-    backgroundSecondary: "#F1F5F9",
-    backgroundTertiary: "#E2E8F0",
+    backgroundSecondary: "#F6F8FA",
+    backgroundTertiary: "#ECEEF1",
     backgroundElevated: "#FFFFFF",
-    success: "#16A34A",
-    warning: "#EA580C",
-    error: "#DC2626",
-    info: "#0369A1",
-    border: "#E2E8F0",
-    cardShadow: "rgba(15,20,25,0.1)",
-    rolePrimary: "#B45309",
-    roleSupervising: "#7C3AED",
-    roleAssistant: "#16A34A",
-    roleTrainee: "#F59E0B",
+    success: "#1A7F37",
+    warning: "#9A6700",
+    error: "#CF222E",
+    info: "#0969DA",
+    border: "#D0D7DE",
+    cardShadow: "rgba(12,15,20,0.1)",
+    rolePrimary: "#B47E00",
+    roleSupervising: "#8250DF",
+    roleAssistant: "#1A7F37",
+    roleTrainee: "#0969DA",
+    specialty: {
+      breast: "#8250DF",
+      hand_surgery: "#0969DA",
+      orthoplastic: "#1A7F37",
+      head_neck: "#BF5700",
+      body_contouring: "#CF222E",
+      burns: "#953800",
+      aesthetics: "#BF3989",
+      general: "#656D76",
+    },
   },
   dark: {
-    text: "#F0F2F4",
-    textSecondary: "#94A3B8",
-    textTertiary: "#64748B",
-    buttonText: "#0F1419",
-    tabIconDefault: "#64748B",
-    tabIconSelected: "#D97706",
-    link: "#D97706",
-    linkPressed: "#F59E0B",
-    backgroundRoot: "#0F1419",
-    backgroundDefault: "#1A1F26",
-    backgroundSecondary: "#242B33",
-    backgroundTertiary: "#2E3740",
-    backgroundElevated: "#1A1F26",
-    success: "#15803D",
-    warning: "#FB923C",
-    error: "#DC2626",
-    info: "#0284C7",
-    border: "#2E3740",
+    text: "#E6EDF3",
+    textSecondary: "#8B949E",
+    textTertiary: "#656D76",
+    buttonText: "#0C0F14",
+    tabIconDefault: "#656D76",
+    tabIconSelected: "#E5A00D",
+    link: "#E5A00D",
+    linkPressed: "#F0B429",
+    backgroundRoot: "#0C0F14",
+    backgroundDefault: "#161B22",
+    backgroundSecondary: "#1C2128",
+    backgroundTertiary: "#2D333B",
+    backgroundElevated: "#161B22",
+    success: "#2EA043",
+    warning: "#D29922",
+    error: "#F85149",
+    info: "#58A6FF",
+    border: "#2D333B",
     cardShadow: "rgba(0,0,0,0.35)",
-    rolePrimary: "#D97706",
-    roleSupervising: "#A78BFA",
-    roleAssistant: "#15803D",
-    roleTrainee: "#FBBF24",
+    rolePrimary: "#E5A00D",
+    roleSupervising: "#D8B4FE",
+    roleAssistant: "#86EFAC",
+    roleTrainee: "#7DD3FC",
+    specialty: {
+      breast: "#D8B4FE",
+      hand_surgery: "#7DD3FC",
+      orthoplastic: "#86EFAC",
+      head_neck: "#FDBA74",
+      body_contouring: "#FB7185",
+      burns: "#FB923C",
+      aesthetics: "#F9A8D4",
+      general: "#94A3B8",
+    },
   },
 };
 

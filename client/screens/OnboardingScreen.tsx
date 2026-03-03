@@ -151,7 +151,7 @@ export default function OnboardingScreen() {
         return (
           <View style={styles.stepContent}>
             <Text style={[styles.stepTitle, { color: colors.text }]}>
-              Welcome to Surgical Logbook
+              Welcome to Opus
             </Text>
             <Text style={[styles.stepDescription, { color: colors.textSecondary }]}>
               Please review and accept the following agreement before continuing.
@@ -160,10 +160,10 @@ export default function OnboardingScreen() {
             <View style={[styles.agreementContainer, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}>
               <ScrollView style={styles.agreementScroll} nestedScrollEnabled>
                 <Text style={[styles.agreementSectionTitle, { color: colors.text }]}>
-                  Using Surgical Logbook
+                  Using Opus
                 </Text>
                 <Text style={[styles.agreementText, { color: colors.textSecondary }]}>
-                  Surgical Logbook is designed to facilitate the following:
+                  Opus is designed to facilitate the following:
                 </Text>
                 <View style={styles.agreementList}>
                   <Text style={[styles.agreementListItem, { color: colors.textSecondary }]}>

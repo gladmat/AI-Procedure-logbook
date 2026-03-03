@@ -115,7 +115,7 @@ function getEventTypeIcon(eventType: TimelineEventType): keyof typeof Feather.gl
   }
 }
 
-function getEventTypeColor(eventType: TimelineEventType, theme: Record<string, string>): string {
+function getEventTypeColor(eventType: TimelineEventType, theme: typeof import("@/constants/theme").Colors.light): string {
   switch (eventType) {
     case "photo":
       return theme.link;
@@ -513,7 +513,7 @@ export default function CaseDetailScreen() {
             borderRadius: 10,
             marginBottom: 16,
           }}>
-            <Feather name="clock" size={18} color="#D97706" />
+            <Feather name="clock" size={18} color="#E5A00D" />
             <View style={{ flex: 1 }}>
               <ThemedText style={{ fontWeight: "600", color: "#92400E", fontSize: 14 }}>
                 Histology pending

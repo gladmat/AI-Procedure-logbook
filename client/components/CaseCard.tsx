@@ -15,16 +15,7 @@ import { Case, Specialty, SPECIALTY_LABELS, getPrimaryDiagnosisName, getPrimaryS
 import { RoleBadge } from "@/components/RoleBadge";
 import { SpecialtyBadge } from "@/components/SpecialtyBadge";
 
-const SPECIALTY_THUMB_ICONS: Record<Specialty, keyof typeof Feather.glyphMap> = {
-  hand_surgery: "tool",
-  general: "clipboard",
-  breast: "heart",
-  burns: "thermometer",
-  orthoplastic: "layers",
-  head_neck: "user",
-  body_contouring: "maximize",
-  aesthetics: "star",
-};
+import { SpecialtyIcon } from "@/components/SpecialtyIcon";
 
 interface CaseCardProps {
   caseData: Case;
@@ -51,11 +42,11 @@ const CaseThumbnail = React.memo(function CaseThumbnail({ caseData }: { caseData
   }
 
   return (
-    <View style={[thumbStyles.container, { backgroundColor: theme.link + "10" }]}>
-      <Feather
-        name={SPECIALTY_THUMB_ICONS[caseData.specialty] || "file-text"}
+    <View style={[thumbStyles.container, { backgroundColor: theme.specialty[caseData.specialty] + "10" }]}>
+      <SpecialtyIcon
+        specialty={caseData.specialty}
         size={20}
-        color={theme.link}
+        color={theme.specialty[caseData.specialty]}
       />
     </View>
   );
@@ -133,8 +124,8 @@ export const CaseCard = React.memo(function CaseCard({ caseData, onPress }: Case
           <SpecialtyBadge specialty={caseData.specialty} size="small" />
           <RoleBadge role={userRole} size="small" />
           {hasHistologyPending ? (
-            <View style={[chipStyles.chip, { backgroundColor: "#F59E0B20" }]}>
-              <ThemedText style={[chipStyles.chipText, { color: "#D97706" }]}>
+            <View style={[chipStyles.chip, { backgroundColor: "#E5A00D20" }]}>
+              <ThemedText style={[chipStyles.chipText, { color: "#E5A00D" }]}>
                 Histology pending
               </ThemedText>
             </View>

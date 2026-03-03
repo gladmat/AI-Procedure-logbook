@@ -69,7 +69,7 @@ const COMMON_SITES: string[] = [
 
 const PATHOLOGY_OPTIONS: { value: LesionPathologyType; label: string; color: string }[] = [
   { value: "bcc",      label: "BCC",      color: "#2563EB" },
-  { value: "scc",      label: "SCC",      color: "#D97706" },
+  { value: "scc",      label: "SCC",      color: "#E5A00D" },
   { value: "melanoma", label: "Mel",      color: "#7C3AED" },
   { value: "benign",   label: "Benign",   color: "#059669" },
   { value: "other",    label: "Other",    color: "#6B7280" },

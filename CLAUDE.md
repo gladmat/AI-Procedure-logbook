@@ -1,8 +1,8 @@
-# CLAUDE.md — AI Procedure Logbook (Surgical Logbook)
+# CLAUDE.md — Opus (Surgical Case Logbook)
 
 ## What is this project?
 
-A full-stack Expo/React Native surgical logbook app for documenting surgical procedures, tracking post-operative outcomes, and generating analytics. Supports multiple surgical specialties with SNOMED CT coding, free flap tracking, anastomosis logging, wound assessments, and infection episode monitoring. Originally built on Replit.
+A full-stack Expo/React Native surgical case logbook app (branded as **Opus**) for documenting surgical procedures, tracking post-operative outcomes, and generating analytics. Supports multiple surgical specialties with SNOMED CT coding, free flap tracking, anastomosis logging, wound assessments, and infection episode monitoring. Originally built on Replit.
 
 ## v2.0 Overhaul Status
 
@@ -175,6 +175,13 @@ Dark-mode-first design with warm charcoal palette and amber as the singular acce
 - **Error**: #DC2626 both modes
 - **Success**: #15803D (dark), #16A34A (light)
 - **buttonText**: #0F1419 — dark text on amber backgrounds for legibility
+
+### Specialty Colors
+Per-specialty colors in `theme.specialty[specialty]` — pastel on dark, deeper on light:
+- Dark: breast=#D8B4FE, hand_surgery=#7DD3FC, orthoplastic=#86EFAC, head_neck=#FDBA74, body_contouring=#FDA4AF, burns=#FB923C, aesthetics=#F9A8D4, general=#94A3B8
+- Light: breast=#7C3AED, hand_surgery=#0369A1, orthoplastic=#15803D, head_neck=#C2410C, body_contouring=#BE123C, burns=#9A3412, aesthetics=#BE185D, general=#475569
+- Used for badges (`SpecialtyBadge`), icons (`SpecialtyIcon` with custom SVGs), and chart segments
+- Amber accent remains for interactive elements; specialty colors for specialty identification only
 
 ### Design Rules
 - Amber accent on interactive elements only (buttons, links, selected states). Never on static text.

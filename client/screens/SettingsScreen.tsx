@@ -306,7 +306,7 @@ export default function SettingsScreen() {
     if (isAvailable) {
       await MailComposer.composeAsync({
         recipients: [SUPPORT_EMAIL],
-        subject: `ReconLog Feedback - v${APP_VERSION} (${BUILD_NUMBER})`,
+        subject: `Opus Feedback — v${APP_VERSION} (${BUILD_NUMBER})`,
         body: `\n\n---\nApp Version: ${APP_VERSION}\nBuild: ${BUILD_NUMBER}\nDevice: ${Constants.deviceName || "Unknown"}`,
       });
     } else {
@@ -672,7 +672,7 @@ export default function SettingsScreen() {
 
         <View style={styles.disclaimerContainer}>
           <ThemedText style={[styles.disclaimerText, { color: theme.textTertiary }]}>
-            ReconLog is a documentation tool. The treating surgeon remains solely responsible for patient care and clinical records. This app does not provide medical advice.
+            Opus is a documentation tool. The treating surgeon remains solely responsible for patient care and clinical records. This app does not provide medical advice.
           </ThemedText>
         </View>
       </KeyboardAwareScrollViewCompat>

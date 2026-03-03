@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
+import { OpusLogo } from "@/components/brand";
 import { useAuth } from "@/contexts/AuthContext";
 import { Spacing, BorderRadius, Typography, Shadows } from "@/constants/theme";
 import { useTheme } from "@/hooks/useTheme";
@@ -125,10 +126,7 @@ export default function AuthScreen() {
     >
       <View style={[styles.content, { paddingTop: insets.top + Spacing["4xl"], paddingBottom: insets.bottom + Spacing.lg }]}>
         <View style={styles.header}>
-          <View style={[styles.iconContainer, { backgroundColor: colors.link + "15" }]}>
-            <Feather name="clipboard" size={40} color={colors.link} />
-          </View>
-          <Text style={[styles.title, { color: colors.text }]}>Surgical Logbook</Text>
+          <OpusLogo size="lg" showSubtitle color="#E5A00D" />
           <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
             {mode === "login" ? "Sign in to your account" : "Create your account"}
           </Text>
@@ -299,20 +297,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: Spacing["4xl"],
   },
-  iconContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: Spacing.lg,
-  },
-  title: {
-    ...Typography.display,
-    marginBottom: Spacing.xs,
-  },
   subtitle: {
     ...Typography.body,
+    marginTop: Spacing["3xl"],
   },
   form: {
     gap: Spacing.lg,

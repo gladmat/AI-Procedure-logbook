@@ -22,7 +22,7 @@ interface WoundAssessmentCardProps {
   createdAt: string;
 }
 
-function getHealingTrendColor(trend: HealingTrend, theme: Record<string, string>): string {
+function getHealingTrendColor(trend: HealingTrend, theme: typeof import("@/constants/theme").Colors.light): string {
   switch (trend) {
     case "improving":
       return theme.success;

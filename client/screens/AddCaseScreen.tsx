@@ -8,9 +8,9 @@ import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
-import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { ThemedText } from "@/components/ThemedText";
+import { SpecialtyIcon } from "@/components/SpecialtyIcon";
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, Shadows } from "@/constants/theme";
@@ -18,17 +18,6 @@ import { Specialty, SPECIALTY_LABELS, PROCEDURE_TYPES } from "@/types/case";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
-
-const SPECIALTY_ICONS: Record<Specialty, keyof typeof Feather.glyphMap> = {
-  breast: "heart",
-  body_contouring: "user",
-  aesthetics: "star",
-  hand_surgery: "edit-3",
-  orthoplastic: "activity",
-  burns: "thermometer",
-  general: "clipboard",
-  head_neck: "mic",
-};
 
 export default function AddCaseScreen() {
   const { theme } = useTheme();
@@ -68,13 +57,13 @@ export default function AddCaseScreen() {
             <View
               style={[
                 styles.specialtyIcon,
-                { backgroundColor: theme.link + "15" },
+                { backgroundColor: theme.specialty[specialty] + "15" },
               ]}
             >
-              <Feather
-                name={SPECIALTY_ICONS[specialty]}
+              <SpecialtyIcon
+                specialty={specialty}
                 size={24}
-                color={theme.link}
+                color={theme.specialty[specialty]}
               />
             </View>
             <ThemedText style={styles.specialtyName}>

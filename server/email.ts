@@ -1,7 +1,7 @@
 import { Resend } from 'resend';
 
 const FROM_EMAIL = 'noreply@drgladysz.com';
-const APP_NAME = 'Surgical Logbook';
+const APP_NAME = 'Opus';
 
 function getResendClient(): Resend {
   const apiKey = process.env.RESEND_API_KEY;
@@ -37,7 +37,7 @@ export async function sendPasswordResetEmail(
     const { data, error } = await client.emails.send({
       from: `${APP_NAME} <${FROM_EMAIL}>`,
       to: email,
-      subject: 'Reset Your Password - ReconLog',
+      subject: 'Reset Your Password — Opus',
       html: `
         <!DOCTYPE html>
         <html>
