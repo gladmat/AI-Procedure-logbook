@@ -4,7 +4,7 @@ import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
-import { BorderRadius, Spacing } from "@/constants/theme";
+import { BorderRadius, Spacing, Shadows } from "@/constants/theme";
 import { FormField, PickerField } from "@/components/FormField";
 import { ProcedureClinicalDetails } from "@/components/ProcedureClinicalDetails";
 import { ProcedureSubcategoryPicker } from "@/components/ProcedureSubcategoryPicker";
@@ -408,14 +408,10 @@ const styles = StyleSheet.create({
   },
   card: {
     borderWidth: 1,
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.md,
+    borderRadius: BorderRadius.md,
+    padding: Spacing.lg,
     marginBottom: Spacing.md,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    ...Shadows.card,
   },
   headerRow: {
     flexDirection: "row",

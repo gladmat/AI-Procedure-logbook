@@ -5,7 +5,17 @@ import { ThemedText } from "@/components/ThemedText";
 import { useCaseFormState } from "@/contexts/CaseFormContext";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, Shadows, Typography, Fonts } from "@/constants/theme";
-import { SPECIALTY_LABELS } from "@/types/case";
+import {
+  SPECIALTY_LABELS,
+  SLNB_BASIN_LABELS,
+  EXCISION_COMPLETENESS_LABELS,
+  type ClinicalDetails,
+  type FreeFlapDetails,
+  type SlnbDetails,
+  type SkinLesionExcisionDetails,
+  type HandSurgeryDetails,
+  type BodyContouringDetails,
+} from "@/types/case";
 import { Button } from "@/components/Button";
 import { validateRequiredFields } from "@/hooks/useCaseForm";
 
@@ -97,6 +107,77 @@ function SummaryRow({
   );
 }
 
+// ── Type Guards ───────────────────────────────────────────────────────────
+
+function isFreeFlapDetails(d: ClinicalDetails): d is FreeFlapDetails {
+  return "anastomoses" in d;
+}
+function isSlnbDetails(d: ClinicalDetails): d is SlnbDetails {
+  return "basins" in d;
+}
+function isSkinLesionDetails(d: ClinicalDetails): d is SkinLesionExcisionDetails {
+  return "excisionCompleteness" in d;
+}
+function isHandSurgeryDetails(d: ClinicalDetails): d is HandSurgeryDetails {
+  return "fractures" in d && Array.isArray((d as HandSurgeryDetails).fractures);
+}
+function isBodyContouringDetails(d: ClinicalDetails): d is BodyContouringDetails {
+  return "resectionWeightGrams" in d;
+}
+
+// ── Procedure Clinical Detail Rows ───────────────────────────────────────
+
+function ProcedureClinicalSummary({ details }: { details: ClinicalDetails }) {
+  if (isFreeFlapDetails(details)) {
+    const parts: string[] = [];
+    if (details.flapDisplayName || details.flapType) parts.push(details.flapDisplayName || details.flapType || "");
+    if (details.harvestSide) parts.push(`${details.harvestSide} side`);
+    if (details.anastomoses?.length) parts.push(`${details.anastomoses.length} anastomos${details.anastomoses.length === 1 ? "is" : "es"}`);
+    if (details.ischemiaTimeMinutes) parts.push(`${details.ischemiaTimeMinutes} min ischaemia`);
+    return parts.length > 0 ? <SummaryRow label="Flap Details" value={parts.join(" · ")} /> : null;
+  }
+
+  if (isSlnbDetails(details)) {
+    const basinSummary = details.basins
+      ?.map((b) => {
+        const name = SLNB_BASIN_LABELS[b.basin] || b.basin;
+        const nodes = b.nodesRemoved != null ? `${b.nodesPositive ?? 0}/${b.nodesRemoved}` : "";
+        return nodes ? `${name} (${nodes})` : name;
+      })
+      .join(", ");
+    const techniques: string[] = [];
+    if (details.radioisotopeUsed) techniques.push("Radioisotope");
+    if (details.blueDyeUsed) techniques.push("Blue dye");
+    if (details.gammaProbeUsed) techniques.push("Gamma probe");
+    if (details.spectCtPerformed) techniques.push("SPECT-CT");
+    return (
+      <>
+        {basinSummary ? <SummaryRow label="SLNB Basins" value={basinSummary} /> : null}
+        {techniques.length > 0 ? <SummaryRow label="Technique" value={techniques.join(", ")} /> : null}
+      </>
+    );
+  }
+
+  if (isSkinLesionDetails(details)) {
+    const parts: string[] = [];
+    if (details.peripheralMarginMm != null) parts.push(`${details.peripheralMarginMm}mm peripheral`);
+    if (details.deepMarginMm != null) parts.push(`${details.deepMarginMm}mm deep`);
+    if (details.excisionCompleteness) parts.push(EXCISION_COMPLETENESS_LABELS[details.excisionCompleteness]);
+    return parts.length > 0 ? <SummaryRow label="Excision" value={parts.join(" · ")} /> : null;
+  }
+
+  if (isHandSurgeryDetails(details) && details.fractures?.length) {
+    const fractureSummary = details.fractures.map((f) => `${f.boneName} (${f.aoCode})`).join(", ");
+    return <SummaryRow label="Fractures" value={fractureSummary} />;
+  }
+
+  if (isBodyContouringDetails(details) && details.resectionWeightGrams) {
+    return <SummaryRow label="Resection Weight" value={`${details.resectionWeightGrams}g`} mono />;
+  }
+
+  return null;
+}
+
 // ── Main Component ────────────────────────────────────────────────────────
 
 export function CaseSummaryView({
@@ -150,6 +231,23 @@ export function CaseSummaryView({
               value={group.diagnosis?.displayName}
               snomedCode={group.diagnosis?.snomedCtCode}
             />
+            {group.diagnosisStagingSelections &&
+              Object.entries(group.diagnosisStagingSelections).length > 0 && (
+                <SummaryRow
+                  label="Staging"
+                  value={Object.entries(group.diagnosisStagingSelections)
+                    .map(([system, value]) => `${system}: ${value}`)
+                    .join(" · ")}
+                />
+              )}
+            {group.isMultiLesion && group.lesionInstances && group.lesionInstances.length > 0 && (
+              <SummaryRow
+                label="Lesions"
+                value={group.lesionInstances
+                  .map((l) => l.site + (l.pathologyType ? ` (${l.pathologyType})` : ""))
+                  .join(", ")}
+              />
+            )}
             {group.procedures.map((proc, pIdx) => (
               <View key={proc.id}>
                 <SummaryRow
@@ -157,6 +255,9 @@ export function CaseSummaryView({
                   value={proc.procedureName}
                   snomedCode={proc.snomedCtCode || proc.snomedCtDisplay}
                 />
+                {proc.clinicalDetails ? (
+                  <ProcedureClinicalSummary details={proc.clinicalDetails} />
+                ) : null}
               </View>
             ))}
           </SummaryCard>
