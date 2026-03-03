@@ -1,57 +1,89 @@
 import { Platform } from "react-native";
 
+// ── Raw Color Scales ─────────────────────────────────────────────────────────
+
+export const palette = {
+  charcoal: {
+    950: "#0F1419",
+    900: "#1A1F26",
+    850: "#242B33",
+    800: "#2E3740",
+    750: "#3D4753",
+    700: "#4B5563",
+    500: "#64748B",
+    400: "#94A3B8",
+    200: "#E2E8F0",
+    100: "#F1F5F9",
+    50: "#F8FAFC",
+  },
+  amber: {
+    900: "#78350F",
+    700: "#B45309",
+    600: "#D97706",
+    500: "#F59E0B",
+    200: "#FDE68A",
+    50: "#FEF3C7",
+  },
+  white: "#FFFFFF",
+  black: "#000000",
+} as const;
+
+// ── Theme Colors ─────────────────────────────────────────────────────────────
+
 export const Colors = {
   light: {
-    text: "#1A1A1A",
-    textSecondary: "#6B7280",
-    textTertiary: "#9CA3AF",
-    buttonText: "#FFFFFF",
-    tabIconDefault: "#6B7280",
-    tabIconSelected: "#0056D2",
-    link: "#0056D2",
-    linkPressed: "#003D99",
-    backgroundRoot: "#FFFFFF",
-    backgroundDefault: "#F8F9FB",
-    backgroundSecondary: "#F2F4F7",
-    backgroundTertiary: "#E5E7EB",
+    text: "#0F1419",
+    textSecondary: "#475569",
+    textTertiary: "#94A3B8",
+    buttonText: "#0F1419",
+    tabIconDefault: "#94A3B8",
+    tabIconSelected: "#B45309",
+    link: "#B45309",
+    linkPressed: "#D97706",
+    backgroundRoot: "#F8FAFC",
+    backgroundDefault: "#FFFFFF",
+    backgroundSecondary: "#F1F5F9",
+    backgroundTertiary: "#E2E8F0",
     backgroundElevated: "#FFFFFF",
-    success: "#059669",
-    warning: "#F59E0B",
+    success: "#16A34A",
+    warning: "#EA580C",
     error: "#DC2626",
-    info: "#3B82F6",
-    border: "#E5E7EB",
-    cardShadow: "rgba(0, 0, 0, 0.05)",
-    rolePrimary: "#0056D2",
+    info: "#0369A1",
+    border: "#E2E8F0",
+    cardShadow: "rgba(15,20,25,0.1)",
+    rolePrimary: "#B45309",
     roleSupervising: "#7C3AED",
-    roleAssistant: "#059669",
+    roleAssistant: "#16A34A",
     roleTrainee: "#F59E0B",
   },
   dark: {
-    text: "#ECEDEE",
-    textSecondary: "#9CA3AF",
-    textTertiary: "#6B7280",
-    buttonText: "#FFFFFF",
-    tabIconDefault: "#6B7280",
-    tabIconSelected: "#4B9FFF",
-    link: "#4B9FFF",
-    linkPressed: "#2D7DD2",
+    text: "#F0F2F4",
+    textSecondary: "#94A3B8",
+    textTertiary: "#64748B",
+    buttonText: "#0F1419",
+    tabIconDefault: "#64748B",
+    tabIconSelected: "#D97706",
+    link: "#D97706",
+    linkPressed: "#F59E0B",
     backgroundRoot: "#0F1419",
     backgroundDefault: "#1A1F26",
-    backgroundSecondary: "#252B33",
-    backgroundTertiary: "#323940",
+    backgroundSecondary: "#242B33",
+    backgroundTertiary: "#2E3740",
     backgroundElevated: "#1A1F26",
-    success: "#34D399",
-    warning: "#FBBF24",
-    error: "#F87171",
-    info: "#60A5FA",
-    border: "#323940",
-    cardShadow: "rgba(0, 0, 0, 0.3)",
-    rolePrimary: "#4B9FFF",
+    success: "#15803D",
+    warning: "#FB923C",
+    error: "#DC2626",
+    info: "#0284C7",
+    border: "#2E3740",
+    cardShadow: "rgba(0,0,0,0.35)",
+    rolePrimary: "#D97706",
     roleSupervising: "#A78BFA",
-    roleAssistant: "#34D399",
+    roleAssistant: "#15803D",
     roleTrainee: "#FBBF24",
   },
 };
+
+// ── Spacing ──────────────────────────────────────────────────────────────────
 
 export const Spacing = {
   xs: 4,
@@ -68,100 +100,19 @@ export const Spacing = {
   touchTarget: 48,
 };
 
+// ── Border Radius ────────────────────────────────────────────────────────────
+
 export const BorderRadius = {
-  xs: 8,
-  sm: 12,
-  md: 18,
-  lg: 24,
-  xl: 30,
+  xs: 6,
+  sm: 10,
+  md: 14,
+  lg: 20,
+  xl: 28,
   "2xl": 40,
-  "3xl": 50,
   full: 9999,
 };
 
-export const Typography = {
-  display: {
-    fontSize: 32,
-    lineHeight: 40,
-    fontWeight: "700" as const,
-  },
-  h1: {
-    fontSize: 24,
-    lineHeight: 32,
-    fontWeight: "600" as const,
-  },
-  h2: {
-    fontSize: 20,
-    lineHeight: 28,
-    fontWeight: "600" as const,
-  },
-  h3: {
-    fontSize: 18,
-    lineHeight: 26,
-    fontWeight: "600" as const,
-  },
-  h4: {
-    fontSize: 16,
-    lineHeight: 24,
-    fontWeight: "600" as const,
-  },
-  body: {
-    fontSize: 16,
-    lineHeight: 24,
-    fontWeight: "400" as const,
-  },
-  bodySemibold: {
-    fontSize: 16,
-    lineHeight: 24,
-    fontWeight: "600" as const,
-  },
-  small: {
-    fontSize: 14,
-    lineHeight: 20,
-    fontWeight: "400" as const,
-  },
-  caption: {
-    fontSize: 12,
-    lineHeight: 16,
-    fontWeight: "500" as const,
-  },
-  label: {
-    fontSize: 12,
-    lineHeight: 16,
-    fontWeight: "500" as const,
-    textTransform: "uppercase" as const,
-    letterSpacing: 0.5,
-  },
-  link: {
-    fontSize: 16,
-    lineHeight: 24,
-    fontWeight: "400" as const,
-  },
-};
-
-export const Shadows = {
-  card: {
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 2,
-  },
-  floating: {
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  modal: {
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.2,
-    shadowRadius: 16,
-    elevation: 16,
-  },
-};
+// ── Typography ───────────────────────────────────────────────────────────────
 
 export const Fonts = Platform.select({
   ios: {
@@ -179,7 +130,109 @@ export const Fonts = Platform.select({
   web: {
     sans: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
     serif: "Georgia, 'Times New Roman', serif",
-    rounded: "'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, 'MS PGothic', sans-serif",
+    rounded:
+      "'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, 'MS PGothic', sans-serif",
     mono: "SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
   },
 });
+
+export const Typography = {
+  display: {
+    fontSize: 28,
+    lineHeight: 36,
+    fontWeight: "700" as const,
+    letterSpacing: -0.5,
+  },
+  h1: {
+    fontSize: 22,
+    lineHeight: 30,
+    fontWeight: "700" as const,
+    letterSpacing: -0.3,
+  },
+  h2: {
+    fontSize: 18,
+    lineHeight: 26,
+    fontWeight: "600" as const,
+    letterSpacing: -0.2,
+  },
+  h3: {
+    fontSize: 16,
+    lineHeight: 24,
+    fontWeight: "600" as const,
+  },
+  h4: {
+    fontSize: 15,
+    lineHeight: 22,
+    fontWeight: "600" as const,
+  },
+  body: {
+    fontSize: 16,
+    lineHeight: 24,
+    fontWeight: "400" as const,
+  },
+  bodySemibold: {
+    fontSize: 16,
+    lineHeight: 24,
+    fontWeight: "600" as const,
+  },
+  small: {
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: "400" as const,
+  },
+  footnote: {
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: "400" as const,
+  },
+  caption: {
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: "400" as const,
+    letterSpacing: 0.1,
+  },
+  label: {
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: "500" as const,
+    textTransform: "uppercase" as const,
+    letterSpacing: 0.5,
+  },
+  link: {
+    fontSize: 16,
+    lineHeight: 24,
+    fontWeight: "400" as const,
+  },
+  mono: {
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: "500" as const,
+    fontFamily: Fonts?.mono,
+  },
+};
+
+// ── Shadows ──────────────────────────────────────────────────────────────────
+
+export const Shadows = {
+  card: {
+    shadowColor: palette.charcoal[950],
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  floating: {
+    shadowColor: palette.charcoal[950],
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  modal: {
+    shadowColor: palette.charcoal[950],
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.2,
+    shadowRadius: 16,
+    elevation: 16,
+  },
+};

@@ -101,23 +101,25 @@ function SuggestionChip({
   theme,
   onToggle,
 }: SuggestionChipProps) {
+  const isDisabled = !!suggestion.isConditional && !isActive && !isSelected;
+
   const chipStyle = isSelected
     ? [styles.chip, styles.chipSelected, { backgroundColor: theme.link, borderColor: theme.link }]
-    : isActive
-    ? [styles.chip, { backgroundColor: theme.backgroundSecondary, borderColor: theme.border }]
-    : [styles.chip, styles.chipInactive, { backgroundColor: theme.backgroundTertiary, borderColor: theme.border }];
+    : isDisabled
+    ? [styles.chip, styles.chipInactive, { backgroundColor: theme.backgroundTertiary, borderColor: theme.border }]
+    : [styles.chip, { backgroundColor: theme.backgroundSecondary, borderColor: theme.border }];
 
   const textColor = isSelected
     ? theme.buttonText
-    : isActive
-    ? theme.text
-    : theme.textTertiary;
+    : isDisabled
+    ? theme.textTertiary
+    : theme.text;
 
   const iconColor = isSelected
     ? theme.buttonText
-    : isActive
-    ? theme.link
-    : theme.textTertiary;
+    : isDisabled
+    ? theme.textTertiary
+    : theme.link;
 
   return (
     <View>
@@ -125,7 +127,7 @@ function SuggestionChip({
         testID={`chip-procedure-${suggestion.procedurePicklistId}`}
         style={chipStyle}
         onPress={() => onToggle(suggestion.procedurePicklistId, !isSelected)}
-        disabled={!isActive && !isSelected}
+        disabled={!!suggestion.isConditional && !isActive && !isSelected}
       >
         <Feather
           name={isSelected ? "check-circle" : "circle"}
@@ -138,7 +140,7 @@ function SuggestionChip({
           style={[
             styles.chipText,
             { color: textColor },
-            !isActive && !isSelected ? styles.chipTextInactive : null,
+            isDisabled ? styles.chipTextInactive : null,
           ]}
         >
           {suggestion.displayName}

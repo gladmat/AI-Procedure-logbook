@@ -2,11 +2,12 @@ import { InfectionOverlay } from "./infection";
 import { WoundAssessment } from "@/types/wound";
 
 // Case status for active patient tracking
-export type CaseStatus = "active" | "discharged";
+export type CaseStatus = "active" | "discharged" | "incomplete";
 
 export const CASE_STATUS_LABELS: Record<CaseStatus, string> = {
   active: "Active",
   discharged: "Discharged",
+  incomplete: "Incomplete",
 };
 
 // RACS MALT Supervision Levels (role in theatre)
@@ -118,6 +119,12 @@ export type ProcedureTag =
 export type ASAScore = 1 | 2 | 3 | 4 | 5 | 6;
 
 export type SmokingStatus = "yes" | "no" | "ex";
+
+export const SMOKING_STATUS_LABELS: Record<SmokingStatus, string> = {
+  no: "Non-smoker",
+  ex: "Ex-smoker",
+  yes: "Current smoker",
+};
 
 export type Gender = "male" | "female" | "other";
 
@@ -544,7 +551,7 @@ export interface SnomedCodedItem {
   commonName?: string;
 }
 
-export type Laterality = "left" | "right";
+export type Laterality = "left" | "right" | "bilateral" | "not_applicable";
 
 export type DigitId = "I" | "II" | "III" | "IV" | "V";
 
@@ -825,14 +832,12 @@ export type ClinicalSuspicion =
   | "suspect_bcc"
   | "suspect_scc"
   | "suspect_melanoma"
-  | "suspect_benign"
   | "uncertain";
 
 export const CLINICAL_SUSPICION_LABELS: Record<ClinicalSuspicion, string> = {
   suspect_bcc: "Suspect BCC",
   suspect_scc: "Suspect SCC",
   suspect_melanoma: "Suspect melanoma",
-  suspect_benign: "Suspect benign / naevus",
   uncertain: "Uncertain",
 };
 
@@ -881,6 +886,7 @@ export interface Case {
   
   // Patient Demographics
   gender?: Gender;
+  age?: number;
   ethnicity?: string;
   
   // Admission Details
@@ -1467,7 +1473,11 @@ export function getPrimarySiteLabel(c: Case): string | null {
   const group = c.diagnosisGroups[0];
   if (!group) return null;
   const laterality = group.diagnosisClinicalDetails?.laterality;
-  const side = laterality === "left" ? "Left" : laterality === "right" ? "Right" : null;
+  const side =
+    laterality === "left" ? "Left" :
+    laterality === "right" ? "Right" :
+    laterality === "bilateral" ? "Bilateral" :
+    null;
   const lesionSite = group.lesionInstances?.[0]?.site;
   if (side && lesionSite) return `${side} ${lesionSite}`;
   if (lesionSite) return lesionSite;

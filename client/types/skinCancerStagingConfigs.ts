@@ -16,7 +16,7 @@
  *   into the diagnosisStagingConfigs array).
  */
 
-import type { DiagnosisStagingConfig } from "./diagnosisStagingConfig";
+import type { DiagnosisStagingConfig } from "@/lib/snomedApi";
 
 export const SKIN_CANCER_STAGING_CONFIGS: DiagnosisStagingConfig[] = [
   // ═══════════════════════════════════════════════════════════════════════

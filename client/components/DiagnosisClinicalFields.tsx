@@ -17,6 +17,8 @@ import {
 const LATERALITY_OPTIONS: { value: Laterality; label: string }[] = [
   { value: "left", label: "Left" },
   { value: "right", label: "Right" },
+  { value: "bilateral", label: "Bilateral" },
+  { value: "not_applicable", label: "N/A" },
 ];
 
 const INJURY_MECHANISM_OPTIONS = [
@@ -180,7 +182,7 @@ export function DiagnosisClinicalFields({
                 ]}
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  updateClinicalDetails({ laterality: option.value });
+                  updateClinicalDetails({ laterality: isSelected ? undefined : option.value });
                 }}
               >
                 <ThemedText

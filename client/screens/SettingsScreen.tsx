@@ -129,7 +129,7 @@ const COUNTRY_OF_PRACTICE_LABELS: Record<string, string> = {
 };
 
 export default function SettingsScreen() {
-  const { theme } = useTheme();
+  const { theme, preference, setColorScheme } = useTheme();
   const insets = useSafeAreaInsets();
   const headerHeight = useHeaderHeight();
   const tabBarHeight = useBottomTabBarHeight();
@@ -413,6 +413,51 @@ export default function SettingsScreen() {
                 </View>
               </View>
             ) : null}
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <ThemedText style={[styles.sectionTitle, { color: theme.textSecondary }]}>
+            APPEARANCE
+          </ThemedText>
+          <View style={[styles.sectionCard, { backgroundColor: theme.backgroundDefault, padding: Spacing.md }]}>
+            <View style={[styles.themeSegmented, { borderColor: theme.border, backgroundColor: theme.backgroundDefault }]}>
+              {([
+                { value: "light" as const, label: "Light", icon: "sun" as const },
+                { value: "dark" as const, label: "Dark", icon: "moon" as const },
+                { value: "system" as const, label: "System", icon: "smartphone" as const },
+              ]).map((opt) => {
+                const isSelected = preference === opt.value;
+                return (
+                  <Pressable
+                    key={opt.value}
+                    style={[
+                      styles.themeSegmentedButton,
+                      isSelected ? { backgroundColor: theme.link } : undefined,
+                    ]}
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      setColorScheme(opt.value);
+                    }}
+                  >
+                    <Feather
+                      name={opt.icon}
+                      size={14}
+                      color={isSelected ? "#FFFFFF" : theme.textSecondary}
+                      style={{ marginRight: 4 }}
+                    />
+                    <ThemedText
+                      style={[
+                        styles.themeSegmentedText,
+                        { color: isSelected ? "#FFFFFF" : theme.textSecondary },
+                      ]}
+                    >
+                      {opt.label}
+                    </ThemedText>
+                  </Pressable>
+                );
+              })}
+            </View>
           </View>
         </View>
 
@@ -798,6 +843,23 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  themeSegmented: {
+    flexDirection: "row",
+    borderRadius: 8,
+    borderWidth: 1,
+    overflow: "hidden",
+  },
+  themeSegmentedButton: {
+    flex: 1,
+    flexDirection: "row",
+    paddingVertical: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  themeSegmentedText: {
+    fontSize: 13,
+    fontWeight: "600",
   },
   content: {
     paddingHorizontal: Spacing.lg,

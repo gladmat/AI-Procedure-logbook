@@ -1,9 +1,12 @@
 import { Specialty, CountryCode, ProcedureCode } from "@/types/case";
 
+/** Procedure sub-categories used for SNOMED lookup grouping */
+export type ProcedureSubcategory = Specialty | "free_flap" | "hand_trauma";
+
 export interface SnomedProcedure {
   snomedCtCode: string;
   snomedCtDisplay: string;
-  specialty: Specialty;
+  specialty: ProcedureSubcategory;
   commonName: string;
   countryMappings: Partial<Record<CountryCode, CountryProcedureMapping>>;
 }

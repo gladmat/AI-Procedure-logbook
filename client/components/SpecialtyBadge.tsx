@@ -13,11 +13,13 @@ interface SpecialtyBadgeProps {
 }
 
 const SPECIALTY_ICONS: Record<Specialty, keyof typeof Feather.glyphMap> = {
-  free_flap: "activity",
-  hand_trauma: "tool",
+  hand_surgery: "tool",
+  orthoplastic: "activity",
+  breast: "heart",
   body_contouring: "user",
   aesthetics: "star",
   burns: "thermometer",
+  head_neck: "eye",
   general: "clipboard",
 };
 

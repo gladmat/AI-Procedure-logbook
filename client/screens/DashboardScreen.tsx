@@ -1117,7 +1117,7 @@ export default function DashboardScreen() {
                     style={[styles.dischargeNotesInput, { 
                       backgroundColor: theme.backgroundSecondary, 
                       borderColor: theme.border,
-                      color: theme.textPrimary,
+                      color: theme.text,
                     }]}
                     placeholder="e.g., Infection resolved, wound healed"
                     placeholderTextColor={theme.textTertiary}

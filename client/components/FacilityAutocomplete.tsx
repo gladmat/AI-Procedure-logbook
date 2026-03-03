@@ -8,8 +8,8 @@ import {
   Keyboard,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
-import { Colors, Spacing, BorderRadius, Typography, Shadows } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/useColorScheme";
+import { Spacing, BorderRadius, Typography, Shadows } from "@/constants/theme";
+import { useTheme } from "@/hooks/useTheme";
 import { MasterFacility, searchFacilities } from "@/data/facilities";
 
 interface FacilityAutocompleteProps {
@@ -27,8 +27,7 @@ export function FacilityAutocomplete({
   placeholder = "Start typing hospital name...",
   disabled = false,
 }: FacilityAutocompleteProps) {
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const { theme: colors } = useTheme();
   const [query, setQuery] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
 

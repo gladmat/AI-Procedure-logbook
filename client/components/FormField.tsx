@@ -8,6 +8,7 @@ import {
   Modal,
   FlatList,
   TouchableOpacity,
+  InteractionManager,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Feather } from "@expo/vector-icons";
@@ -346,7 +347,9 @@ export function PickerField({
     if (pendingValueRef.current !== null) {
       const selected = pendingValueRef.current;
       pendingValueRef.current = null;
-      onSelect(selected);
+      InteractionManager.runAfterInteractions(() => {
+        onSelect(selected);
+      });
     }
   }, [onSelect]);
 

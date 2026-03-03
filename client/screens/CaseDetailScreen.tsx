@@ -407,7 +407,7 @@ export default function CaseDetailScreen() {
   );
 
   const hasProcedures = caseData.diagnosisGroups?.some(g => g.procedures.length > 0);
-  const hasPatientDemographics = caseData.gender || caseData.ethnicity;
+  const hasPatientDemographics = caseData.gender || caseData.age || caseData.ethnicity;
   const hasAdmissionDetails = caseData.admissionDate || caseData.dischargeDate || caseData.admissionUrgency || (caseData.unplannedReadmission && caseData.unplannedReadmission !== "no");
   const hasDiagnoses = caseData.diagnosisGroups?.some(g => g.diagnosis);
   const hasComorbidities = caseData.comorbidities && caseData.comorbidities.length > 0;
@@ -570,7 +570,7 @@ export default function CaseDetailScreen() {
                               {(proc.clinicalDetails as FreeFlapDetails).recipientSiteRegion ? (
                                 <DetailRow 
                                   label="Recipient Site" 
-                                  value={`${(proc.clinicalDetails as FreeFlapDetails).recipientSiteLaterality ? ((proc.clinicalDetails as FreeFlapDetails).recipientSiteLaterality === "left" ? "Left " : "Right ") : ""}${(proc.clinicalDetails as FreeFlapDetails).recipientSiteRegion?.replace(/_/g, " ")}`} 
+                                  value={(proc.clinicalDetails as FreeFlapDetails).recipientSiteRegion?.replace(/_/g, " ")}
                                 />
                               ) : null}
                               {(proc.clinicalDetails as FreeFlapDetails).ischemiaTimeMinutes ? (
@@ -710,10 +710,11 @@ export default function CaseDetailScreen() {
           <>
             <SectionHeader title="Patient Demographics" />
             <View style={[styles.card, { backgroundColor: theme.backgroundDefault }]}>
-              <DetailRow 
-                label="Gender" 
-                value={caseData.gender ? GENDER_LABELS[caseData.gender] : undefined} 
+              <DetailRow
+                label="Gender"
+                value={caseData.gender ? GENDER_LABELS[caseData.gender] : undefined}
               />
+              <DetailRow label="Age" value={caseData.age ? String(caseData.age) : undefined} />
               <DetailRow label="Ethnicity" value={caseData.ethnicity} />
             </View>
           </>

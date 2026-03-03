@@ -14,8 +14,8 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { useAuth } from "@/contexts/AuthContext";
-import { Colors, Spacing, BorderRadius, Typography } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/useColorScheme";
+import { Spacing, BorderRadius, Typography } from "@/constants/theme";
+import { useTheme } from "@/hooks/useTheme";
 import { FacilitySelector } from "@/components/FacilitySelector";
 import { FacilityAutocomplete } from "@/components/FacilityAutocomplete";
 import { MasterFacility } from "@/data/facilities";
@@ -42,8 +42,7 @@ type Step = "agreement" | "country" | "career" | "facilities";
 
 export default function OnboardingScreen() {
   const insets = useSafeAreaInsets();
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const { theme: colors } = useTheme();
   const { updateProfile, addFacility, removeFacility, setFacilityPrimary, facilities } = useAuth();
 
   const [step, setStep] = useState<Step>("agreement");

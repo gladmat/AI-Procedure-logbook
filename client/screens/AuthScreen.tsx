@@ -14,16 +14,15 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { useAuth } from "@/contexts/AuthContext";
-import { Colors, Spacing, BorderRadius, Typography, Shadows } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/useColorScheme";
+import { Spacing, BorderRadius, Typography, Shadows } from "@/constants/theme";
+import { useTheme } from "@/hooks/useTheme";
 import { getApiUrl } from "@/lib/query-client";
 
 type Mode = "login" | "signup";
 
 export default function AuthScreen() {
   const insets = useSafeAreaInsets();
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const { theme: colors } = useTheme();
   const { login, signup } = useAuth();
 
   const [mode, setMode] = useState<Mode>("login");

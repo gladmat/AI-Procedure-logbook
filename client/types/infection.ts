@@ -271,6 +271,8 @@ export interface InfectionOverlay {
   scores?: ScoreEntry[];
   episodes: InfectionEpisode[];
   status: InfectionCaseStatus;
+  dischargeNotes?: string;
+  resolvedDate?: string;
   createdAt: string;
   updatedAt: string;
 }

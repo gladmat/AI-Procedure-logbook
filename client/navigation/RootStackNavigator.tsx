@@ -13,8 +13,7 @@ import OnboardingScreen from "@/screens/OnboardingScreen";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
 import { useAuth } from "@/contexts/AuthContext";
 import { Specialty, TimelineEventType, MediaAttachment } from "@/types/case";
-import { Colors } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/useColorScheme";
+import { useTheme } from "@/hooks/useTheme";
 
 export type RootStackParamList = {
   Auth: undefined;
@@ -47,8 +46,7 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 export default function RootStackNavigator() {
   const screenOptions = useScreenOptions();
   const { isAuthenticated, onboardingComplete, isLoading } = useAuth();
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const { theme: colors } = useTheme();
 
   if (isLoading) {
     return (

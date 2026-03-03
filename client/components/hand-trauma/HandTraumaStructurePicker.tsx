@@ -147,7 +147,7 @@ export function HandTraumaStructurePicker({
         tags: entry.tags as CaseProcedure["tags"],
         snomedCtCode: entry.snomedCtCode,
         snomedCtDisplay: entry.snomedCtDisplay,
-        surgeonRole: "primary_surgeon",
+        surgeonRole: "PS",
         notes: notesParts.join(" | "),
       };
 
@@ -248,7 +248,7 @@ export function HandTraumaStructurePicker({
     <View style={[styles.container, { backgroundColor: theme.backgroundSecondary, borderColor: theme.border }]}>
       <View style={styles.header}>
         <Feather name="clipboard" size={18} color={theme.link} />
-        <ThemedText type="defaultSemiBold" style={{ color: theme.text, marginLeft: Spacing.sm }}>
+        <ThemedText style={{ color: theme.text, marginLeft: Spacing.sm, fontWeight: "600" }}>
           Injured Structures
         </ThemedText>
       </View>

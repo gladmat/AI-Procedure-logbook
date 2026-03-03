@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { View, StyleSheet, Pressable } from "react-native";
+import { View, StyleSheet, Pressable, Animated } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { v4 as uuidv4 } from "uuid";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
-import { Spacing, BorderRadius } from "@/constants/theme";
+import { Spacing, BorderRadius, Shadows } from "@/constants/theme";
 import {
   DiagnosisGroup,
   CaseProcedure,
@@ -49,12 +49,22 @@ interface DiagnosisGroupEditorProps {
   group: DiagnosisGroup;
   index: number;
   isOnly: boolean;
+  totalGroups: number;
   onChange: (updatedGroup: DiagnosisGroup) => void;
   onDelete: () => void;
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
 }
 
-export function DiagnosisGroupEditor({ group, index, isOnly, onChange, onDelete }: DiagnosisGroupEditorProps) {
+export function DiagnosisGroupEditor({ group, index, isOnly, totalGroups, onChange, onDelete, onMoveUp, onMoveDown }: DiagnosisGroupEditorProps) {
   const { theme } = useTheme();
+
+  // Accent color: monochromatic amber — primary full, then fading
+  const accentColor = index === 0 ? theme.link : index === 1 ? theme.link + "99" : theme.link + "59";
+
+  // Completion check: group has diagnosis + at least one named procedure
+  const isComplete = !!(group.diagnosis?.displayName && group.procedures.some(p => p.procedureName.trim()));
+
   const initializedRef = useRef(false);
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
@@ -532,43 +542,106 @@ export function DiagnosisGroupEditor({ group, index, isOnly, onChange, onDelete 
 
   if (!isExpanded && !isOnly) {
     return (
-      <Pressable
-        onPress={() => {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          setIsExpanded(true);
-        }}
+      <View
         style={[
-          styles.collapsedGroupCard,
-          { backgroundColor: theme.backgroundElevated, borderColor: theme.border },
+          styles.diagnosisCard,
+          {
+            backgroundColor: theme.backgroundElevated,
+            borderLeftColor: accentColor,
+          },
+          Shadows.card,
         ]}
       >
-        <View style={styles.collapsedGroupHeader}>
-          <View style={[styles.orderBadge, { backgroundColor: theme.link + "20" }]}>
-            <ThemedText style={[styles.orderText, { color: theme.link }]}>
-              {index + 1}
-            </ThemedText>
+        <Pressable
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            setIsExpanded(true);
+          }}
+          style={styles.collapsedGroupCardInner}
+        >
+          <View style={styles.collapsedGroupHeader}>
+            <View style={[styles.orderBadge, { backgroundColor: accentColor + "20" }]}>
+              <ThemedText style={[styles.orderText, { color: accentColor }]}>
+                {index + 1}
+              </ThemedText>
+            </View>
+            <View style={{ flex: 1 }}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: Spacing.sm }}>
+                <ThemedText style={{ fontWeight: "600", fontSize: 15 }}>
+                  {SPECIALTY_LABELS[groupSpecialty]}
+                </ThemedText>
+                {index === 0 && !isOnly ? (
+                  <View style={[styles.primaryBadge, { backgroundColor: theme.link }]}>
+                    <ThemedText style={[styles.primaryBadgeText, { color: theme.buttonText }]}>
+                      Primary
+                    </ThemedText>
+                  </View>
+                ) : null}
+              </View>
+              <ThemedText style={{ color: theme.textSecondary, fontSize: 13, marginTop: 2 }}>
+                {group.diagnosis?.displayName || "No diagnosis"} · {procedures.length} procedure{procedures.length !== 1 ? "s" : ""}
+              </ThemedText>
+            </View>
+            {isComplete ? (
+              <Feather name="check-circle" size={16} color={theme.success} style={{ marginRight: Spacing.sm }} />
+            ) : null}
+            {totalGroups > 1 ? (
+              <View style={styles.reorderButtons}>
+                {onMoveUp && index > 0 ? (
+                  <Pressable
+                    onPress={(e) => { e.stopPropagation(); onMoveUp(); }}
+                    hitSlop={8}
+                  >
+                    <Feather name="chevron-up" size={18} color={theme.textTertiary} />
+                  </Pressable>
+                ) : null}
+                {onMoveDown && index < totalGroups - 1 ? (
+                  <Pressable
+                    onPress={(e) => { e.stopPropagation(); onMoveDown(); }}
+                    hitSlop={8}
+                  >
+                    <Feather name="chevron-down" size={18} color={theme.textTertiary} />
+                  </Pressable>
+                ) : null}
+              </View>
+            ) : null}
+            <Feather name="chevron-right" size={20} color={theme.textSecondary} />
           </View>
-          <View style={{ flex: 1 }}>
-            <ThemedText style={{ fontWeight: "600", fontSize: 15 }}>
-              {SPECIALTY_LABELS[groupSpecialty]}
-            </ThemedText>
-            <ThemedText style={{ color: theme.textSecondary, fontSize: 13, marginTop: 2 }}>
-              {group.diagnosis?.displayName || "No diagnosis"} · {procedures.length} procedure{procedures.length !== 1 ? "s" : ""}
-            </ThemedText>
-          </View>
-          <Feather name="chevron-down" size={20} color={theme.textSecondary} />
-        </View>
-      </Pressable>
+        </Pressable>
+      </View>
     );
   }
 
   return (
-    <View style={[styles.groupContainer, !isOnly ? { borderColor: theme.border } : undefined]}>
+    <View
+      style={[
+        styles.diagnosisCard,
+        {
+          backgroundColor: theme.backgroundElevated,
+          borderLeftColor: accentColor,
+        },
+        !isOnly ? Shadows.card : undefined,
+      ]}
+    >
       {!isOnly ? (
-        <View style={styles.groupHeader}>
-          <ThemedText style={[styles.groupTitle, { color: theme.textSecondary }]}>
-            Diagnosis Group {index + 1}
-          </ThemedText>
+        <View style={[styles.groupHeader, { borderBottomColor: theme.border }]}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: Spacing.sm, flex: 1 }}>
+            <View style={[styles.orderBadge, { backgroundColor: accentColor + "20" }]}>
+              <ThemedText style={[styles.orderText, { color: accentColor }]}>
+                {index + 1}
+              </ThemedText>
+            </View>
+            <ThemedText style={[styles.groupTitle, { color: theme.text }]}>
+              Diagnosis Group {index + 1}
+            </ThemedText>
+            {index === 0 ? (
+              <View style={[styles.primaryBadge, { backgroundColor: theme.link }]}>
+                <ThemedText style={[styles.primaryBadgeText, { color: theme.buttonText }]}>
+                  Primary
+                </ThemedText>
+              </View>
+            ) : null}
+          </View>
           <View style={{ flexDirection: "row", alignItems: "center", gap: Spacing.sm }}>
             <Pressable
               onPress={() => {
@@ -577,20 +650,24 @@ export function DiagnosisGroupEditor({ group, index, isOnly, onChange, onDelete 
               }}
               hitSlop={8}
             >
-              <Feather name="chevron-up" size={20} color={theme.textSecondary} />
+              <Feather name="minus" size={20} color={theme.textSecondary} />
             </Pressable>
-            <Pressable
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                onDelete();
-              }}
-              hitSlop={8}
-            >
-              <Feather name="trash-2" size={18} color={theme.error} />
-            </Pressable>
+            {index > 0 ? (
+              <Pressable
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  onDelete();
+                }}
+                hitSlop={8}
+              >
+                <Feather name="trash-2" size={18} color={theme.error} />
+              </Pressable>
+            ) : null}
           </View>
         </View>
       ) : null}
+
+      <View style={!isOnly ? styles.cardContent : undefined}>
 
       {index > 0 ? (
         <PickerField
@@ -805,19 +882,44 @@ export function DiagnosisGroupEditor({ group, index, isOnly, onChange, onDelete 
         </View>
       ) : null}
 
-      {/* Clinical suspicion picker for excision biopsy diagnoses */}
+      {/* Clinical suspicion buttons for excision biopsy diagnoses */}
       {isExcisionBiopsyDiagnosis(selectedDiagnosis?.id) ? (
         <View style={styles.stagingContainer}>
-          <PickerField
-            label="Clinical suspicion (optional)"
-            value={clinicalSuspicion || ""}
-            options={Object.entries(CLINICAL_SUSPICION_LABELS).map(([value, label]) => ({
-              value,
-              label,
-            }))}
-            onSelect={(val) => setClinicalSuspicion(val as ClinicalSuspicion)}
-            placeholder="Select clinical impression..."
-          />
+          <ThemedText style={[styles.clinicalSuspicionLabel, { color: theme.text }]}>
+            Clinical suspicion (optional)
+          </ThemedText>
+          <View style={styles.clinicalSuspicionOptions}>
+            {(Object.entries(CLINICAL_SUSPICION_LABELS) as [ClinicalSuspicion, string][]).map(
+              ([value, label]) => {
+                const isSelected = clinicalSuspicion === value;
+                return (
+                  <Pressable
+                    key={value}
+                    style={[
+                      styles.clinicalSuspicionButton,
+                      {
+                        backgroundColor: isSelected ? theme.link : theme.backgroundSecondary,
+                        borderColor: isSelected ? theme.link : theme.border,
+                      },
+                    ]}
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      setClinicalSuspicion(isSelected ? undefined : (value as ClinicalSuspicion));
+                    }}
+                  >
+                    <ThemedText
+                      style={[
+                        styles.clinicalSuspicionButtonText,
+                        { color: isSelected ? "#FFF" : theme.text },
+                      ]}
+                    >
+                      {label}
+                    </ThemedText>
+                  </Pressable>
+                );
+              },
+            )}
+          </View>
         </View>
       ) : null}
 
@@ -838,6 +940,11 @@ export function DiagnosisGroupEditor({ group, index, isOnly, onChange, onDelete 
           onOpenFractureWizard={() => setShowFractureWizard(true)}
         />
       ) : null}
+
+      {/* Visual connector between diagnosis and procedures */}
+      <View style={styles.connector}>
+        <Feather name="arrow-down" size={16} color={theme.textTertiary} />
+      </View>
 
       <SectionHeader title="Procedures Performed" />
 
@@ -983,28 +1090,68 @@ export function DiagnosisGroupEditor({ group, index, isOnly, onChange, onDelete 
         onSave={handleFractureWizardSave}
         initialFractures={fractures}
       />
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  groupContainer: {
+  clinicalSuspicionLabel: {
+    fontSize: 14,
+    fontWeight: "500",
+    marginBottom: Spacing.sm,
+  },
+  clinicalSuspicionOptions: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: Spacing.sm,
+  },
+  clinicalSuspicionButton: {
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.sm,
+    borderWidth: 1,
+  },
+  clinicalSuspicionButtonText: {
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  diagnosisCard: {
+    borderLeftWidth: 4,
+    borderRadius: BorderRadius.md,
     marginBottom: Spacing.md,
+    overflow: "hidden",
+  },
+  cardContent: {
+    paddingHorizontal: Spacing.lg,
+    paddingBottom: Spacing.lg,
   },
   groupHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: Spacing.md,
-    paddingTop: Spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: "#ccc",
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+    borderBottomWidth: 1,
   },
   groupTitle: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "600",
+  },
+  primaryBadge: {
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 2,
+    borderRadius: BorderRadius.xs,
+  },
+  primaryBadgeText: {
+    fontSize: 11,
+    fontWeight: "700",
     textTransform: "uppercase",
     letterSpacing: 0.5,
+  },
+  connector: {
+    alignItems: "center",
+    paddingVertical: Spacing.sm,
   },
   suggestionBanner: {
     flexDirection: "row",
@@ -1119,16 +1266,17 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "500",
   },
-  collapsedGroupCard: {
-    borderWidth: 1,
-    borderRadius: BorderRadius.lg,
+  collapsedGroupCardInner: {
     padding: Spacing.md,
-    marginBottom: Spacing.md,
   },
   collapsedGroupHeader: {
     flexDirection: "row",
     alignItems: "center",
     gap: Spacing.sm,
+  },
+  reorderButtons: {
+    gap: 2,
+    marginRight: Spacing.xs,
   },
   orderBadge: {
     width: 28,
