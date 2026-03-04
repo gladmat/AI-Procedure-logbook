@@ -88,6 +88,7 @@ export function OperativeMediaSection({
       caption: item.caption,
       createdAt: item.createdAt,
       category: MEDIA_TYPE_TO_CATEGORY[item.mediaType],
+      timestamp: item.timestamp,
     }));
 
     const callbackId = registerGenericCallback(
@@ -101,6 +102,7 @@ export function OperativeMediaSection({
             mimeType: att.mimeType,
             caption: att.caption,
             createdAt: att.createdAt,
+            timestamp: att.timestamp,
             mediaType:
               (att.category && CATEGORY_TO_MEDIA_TYPE[att.category]) ||
               "intraoperative_photo",
@@ -256,6 +258,7 @@ export function OperativeMediaSection({
       existingMediaId: item.id,
       existingMediaType: item.mediaType,
       existingCaption: item.caption,
+      existingTimestamp: item.timestamp,
     });
   };
 
