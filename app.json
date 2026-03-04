@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Opus",
-    "slug": "opus",
+    "slug": "surgical-logbook",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./client/assets/icons/app/opus-icon-1024.png",
@@ -63,6 +63,7 @@
       "eas": {
         "projectId": "0bc1b91c-c240-4f4e-b030-31d16389cd1e"
       }
-    }
+    },
+    "owner": "gladmat"
   }
 }
