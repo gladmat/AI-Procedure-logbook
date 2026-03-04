@@ -10,7 +10,7 @@ import {
   userDeviceKeys, type UserDeviceKey
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, ilike, sql, lt, isNull } from "drizzle-orm";
+import { eq, and, ilike, sql, lt, isNull, desc } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -29,7 +29,7 @@ export interface IStorage {
   
   getUserFacilities(userId: string): Promise<UserFacility[]>;
   createUserFacility(facility: InsertUserFacility): Promise<UserFacility>;
-  updateUserFacility(id: string, facility: Partial<InsertUserFacility>): Promise<UserFacility | undefined>;
+  updateUserFacility(id: string, userId: string, facility: Partial<InsertUserFacility>): Promise<UserFacility | undefined>;
   // IMPROVEMENT: IDOR fix — requires userId to enforce ownership at query level
   deleteUserFacility(id: string, userId: string): Promise<boolean>;
   
@@ -39,7 +39,7 @@ export interface IStorage {
   bulkCreateSnomedRefs(refs: InsertSnomedRef[]): Promise<SnomedRef[]>;
   
   getProcedure(id: string): Promise<Procedure | undefined>;
-  getProceduresByUser(userId: string): Promise<Procedure[]>;
+  getProceduresByUser(userId: string, limit?: number, offset?: number): Promise<Procedure[]>;
   createProcedure(procedure: InsertProcedure): Promise<Procedure>;
   updateProcedure(id: string, procedure: Partial<InsertProcedure>): Promise<Procedure | undefined>;
   
@@ -138,11 +138,11 @@ export class DatabaseStorage implements IStorage {
     return created;
   }
 
-  async updateUserFacility(id: string, facility: Partial<InsertUserFacility>): Promise<UserFacility | undefined> {
+  async updateUserFacility(id: string, userId: string, facility: Partial<InsertUserFacility>): Promise<UserFacility | undefined> {
     const [updated] = await db
       .update(userFacilities)
       .set(facility)
-      .where(eq(userFacilities.id, id))
+      .where(and(eq(userFacilities.id, id), eq(userFacilities.userId, userId)))
       .returning();
     return updated || undefined;
   }
@@ -200,8 +200,14 @@ export class DatabaseStorage implements IStorage {
     return procedure || undefined;
   }
 
-  async getProceduresByUser(userId: string): Promise<Procedure[]> {
-    return db.select().from(procedures).where(eq(procedures.userId, userId));
+  async getProceduresByUser(userId: string, limit: number = 50, offset: number = 0): Promise<Procedure[]> {
+    return db
+      .select()
+      .from(procedures)
+      .where(eq(procedures.userId, userId))
+      .orderBy(desc(procedures.createdAt))
+      .limit(limit)
+      .offset(offset);
   }
 
   async createProcedure(procedure: InsertProcedure): Promise<Procedure> {

@@ -9,6 +9,7 @@ import { sendPasswordResetEmail } from "./email";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { insertProfileSchema, insertFlapSchema, insertAnastomosisSchema } from "@shared/schema";
+import { env } from "./env";
 
 const profileUpdateSchema = insertProfileSchema
   .pick({
@@ -57,11 +58,8 @@ function checkAuthRateLimit(ip: string): boolean {
   return true;
 }
 
-// JWT_SECRET must be set in environment - fail hard if missing for security
-if (!process.env.JWT_SECRET) {
-  throw new Error("JWT_SECRET environment variable must be set for secure token signing");
-}
-const JWT_SECRET = process.env.JWT_SECRET;
+// JWT_SECRET is validated by env.ts at startup (minimum 32 characters)
+const JWT_SECRET = env.JWT_SECRET;
 
 // Hash password reset tokens before storing in database
 const hashResetToken = (token: string) =>
@@ -80,7 +78,7 @@ const authenticateToken = async (req: AuthenticatedRequest, res: Response, next:
   }
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as { userId: string; tokenVersion?: number };
+    const decoded = jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'] }) as { userId: string; tokenVersion?: number };
     const user = await storage.getUser(decoded.userId);
     if (!user) {
       return res.status(401).json({ error: "Authentication required" });
@@ -135,9 +133,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const token = jwt.sign(
         { userId: user.id, tokenVersion: user.tokenVersion ?? 0 },
         JWT_SECRET,
-        { expiresIn: "30d" }
+        { algorithm: 'HS256', expiresIn: "30d" }
       );
-      
+
       res.json({ token, user: { id: user.id, email: user.email } });
     } catch (error) {
       console.error("Signup error:", error);
@@ -173,11 +171,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const token = jwt.sign(
         { userId: user.id, tokenVersion: user.tokenVersion ?? 0 },
         JWT_SECRET,
-        { expiresIn: "30d" }
+        { algorithm: 'HS256', expiresIn: "30d" }
       );
-      
-      res.json({ 
-        token, 
+
+      res.json({
+        token,
         user: { id: user.id, email: user.email },
         profile,
         facilities,
@@ -392,19 +390,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/facilities/:id", authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
+      const userId = req.userId!;
       const { isPrimary } = req.body;
 
       // If setting as primary, unset all other facilities first
       if (isPrimary) {
-        const allFacilities = await storage.getUserFacilities(req.userId!);
+        const allFacilities = await storage.getUserFacilities(userId);
         for (const f of allFacilities) {
           if (f.isPrimary && f.id !== req.params.id) {
-            await storage.updateUserFacility(f.id, { isPrimary: false });
+            await storage.updateUserFacility(f.id, userId, { isPrimary: false });
           }
         }
       }
 
-      const updated = await storage.updateUserFacility(req.params.id, { isPrimary: isPrimary ?? false });
+      const updated = await storage.updateUserFacility(req.params.id, userId, { isPrimary: isPrimary ?? false });
       if (!updated) {
         return res.status(404).json({ error: "Facility not found" });
       }
@@ -593,12 +592,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Consumer: Developer-only (run once to populate SNOMED reference data)
   // IMPROVEMENT #1: Environment-gated — disabled entirely unless ENABLE_SEED=true
   // ──────────────────────────────────────────────────────────────────────────
-  if (process.env.ENABLE_SEED === "true") {
+  if (env.ENABLE_SEED === "true") {
     app.post("/api/seed-snomed-ref", authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
       try {
         // Additional seed token protection
         const seedHeader = req.header("x-seed-token");
-        const seedToken = process.env.SEED_TOKEN;
+        const seedToken = env.SEED_TOKEN;
 
         if (seedToken && seedHeader !== seedToken) {
           return res.status(403).json({ error: "Forbidden" });
