@@ -119,17 +119,14 @@ export function AppLockProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const unlockWithPin = useCallback(
-    async (pin: string): Promise<boolean> => {
-      const valid = await verifyPin(pin);
-      if (valid) {
-        setIsLocked(false);
-        return true;
-      }
-      return false;
-    },
-    [],
-  );
+  const unlockWithPin = useCallback(async (pin: string): Promise<boolean> => {
+    const valid = await verifyPin(pin);
+    if (valid) {
+      setIsLocked(false);
+      return true;
+    }
+    return false;
+  }, []);
 
   return (
     <AppLockContext.Provider
