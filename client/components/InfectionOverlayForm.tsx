@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { View, StyleSheet, Pressable, Switch, ScrollView } from "react-native";
-import { Feather } from "@expo/vector-icons";
+import { Feather } from "@/components/FeatherIcon";
 import * as Haptics from "expo-haptics";
 import { v4 as uuidv4 } from "uuid";
 import { ThemedText } from "@/components/ThemedText";

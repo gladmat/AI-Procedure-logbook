@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Pressable, StyleSheet, Platform } from "react-native";
-import { Feather } from "@expo/vector-icons";
+import { Feather } from "@/components/FeatherIcon";
 import { ThemedText } from "@/components/ThemedText";
 import { SpecialtyBadge } from "@/components/SpecialtyBadge";
 import { useTheme } from "@/hooks/useTheme";

@@ -1,0 +1,22 @@
+# Server code — not needed in client builds
+server/
+shared/
+migrations/
+server_dist/
+
+# Dev/build artifacts
+attached_assets/
+.local/
+.config/
+
+# Documentation & config not needed in builds
+CLAUDE.md
+railway.toml
+drizzle.config.ts
+
+# Git
+.git/
+.gitignore
+
+# Other
+*.md
