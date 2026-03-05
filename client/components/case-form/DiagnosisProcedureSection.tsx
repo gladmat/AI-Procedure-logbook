@@ -11,16 +11,20 @@ import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { DiagnosisGroup } from "@/types/case";
 import type { InfectionOverlay } from "@/types/infection";
+import type { EpisodeType } from "@/types/episode";
 
 interface DiagnosisProcedureSectionProps {
   scrollViewRef: React.RefObject<any>;
   scrollPositionRef: React.MutableRefObject<number>;
+  /** Episode type from linked episode — triggers wound module for wound/burns episodes */
+  episodeType?: EpisodeType;
 }
 
 export const DiagnosisProcedureSection = React.memo(
   function DiagnosisProcedureSection({
     scrollViewRef,
     scrollPositionRef,
+    episodeType,
   }: DiagnosisProcedureSectionProps) {
     const { theme } = useTheme();
     const { state } = useCaseFormState();
@@ -37,7 +41,11 @@ export const DiagnosisProcedureSection = React.memo(
 
     const handleInfectionChange = useCallback(
       (overlay: InfectionOverlay | undefined) => {
-        dispatch({ type: "SET_FIELD", field: "infectionOverlay", value: overlay });
+        dispatch({
+          type: "SET_FIELD",
+          field: "infectionOverlay",
+          value: overlay,
+        });
       },
       [dispatch],
     );
@@ -101,6 +109,7 @@ export const DiagnosisProcedureSection = React.memo(
             infectionOverlay={infectionOverlay}
             onInfectionChange={handleInfectionChange}
             isFirstInfectionGroup={idx === firstInfectionGroupIndex}
+            episodeType={episodeType}
           />
         ))}
 
