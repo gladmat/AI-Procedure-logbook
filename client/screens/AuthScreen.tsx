@@ -12,7 +12,7 @@ import {
   Modal,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Feather } from "@expo/vector-icons";
+import { Feather } from "@/components/FeatherIcon";
 import { OpusLogo } from "@/components/brand";
 import { useAuth } from "@/contexts/AuthContext";
 import { Spacing, BorderRadius, Typography, Shadows } from "@/constants/theme";

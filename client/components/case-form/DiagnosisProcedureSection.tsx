@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo } from "react";
 import { View, Pressable, StyleSheet } from "react-native";
-import { Feather } from "@expo/vector-icons";
+import { Feather } from "@/components/FeatherIcon";
 import { ThemedText } from "@/components/ThemedText";
 import { DiagnosisGroupEditor } from "@/components/DiagnosisGroupEditor";
 import { InlineEpisodeCreator } from "@/components/InlineEpisodeCreator";

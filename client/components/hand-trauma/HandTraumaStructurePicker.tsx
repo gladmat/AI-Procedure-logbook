@@ -7,7 +7,7 @@ import {
   Platform,
   UIManager,
 } from "react-native";
-import { Feather } from "@expo/vector-icons";
+import { Feather } from "@/components/FeatherIcon";
 import { v4 as uuidv4 } from "uuid";
 import * as Haptics from "expo-haptics";
 import { ThemedText } from "@/components/ThemedText";

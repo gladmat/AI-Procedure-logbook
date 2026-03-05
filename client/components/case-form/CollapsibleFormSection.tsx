@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback } from "react";
 import { View, Pressable, StyleSheet } from "react-native";
-import { Feather } from "@expo/vector-icons";
+import { Feather } from "@/components/FeatherIcon";
 import * as Haptics from "expo-haptics";
 import Animated, {
   useSharedValue,

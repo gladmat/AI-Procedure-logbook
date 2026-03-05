@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from "react";
 import { View, StyleSheet, Pressable, TextInput } from "react-native";
-import { Feather } from "@expo/vector-icons";
+import { Feather } from "@/components/FeatherIcon";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { BorderRadius, Spacing, Typography } from "@/constants/theme";

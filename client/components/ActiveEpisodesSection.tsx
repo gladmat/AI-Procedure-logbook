@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { View, Pressable, StyleSheet } from "react-native";
-import { Feather } from "@expo/vector-icons";
+import { Feather } from "@/components/FeatherIcon";
 import { ThemedText } from "@/components/ThemedText";
 import { EpisodeCard } from "@/components/EpisodeCard";
 import { useTheme } from "@/hooks/useTheme";

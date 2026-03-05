@@ -7,7 +7,7 @@ import {
   StyleSheet,
   Keyboard,
 } from "react-native";
-import { Feather } from "@expo/vector-icons";
+import { Feather } from "@/components/FeatherIcon";
 import { Spacing, BorderRadius, Typography, Shadows } from "@/constants/theme";
 import { useTheme } from "@/hooks/useTheme";
 import { MasterFacility, searchFacilities } from "@/data/facilities";
