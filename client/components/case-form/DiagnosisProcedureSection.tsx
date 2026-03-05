@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useMemo } from "react";
 import { View, Pressable, StyleSheet } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { ThemedText } from "@/components/ThemedText";
@@ -10,26 +10,55 @@ import {
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { DiagnosisGroup } from "@/types/case";
+import type { InfectionOverlay } from "@/types/infection";
+import type { EpisodeType } from "@/types/episode";
 
 interface DiagnosisProcedureSectionProps {
   scrollViewRef: React.RefObject<any>;
   scrollPositionRef: React.MutableRefObject<number>;
+  /** Episode type from linked episode — triggers wound module for wound/burns episodes */
+  episodeType?: EpisodeType;
 }
 
 export const DiagnosisProcedureSection = React.memo(
   function DiagnosisProcedureSection({
     scrollViewRef,
     scrollPositionRef,
+    episodeType,
   }: DiagnosisProcedureSectionProps) {
     const { theme } = useTheme();
     const { state } = useCaseFormState();
     const {
+      dispatch,
       handleDiagnosisGroupChange: dispatchGroupChange,
       handleDeleteDiagnosisGroup,
       addDiagnosisGroup,
       reorderDiagnosisGroups,
       fieldErrors,
     } = useCaseFormDispatch();
+
+    const infectionOverlay = state.infectionOverlay;
+
+    const handleInfectionChange = useCallback(
+      (overlay: InfectionOverlay | undefined) => {
+        dispatch({
+          type: "SET_FIELD",
+          field: "infectionOverlay",
+          value: overlay,
+        });
+      },
+      [dispatch],
+    );
+
+    // Determine which group index is the first to trigger infection visibility
+    const firstInfectionGroupIndex = useMemo(() => {
+      return state.diagnosisGroups.findIndex(
+        (g) =>
+          g.procedures.some(
+            (p) => p.subcategory === "Chronic Wounds / Infection",
+          ) || !!infectionOverlay,
+      );
+    }, [state.diagnosisGroups, infectionOverlay]);
 
     const onGroupChange = useCallback(
       (index: number, updated: DiagnosisGroup) => {
@@ -77,6 +106,10 @@ export const DiagnosisProcedureSection = React.memo(
             onDelete={() => handleDeleteDiagnosisGroup(idx)}
             onMoveUp={() => handleMoveUp(idx)}
             onMoveDown={() => handleMoveDown(idx)}
+            infectionOverlay={infectionOverlay}
+            onInfectionChange={handleInfectionChange}
+            isFirstInfectionGroup={idx === firstInfectionGroupIndex}
+            episodeType={episodeType}
           />
         ))}
 
