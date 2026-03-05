@@ -839,10 +839,38 @@ export interface HandTraumaStructure {
   generatedProcedureId?: string;
 }
 
+export interface DislocationEntry {
+  joint:
+    | "pip"
+    | "mcp"
+    | "cmc"
+    | "thumb_cmc"
+    | "druj"
+    | "perilunate"
+    | "lunate";
+  direction?: "dorsal" | "volar" | "lateral";
+  hasFracture?: boolean;
+  isComplex?: boolean;
+}
+
 export interface HandTraumaDetails {
   injuryMechanism?: string;
   affectedDigits?: DigitId[];
   injuredStructures?: HandTraumaStructure[];
+  dislocations?: DislocationEntry[];
+  isHighPressureInjection?: boolean;
+  isFightBite?: boolean;
+  isCompartmentSyndrome?: boolean;
+  isRingAvulsion?: boolean;
+  amputationLevel?:
+    | "fingertip"
+    | "distal_phalanx"
+    | "middle_phalanx"
+    | "proximal_phalanx"
+    | "mcp"
+    | "ray"
+    | "hand_wrist";
+  isReplantable?: boolean;
 }
 
 export interface DiagnosisClinicalDetails {
