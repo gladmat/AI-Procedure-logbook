@@ -39,7 +39,13 @@ import {
 } from "@/types/case";
 import { InfectionOverlay } from "@/types/infection";
 import type { EncounterClass, EpisodePrefillData } from "@/types/episode";
-import { saveCase, updateCase, getCase, CaseDraft } from "@/lib/storage";
+import {
+  saveCase,
+  updateCase,
+  getCase,
+  CaseDraft,
+  getCasesByEpisodeId,
+} from "@/lib/storage";
 import { updateEpisode, getEpisode } from "@/lib/episodeStorage";
 import { getDefaultClinicalDetails } from "@/lib/procedureConfig";
 import {
@@ -1261,6 +1267,25 @@ export function useCaseForm({
               }
             : undefined;
 
+        // Compute episode sequence at save time to avoid duplicates
+        let computedEpisodeSequence = state.episodeSequence;
+        if (state.episodeId) {
+          const caseId =
+            isEditMode && existingCase ? existingCase.id : undefined;
+          const episodeCases = await getCasesByEpisodeId(state.episodeId);
+          if (isEditMode && existingCase?.episodeId === state.episodeId) {
+            // Editing a case already in this episode — preserve its sequence
+            computedEpisodeSequence =
+              existingCase.episodeSequence || state.episodeSequence;
+          } else {
+            // New case or episode changed — next available sequence
+            const existingCount = caseId
+              ? episodeCases.filter((c) => c.id !== caseId).length
+              : episodeCases.length;
+            computedEpisodeSequence = existingCount + 1;
+          }
+        }
+
         const casePayload: Case = {
           id: isEditMode && existingCase ? existingCase.id : uuidv4(),
           patientIdentifier: state.patientIdentifier.trim(),
@@ -1316,7 +1341,7 @@ export function useCaseForm({
           discussedAtMDM: state.discussedAtMDM || undefined,
           infectionOverlay: state.infectionOverlay || undefined,
           episodeId: state.episodeId || undefined,
-          episodeSequence: state.episodeSequence || undefined,
+          episodeSequence: computedEpisodeSequence || undefined,
           encounterClass: state.encounterClass || undefined,
           caseStatus: isIncomplete
             ? "incomplete"
