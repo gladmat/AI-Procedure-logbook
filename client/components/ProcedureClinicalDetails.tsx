@@ -56,7 +56,9 @@ import { CollapsibleFormSection } from "@/components/case-form/CollapsibleFormSe
 import { FLAP_ELEVATION_PLANES } from "@/data/flapFieldConfig";
 import {
   getDefaultFlapSpecificDetails,
+  getFibulaContextDefaults,
   ALT_ELEVATION_TO_COMPOSITION,
+  DIEP_BILATERAL_DEFAULTS,
   normalizeVesselName,
   resolveConcomitantVeinName,
 } from "@/data/autoFillMappings";
@@ -290,15 +292,47 @@ export function FreeFlapClinicalFields({
 
   const handleFlapTypeChange = (flap: FreeFlap) => {
     const snomedEntry = FLAP_SNOMED_MAP[flap];
-    const defaultFlapSpecific = getDefaultFlapSpecificDetails(flap);
+    let flapSpecificDetails = getDefaultFlapSpecificDetails(flap);
+
+    // Context-aware overrides using existing recipientSiteRegion
+    const recipientSite = clinicalDetails.recipientSiteRegion;
+    let skinIsland: boolean | undefined;
+
+    if (flap === "fibula") {
+      const fibulaDefaults = getFibulaContextDefaults(recipientSite);
+      flapSpecificDetails = { ...flapSpecificDetails, ...fibulaDefaults };
+    }
+
+    if (flap === "gracilis" || flap === "tug") {
+      // Gracilis context: H&N (facial reanimation) = muscle_only, else myocutaneous
+      if (recipientSite === "head_neck") {
+        flapSpecificDetails = {
+          ...flapSpecificDetails,
+          gracilisTissueComposition: "muscle_only",
+        };
+      } else {
+        flapSpecificDetails = {
+          ...flapSpecificDetails,
+          gracilisTissueComposition: "myocutaneous",
+        };
+        skinIsland = true;
+      }
+    }
+
+    if (flap === "diep") {
+      flapSpecificDetails = {
+        ...flapSpecificDetails,
+        ...DIEP_BILATERAL_DEFAULTS,
+      };
+    }
 
     onUpdate({
       ...clinicalDetails,
       flapType: flap,
       flapSnomedCode: snomedEntry?.code,
       flapSnomedDisplay: snomedEntry?.display,
-      skinIsland: undefined,
-      flapSpecificDetails: defaultFlapSpecific,
+      skinIsland,
+      flapSpecificDetails,
     });
   };
 

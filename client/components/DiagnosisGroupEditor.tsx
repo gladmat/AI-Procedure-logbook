@@ -1711,6 +1711,8 @@ export function DiagnosisGroupEditor({
                         onMoveDown={() => moveProcedureDown(proc.id)}
                         canMoveUp={idx > 0}
                         canMoveDown={idx < procedures.length - 1}
+                        diagnosisId={selectedDiagnosis?.id}
+                        clinicalGroup={selectedDiagnosis?.clinicalGroup}
                       />
                     ))}
 

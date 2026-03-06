@@ -22,6 +22,7 @@ const REGION_ORDER: AnatomicalRegion[] = [
   "knee",
   "lower_leg",
   "foot",
+  "perineum",
 ];
 
 export function RecipientSiteSelector({

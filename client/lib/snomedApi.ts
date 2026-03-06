@@ -317,6 +317,18 @@ export const RECIPIENT_VESSEL_PRESETS: Record<
       "Cephalic vein",
     ],
   },
+  perineum: {
+    arteries: [
+      "Internal pudendal artery",
+      "Superior gluteal artery",
+      "Inferior gluteal artery",
+    ],
+    veins: [
+      "Internal pudendal vein",
+      "Superior gluteal vein",
+      "Inferior gluteal vein",
+    ],
+  },
 };
 
 /**

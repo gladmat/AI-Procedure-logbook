@@ -35,8 +35,15 @@ import {
 } from "@/types/case";
 import {
   getDefaultFlapSpecificDetails,
+  getGracilisContextDefaults,
+  getFibulaContextDefaults,
   BREAST_RECON_DEFAULT_RECIPIENT_VESSELS,
+  DIAGNOSIS_TO_RECIPIENT_SITE,
+  CLINICAL_GROUP_TO_INDICATION,
+  DIEP_BILATERAL_DEFAULTS,
+  REGION_ARTERIAL_CONFIGURATION,
 } from "@/data/autoFillMappings";
+import type { AnatomicalRegion, Indication } from "@/types/case";
 
 interface ProcedureEntryCardProps {
   procedure: CaseProcedure;
@@ -48,6 +55,10 @@ interface ProcedureEntryCardProps {
   onMoveDown?: () => void;
   canMoveUp: boolean;
   canMoveDown: boolean;
+  /** Diagnosis picklist ID for auto-fill context (e.g. "orth_dx_open_fx_lower_leg") */
+  diagnosisId?: string;
+  /** Clinical group from diagnosis (e.g. "trauma", "oncological") */
+  clinicalGroup?: string;
 }
 
 export function ProcedureEntryCard({
@@ -60,6 +71,8 @@ export function ProcedureEntryCard({
   onMoveDown,
   canMoveUp,
   canMoveDown,
+  diagnosisId,
+  clinicalGroup,
 }: ProcedureEntryCardProps) {
   const { theme } = useTheme();
   const [showRoleInfoModal, setShowRoleInfoModal] = useState(false);
@@ -82,13 +95,56 @@ export function ProcedureEntryCard({
     let clinicalDetails: ClinicalDetails | undefined = undefined;
     if (entry.hasFreeFlap && mappedFlapType) {
       const snomedEntry = FLAP_SNOMED_MAP[mappedFlapType];
-      const flapSpecificDetails =
-        getDefaultFlapSpecificDetails(mappedFlapType);
-      const recipientSiteRegion =
-        procedure.specialty === "breast" ? "breast_chest" : undefined;
+      let flapSpecificDetails = getDefaultFlapSpecificDetails(mappedFlapType);
+
+      // ── Recipient site: use diagnosis mapping, then specialty fallback ──
+      let recipientSiteRegion: AnatomicalRegion | undefined;
+      if (diagnosisId && DIAGNOSIS_TO_RECIPIENT_SITE[diagnosisId]) {
+        recipientSiteRegion = DIAGNOSIS_TO_RECIPIENT_SITE[diagnosisId];
+      } else if (procedure.specialty === "breast") {
+        recipientSiteRegion = "breast_chest";
+      }
+
       const recipientSiteSnomed = recipientSiteRegion
         ? RECIPIENT_SITE_SNOMED_MAP[recipientSiteRegion]
         : undefined;
+
+      // ── Indication from clinical group ──
+      let indication: Indication | undefined;
+      if (clinicalGroup && CLINICAL_GROUP_TO_INDICATION[clinicalGroup]) {
+        indication = CLINICAL_GROUP_TO_INDICATION[clinicalGroup];
+      }
+
+      // ── Context-specific flap overrides ──
+      let skinIsland: boolean | undefined;
+
+      if (mappedFlapType === "gracilis" || mappedFlapType === "tug") {
+        if (diagnosisId) {
+          const gracilisDefaults = getGracilisContextDefaults(diagnosisId);
+          flapSpecificDetails = {
+            ...flapSpecificDetails,
+            ...gracilisDefaults.flapSpecificDetails,
+          };
+          skinIsland = gracilisDefaults.skinIsland;
+        }
+      }
+
+      if (mappedFlapType === "fibula") {
+        const fibulaDefaults = getFibulaContextDefaults(recipientSiteRegion);
+        flapSpecificDetails = {
+          ...flapSpecificDetails,
+          ...fibulaDefaults,
+        };
+      }
+
+      if (mappedFlapType === "diep") {
+        flapSpecificDetails = {
+          ...flapSpecificDetails,
+          ...DIEP_BILATERAL_DEFAULTS,
+        };
+      }
+
+      // ── Breast recon default vessels ──
       const anastomoses =
         recipientSiteRegion === "breast_chest"
           ? [
@@ -97,6 +153,7 @@ export function ProcedureEntryCard({
                 vesselType: "artery" as const,
                 recipientVesselName:
                   BREAST_RECON_DEFAULT_RECIPIENT_VESSELS.artery,
+                anastomosisConfiguration: "end_to_end" as const,
                 couplingMethod: "hand_sewn" as const,
               },
               {
@@ -117,6 +174,8 @@ export function ProcedureEntryCard({
         recipientSiteRegion,
         recipientSiteSnomedCode: recipientSiteSnomed?.code,
         recipientSiteSnomedDisplay: recipientSiteSnomed?.display,
+        ...(indication ? { indication } : {}),
+        ...(skinIsland !== undefined ? { skinIsland } : {}),
         ...(Object.keys(flapSpecificDetails).length > 0
           ? { flapSpecificDetails }
           : {}),

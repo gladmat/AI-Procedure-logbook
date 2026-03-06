@@ -40,6 +40,15 @@ export const DIAGNOSIS_TO_RECIPIENT_SITE: Record<string, AnatomicalRegion> = {
   hn_dx_oral_cavity_scc: "head_neck",
   hn_dx_facial_nerve_chronic: "head_neck",
   hn_dx_facial_nerve_acute: "head_neck",
+  hn_dx_mohs_defect: "head_neck",
+  hn_dx_parotid_tumour: "head_neck",
+  hn_dx_fx_mandible: "head_neck",
+
+  // Pressure injuries (general)
+  gen_dx_pressure_sacral: "perineum",
+  gen_dx_pressure_ischial: "perineum",
+  gen_dx_pressure_trochanteric: "thigh",
+  gen_dx_pressure_heel: "foot",
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -221,6 +230,11 @@ export const ARTERY_TO_CONCOMITANT_VEIN: Record<string, string> = {
   "Transverse cervical artery": "External jugular vein",
   "External carotid artery": "Internal jugular vein",
 
+  // Perineum / Pelvis
+  "Internal pudendal artery": "Internal pudendal vein",
+  "Superior gluteal artery": "Superior gluteal vein",
+  "Inferior gluteal artery": "Inferior gluteal vein",
+
   // Breast / Chest
   "Internal mammary artery (IMA)": "Internal mammary vein",
   "Thoracodorsal artery": "Thoracodorsal vein",
@@ -289,4 +303,5 @@ export const REGION_ARTERIAL_CONFIGURATION: Record<
   upper_arm: "end_to_side",
   head_neck: "end_to_end",
   breast_chest: "end_to_end",
+  perineum: "end_to_end",
 };

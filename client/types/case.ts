@@ -311,7 +311,8 @@ export type AnatomicalRegion =
   | "forearm"
   | "upper_arm"
   | "head_neck"
-  | "breast_chest";
+  | "breast_chest"
+  | "perineum";
 
 export type HarvestSide = "left" | "right";
 
@@ -824,6 +825,10 @@ export const RECIPIENT_SITE_SNOMED_MAP: Partial<
   breast_chest: {
     code: "80248007",
     display: "Breast structure (body structure)",
+  },
+  perineum: {
+    code: "261157007",
+    display: "Perineal structure (body structure)",
   },
 };
 
@@ -1958,6 +1963,7 @@ export const ANATOMICAL_REGION_LABELS: Record<AnatomicalRegion, string> = {
   upper_arm: "Upper Arm",
   head_neck: "Head & Neck",
   breast_chest: "Breast / Chest Wall",
+  perineum: "Perineum / Pelvis",
 };
 
 export const COUNTRY_LABELS: Record<CountryCode, string> = {
