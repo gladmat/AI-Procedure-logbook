@@ -43,38 +43,6 @@ export function OtherStructuresSection({
         </ThemedText>
 
         <Pressable
-          testID="other-bone"
-          style={[styles.checkRow, { borderColor: theme.border }]}
-          onPress={() =>
-            onToggleStructure(
-              "bone",
-              "other",
-              "Bone injury (use AO classification)",
-            )
-          }
-        >
-          <Feather
-            name={isChecked("bone") ? "check-square" : "square"}
-            size={20}
-            color={isChecked("bone") ? theme.link : theme.textTertiary}
-          />
-          <View style={styles.labelContainer}>
-            <ThemedText
-              type="small"
-              style={[styles.checkLabel, { color: theme.text }]}
-            >
-              Bone
-            </ThemedText>
-            <ThemedText
-              type="small"
-              style={{ color: theme.textTertiary, fontSize: 12 }}
-            >
-              Links to AO fracture classification
-            </ThemedText>
-          </View>
-        </Pressable>
-
-        <Pressable
           testID="other-nail_bed"
           style={[styles.checkRow, { borderColor: theme.border }]}
           onPress={() =>

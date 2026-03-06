@@ -1,3 +1,7 @@
+/**
+ * @deprecated Replaced by unified `HandTraumaAssessment`.
+ * Kept temporarily for backward compatibility during rollout.
+ */
 import React, { useState, useCallback, useEffect, useRef } from "react";
 import {
   View,

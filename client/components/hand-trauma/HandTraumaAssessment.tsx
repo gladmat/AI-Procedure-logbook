@@ -93,13 +93,16 @@ interface HandTraumaAssessmentProps {
   ) => void;
   selectedDiagnosis?: DiagnosisPicklistEntry;
   /** Called when the user accepts suggestions and wants to save */
-  onAccept: (context: HandTraumaAcceptContext) => void;
+  onAccept: (payload: HandTraumaAssessmentAcceptPayload) => void;
+  /** Reveal manual diagnosis picker in parent container */
+  onEditDiagnosis?: () => void;
+  /** Add a manual procedure row in parent container */
+  onAddProcedureManual?: () => void;
 }
 
-export interface HandTraumaAcceptContext {
+export interface HandTraumaAssessmentAcceptPayload {
   mappingResult: TraumaMappingResult | null;
-  selectedSuggestedProcedureIds: string[];
-  mergedProcedures: CaseProcedure[];
+  selectedProcedureIds: string[];
 }
 
 // Map InjuryCategory to StructureCategory for the existing section components
@@ -130,6 +133,8 @@ export function HandTraumaAssessment({
   onProceduresChange,
   selectedDiagnosis,
   onAccept,
+  onEditDiagnosis,
+  onAddProcedureManual,
 }: HandTraumaAssessmentProps) {
   const { theme } = useTheme();
 
@@ -214,6 +219,16 @@ export function HandTraumaAssessment({
       } else {
         next.add(category);
       }
+      return next;
+    });
+  }, []);
+
+  const ensureFractureCategory = useCallback(() => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setActiveCategories((prev) => {
+      if (prev.has("fracture")) return prev;
+      const next = new Set(prev);
+      next.add("fracture");
       return next;
     });
   }, []);
@@ -497,60 +512,6 @@ export function HandTraumaAssessment({
     });
   }, []);
 
-  const mergeSuggestedProcedures = useCallback((): CaseProcedure[] => {
-    if (!mappingResult) {
-      return procedures.map((p, idx) => ({ ...p, sequenceOrder: idx + 1 }));
-    }
-
-    const mappedIds = new Set(
-      mappingResult.suggestedProcedures.map((p) => p.procedurePicklistId),
-    );
-    const selectedIds = [...selectedProcedureIds].filter((id) =>
-      mappedIds.has(id),
-    );
-
-    // Remove previous mapping-driven procedures so we can apply current surgeon selections.
-    const kept = procedures.filter(
-      (p) => !p.picklistEntryId || !mappedIds.has(p.picklistEntryId),
-    );
-
-    const next: CaseProcedure[] = [...kept];
-    for (const picklistId of selectedIds) {
-      const entry = findPicklistEntry(picklistId);
-      if (!entry) continue;
-      next.push({
-        id: uuidv4(),
-        sequenceOrder: 0,
-        procedureName: entry.displayName,
-        specialty: "hand_wrist",
-        surgeonRole: "PS",
-        picklistEntryId: entry.id,
-        snomedCtCode: entry.snomedCtCode,
-        snomedCtDisplay: entry.snomedCtDisplay,
-        subcategory: entry.subcategory,
-        tags: entry.tags,
-      });
-    }
-
-    return next.map((p, idx) => ({ ...p, sequenceOrder: idx + 1 }));
-  }, [mappingResult, selectedProcedureIds, procedures]);
-
-  const handleAccept = useCallback(() => {
-    const mergedProcedures = mergeSuggestedProcedures();
-    onProceduresChange(() => mergedProcedures);
-    onAccept({
-      mappingResult,
-      selectedSuggestedProcedureIds: [...selectedProcedureIds],
-      mergedProcedures,
-    });
-  }, [
-    mergeSuggestedProcedures,
-    onProceduresChange,
-    onAccept,
-    mappingResult,
-    selectedProcedureIds,
-  ]);
-
   // ─── Category counts for badge display ─────────────────────────────────────
   const categoryCounts = useMemo<
     Partial<Record<InjuryCategory, number>>
@@ -592,6 +553,16 @@ export function HandTraumaAssessment({
     (s) => s.generatedProcedureId,
   ).length;
 
+  const handleAccept = useCallback(
+    (acceptedProcedureIds: string[]) => {
+      onAccept({
+        mappingResult,
+        selectedProcedureIds: acceptedProcedureIds,
+      });
+    },
+    [mappingResult, onAccept],
+  );
+
   return (
     <View style={styles.container}>
       {/* 1. Digit Selector */}
@@ -631,6 +602,7 @@ export function HandTraumaAssessment({
             dislocations={dislocations}
             onDislocationsChange={handleDislocationsChange}
             selectedDigits={selectedDigits}
+            onAssociatedFractureEnabled={ensureFractureCategory}
           />
         </SectionWrapper>
       ) : null}
@@ -725,6 +697,8 @@ export function HandTraumaAssessment({
         selectedProcedureIds={selectedProcedureIds}
         onToggleProcedure={handleToggleProcedure}
         onAccept={handleAccept}
+        onEditDiagnosis={onEditDiagnosis}
+        onAddProcedureManual={onAddProcedureManual}
         hasStructureProcedures={structureProcedureCount > 0}
         structureProcedureCount={structureProcedureCount}
       />

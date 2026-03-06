@@ -8,7 +8,7 @@
  * - "Accept & Continue" button
  */
 
-import React, { useMemo } from "react";
+import React from "react";
 import { View, Pressable, StyleSheet } from "react-native";
 import { Feather } from "@/components/FeatherIcon";
 import * as Haptics from "expo-haptics";
@@ -16,13 +16,6 @@ import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, Fonts } from "@/constants/theme";
 import type { TraumaMappingResult } from "@/lib/handTraumaMapping";
-
-interface SuggestedProcedure {
-  procedurePicklistId: string;
-  displayName: string;
-  isDefault: boolean;
-  reason: string;
-}
 
 interface DiagnosisProcedureSuggestionPanelProps {
   /** Resolved mapping result from handTraumaMapping engine */
@@ -32,7 +25,11 @@ interface DiagnosisProcedureSuggestionPanelProps {
   /** Toggle a procedure selection */
   onToggleProcedure: (procedureId: string) => void;
   /** Accept the suggestions and continue */
-  onAccept: () => void;
+  onAccept: (selectedProcedureIds: string[]) => void;
+  /** Optional action to switch to manual diagnosis picker */
+  onEditDiagnosis?: () => void;
+  /** Optional action to add a manual procedure row */
+  onAddProcedureManual?: () => void;
   /** Whether there are any structure-generated procedures (from tendon/nerve/vessel sections) */
   hasStructureProcedures?: boolean;
   /** Count of structure-generated procedures */
@@ -44,6 +41,8 @@ export function DiagnosisProcedureSuggestionPanel({
   selectedProcedureIds,
   onToggleProcedure,
   onAccept,
+  onEditDiagnosis,
+  onAddProcedureManual,
   hasStructureProcedures,
   structureProcedureCount = 0,
 }: DiagnosisProcedureSuggestionPanelProps) {
@@ -94,6 +93,23 @@ export function DiagnosisProcedureSuggestionPanel({
             >
               SNOMED {mappingResult.primaryDiagnosis.snomedCtCode}
             </ThemedText>
+          ) : null}
+
+          {onEditDiagnosis ? (
+            <Pressable
+              style={styles.editDiagnosisLink}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                onEditDiagnosis();
+              }}
+            >
+              <Feather name="edit-3" size={13} color={theme.link} />
+              <ThemedText
+                style={[styles.editDiagnosisLinkText, { color: theme.link }]}
+              >
+                Change diagnosis manually
+              </ThemedText>
+            </Pressable>
           ) : null}
 
           {/* Additional diagnoses */}
@@ -174,6 +190,22 @@ export function DiagnosisProcedureSuggestionPanel({
               </Pressable>
             );
           })}
+          {onAddProcedureManual ? (
+            <Pressable
+              style={styles.addProcedureLink}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                onAddProcedureManual();
+              }}
+            >
+              <Feather name="plus" size={13} color={theme.link} />
+              <ThemedText
+                style={[styles.addProcedureLinkText, { color: theme.link }]}
+              >
+                Add procedure manually
+              </ThemedText>
+            </Pressable>
+          ) : null}
         </View>
       ) : null}
 
@@ -195,7 +227,7 @@ export function DiagnosisProcedureSuggestionPanel({
         style={[styles.acceptButton, { backgroundColor: theme.link }]}
         onPress={() => {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-          onAccept();
+          onAccept(Array.from(selectedProcedureIds));
         }}
       >
         <Feather name="check" size={18} color={theme.buttonText} />
@@ -243,6 +275,16 @@ const styles = StyleSheet.create({
     marginTop: 4,
     gap: 2,
   },
+  editDiagnosisLink: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: Spacing.xs,
+  },
+  editDiagnosisLinkText: {
+    fontSize: 13,
+    fontWeight: "500",
+  },
   additionalDx: {
     fontSize: 13,
   },
@@ -283,6 +325,16 @@ const styles = StyleSheet.create({
   },
   procedureReason: {
     fontSize: 12,
+  },
+  addProcedureLink: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingTop: Spacing.xs,
+  },
+  addProcedureLinkText: {
+    fontSize: 13,
+    fontWeight: "500",
   },
   structureNote: {
     flexDirection: "row",

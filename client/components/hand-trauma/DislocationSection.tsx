@@ -45,12 +45,14 @@ interface DislocationSectionProps {
   dislocations: DislocationEntry[];
   onDislocationsChange: (dislocations: DislocationEntry[]) => void;
   selectedDigits: DigitId[];
+  onAssociatedFractureEnabled?: () => void;
 }
 
 export function DislocationSection({
   dislocations,
   onDislocationsChange,
   selectedDigits,
+  onAssociatedFractureEnabled,
 }: DislocationSectionProps) {
   const { theme } = useTheme();
 
@@ -308,7 +310,11 @@ export function DislocationSection({
           ]}
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            setHasFracture(!hasFracture);
+            const next = !hasFracture;
+            setHasFracture(next);
+            if (next) {
+              onAssociatedFractureEnabled?.();
+            }
           }}
         >
           <View

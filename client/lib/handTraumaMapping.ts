@@ -193,6 +193,61 @@ const DIAGNOSIS_LOOKUP: Record<string, DiagnosisRef> = {
     displayName: "Fingertip injury / amputation",
     snomedCtCode: "283593005",
   },
+  hand_dx_ucl_thumb: {
+    diagnosisPicklistId: "hand_dx_ucl_thumb",
+    displayName: "Thumb UCL injury (Gamekeeper's / Skier's)",
+    snomedCtCode: "239227006",
+  },
+  hand_dx_flexor_tendon_lac: {
+    diagnosisPicklistId: "hand_dx_flexor_tendon_lac",
+    displayName: "Flexor tendon laceration",
+    snomedCtCode: "283588004",
+  },
+  hand_dx_extensor_tendon_lac: {
+    diagnosisPicklistId: "hand_dx_extensor_tendon_lac",
+    displayName: "Extensor tendon laceration",
+    snomedCtCode: "283589007",
+  },
+  hand_dx_digital_nerve_lac: {
+    diagnosisPicklistId: "hand_dx_digital_nerve_lac",
+    displayName: "Digital nerve laceration",
+    snomedCtCode: "283013008",
+  },
+  hand_dx_median_nerve_lac: {
+    diagnosisPicklistId: "hand_dx_median_nerve_lac",
+    displayName: "Median nerve injury / laceration",
+    snomedCtCode: "283018004",
+  },
+  hand_dx_ulnar_nerve_lac: {
+    diagnosisPicklistId: "hand_dx_ulnar_nerve_lac",
+    displayName: "Ulnar nerve injury / laceration",
+    snomedCtCode: "283019007",
+  },
+  hand_dx_radial_nerve_lac: {
+    diagnosisPicklistId: "hand_dx_radial_nerve_lac",
+    displayName: "Radial nerve / PIN / SRN injury",
+    snomedCtCode: "283020001",
+  },
+  hand_dx_dbun_injury: {
+    diagnosisPicklistId: "hand_dx_dbun_injury",
+    displayName: "Dorsal branch of ulnar nerve injury",
+    snomedCtCode: "283019007",
+  },
+  hand_dx_complex_laceration: {
+    diagnosisPicklistId: "hand_dx_complex_laceration",
+    displayName: "Complex hand laceration (multistructure)",
+    snomedCtCode: "284003005",
+  },
+  hand_dx_nail_bed_injury: {
+    diagnosisPicklistId: "hand_dx_nail_bed_injury",
+    displayName: "Nail bed injury",
+    snomedCtCode: "283028008",
+  },
+  hand_dx_hand_degloving: {
+    diagnosisPicklistId: "hand_dx_hand_degloving",
+    displayName: "Hand / finger degloving injury",
+    snomedCtCode: "283681000",
+  },
 };
 
 function lookup(id: string): DiagnosisRef {
@@ -669,6 +724,152 @@ function resolveSpecialInjury(
   return null;
 }
 
+// ─── Structure-Driven Diagnosis Resolution ────────────────────────────────────
+
+function resolveStructureDrivenDiagnosis(
+  selection: HandTraumaSelection,
+): TraumaMappingResult | null {
+  const structures = selection.injuredStructures ?? [];
+  if (structures.length === 0) return null;
+
+  const hasStructure = (predicate: (id: string) => boolean) =>
+    structures.some((s) => predicate(s.structureId));
+
+  if (hasStructure((id) => id === "mcp1_ucl")) {
+    return {
+      primaryDiagnosis: lookup("hand_dx_ucl_thumb"),
+      suggestedProcedures: [
+        {
+          procedurePicklistId: "hand_lig_ucl_repair",
+          displayName: "UCL repair — thumb MCP",
+          isDefault: true,
+          reason: "Thumb MCP UCL selected",
+        },
+        {
+          procedurePicklistId: "hand_lig_ucl_reconstruction",
+          displayName: "UCL reconstruction — thumb MCP (chronic)",
+          isDefault: false,
+          reason: "Alternative for chronic insufficiency",
+        },
+      ],
+    };
+  }
+
+  if (structures.some((s) => s.category === "flexor_tendon")) {
+    return {
+      primaryDiagnosis: lookup("hand_dx_flexor_tendon_lac"),
+      suggestedProcedures: [
+        {
+          procedurePicklistId: "hand_tend_flexor_primary",
+          displayName: "Flexor tendon repair",
+          isDefault: true,
+          reason: "Flexor tendon injury selected",
+        },
+      ],
+    };
+  }
+
+  if (structures.some((s) => s.category === "extensor_tendon")) {
+    return {
+      primaryDiagnosis: lookup("hand_dx_extensor_tendon_lac"),
+      suggestedProcedures: [
+        {
+          procedurePicklistId: "hand_tend_extensor_primary",
+          displayName: "Extensor tendon repair",
+          isDefault: true,
+          reason: "Extensor tendon injury selected",
+        },
+      ],
+    };
+  }
+
+  if (hasStructure((id) => id === "median")) {
+    return {
+      primaryDiagnosis: lookup("hand_dx_median_nerve_lac"),
+      suggestedProcedures: [
+        {
+          procedurePicklistId: "hand_nerve_median_repair",
+          displayName: "Median nerve repair",
+          isDefault: true,
+          reason: "Median nerve selected",
+        },
+      ],
+    };
+  }
+
+  if (hasStructure((id) => id === "ulnar" || id === "dbun")) {
+    return {
+      primaryDiagnosis: hasStructure((id) => id === "dbun")
+        ? lookup("hand_dx_dbun_injury")
+        : lookup("hand_dx_ulnar_nerve_lac"),
+      suggestedProcedures: [
+        {
+          procedurePicklistId: "hand_nerve_ulnar_repair",
+          displayName: "Ulnar nerve repair",
+          isDefault: true,
+          reason: "Ulnar nerve branch selected",
+        },
+      ],
+    };
+  }
+
+  if (hasStructure((id) => id === "radial")) {
+    return {
+      primaryDiagnosis: lookup("hand_dx_radial_nerve_lac"),
+      suggestedProcedures: [
+        {
+          procedurePicklistId: "hand_nerve_radial_repair",
+          displayName: "Radial nerve / PIN / SRN repair",
+          isDefault: true,
+          reason: "Radial nerve branch selected",
+        },
+      ],
+    };
+  }
+
+  if (structures.some((s) => s.category === "nerve")) {
+    return {
+      primaryDiagnosis: lookup("hand_dx_digital_nerve_lac"),
+      suggestedProcedures: [
+        {
+          procedurePicklistId: "hand_nerve_digital_repair",
+          displayName: "Digital nerve repair",
+          isDefault: true,
+          reason: "Digital nerve injury selected",
+        },
+      ],
+    };
+  }
+
+  if (hasStructure((id) => id === "nail_bed")) {
+    return {
+      primaryDiagnosis: lookup("hand_dx_nail_bed_injury"),
+      suggestedProcedures: [
+        {
+          procedurePicklistId: "hand_cov_nail_bed_repair",
+          displayName: "Nail bed repair",
+          isDefault: true,
+          reason: "Nail bed injury selected",
+        },
+      ],
+    };
+  }
+
+  if (
+    hasStructure((id) => id === "skin_loss") ||
+    structures.some((s) => s.category === "artery")
+  ) {
+    return {
+      primaryDiagnosis: hasStructure((id) => id === "skin_loss")
+        ? lookup("hand_dx_hand_degloving")
+        : lookup("hand_dx_complex_laceration"),
+      suggestedProcedures: [],
+    };
+  }
+
+  return null;
+}
+
 // ─── Main Mapping Function ───────────────────────────────────────────────────
 
 /**
@@ -750,7 +951,12 @@ export function resolveTraumaDiagnosis(
   }
 
   // 4. Fractures — delegate to aoToDiagnosisMapping (not handled here)
-  // 5. Tendon/nerve/vessel — handled by existing structure picker auto-procedure generation
+
+  // 5. Tendon/nerve/vessel/ligament/other structure-driven diagnosis fallback
+  const structureResult = resolveStructureDrivenDiagnosis(selection);
+  if (structureResult) {
+    return structureResult;
+  }
 
   return null;
 }

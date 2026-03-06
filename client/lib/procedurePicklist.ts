@@ -5414,10 +5414,18 @@ export function getProceduresForSubcategory(
   );
 }
 
+const PICKLIST_ID_ALIASES: Record<string, string> = {
+  hand_joint_sl_repair: "hand_joint_sl_ligament_repair",
+  hand_joint_arthroscopy_therapeutic: "hand_joint_wrist_arthroscopy_ther",
+  hand_recon_toe_to_thumb: "hand_cov_toe_to_thumb",
+  hand_recon_pollicisation: "hand_cov_pollicisation",
+};
+
 export function findPicklistEntry(
   id: string,
 ): ProcedurePicklistEntry | undefined {
-  return PROCEDURE_PICKLIST.find((p) => p.id === id);
+  const resolvedId = PICKLIST_ID_ALIASES[id] ?? id;
+  return PROCEDURE_PICKLIST.find((p) => p.id === resolvedId);
 }
 
 export function hasPicklistForSpecialty(specialty: Specialty): boolean {

@@ -11,11 +11,7 @@ import { PICKLIST_TO_FLAP_TYPE } from "@/lib/procedurePicklist";
 export interface ModuleVisibility {
   flapDetails: boolean;
   flapOutcome: boolean;
-  /** @deprecated Use handTraumaAssessment instead */
-  fractureClassification: boolean;
-  /** @deprecated Use handTraumaAssessment instead */
-  handStructures: boolean;
-  /** Unified hand trauma assessment (replaces fractureClassification + handStructures) */
+  /** Unified hand trauma assessment */
   handTraumaAssessment: boolean;
   infection: boolean;
   woundAssessment: boolean;
@@ -67,13 +63,9 @@ export function getModuleVisibility(
   // Flap Outcome: same predicate as flapDetails (Part 8D alignment)
   const flapOutcome = flapDetails;
 
-  // Hand Trauma Assessment (unified): hand_surgery specialty + trauma case type
+  // Hand Trauma Assessment: unified module replacing separate fracture + structure modules
   const handTraumaAssessment =
     group.specialty === "hand_wrist" && handCaseType === "trauma";
-
-  // Legacy fields (kept for backward compatibility, both point to same predicate)
-  const fractureClassification = handTraumaAssessment;
-  const handStructures = handTraumaAssessment;
 
   // Infection: diagnosis from infection subcategory OR infectionOverlay exists
   // Only shown on the first matching group (infection data is case-level)
@@ -95,8 +87,6 @@ export function getModuleVisibility(
   return {
     flapDetails,
     flapOutcome,
-    fractureClassification,
-    handStructures,
     handTraumaAssessment,
     infection,
     woundAssessment,
