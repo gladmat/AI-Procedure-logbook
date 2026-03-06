@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   StyleSheet,
@@ -57,7 +57,7 @@ const CAREER_STAGES = [
 ];
 
 export default function EditProfileScreen() {
-  const { theme } = useTheme();
+  const { theme, isDark } = useTheme();
   const insets = useSafeAreaInsets();
   const headerHeight = useHeaderHeight();
   const navigation = useNavigation();
@@ -97,8 +97,20 @@ export default function EditProfileScreen() {
 
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingPicture, setIsUploadingPicture] = useState(false);
+  const hasInitialized = useRef(false);
 
   useEffect(() => {
+    if (!profile || hasInitialized.current) {
+      return;
+    }
+
+    hasInitialized.current = true;
+    setFirstName(profile.firstName || "");
+    setLastName(profile.lastName || "");
+    setDateOfBirth(profile.dateOfBirth ? new Date(profile.dateOfBirth) : null);
+    setSex(profile.sex || null);
+    setCountryOfPractice(profile.countryOfPractice || "");
+    setCareerStage(profile.careerStage || "");
     setProfessionalRegistrations(
       getProfessionalRegistrations(
         profile?.professionalRegistrations,
@@ -106,11 +118,7 @@ export default function EditProfileScreen() {
         profile?.countryOfPractice,
       ) ?? {},
     );
-  }, [
-    profile?.countryOfPractice,
-    profile?.medicalCouncilNumber,
-    profile?.professionalRegistrations,
-  ]);
+  }, [profile]);
 
   // Derive legacy fullName from first + last for backward compat
   const derivedFullName =
@@ -230,6 +238,23 @@ export default function EditProfileScreen() {
       year: "numeric",
     });
   };
+
+  if (!profile) {
+    return (
+      <View
+        style={[
+          styles.container,
+          {
+            backgroundColor: theme.backgroundRoot,
+            justifyContent: "center",
+            alignItems: "center",
+          },
+        ]}
+      >
+        <ActivityIndicator color={theme.link} size="large" />
+      </View>
+    );
+  }
 
   return (
     <KeyboardAwareScrollViewCompat
@@ -362,24 +387,50 @@ export default function EditProfileScreen() {
             >
               Date of Birth
             </ThemedText>
-            <Pressable
-              style={[
-                styles.fieldInput,
-                styles.dateButton,
-                {
-                  backgroundColor: theme.backgroundSecondary,
-                  borderColor: theme.border,
-                },
-              ]}
-              onPress={() => setShowDatePicker(true)}
-            >
-              <ThemedText
-                style={{ color: dateOfBirth ? theme.text : theme.textTertiary }}
+            <View style={styles.dateRow}>
+              <Pressable
+                style={[
+                  styles.fieldInput,
+                  styles.dateButton,
+                  {
+                    backgroundColor: theme.backgroundSecondary,
+                    borderColor: theme.border,
+                    flex: 1,
+                  },
+                ]}
+                onPress={() => setShowDatePicker(true)}
               >
-                {dateOfBirth ? formatDate(dateOfBirth) : "Select date"}
-              </ThemedText>
-              <Feather name="calendar" size={18} color={theme.textSecondary} />
-            </Pressable>
+                <ThemedText
+                  style={{
+                    color: dateOfBirth ? theme.text : theme.textTertiary,
+                  }}
+                >
+                  {dateOfBirth ? formatDate(dateOfBirth) : "Select date"}
+                </ThemedText>
+                <Feather
+                  name="calendar"
+                  size={18}
+                  color={theme.textSecondary}
+                />
+              </Pressable>
+              {dateOfBirth ? (
+                <Pressable
+                  style={styles.clearDateButton}
+                  onPress={() => {
+                    setDateOfBirth(null);
+                    setShowDatePicker(false);
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  }}
+                  hitSlop={8}
+                >
+                  <Feather
+                    name="x-circle"
+                    size={20}
+                    color={theme.textTertiary}
+                  />
+                </Pressable>
+              ) : null}
+            </View>
           </View>
 
           {showDatePicker && (
@@ -391,7 +442,8 @@ export default function EditProfileScreen() {
                 maximumDate={new Date()}
                 minimumDate={new Date(1920, 0, 1)}
                 onChange={handleDateChange}
-                themeVariant="dark"
+                themeVariant={isDark ? "dark" : "light"}
+                style={styles.datePicker}
               />
               {Platform.OS === "ios" && (
                 <Pressable
@@ -728,9 +780,21 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
   },
+  dateRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+  },
+  clearDateButton: {
+    padding: Spacing.xs,
+  },
   datePickerContainer: {
     paddingHorizontal: Spacing.lg,
     paddingBottom: Spacing.md,
+    minHeight: 200,
+  },
+  datePicker: {
+    height: 180,
   },
   datePickerDone: {
     alignSelf: "center",

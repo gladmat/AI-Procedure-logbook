@@ -15,6 +15,7 @@ import {
   getAutoLockTimeout,
   verifyPin,
   isPinSet,
+  migratePinIfNeeded,
 } from "@/lib/appLockStorage";
 
 interface AppLockContextType {
@@ -52,9 +53,10 @@ export function AppLockProvider({ children }: { children: ReactNode }) {
     await checkIfConfigured();
   }, [checkIfConfigured]);
 
-  // Initial check — lock if app lock is configured
+  // Initial check — migrate old PIN state if needed, then lock if configured
   useEffect(() => {
     const init = async () => {
+      await migratePinIfNeeded();
       const configured = await checkIfConfigured();
       if (configured && !hasInitialized.current) {
         setIsLocked(true);
@@ -128,18 +130,15 @@ export function AppLockProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const unlockWithPin = useCallback(
-    async (pin: string): Promise<boolean> => {
-      const valid = await verifyPin(pin);
-      if (valid) {
-        backgroundTimestamp.current = null;
-        setIsLocked(false);
-        return true;
-      }
-      return false;
-    },
-    [],
-  );
+  const unlockWithPin = useCallback(async (pin: string): Promise<boolean> => {
+    const valid = await verifyPin(pin);
+    if (valid) {
+      backgroundTimestamp.current = null;
+      setIsLocked(false);
+      return true;
+    }
+    return false;
+  }, []);
 
   return (
     <AppLockContext.Provider

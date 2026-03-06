@@ -28,6 +28,9 @@
       "predictiveBackGestureEnabled": false,
       "package": "com.drgladysz.opus",
       "versionCode": 1,
+      "blockedPermissions": [
+        "android.permission.RECORD_AUDIO"
+      ],
       "permissions": []
     },
     "web": {
@@ -40,10 +43,7 @@
         {
           "image": "./assets/images/splash.png",
           "resizeMode": "contain",
-          "backgroundColor": "#141414",
-          "dark": {
-            "backgroundColor": "#141414"
-          }
+          "backgroundColor": "#141414"
         }
       ],
       "expo-web-browser",
@@ -52,9 +52,11 @@
         "expo-image-picker",
         {
           "photosPermission": "Opus needs access to your photo library to attach operative images to cases.",
-          "cameraPermission": "Opus needs access to your camera to capture intraoperative photos."
+          "cameraPermission": "Opus needs access to your camera to capture intraoperative photos.",
+          "microphonePermission": false
         }
-      ]
+      ],
+      "@react-native-community/datetimepicker"
     ],
     "experiments": {
       "reactCompiler": true

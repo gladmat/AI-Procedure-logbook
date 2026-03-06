@@ -208,13 +208,13 @@ const BC_DX_LOWER: DiagnosisPicklistEntry[] = [
     ],
     suggestedProcedures: [
       {
-        procedurePicklistId: "bc_lower_medial_thigh",
+        procedurePicklistId: "bc_lower_thigh_lift_medial",
         displayName: "Medial thigh lift",
         isDefault: true,
         sortOrder: 1,
       },
       {
-        procedurePicklistId: "bc_lower_lateral_thigh",
+        procedurePicklistId: "bc_lower_thigh_lift_lateral",
         displayName: "Lateral thigh lift",
         isDefault: false,
         sortOrder: 2,
@@ -241,7 +241,7 @@ const BC_DX_LOWER: DiagnosisPicklistEntry[] = [
         sortOrder: 1,
       },
       {
-        procedurePicklistId: "bc_buttock_augment_implant",
+        procedurePicklistId: "bc_buttock_implant",
         displayName: "Buttock augmentation — implant",
         isDefault: false,
         sortOrder: 2,
@@ -262,7 +262,7 @@ const BC_DX_LOWER: DiagnosisPicklistEntry[] = [
     searchSynonyms: ["monsplasty", "mons pubis", "FUPA"],
     suggestedProcedures: [
       {
-        procedurePicklistId: "bc_other_monsplasty",
+        procedurePicklistId: "bc_postbar_mons_lift",
         displayName: "Monsplasty",
         isDefault: true,
         sortOrder: 1,
@@ -296,13 +296,13 @@ const BC_DX_POST_BARIATRIC: DiagnosisPicklistEntry[] = [
     ],
     suggestedProcedures: [
       {
-        procedurePicklistId: "bc_postbar_circumferential_body_lift",
+        procedurePicklistId: "bc_postbar_combined_upper_lower",
         displayName: "Circumferential body lift",
         isDefault: true,
         sortOrder: 1,
       },
       {
-        procedurePicklistId: "bc_postbar_belt_lipectomy",
+        procedurePicklistId: "bc_lower_belt_lipectomy",
         displayName: "Belt lipectomy",
         isDefault: false,
         sortOrder: 2,
@@ -351,7 +351,7 @@ const BC_DX_POST_BARIATRIC: DiagnosisPicklistEntry[] = [
     searchSynonyms: ["post-bariatric thighs", "massive weight loss thighs"],
     suggestedProcedures: [
       {
-        procedurePicklistId: "bc_postbar_thigh_lift",
+        procedurePicklistId: "bc_lower_thigh_lift_medial",
         displayName: "Thigh lift — post-bariatric",
         isDefault: true,
         sortOrder: 1,

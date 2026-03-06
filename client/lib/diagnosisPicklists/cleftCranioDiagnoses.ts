@@ -236,7 +236,7 @@ const CC_DX_CRANIOFACIAL: DiagnosisPicklistEntry[] = [
     ],
     suggestedProcedures: [
       {
-        procedurePicklistId: "cc_vault_remodel",
+        procedurePicklistId: "cc_cranial_vault_remodel",
         displayName: "Cranial vault remodelling",
         isDefault: true,
         sortOrder: 1,
@@ -261,7 +261,7 @@ const CC_DX_CRANIOFACIAL: DiagnosisPicklistEntry[] = [
     ],
     suggestedProcedures: [
       {
-        procedurePicklistId: "cc_foa",
+        procedurePicklistId: "cc_fronto_orbital",
         displayName: "Fronto-orbital advancement (FOA)",
         isDefault: true,
         sortOrder: 1,
@@ -288,7 +288,7 @@ const CC_DX_CRANIOFACIAL: DiagnosisPicklistEntry[] = [
     ],
     suggestedProcedures: [
       {
-        procedurePicklistId: "cc_foa",
+        procedurePicklistId: "cc_fronto_orbital",
         displayName: "Fronto-orbital advancement (FOA)",
         isDefault: true,
         sortOrder: 1,
@@ -315,7 +315,7 @@ const CC_DX_CRANIOFACIAL: DiagnosisPicklistEntry[] = [
     ],
     suggestedProcedures: [
       {
-        procedurePicklistId: "cc_foa",
+        procedurePicklistId: "cc_fronto_orbital",
         displayName: "Fronto-orbital advancement (FOA)",
         isDefault: false,
         sortOrder: 1,
@@ -360,7 +360,7 @@ const CC_DX_CRANIOFACIAL: DiagnosisPicklistEntry[] = [
         sortOrder: 1,
       },
       {
-        procedurePicklistId: "cc_microsomia_reconstruction",
+        procedurePicklistId: "cc_craniofacial_microsomia",
         displayName: "Craniofacial microsomia reconstruction",
         isDefault: false,
         sortOrder: 2,

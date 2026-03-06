@@ -6,7 +6,10 @@ const KEYS = {
   BIOMETRIC_ENABLED: "opus_app_lock_biometric_enabled",
   APP_LOCK_ENABLED: "opus_app_lock_enabled",
   AUTO_LOCK_TIMEOUT: "opus_app_lock_timeout",
+  PIN_VERSION: "opus_app_lock_pin_version",
 } as const;
+
+const CURRENT_PIN_VERSION = "2";
 
 // ── Storage Functions ────────────────────────────────────────────────────────
 
@@ -53,6 +56,7 @@ export async function savePin(pin: string): Promise<void> {
     `opus_pin_v1_${pin}`,
   );
   await SecureStore.setItemAsync(KEYS.PIN_HASH, hash);
+  await SecureStore.setItemAsync(KEYS.PIN_VERSION, CURRENT_PIN_VERSION);
 }
 
 export async function verifyPin(pin: string): Promise<boolean> {
@@ -73,9 +77,29 @@ export async function isPinSet(): Promise<boolean> {
   return hash !== null && hash.length > 0;
 }
 
+export async function migratePinIfNeeded(): Promise<boolean> {
+  const storedVersion = await SecureStore.getItemAsync(KEYS.PIN_VERSION);
+  if (storedVersion === CURRENT_PIN_VERSION) {
+    return false;
+  }
+
+  const hasPin = await isPinSet();
+  if (!hasPin) {
+    return false;
+  }
+
+  await SecureStore.deleteItemAsync(KEYS.PIN_HASH);
+  await SecureStore.deleteItemAsync(KEYS.APP_LOCK_ENABLED);
+  await SecureStore.deleteItemAsync(KEYS.BIOMETRIC_ENABLED);
+  await SecureStore.deleteItemAsync(KEYS.AUTO_LOCK_TIMEOUT);
+  await SecureStore.deleteItemAsync(KEYS.PIN_VERSION);
+  return true;
+}
+
 export async function clearAllAppLockData(): Promise<void> {
   await SecureStore.deleteItemAsync(KEYS.PIN_HASH);
   await SecureStore.deleteItemAsync(KEYS.BIOMETRIC_ENABLED);
   await SecureStore.deleteItemAsync(KEYS.APP_LOCK_ENABLED);
   await SecureStore.deleteItemAsync(KEYS.AUTO_LOCK_TIMEOUT);
+  await SecureStore.deleteItemAsync(KEYS.PIN_VERSION);
 }

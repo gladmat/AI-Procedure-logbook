@@ -47,7 +47,7 @@ const PN_DX_BRACHIAL_PLEXUS: DiagnosisPicklistEntry[] = [
         sortOrder: 2,
       },
       {
-        procedurePicklistId: "pn_bp_nerve_transfer",
+        procedurePicklistId: "pn_transfer_sas",
         displayName: "Nerve transfer (brachial plexus)",
         isDefault: false,
         sortOrder: 3,
@@ -65,12 +65,7 @@ const PN_DX_BRACHIAL_PLEXUS: DiagnosisPicklistEntry[] = [
     subcategory: "Brachial Plexus",
     clinicalGroup: "trauma",
     hasStaging: false,
-    searchSynonyms: [
-      "Klumpke",
-      "lower trunk",
-      "C8 T1",
-      "lower plexus injury",
-    ],
+    searchSynonyms: ["Klumpke", "lower trunk", "C8 T1", "lower plexus injury"],
     suggestedProcedures: [
       {
         procedurePicklistId: "pn_bp_exploration",
@@ -117,13 +112,13 @@ const PN_DX_BRACHIAL_PLEXUS: DiagnosisPicklistEntry[] = [
         sortOrder: 2,
       },
       {
-        procedurePicklistId: "pn_bp_nerve_transfer",
+        procedurePicklistId: "pn_transfer_sas",
         displayName: "Nerve transfer (brachial plexus)",
         isDefault: false,
         sortOrder: 3,
       },
       {
-        procedurePicklistId: "pn_bp_free_functioning_muscle",
+        procedurePicklistId: "pn_ffmt_elbow",
         displayName: "Free functioning muscle transfer",
         isDefault: false,
         sortOrder: 4,
@@ -161,7 +156,7 @@ const PN_DX_BRACHIAL_PLEXUS: DiagnosisPicklistEntry[] = [
         sortOrder: 2,
       },
       {
-        procedurePicklistId: "pn_bp_nerve_transfer",
+        procedurePicklistId: "pn_transfer_sas",
         displayName: "Nerve transfer",
         isDefault: false,
         sortOrder: 3,
@@ -195,19 +190,19 @@ const PN_DX_TRAUMA: DiagnosisPicklistEntry[] = [
     ],
     suggestedProcedures: [
       {
-        procedurePicklistId: "pn_nerve_repair",
+        procedurePicklistId: "pn_repair_upper",
         displayName: "Nerve repair — primary",
         isDefault: true,
         sortOrder: 1,
       },
       {
-        procedurePicklistId: "hand_nerve_graft",
+        procedurePicklistId: "pn_graft_upper",
         displayName: "Nerve graft (cable / interposition)",
         isDefault: false,
         sortOrder: 2,
       },
       {
-        procedurePicklistId: "hand_nerve_transfer",
+        procedurePicklistId: "pn_transfer_sas",
         displayName: "Nerve transfer",
         isDefault: false,
         sortOrder: 3,
@@ -234,25 +229,25 @@ const PN_DX_TRAUMA: DiagnosisPicklistEntry[] = [
     ],
     suggestedProcedures: [
       {
-        procedurePicklistId: "pn_nerve_repair",
+        procedurePicklistId: "pn_repair_lower",
         displayName: "Nerve repair — primary",
         isDefault: false,
         sortOrder: 1,
       },
       {
-        procedurePicklistId: "hand_nerve_graft",
+        procedurePicklistId: "pn_graft_lower",
         displayName: "Nerve graft (cable / interposition)",
         isDefault: false,
         sortOrder: 2,
       },
       {
-        procedurePicklistId: "hand_nerve_transfer",
+        procedurePicklistId: "pn_transfer_intercostal",
         displayName: "Nerve transfer",
         isDefault: false,
         sortOrder: 3,
       },
       {
-        procedurePicklistId: "pn_nerve_decompression",
+        procedurePicklistId: "pn_neurolysis",
         displayName: "Nerve decompression",
         isDefault: false,
         sortOrder: 4,
@@ -286,7 +281,7 @@ const PN_DX_COMPRESSION: DiagnosisPicklistEntry[] = [
     ],
     suggestedProcedures: [
       {
-        procedurePicklistId: "pn_tos_decompression",
+        procedurePicklistId: "pn_neurolysis",
         displayName: "TOS decompression (first rib resection / scalenectomy)",
         isDefault: true,
         sortOrder: 1,
@@ -320,7 +315,7 @@ const PN_DX_NEUROMA: DiagnosisPicklistEntry[] = [
     ],
     suggestedProcedures: [
       {
-        procedurePicklistId: "hand_nerve_neuroma_excision",
+        procedurePicklistId: "pn_neuroma_excision",
         displayName: "Neuroma excision",
         isDefault: true,
         sortOrder: 1,
@@ -365,7 +360,7 @@ const PN_DX_TUMOUR: DiagnosisPicklistEntry[] = [
     ],
     suggestedProcedures: [
       {
-        procedurePicklistId: "pn_schwannoma_excision",
+        procedurePicklistId: "pn_schwannoma",
         displayName: "Schwannoma excision (intrafascicular dissection)",
         isDefault: true,
         sortOrder: 1,

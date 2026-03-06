@@ -14,10 +14,28 @@ export const PROFESSIONAL_REGISTRATION_OPTIONS = [
     placeholder: "Enter AHPRA number",
   },
   {
+    id: "canada",
+    label: "Canada",
+    authority: "Provincial licence",
+    placeholder: "Enter provincial registration number",
+  },
+  {
+    id: "germany",
+    label: "Germany",
+    authority: "Approbation",
+    placeholder: "Enter Approbation or licence number",
+  },
+  {
     id: "poland",
     label: "Poland",
     authority: "PWZ",
     placeholder: "Enter PWZ number",
+  },
+  {
+    id: "austria",
+    label: "Austria",
+    authority: "Aerztekammer",
+    placeholder: "Enter Austrian registration number",
   },
   {
     id: "switzerland",
@@ -56,7 +74,10 @@ export const professionalRegistrationsSchema = z
   .object({
     new_zealand: z.string().trim().max(64).nullable().optional(),
     australia: z.string().trim().max(64).nullable().optional(),
+    canada: z.string().trim().max(64).nullable().optional(),
+    germany: z.string().trim().max(64).nullable().optional(),
     poland: z.string().trim().max(64).nullable().optional(),
+    austria: z.string().trim().max(64).nullable().optional(),
     switzerland: z.string().trim().max(64).nullable().optional(),
     united_kingdom: z.string().trim().max(64).nullable().optional(),
     united_states: z.string().trim().max(64).nullable().optional(),
@@ -103,8 +124,14 @@ export function getRegistrationJurisdictionForCountry(
       return "new_zealand";
     case "australia":
       return "australia";
+    case "canada":
+      return "canada";
+    case "germany":
+      return "germany";
     case "poland":
       return "poland";
+    case "austria":
+      return "austria";
     case "united_kingdom":
       return "united_kingdom";
     case "united_states":

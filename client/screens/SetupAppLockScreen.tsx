@@ -13,7 +13,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@/components/FeatherIcon";
 import * as Haptics from "expo-haptics";
 import * as LocalAuthentication from "expo-local-authentication";
-import { useNavigation } from "@react-navigation/native";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
@@ -31,7 +30,7 @@ import {
 } from "@/lib/appLockStorage";
 import { Spacing, BorderRadius, Shadows, Typography } from "@/constants/theme";
 
-const PIN_LENGTH = 4;
+const PIN_LENGTH = 6;
 
 const AUTO_LOCK_OPTIONS = [
   { label: "Immediately", value: 0 },
@@ -45,9 +44,8 @@ type SetupStep = "idle" | "enter_new" | "confirm_new" | "enter_current";
 export default function SetupAppLockScreen() {
   const { theme: colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const navigation = useNavigation();
   const headerHeight = useHeaderHeight();
-  const { refreshLockState, isAppLockConfigured } = useAppLock();
+  const { refreshLockState } = useAppLock();
 
   const [hasPinSet, setHasPinSet] = useState(false);
   const [biometricEnabled, setBiometricEnabled] = useState(false);
@@ -254,7 +252,7 @@ export default function SetupAppLockScreen() {
       case "enter_current":
         return "Enter your current PIN";
       case "enter_new":
-        return "Enter a new 4-digit PIN";
+        return "Enter a new 6-digit PIN";
       case "confirm_new":
         return "Confirm your PIN";
       default:
@@ -376,7 +374,10 @@ export default function SetupAppLockScreen() {
       ]}
       contentContainerStyle={[
         styles.scrollContent,
-        { paddingTop: headerHeight + Spacing.lg, paddingBottom: insets.bottom + Spacing["3xl"] },
+        {
+          paddingTop: headerHeight + Spacing.lg,
+          paddingBottom: insets.bottom + Spacing["3xl"],
+        },
       ]}
     >
       {/* PIN Section */}
@@ -413,7 +414,7 @@ export default function SetupAppLockScreen() {
                 <ThemedText
                   style={[styles.rowSubtitle, { color: colors.textSecondary }]}
                 >
-                  Create a 4-digit PIN to lock the app
+                  Create a 6-digit PIN to lock the app
                 </ThemedText>
               </View>
               <Feather
@@ -443,7 +444,7 @@ export default function SetupAppLockScreen() {
                 <ThemedText
                   style={[styles.rowSubtitle, { color: colors.textSecondary }]}
                 >
-                  Update your 4-digit PIN
+                  Update your 6-digit PIN
                 </ThemedText>
               </View>
               <Feather

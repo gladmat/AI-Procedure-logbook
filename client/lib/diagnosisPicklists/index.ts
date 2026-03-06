@@ -17,10 +17,26 @@
 import type { Specialty } from "@/types/case";
 import type {
   DiagnosisPicklistEntry,
-  ProcedureSuggestion,
   EvaluatedSuggestion,
   StagingSelections,
 } from "@/types/diagnosis";
+
+import { HAND_SURGERY_DIAGNOSES } from "./handSurgeryDiagnoses";
+import { BURNS_DIAGNOSES } from "./burnsDiagnoses";
+import { BODY_CONTOURING_DIAGNOSES } from "./bodyContouringDiagnoses";
+import { BREAST_DIAGNOSES } from "./breastDiagnoses";
+import { AESTHETICS_DIAGNOSES } from "./aestheticsDiagnoses";
+import { GENERAL_DIAGNOSES, GEN_DX_SKIN_CANCER } from "./generalDiagnoses";
+import {
+  HEAD_NECK_DIAGNOSES,
+  HN_DX_SKIN_CANCER,
+  HN_DX_CLEFT_CRANIOFACIAL,
+} from "./headNeckDiagnoses";
+import { ORTHOPLASTIC_DIAGNOSES } from "./orthoplasticDiagnoses";
+import { CLEFT_CRANIO_DIAGNOSES } from "./cleftCranioDiagnoses";
+import { SKIN_CANCER_DIAGNOSES } from "./skinCancerDiagnoses";
+import { LYMPHOEDEMA_DIAGNOSES } from "./lymphoedemaDiagnoses";
+import { PERIPHERAL_NERVE_DIAGNOSES } from "./peripheralNerveDiagnoses";
 
 // ─── Re-exports ──────────────────────────────────────────────────────────────
 
@@ -30,7 +46,11 @@ export { BODY_CONTOURING_DIAGNOSES } from "./bodyContouringDiagnoses";
 export { BREAST_DIAGNOSES } from "./breastDiagnoses";
 export { AESTHETICS_DIAGNOSES } from "./aestheticsDiagnoses";
 export { GENERAL_DIAGNOSES, GEN_DX_SKIN_CANCER } from "./generalDiagnoses";
-export { HEAD_NECK_DIAGNOSES, HN_DX_SKIN_CANCER, HN_DX_CLEFT_CRANIOFACIAL } from "./headNeckDiagnoses";
+export {
+  HEAD_NECK_DIAGNOSES,
+  HN_DX_SKIN_CANCER,
+  HN_DX_CLEFT_CRANIOFACIAL,
+} from "./headNeckDiagnoses";
 export { ORTHOPLASTIC_DIAGNOSES } from "./orthoplasticDiagnoses";
 export { CLEFT_CRANIO_DIAGNOSES } from "./cleftCranioDiagnoses";
 export { SKIN_CANCER_DIAGNOSES } from "./skinCancerDiagnoses";
@@ -44,22 +64,6 @@ export type {
   EvaluatedSuggestion,
   StagingSelections,
 } from "@/types/diagnosis";
-
-// ─── Import all diagnosis arrays ─────────────────────────────────────────────
-
-import { HAND_SURGERY_DIAGNOSES } from "./handSurgeryDiagnoses";
-import { BURNS_DIAGNOSES } from "./burnsDiagnoses";
-import { BODY_CONTOURING_DIAGNOSES } from "./bodyContouringDiagnoses";
-import { BREAST_DIAGNOSES } from "./breastDiagnoses";
-import { AESTHETICS_DIAGNOSES } from "./aestheticsDiagnoses";
-import { GENERAL_DIAGNOSES, GEN_DX_SKIN_CANCER } from "./generalDiagnoses";
-
-import { HEAD_NECK_DIAGNOSES, HN_DX_SKIN_CANCER, HN_DX_CLEFT_CRANIOFACIAL } from "./headNeckDiagnoses";
-import { ORTHOPLASTIC_DIAGNOSES } from "./orthoplasticDiagnoses";
-import { CLEFT_CRANIO_DIAGNOSES } from "./cleftCranioDiagnoses";
-import { SKIN_CANCER_DIAGNOSES } from "./skinCancerDiagnoses";
-import { LYMPHOEDEMA_DIAGNOSES } from "./lymphoedemaDiagnoses";
-import { PERIPHERAL_NERVE_DIAGNOSES } from "./peripheralNerveDiagnoses";
 
 // ─── Master Diagnosis Registry ───────────────────────────────────────────────
 
@@ -77,6 +81,8 @@ export const ALL_DIAGNOSES: DiagnosisPicklistEntry[] = [
   ...HEAD_NECK_DIAGNOSES,
   ...ORTHOPLASTIC_DIAGNOSES,
   ...CLEFT_CRANIO_DIAGNOSES,
+  // Legacy cleft IDs kept for backward lookup of older saved cases.
+  ...HN_DX_CLEFT_CRANIOFACIAL,
   ...SKIN_CANCER_DIAGNOSES,
   ...LYMPHOEDEMA_DIAGNOSES,
   ...PERIPHERAL_NERVE_DIAGNOSES,
@@ -94,8 +100,12 @@ const SPECIALTY_MAP: Partial<Record<Specialty, DiagnosisPicklistEntry[]>> = {
   general: [...GENERAL_DIAGNOSES, ...HN_DX_SKIN_CANCER],
   head_neck: [...HEAD_NECK_DIAGNOSES, ...GEN_DX_SKIN_CANCER],
   orthoplastic: ORTHOPLASTIC_DIAGNOSES,
-  cleft_cranio: [...CLEFT_CRANIO_DIAGNOSES, ...HN_DX_CLEFT_CRANIOFACIAL],
-  skin_cancer: [...SKIN_CANCER_DIAGNOSES, ...HN_DX_SKIN_CANCER, ...GEN_DX_SKIN_CANCER],
+  cleft_cranio: CLEFT_CRANIO_DIAGNOSES,
+  skin_cancer: [
+    ...SKIN_CANCER_DIAGNOSES,
+    ...HN_DX_SKIN_CANCER,
+    ...GEN_DX_SKIN_CANCER,
+  ],
   lymphoedema: LYMPHOEDEMA_DIAGNOSES,
   peripheral_nerve: PERIPHERAL_NERVE_DIAGNOSES,
 };
@@ -197,7 +207,7 @@ export function searchDiagnoses(
   const q = query.toLowerCase().trim();
   const pool = specialty ? getDiagnosesForSpecialty(specialty) : ALL_DIAGNOSES;
 
-  const scored: Array<{ dx: DiagnosisPicklistEntry; score: number }> = [];
+  const scored: { dx: DiagnosisPicklistEntry; score: number }[] = [];
 
   for (const dx of pool) {
     let score = 0;

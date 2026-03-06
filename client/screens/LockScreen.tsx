@@ -10,7 +10,7 @@ import { useAppLock } from "@/contexts/AppLockContext";
 import { isBiometricPreferenceEnabled } from "@/lib/appLockStorage";
 import { Spacing, BorderRadius, Typography } from "@/constants/theme";
 
-const PIN_LENGTH = 4;
+const PIN_LENGTH = 6;
 const MAX_ATTEMPTS = 5;
 
 export default function LockScreen() {

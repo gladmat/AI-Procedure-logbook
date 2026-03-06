@@ -162,8 +162,9 @@ const LE_DX_SECONDARY: DiagnosisPicklistEntry[] = [
         sortOrder: 2,
       },
       {
-        procedurePicklistId: "le_lympha",
-        displayName: "LYMPHA (Lymphatic Microsurgical Preventive Healing Approach)",
+        procedurePicklistId: "lymph_lympha",
+        displayName:
+          "LYMPHA (Lymphatic Microsurgical Preventive Healing Approach)",
         isDefault: false,
         sortOrder: 3,
       },
@@ -228,13 +229,13 @@ const LE_DX_BY_SITE: DiagnosisPicklistEntry[] = [
     ],
     suggestedProcedures: [
       {
-        procedurePicklistId: "le_lva_upper",
+        procedurePicklistId: "lymph_lva_upper",
         displayName: "LVA — upper limb",
         isDefault: true,
         sortOrder: 1,
       },
       {
-        procedurePicklistId: "le_vlnt_groin",
+        procedurePicklistId: "lymph_vlnt_groin",
         displayName: "VLNT — groin-to-axilla transfer",
         isDefault: false,
         sortOrder: 2,
@@ -272,13 +273,13 @@ const LE_DX_BY_SITE: DiagnosisPicklistEntry[] = [
     ],
     suggestedProcedures: [
       {
-        procedurePicklistId: "le_lva_lower",
+        procedurePicklistId: "lymph_lva_lower",
         displayName: "LVA — lower limb",
         isDefault: true,
         sortOrder: 1,
       },
       {
-        procedurePicklistId: "le_vlnt_supraclavicular",
+        procedurePicklistId: "lymph_vlnt_supraclavicular",
         displayName: "VLNT — supraclavicular transfer",
         isDefault: false,
         sortOrder: 2,
