@@ -1,6 +1,6 @@
 const http = require("http");
 const os = require("os");
-const { spawn } = require("child_process");
+const { execFileSync, spawn } = require("child_process");
 
 const npmCommand = process.platform === "win32" ? "npm.cmd" : "npm";
 const apiPort = Number(process.env.DEV_API_PORT || process.env.PORT || 5001);
@@ -42,6 +42,44 @@ function checkApiHealth(port) {
   });
 }
 
+function getListeningPid(port) {
+  try {
+    const output = execFileSync("lsof", ["-tiTCP:" + port, "-sTCP:LISTEN"], {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+    }).trim();
+
+    return output ? Number(output.split("\n")[0]) : null;
+  } catch {
+    return null;
+  }
+}
+
+function getProcessCommand(pid) {
+  if (!pid) {
+    return null;
+  }
+
+  try {
+    return execFileSync("ps", ["-p", String(pid), "-o", "command="], {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+    }).trim();
+  } catch {
+    return null;
+  }
+}
+
+function isManagedApiProcess(command) {
+  return Boolean(
+    command && command.includes("server/index.ts") && command.includes("--watch"),
+  );
+}
+
+function isManagedExpoProcess(command) {
+  return Boolean(command && command.includes("expo") && command.includes("start"));
+}
+
 function prefixStream(stream, label) {
   if (!stream) {
     return;
@@ -78,8 +116,15 @@ async function main() {
   console.log(`Expo port: ${expoPort}`);
 
   let serverProcess = null;
-  if (await checkApiHealth(apiPort)) {
+  const apiProcessCommand = getProcessCommand(getListeningPid(apiPort));
+  if ((await checkApiHealth(apiPort)) && isManagedApiProcess(apiProcessCommand)) {
     console.log(`Reusing existing API server on http://127.0.0.1:${apiPort}`);
+  } else if (await checkApiHealth(apiPort)) {
+    console.error(
+      `Port ${apiPort} is already in use by a non-watch process: ${apiProcessCommand || "unknown"}`,
+    );
+    console.error("Stop that process or run the watch-mode API before using dev:mobile.");
+    process.exit(1);
   } else {
     console.log("Starting local API server...");
     serverProcess = spawnCommand(
@@ -92,23 +137,43 @@ async function main() {
     );
   }
 
-  const expoProcess = spawnCommand(
-    process.platform === "win32" ? "npx.cmd" : "npx",
-    ["expo", "start", "--host", "lan", "--port", String(expoPort), "--clear"],
-    {
-      env: {
-        ...process.env,
-        EXPO_PUBLIC_API_URL: apiUrl,
-      },
-      label: "expo",
-    },
-  );
+  const expoProcessCommand = getProcessCommand(getListeningPid(expoPort));
+  let expoProcess = null;
+
+  if (isManagedExpoProcess(expoProcessCommand)) {
+    console.log(`Reusing existing Expo session on port ${expoPort}`);
+  } else if (expoProcessCommand) {
+    console.error(
+      `Port ${expoPort} is already in use by a non-Expo process: ${expoProcessCommand}`,
+    );
+    process.exit(1);
+  } else {
+    expoProcess = spawnCommand(
+        process.platform === "win32" ? "npx.cmd" : "npx",
+        [
+          "expo",
+          "start",
+          "--host",
+          "lan",
+          "--port",
+          String(expoPort),
+          "--clear",
+        ],
+        {
+          env: {
+            ...process.env,
+            EXPO_PUBLIC_API_URL: apiUrl,
+          },
+          label: "expo",
+        },
+      );
+  }
 
   const cleanup = () => {
     if (serverProcess && !serverProcess.killed) {
       serverProcess.kill("SIGINT");
     }
-    if (!expoProcess.killed) {
+    if (expoProcess && !expoProcess.killed) {
       expoProcess.kill("SIGINT");
     }
   };
@@ -116,10 +181,12 @@ async function main() {
   process.on("SIGINT", cleanup);
   process.on("SIGTERM", cleanup);
 
-  expoProcess.on("exit", (code) => {
-    cleanup();
-    process.exit(code || 0);
-  });
+  if (expoProcess) {
+    expoProcess.on("exit", (code) => {
+      cleanup();
+      process.exit(code || 0);
+    });
+  }
 
   if (serverProcess) {
     serverProcess.on("exit", (code) => {
@@ -127,6 +194,11 @@ async function main() {
         console.error(`Server exited with code ${code}`);
       }
     });
+  }
+
+  if (!expoProcess && serverProcess) {
+    console.log("API server started. Reusing existing Expo session.");
+    process.stdin.resume();
   }
 }
 
