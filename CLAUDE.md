@@ -320,34 +320,47 @@ Cases with `stayType === "inpatient"` and no `dischargeDate` shown in a collapsi
 - **Healthcheck:** `GET /api/health`
 - **Schema push:** Use public DATABASE_URL from Postgres service with `npx drizzle-kit push`
 
-## Brand & Design System: Charcoal + Amber
+## Brand & Design System: Opus — Charcoal + Amber
 
-Dark-mode-first design with warm charcoal palette and amber as the singular accent colour. Defined in `client/constants/theme.ts`.
+Dark-mode-first design with warm charcoal palette and golden amber as the singular accent colour. All tokens defined in `client/constants/theme.ts` (single source of truth).
 
-### Colour Palette
-- **Backgrounds**: Charcoal scale — #0F1419 (root), #1A1F26 (surface), #242B33 (raised), #2E3740 (border)
-- **Text**: #F0F2F4 (primary dark), #94A3B8 (secondary dark), #64748B (tertiary dark)
-- **Accent (Amber)**: #D97706 (dark mode), #B45309 (light mode) — interactive elements ONLY
-- **Warning**: #FB923C (dark), #EA580C (light) — deliberately distinct from amber accent
-- **Error**: #DC2626 both modes
-- **Success**: #15803D (dark), #16A34A (light)
-- **buttonText**: #0F1419 — dark text on amber backgrounds for legibility
+### Brand Identity
+
+- **Name:** Opus — used in all UI strings, email subjects, HTML templates, App Store listing
+- **Mark:** The Interrupted Circle — an open-arc SVG stroke rendered by `OpusMark` (`client/components/brand/OpusMark.tsx`). SVG path: `M 64.68 13.65 A 39.2 39.2 0 1 1 35.32 13.65` in a 100x100 viewBox, stroke-width 7.2, round line-caps.
+- **Logo lockup:** Horizontal — mark LEFT of "opus" wordmark. Rendered by `OpusLogo` (`client/components/brand/OpusLogo.tsx`) with sm/md/lg size presets. Optional subtitle slot.
+- **Canonical amber:** `#E5A00D` (golden amber). NOT `#D97706` (burnt orange — previous draft value).
+- **Assets:** `client/assets/icons/app/opus-icon-1024.png` (dark bg), `opus-icon-light-1024.png` (light bg), `mark.svg`, `assets/images/splash.png`
+
+### Colour Palette (Canonical Token Values)
+- **Backgrounds (dark)**: Charcoal scale — #0C0F14 (root), #161B22 (surface), #1C2128 (raised), #2D333B (border)
+- **Backgrounds (light)**: #FFFFFF (root/elevated), #F6F8FA (surface), #ECEEF1 (raised), #D0D7DE (border)
+- **Text (dark)**: #E6EDF3 (primary), #8B949E (secondary), #656D76 (tertiary)
+- **Text (light)**: #1F2328 (primary), #656D76 (secondary), #8B949E (tertiary)
+- **Accent (Amber)**: #E5A00D (dark mode), #B47E00 (light mode) — interactive elements ONLY
+- **Semantic**: success #2EA043/#1A7F37, warning #D29922/#9A6700, error #F85149/#CF222E, info #58A6FF/#0969DA (dark/light)
+- **buttonText**: #0C0F14 (dark mode — dark text on amber), #FFFFFF (light mode — white text on amber)
+
+### Role Colors
+- Dark: primary=#E5A00D, supervising=#D8B4FE, assistant=#86EFAC, trainee=#7DD3FC
+- Light: primary=#B47E00, supervising=#8250DF, assistant=#1A7F37, trainee=#0969DA
 
 ### Specialty Colors
 Per-specialty colors in `theme.specialty[specialty]` — pastel on dark, deeper on light:
-- Dark: breast=#D8B4FE, hand_surgery=#7DD3FC, orthoplastic=#86EFAC, head_neck=#FDBA74, body_contouring=#FDA4AF, burns=#FB923C, aesthetics=#F9A8D4, general=#94A3B8
-- Light: breast=#7C3AED, hand_surgery=#0369A1, orthoplastic=#15803D, head_neck=#C2410C, body_contouring=#BE123C, burns=#9A3412, aesthetics=#BE185D, general=#475569
-- Used for badges (`SpecialtyBadge`), icons (`SpecialtyIcon` with custom SVGs), and chart segments
+- Dark: breast=#D8B4FE, hand_surgery=#7DD3FC, orthoplastic=#86EFAC, head_neck=#FDBA74, body_contouring=#FB7185, burns=#FB923C, aesthetics=#F9A8D4, general=#94A3B8
+- Light: breast=#8250DF, hand_surgery=#0969DA, orthoplastic=#1A7F37, head_neck=#BF5700, body_contouring=#CF222E, burns=#953800, aesthetics=#BF3989, general=#656D76
+- Rendered via `SpecialtyBadge` (text badge) and `SpecialtyIcon` (custom SVG from `client/assets/specialty-icons.ts`)
 - Amber accent remains for interactive elements; specialty colors for specialty identification only
 
 ### Design Rules
 - Amber accent on interactive elements only (buttons, links, selected states). Never on static text.
-- Never #000000 as background — use charcoal.950 (#0F1419)
-- Never #FFFFFF as text in dark mode — use #F0F2F4
+- Never #000000 as background — use charcoal.950 (#0C0F14)
+- Never #FFFFFF as text in dark mode — use #E6EDF3
 - Font weight for emphasis, NOT colour variation
 - Numbers in SF Pro Mono in data-dense views (summary, dashboard)
 - Card accent borders: primary group = theme.link full opacity; groups 2+ = theme.link at 60%/35% opacity
 - All cards: Shadows.card + BorderRadius.md (14px) + theme.backgroundElevated
+- No hardcoded colour hex values in components — always reference `theme.*` or `palette.*` from `client/constants/theme.ts`
 
 ### Typography
 - display: 28/36/700, h1: 22/30/700, h2: 18/26/600, h3: 16/24/600, h4: 15/22/600
