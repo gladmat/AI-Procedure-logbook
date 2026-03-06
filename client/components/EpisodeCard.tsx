@@ -6,10 +6,7 @@ import { SpecialtyBadge } from "@/components/SpecialtyBadge";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, Shadows } from "@/constants/theme";
 import type { TreatmentEpisode } from "@/types/episode";
-import {
-  EPISODE_STATUS_LABELS,
-  PENDING_ACTION_LABELS,
-} from "@/types/episode";
+import { EPISODE_STATUS_LABELS, PENDING_ACTION_LABELS } from "@/types/episode";
 import type { Case } from "@/types/case";
 import { getPrimaryDiagnosisName } from "@/types/case";
 
@@ -20,10 +17,7 @@ interface EpisodeCardProps {
   onLogCase: () => void;
 }
 
-const STATUS_COLORS: Record<
-  string,
-  { bg: string; text: string }
-> = {
+const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
   active: { bg: "success", text: "success" },
   on_hold: { bg: "warning", text: "warning" },
   planned: { bg: "info", text: "info" },
@@ -45,11 +39,15 @@ export function EpisodeCard({
   const { theme } = useTheme();
 
   const specialtyColor = theme.specialty[episode.specialty];
-  const statusConfig = STATUS_COLORS[episode.status] ?? { bg: "textTertiary", text: "textTertiary" };
+  const statusConfig = STATUS_COLORS[episode.status] ?? {
+    bg: "textTertiary",
+    text: "textTertiary",
+  };
   const statusColor = (theme as any)[statusConfig.text] as string;
 
   // Last case info
-  const lastCase = linkedCases.length > 0 ? linkedCases[linkedCases.length - 1] : null;
+  const lastCase =
+    linkedCases.length > 0 ? linkedCases[linkedCases.length - 1] : null;
   const lastCaseDate = lastCase?.procedureDate;
   const daysSinceLastCase = lastCaseDate ? daysSince(lastCaseDate) : null;
 

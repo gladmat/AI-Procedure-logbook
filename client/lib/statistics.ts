@@ -403,10 +403,7 @@ export function calculateFreeFlapStatistics(cases: Case[]): FreeFlapStatistics {
         if (outcome.donorSiteComplications?.length) {
           procsWithDonorComp++;
           for (const comp of outcome.donorSiteComplications) {
-            donorCompCounts.set(
-              comp,
-              (donorCompCounts.get(comp) || 0) + 1,
-            );
+            donorCompCounts.set(comp, (donorCompCounts.get(comp) || 0) + 1);
           }
         }
 
@@ -478,24 +475,17 @@ export function calculateFreeFlapStatistics(cases: Case[]): FreeFlapStatistics {
   }
 
   // ─── Aggregate survival rates ───────────────────────────────────────
-  const totalWithOutcome =
-    structuredOutcomeCount + legacyOutcomeCount;
+  const totalWithOutcome = structuredOutcomeCount + legacyOutcomeCount;
   const totalSurvived = structuredComplete + legacySurvived;
   const totalPartialLoss = structuredPartial;
   const totalTotalLoss = structuredTotal + legacyLost;
 
   const flapSurvivalRate =
-    totalWithOutcome > 0
-      ? (totalSurvived / totalWithOutcome) * 100
-      : 100;
+    totalWithOutcome > 0 ? (totalSurvived / totalWithOutcome) * 100 : 100;
   const partialLossRate =
-    totalWithOutcome > 0
-      ? (totalPartialLoss / totalWithOutcome) * 100
-      : 0;
+    totalWithOutcome > 0 ? (totalPartialLoss / totalWithOutcome) * 100 : 0;
   const totalLossRate =
-    totalWithOutcome > 0
-      ? (totalTotalLoss / totalWithOutcome) * 100
-      : 0;
+    totalWithOutcome > 0 ? (totalTotalLoss / totalWithOutcome) * 100 : 0;
 
   // ─── Ischemia averages ──────────────────────────────────────────────
   const averageIschemiaTimeMinutes =
@@ -520,9 +510,7 @@ export function calculateFreeFlapStatistics(cases: Case[]): FreeFlapStatistics {
       ? (reExplorationCount / totalFreeFlapProcs) * 100
       : 0;
   const salvageRate =
-    salvageAttempts > 0
-      ? (salvageSuccesses / salvageAttempts) * 100
-      : 0;
+    salvageAttempts > 0 ? (salvageSuccesses / salvageAttempts) * 100 : 0;
 
   // ─── Complication rates ─────────────────────────────────────────────
   const donorSiteComplicationRate =

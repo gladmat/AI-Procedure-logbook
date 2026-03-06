@@ -2,16 +2,17 @@ import React, { useState, useEffect, useCallback } from "react";
 import { View, Switch, StyleSheet, Animated } from "react-native";
 import * as Crypto from "expo-crypto";
 import { ThemedText } from "@/components/ThemedText";
-import { FormField, SelectField, DatePickerField } from "@/components/FormField";
+import {
+  FormField,
+  SelectField,
+  DatePickerField,
+} from "@/components/FormField";
 import { Button } from "@/components/Button";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/contexts/AuthContext";
 import { Spacing, BorderRadius, Shadows } from "@/constants/theme";
 import { saveEpisode } from "@/lib/episodeStorage";
-import {
-  suggestEpisodeType,
-  suggestEpisodeTitle,
-} from "@/lib/episodeHelpers";
+import { suggestEpisodeType, suggestEpisodeTitle } from "@/lib/episodeHelpers";
 import type { Specialty } from "@/types/case";
 import type {
   TreatmentEpisode,
@@ -19,10 +20,7 @@ import type {
   PendingAction,
   EpisodeLaterality,
 } from "@/types/episode";
-import {
-  EPISODE_TYPE_LABELS,
-  PENDING_ACTION_LABELS,
-} from "@/types/episode";
+import { EPISODE_TYPE_LABELS, PENDING_ACTION_LABELS } from "@/types/episode";
 
 interface InlineEpisodeCreatorProps {
   visible: boolean;
@@ -55,7 +53,9 @@ export function InlineEpisodeCreator({
   const [enabled, setEnabled] = useState(false);
   const [title, setTitle] = useState("");
   const [episodeType, setEpisodeType] = useState<EpisodeType>("other");
-  const [onsetDate, setOnsetDate] = useState(procedureDate || new Date().toISOString());
+  const [onsetDate, setOnsetDate] = useState(
+    procedureDate || new Date().toISOString(),
+  );
   const [pendingAction, setPendingAction] = useState<PendingAction | "">("");
   const [saving, setSaving] = useState(false);
 
@@ -198,7 +198,9 @@ export function InlineEpisodeCreator({
                   ([value, label]) => ({ value, label }),
                 ),
               ]}
-              onSelect={(v: string) => setPendingAction(v as PendingAction | "")}
+              onSelect={(v: string) =>
+                setPendingAction(v as PendingAction | "")
+              }
             />
 
             <Button onPress={handleCreate} disabled={saving || !title.trim()}>

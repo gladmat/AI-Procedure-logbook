@@ -522,10 +522,7 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(treatmentEpisodes)
       .where(
-        and(
-          eq(treatmentEpisodes.id, id),
-          eq(treatmentEpisodes.userId, userId),
-        ),
+        and(eq(treatmentEpisodes.id, id), eq(treatmentEpisodes.userId, userId)),
       );
     return episode || undefined;
   }
@@ -549,10 +546,7 @@ export class DatabaseStorage implements IStorage {
       .update(treatmentEpisodes)
       .set({ ...data, updatedAt: new Date() })
       .where(
-        and(
-          eq(treatmentEpisodes.id, id),
-          eq(treatmentEpisodes.userId, userId),
-        ),
+        and(eq(treatmentEpisodes.id, id), eq(treatmentEpisodes.userId, userId)),
       )
       .returning();
     return updated || undefined;
@@ -562,10 +556,7 @@ export class DatabaseStorage implements IStorage {
     const result = await db
       .delete(treatmentEpisodes)
       .where(
-        and(
-          eq(treatmentEpisodes.id, id),
-          eq(treatmentEpisodes.userId, userId),
-        ),
+        and(eq(treatmentEpisodes.id, id), eq(treatmentEpisodes.userId, userId)),
       )
       .returning();
     return result.length > 0;
@@ -704,15 +695,9 @@ export class DatabaseStorage implements IStorage {
         caseProcedures,
         eq(procedureOutcomes.caseProcedureId, caseProcedures.id),
       )
-      .innerJoin(
-        procedures,
-        eq(caseProcedures.caseId, procedures.id),
-      )
+      .innerJoin(procedures, eq(caseProcedures.caseId, procedures.id))
       .where(
-        and(
-          eq(procedureOutcomes.id, outcomeId),
-          eq(procedures.userId, userId),
-        ),
+        and(eq(procedureOutcomes.id, outcomeId), eq(procedures.userId, userId)),
       );
     return !!result;
   }

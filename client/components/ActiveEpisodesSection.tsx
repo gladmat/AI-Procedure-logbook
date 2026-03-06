@@ -33,10 +33,7 @@ export function ActiveEpisodesSection({
 
   return (
     <View style={styles.section}>
-      <Pressable
-        onPress={() => setExpanded(!expanded)}
-        style={styles.header}
-      >
+      <Pressable onPress={() => setExpanded(!expanded)} style={styles.header}>
         <View style={styles.titleRow}>
           <Feather name="layers" size={18} color={theme.link} />
           <ThemedText style={[styles.title, { color: theme.link }]}>

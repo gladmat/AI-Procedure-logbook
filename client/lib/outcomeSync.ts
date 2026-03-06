@@ -58,9 +58,7 @@ export async function syncFlapOutcomeToServer(
           body: JSON.stringify({
             details: outcome,
             assessedAt,
-            ...(assessedDaysPostOp !== undefined
-              ? { assessedDaysPostOp }
-              : {}),
+            ...(assessedDaysPostOp !== undefined ? { assessedDaysPostOp } : {}),
           }),
         });
       } else {
@@ -72,9 +70,7 @@ export async function syncFlapOutcomeToServer(
             outcomeType: "free_flap",
             details: outcome,
             assessedAt,
-            ...(assessedDaysPostOp !== undefined
-              ? { assessedDaysPostOp }
-              : {}),
+            ...(assessedDaysPostOp !== undefined ? { assessedDaysPostOp } : {}),
           }),
         });
       }
@@ -87,9 +83,7 @@ export async function syncFlapOutcomeToServer(
           outcomeType: "free_flap",
           details: outcome,
           assessedAt,
-          ...(assessedDaysPostOp !== undefined
-            ? { assessedDaysPostOp }
-            : {}),
+          ...(assessedDaysPostOp !== undefined ? { assessedDaysPostOp } : {}),
         }),
       });
     }

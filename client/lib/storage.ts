@@ -596,9 +596,7 @@ export async function exportCasesAsJSON(): Promise<string> {
   }
 }
 
-export async function getCasesByEpisodeId(
-  episodeId: string,
-): Promise<Case[]> {
+export async function getCasesByEpisodeId(episodeId: string): Promise<Case[]> {
   try {
     const index = await getCaseIndex();
     const matching = index.filter((e) => e.episodeId === episodeId);

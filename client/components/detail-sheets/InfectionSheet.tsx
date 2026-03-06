@@ -70,10 +70,7 @@ export function InfectionSheet({
       onSave={handleSave}
       onCancel={onClose}
     >
-      <InfectionOverlayForm
-        value={localOverlay}
-        onChange={handleChange}
-      />
+      <InfectionOverlayForm value={localOverlay} onChange={handleChange} />
     </DetailModuleSheet>
   );
 }

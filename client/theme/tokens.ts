@@ -6,44 +6,44 @@
 export const colors = {
   // Backgrounds
   background: {
-    primary: '#141414', // Root background for all onboarding screens
-    elevated: '#1C1C1E', // Cards, input field surfaces
-    tertiary: '#2C2C2E', // Disabled states, subtle fills
+    primary: "#141414", // Root background for all onboarding screens
+    elevated: "#1C1C1E", // Cards, input field surfaces
+    tertiary: "#2C2C2E", // Disabled states, subtle fills
   },
 
   // Amber accent — SACRED
   // Use ONLY for: logo arc, CTA button fills, selected card borders, progress bar
   accent: {
-    primary: '#E5A00D',
-    muted: '#B8820A', // Pressed/active state
-    onAccent: '#1A1A1A', // Text placed ON amber backgrounds
+    primary: "#E5A00D",
+    muted: "#B8820A", // Pressed/active state
+    onAccent: "#1A1A1A", // Text placed ON amber backgrounds
     // accent.surface = rgba(229, 160, 13, 0.08) — selected card background
     // accent.glow    = rgba(229, 160, 13, 0.15) — logo glow on welcome screen only
   },
 
   // Text
   text: {
-    primary: '#F2F2F7', // Headlines — NOT pure white (avoids OLED glare)
-    secondary: '#AEAEB2', // Supporting text, subheads
-    tertiary: '#636366', // Placeholders, skip links, legal text
+    primary: "#F2F2F7", // Headlines — NOT pure white (avoids OLED glare)
+    secondary: "#AEAEB2", // Supporting text, subheads
+    tertiary: "#636366", // Placeholders, skip links, legal text
   },
 
   // Borders
   border: {
-    default: '#38383A', // Cards, dividers, inputs at rest
-    focused: '#E5A00D', // Input/card when focused or selected
+    default: "#38383A", // Cards, dividers, inputs at rest
+    focused: "#E5A00D", // Input/card when focused or selected
   },
 
   // Icons — NOT amber (would dilute the sacred accent)
   icon: {
-    default: '#AEAEB2',
-    subtle: '#636366',
+    default: "#AEAEB2",
+    subtle: "#636366",
   },
 
   // Warning — DISTINCT from amber to prevent colour collision
   warning: {
-    primary: '#F59E0B',
-    surface: '#FFFBEB',
+    primary: "#F59E0B",
+    surface: "#FFFBEB",
   },
 } as const;
 
@@ -58,11 +58,11 @@ export const typography = {
     hero: 42,
   },
   weight: {
-    light: '300' as const,
-    regular: '400' as const,
-    medium: '500' as const,
-    semibold: '600' as const,
-    bold: '700' as const,
+    light: "300" as const,
+    regular: "400" as const,
+    medium: "500" as const,
+    semibold: "600" as const,
+    bold: "700" as const,
   },
 } as const;
 

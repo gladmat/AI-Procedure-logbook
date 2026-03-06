@@ -416,7 +416,7 @@ const SPECIAL_INJURY_MAP = {
 // ─── Amputation / Replantation Decision Logic ────────────────────────────────
 
 function resolveAmputationDiagnosis(
-  selection: HandTraumaSelection
+  selection: HandTraumaSelection,
 ): TraumaMappingResult {
   const { amputationLevel, isReplantable, affectedDigits } = selection;
   const isThumb = affectedDigits.includes("I");
@@ -594,7 +594,7 @@ function resolveAmputationDiagnosis(
 // ─── Dislocation Resolution ──────────────────────────────────────────────────
 
 function resolveDislocationDiagnosis(
-  dislocation: DislocationEntry
+  dislocation: DislocationEntry,
 ): TraumaMappingResult {
   const key = getDislocationKey(dislocation);
   const mapping = DISLOCATION_DIAGNOSIS_MAP[key];
@@ -625,7 +625,7 @@ function resolveDislocationDiagnosis(
 // ─── Special Injury Resolution ───────────────────────────────────────────────
 
 function resolveSpecialInjury(
-  selection: HandTraumaSelection
+  selection: HandTraumaSelection,
 ): TraumaMappingResult | null {
   if (selection.isHighPressureInjection) {
     const m = SPECIAL_INJURY_MAP.highPressureInjection;
@@ -684,7 +684,7 @@ function resolveSpecialInjury(
  * (e.g., fracture-only cases should use aoToDiagnosisMapping instead).
  */
 export function resolveTraumaDiagnosis(
-  selection: HandTraumaSelection
+  selection: HandTraumaSelection,
 ): TraumaMappingResult | null {
   // 1. Special injuries take priority
   const specialResult = resolveSpecialInjury(selection);
@@ -719,7 +719,7 @@ export function resolveTraumaDiagnosis(
         })
         .filter(
           (d): d is { diagnosisPicklistId: string; displayName: string } =>
-            d !== null
+            d !== null,
         );
 
       // Merge all dislocation procedures
@@ -731,7 +731,7 @@ export function resolveTraumaDiagnosis(
             // Avoid duplicate procedure suggestions
             if (
               !result.suggestedProcedures.some(
-                (sp) => sp.procedurePicklistId === p.id
+                (sp) => sp.procedurePicklistId === p.id,
               )
             ) {
               result.suggestedProcedures.push({

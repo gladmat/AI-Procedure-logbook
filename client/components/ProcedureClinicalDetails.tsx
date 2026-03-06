@@ -223,14 +223,17 @@ export function FreeFlapClinicalFields({
     const normalizedTarget = normalizeVesselName(concomitantVein);
     const matchingVeinOption = payload.availableVeinOptions.find((option) => {
       const display = normalizeVesselName(option.displayName);
-      const common = option.commonName ? normalizeVesselName(option.commonName) : "";
+      const common = option.commonName
+        ? normalizeVesselName(option.commonName)
+        : "";
       return (
         display === normalizedTarget ||
         common === normalizedTarget ||
         display.includes(normalizedTarget) ||
         normalizedTarget.includes(display) ||
         (common.length > 0 &&
-          (common.includes(normalizedTarget) || normalizedTarget.includes(common)))
+          (common.includes(normalizedTarget) ||
+            normalizedTarget.includes(common)))
       );
     });
 
@@ -471,9 +474,7 @@ export function FreeFlapClinicalFields({
             onUpdate={updateAnastomosis}
             onDelete={() => removeAnastomosis(entry.id)}
             onArterySelected={
-              entry.vesselType === "artery"
-                ? handleArterySelected
-                : undefined
+              entry.vesselType === "artery" ? handleArterySelected : undefined
             }
           />
         );
@@ -1488,7 +1489,9 @@ function SlnbDisclosureGroup({
 }) {
   const { theme } = useTheme();
   const [expanded, setExpanded] = useState(defaultExpanded);
-  const animHeight = useRef(new Animated.Value(defaultExpanded ? 1 : 0)).current;
+  const animHeight = useRef(
+    new Animated.Value(defaultExpanded ? 1 : 0),
+  ).current;
   const contentHeight = useRef(0);
 
   const toggle = () => {

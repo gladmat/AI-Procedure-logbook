@@ -68,10 +68,31 @@ export type HeadNeckCategory =
   | "congenital"
   | "other";
 export type GeneralCategory = "other";
-export type CleftCranioCategory = "congenital" | "secondary_revision" | "syndromic" | "other";
-export type SkinCancerCategory = "bcc" | "scc" | "melanoma" | "other_malignant" | "premalignant" | "diagnostic" | "other";
-export type LymphoedemaCategory = "primary" | "secondary" | "combined_treatment" | "other";
-export type PeripheralNerveCategory = "trauma" | "tumour" | "compression" | "reconstruction" | "brachial_plexus" | "other";
+export type CleftCranioCategory =
+  | "congenital"
+  | "secondary_revision"
+  | "syndromic"
+  | "other";
+export type SkinCancerCategory =
+  | "bcc"
+  | "scc"
+  | "melanoma"
+  | "other_malignant"
+  | "premalignant"
+  | "diagnostic"
+  | "other";
+export type LymphoedemaCategory =
+  | "primary"
+  | "secondary"
+  | "combined_treatment"
+  | "other";
+export type PeripheralNerveCategory =
+  | "trauma"
+  | "tumour"
+  | "compression"
+  | "reconstruction"
+  | "brachial_plexus"
+  | "other";
 
 export type ProcedureCategory =
   | HandSurgeryCategory
@@ -885,14 +906,7 @@ export interface HandTraumaStructure {
 }
 
 export interface DislocationEntry {
-  joint:
-    | "pip"
-    | "mcp"
-    | "cmc"
-    | "thumb_cmc"
-    | "druj"
-    | "perilunate"
-    | "lunate";
+  joint: "pip" | "mcp" | "cmc" | "thumb_cmc" | "druj" | "perilunate" | "lunate";
   direction?: "dorsal" | "volar" | "lateral";
   hasFracture?: boolean;
   isComplex?: boolean;
@@ -976,17 +990,15 @@ export type PreoperativeImaging =
   | "mr_angiography"
   | "conventional_angiography";
 
-export const PREOPERATIVE_IMAGING_LABELS: Record<
-  PreoperativeImaging,
-  string
-> = {
-  none: "None",
-  handheld_doppler: "Handheld Doppler",
-  duplex_ultrasound: "Duplex Ultrasound",
-  ct_angiography: "CT Angiography",
-  mr_angiography: "MR Angiography",
-  conventional_angiography: "Conventional Angiography",
-};
+export const PREOPERATIVE_IMAGING_LABELS: Record<PreoperativeImaging, string> =
+  {
+    none: "None",
+    handheld_doppler: "Handheld Doppler",
+    duplex_ultrasound: "Duplex Ultrasound",
+    ct_angiography: "CT Angiography",
+    mr_angiography: "MR Angiography",
+    conventional_angiography: "Conventional Angiography",
+  };
 
 export type ReconstructionTiming =
   | "immediate"
@@ -1016,19 +1028,17 @@ export type PerfusionAssessment =
   | "spo2_probe"
   | "thermography";
 
-export const PERFUSION_ASSESSMENT_LABELS: Record<
-  PerfusionAssessment,
-  string
-> = {
-  none: "None",
-  clinical_only: "Clinical Only",
-  icg_fluorescence: "ICG Fluorescence Angiography",
-  handheld_doppler: "Handheld Doppler",
-  implantable_doppler: "Implantable Doppler",
-  laser_doppler: "Laser Doppler",
-  spo2_probe: "SpO\u2082 Probe",
-  thermography: "Thermography",
-};
+export const PERFUSION_ASSESSMENT_LABELS: Record<PerfusionAssessment, string> =
+  {
+    none: "None",
+    clinical_only: "Clinical Only",
+    icg_fluorescence: "ICG Fluorescence Angiography",
+    handheld_doppler: "Handheld Doppler",
+    implantable_doppler: "Implantable Doppler",
+    laser_doppler: "Laser Doppler",
+    spo2_probe: "SpO\u2082 Probe",
+    thermography: "Thermography",
+  };
 
 export type DonorSiteClosureMethod =
   | "primary_closure"
@@ -1039,18 +1049,16 @@ export type DonorSiteClosureMethod =
   | "local_flap"
   | "combination";
 
-export const DONOR_SITE_CLOSURE_LABELS: Record<
-  DonorSiteClosureMethod,
-  string
-> = {
-  primary_closure: "Primary Closure",
-  skin_graft_split: "Split-Thickness Skin Graft",
-  skin_graft_full: "Full-Thickness Skin Graft",
-  dermal_substitute: "Dermal Substitute",
-  secondary_intention: "Secondary Intention",
-  local_flap: "Local Flap",
-  combination: "Combination",
-};
+export const DONOR_SITE_CLOSURE_LABELS: Record<DonorSiteClosureMethod, string> =
+  {
+    primary_closure: "Primary Closure",
+    skin_graft_split: "Split-Thickness Skin Graft",
+    skin_graft_full: "Full-Thickness Skin Graft",
+    dermal_substitute: "Dermal Substitute",
+    secondary_intention: "Secondary Intention",
+    local_flap: "Local Flap",
+    combination: "Combination",
+  };
 
 // ═══════════════════════════════════════════════════════════════════════════
 // PROCEDURE-SPECIFIC OUTCOMES (Polymorphic)

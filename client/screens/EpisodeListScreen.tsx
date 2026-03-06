@@ -18,10 +18,7 @@ import { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { getEpisodes } from "@/lib/episodeStorage";
 import { getCasesByEpisodeId, getLatestCaseForEpisode } from "@/lib/storage";
 import type { Case } from "@/types/case";
-import type {
-  TreatmentEpisode,
-  EpisodePrefillData,
-} from "@/types/episode";
+import type { TreatmentEpisode, EpisodePrefillData } from "@/types/episode";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -136,9 +133,7 @@ export default function EpisodeListScreen() {
   );
 
   return (
-    <View
-      style={[styles.container, { backgroundColor: theme.backgroundRoot }]}
-    >
+    <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
       {/* Search bar */}
       <View
         style={[

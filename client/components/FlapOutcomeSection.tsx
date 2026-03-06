@@ -61,9 +61,7 @@ function SurvivalStatusControl({
 
   return (
     <View style={styles.segmentedControl}>
-      <ThemedText
-        style={[styles.fieldLabel, { color: theme.textSecondary }]}
-      >
+      <ThemedText style={[styles.fieldLabel, { color: theme.textSecondary }]}>
         Flap Survival
       </ThemedText>
       <View style={styles.segmentedRow}>
@@ -195,7 +193,9 @@ function ReExplorationCard({
       ]}
     >
       <View style={styles.reExplorationCardHeader}>
-        <ThemedText style={[styles.reExplorationCardTitle, { color: theme.text }]}>
+        <ThemedText
+          style={[styles.reExplorationCardTitle, { color: theme.text }]}
+        >
           Re-exploration #{index + 1}
         </ThemedText>
         <Pressable
@@ -221,49 +221,55 @@ function ReExplorationCard({
       />
 
       <View style={styles.selectField}>
-        <ThemedText style={[styles.selectLabel, { color: theme.textSecondary }]}>
+        <ThemedText
+          style={[styles.selectLabel, { color: theme.textSecondary }]}
+        >
           Finding
         </ThemedText>
         <View style={styles.selectOptions}>
-          {Object.entries(RE_EXPLORATION_FINDING_LABELS).map(([value, label]) => {
-            const isActive = event.finding === value;
-            return (
-              <Pressable
-                key={value}
-                style={[
-                  styles.selectOption,
-                  {
-                    backgroundColor: isActive
-                      ? theme.link + "20"
-                      : theme.backgroundDefault,
-                    borderColor: isActive ? theme.link : theme.border,
-                  },
-                ]}
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  onUpdate({
-                    ...event,
-                    finding: value as ReExplorationFinding,
-                  });
-                }}
-              >
-                <ThemedText
+          {Object.entries(RE_EXPLORATION_FINDING_LABELS).map(
+            ([value, label]) => {
+              const isActive = event.finding === value;
+              return (
+                <Pressable
+                  key={value}
                   style={[
-                    styles.selectOptionText,
-                    { color: isActive ? theme.link : theme.text },
+                    styles.selectOption,
+                    {
+                      backgroundColor: isActive
+                        ? theme.link + "20"
+                        : theme.backgroundDefault,
+                      borderColor: isActive ? theme.link : theme.border,
+                    },
                   ]}
-                  numberOfLines={1}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    onUpdate({
+                      ...event,
+                      finding: value as ReExplorationFinding,
+                    });
+                  }}
                 >
-                  {label}
-                </ThemedText>
-              </Pressable>
-            );
-          })}
+                  <ThemedText
+                    style={[
+                      styles.selectOptionText,
+                      { color: isActive ? theme.link : theme.text },
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {label}
+                  </ThemedText>
+                </Pressable>
+              );
+            },
+          )}
         </View>
       </View>
 
       <View style={styles.selectField}>
-        <ThemedText style={[styles.selectLabel, { color: theme.textSecondary }]}>
+        <ThemedText
+          style={[styles.selectLabel, { color: theme.textSecondary }]}
+        >
           Intervention
         </ThemedText>
         <View style={styles.selectOptions}>
@@ -307,7 +313,9 @@ function ReExplorationCard({
       </View>
 
       <View style={styles.selectField}>
-        <ThemedText style={[styles.selectLabel, { color: theme.textSecondary }]}>
+        <ThemedText
+          style={[styles.selectLabel, { color: theme.textSecondary }]}
+        >
           Salvage Outcome
         </ThemedText>
         <View style={styles.selectOptions}>
@@ -433,17 +441,18 @@ export function FlapOutcomeSection({
       ...outcome,
       reExploration: {
         reExplored: newReExplored,
-        events: newReExplored && events.length === 0
-          ? [
-              {
-                id: uuidv4(),
-                hoursPostOp: 0,
-                finding: "venous_thrombosis",
-                intervention: "thrombectomy_reanastomosis",
-                salvageOutcome: "salvaged_complete",
-              },
-            ]
-          : events,
+        events:
+          newReExplored && events.length === 0
+            ? [
+                {
+                  id: uuidv4(),
+                  hoursPostOp: 0,
+                  finding: "venous_thrombosis",
+                  intervention: "thrombectomy_reanastomosis",
+                  salvageOutcome: "salvaged_complete",
+                },
+              ]
+            : events,
       },
     });
   }, [outcome, reExploration, events, onUpdate]);
@@ -614,13 +623,10 @@ export function FlapOutcomeSection({
                         },
                       ]}
                       onPress={() => {
-                        Haptics.impactAsync(
-                          Haptics.ImpactFeedbackStyle.Light,
-                        );
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                         onUpdate({
                           ...outcome,
-                          partialLossManagement:
-                            value as PartialLossManagement,
+                          partialLossManagement: value as PartialLossManagement,
                         });
                       }}
                     >
@@ -644,7 +650,9 @@ export function FlapOutcomeSection({
 
       {/* Monitoring Protocol */}
       <View style={styles.selectField}>
-        <ThemedText style={[styles.selectLabel, { color: theme.textSecondary }]}>
+        <ThemedText
+          style={[styles.selectLabel, { color: theme.textSecondary }]}
+        >
           Monitoring Protocol
         </ThemedText>
         <View style={styles.selectOptions}>

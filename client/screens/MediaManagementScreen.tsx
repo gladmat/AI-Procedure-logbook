@@ -437,9 +437,7 @@ export default function MediaManagementScreen() {
                   ? selectedAttachment.timestamp.split("T")[0]
                   : selectedAttachment.createdAt.split("T")[0]
               }
-              onChange={(date) =>
-                handleDateChange(selectedAttachment.id, date)
-              }
+              onChange={(date) => handleDateChange(selectedAttachment.id, date)}
               placeholder="Select date..."
             />
 

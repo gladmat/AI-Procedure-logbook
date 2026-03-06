@@ -81,11 +81,15 @@ export async function pushEpisodeToServer(
     });
     if (!postRes.ok) {
       const text = await postRes.text();
-      throw new Error(`Failed to create episode on server: ${postRes.status} ${text}`);
+      throw new Error(
+        `Failed to create episode on server: ${postRes.status} ${text}`,
+      );
     }
   } else if (!putRes.ok) {
     const text = await putRes.text();
-    throw new Error(`Failed to update episode on server: ${putRes.status} ${text}`);
+    throw new Error(
+      `Failed to update episode on server: ${putRes.status} ${text}`,
+    );
   }
 }
 
@@ -114,7 +118,9 @@ export async function pullEpisodesFromServer(): Promise<TreatmentEpisode[]> {
   const res = await authedFetch("/api/episodes");
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(`Failed to fetch episodes from server: ${res.status} ${text}`);
+    throw new Error(
+      `Failed to fetch episodes from server: ${res.status} ${text}`,
+    );
   }
 
   const rows: ServerEpisodeRow[] = await res.json();

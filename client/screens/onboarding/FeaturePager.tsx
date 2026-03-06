@@ -232,21 +232,11 @@ function TeamVisual({ isActive }: { isActive: boolean }) {
   }));
 
   const branchStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(
-      progress.value,
-      [1, 2],
-      [0, 1],
-      Extrapolation.CLAMP,
-    ),
+    opacity: interpolate(progress.value, [1, 2], [0, 1], Extrapolation.CLAMP),
   }));
 
   const card1Style = useAnimatedStyle(() => ({
-    opacity: interpolate(
-      progress.value,
-      [2, 3],
-      [0, 1],
-      Extrapolation.CLAMP,
-    ),
+    opacity: interpolate(progress.value, [2, 3], [0, 1], Extrapolation.CLAMP),
     transform: [
       {
         translateY: interpolate(
@@ -279,12 +269,7 @@ function TeamVisual({ isActive }: { isActive: boolean }) {
   }));
 
   const card3Style = useAnimatedStyle(() => ({
-    opacity: interpolate(
-      progress.value,
-      [3, 4],
-      [0, 1],
-      Extrapolation.CLAMP,
-    ),
+    opacity: interpolate(progress.value, [3, 4], [0, 1], Extrapolation.CLAMP),
     transform: [
       {
         translateY: interpolate(
@@ -435,12 +420,7 @@ function DataFlowVisual({ isActive }: { isActive: boolean }) {
       {/* Connecting lines + programme labels */}
       <View style={dataStyles.labelsColumn}>
         {PROGRAMMES.map((name, i) => (
-          <DataFlowLabel
-            key={name}
-            name={name}
-            index={i}
-            progress={progress}
-          />
+          <DataFlowLabel key={name} name={name} index={i} progress={progress} />
         ))}
       </View>
     </View>

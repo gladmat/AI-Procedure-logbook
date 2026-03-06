@@ -82,9 +82,7 @@ export function DetailModuleSheet({
             style={[
               styles.saveButton,
               {
-                backgroundColor: saveDisabled
-                  ? theme.textTertiary
-                  : theme.link,
+                backgroundColor: saveDisabled ? theme.textTertiary : theme.link,
               },
             ]}
             onPress={onSave}

@@ -40,7 +40,9 @@ const MEDIA_TYPE_TO_CATEGORY: Record<OperativeMediaType, MediaCategory> = {
   other: "other",
 };
 
-const CATEGORY_TO_MEDIA_TYPE: Partial<Record<MediaCategory, OperativeMediaType>> = {
+const CATEGORY_TO_MEDIA_TYPE: Partial<
+  Record<MediaCategory, OperativeMediaType>
+> = {
   preop: "preoperative_photo",
   flap_harvest: "intraoperative_photo",
   flap_inset: "intraoperative_photo",

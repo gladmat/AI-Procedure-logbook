@@ -2,10 +2,10 @@
 // Stack navigator for all onboarding screens.
 // No header bar — all navigation is handled by in-screen buttons.
 
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { colors } from '@/theme/tokens';
+import React from "react";
+import { View, Text, StyleSheet } from "react-native";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { colors } from "@/theme/tokens";
 
 export type OnboardingStackParams = {
   Welcome: undefined;
@@ -63,7 +63,7 @@ export function OnboardingNavigator() {
     <Stack.Navigator
       screenOptions={{
         headerShown: false,
-        animation: 'slide_from_right',
+        animation: "slide_from_right",
         contentStyle: { backgroundColor: colors.background.primary },
       }}
     >
@@ -82,8 +82,8 @@ export function OnboardingNavigator() {
 const styles = StyleSheet.create({
   placeholder: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     backgroundColor: colors.background.primary,
   },
   placeholderText: {

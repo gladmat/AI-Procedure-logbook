@@ -20,10 +20,7 @@ import {
   STAY_TYPE_LABELS,
   UNPLANNED_READMISSION_LABELS,
 } from "@/types/case";
-import {
-  EncounterClass,
-  ENCOUNTER_CLASS_LABELS,
-} from "@/types/episode";
+import { EncounterClass, ENCOUNTER_CLASS_LABELS } from "@/types/episode";
 
 export const AdmissionSection = React.memo(function AdmissionSection() {
   const { theme } = useTheme();

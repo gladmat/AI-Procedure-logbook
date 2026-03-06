@@ -160,9 +160,7 @@ export const SPECIALTY_ICON_PATHS: Record<
   },
   peripheral_nerve: {
     // Lightning/zap icon (nerve signal)
-    strokes: [
-      { d: "M13 2L4 14H12L11 22L20 10H12L13 2Z", strokeWidth: 1.8 },
-    ],
+    strokes: [{ d: "M13 2L4 14H12L11 22L20 10H12L13 2Z", strokeWidth: 1.8 }],
   },
   general: {
     strokes: [

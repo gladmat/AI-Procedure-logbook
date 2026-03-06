@@ -51,9 +51,7 @@ export function InjuryCategoryChips({
 
   return (
     <View style={styles.container}>
-      <ThemedText
-        style={[styles.label, { color: theme.textSecondary }]}
-      >
+      <ThemedText style={[styles.label, { color: theme.textSecondary }]}>
         INJURY TYPE
       </ThemedText>
       <ScrollView

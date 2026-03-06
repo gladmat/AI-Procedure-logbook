@@ -24,12 +24,12 @@ export default function SurgicalPreferencesScreen() {
   const headerHeight = useHeaderHeight();
 
   const prefs = profile?.surgicalPreferences?.microsurgery;
-  const [selectedAnticoag, setSelectedAnticoag] =
-    useState<AnticoagulationProtocolId | undefined>(
-      prefs?.anticoagulationProtocol,
-    );
-  const [selectedMonitoring, setSelectedMonitoring] =
-    useState<FlapMonitoringProtocolId | undefined>(prefs?.monitoringProtocol);
+  const [selectedAnticoag, setSelectedAnticoag] = useState<
+    AnticoagulationProtocolId | undefined
+  >(prefs?.anticoagulationProtocol);
+  const [selectedMonitoring, setSelectedMonitoring] = useState<
+    FlapMonitoringProtocolId | undefined
+  >(prefs?.monitoringProtocol);
 
   // Debounced save
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -85,9 +85,11 @@ export default function SurgicalPreferencesScreen() {
       }}
     >
       {/* Header description */}
-      <ThemedText style={[styles.headerDescription, { color: theme.textSecondary }]}>
-        Set your default protocols for microsurgery cases. These will
-        auto-fill when you create new free flap cases.
+      <ThemedText
+        style={[styles.headerDescription, { color: theme.textSecondary }]}
+      >
+        Set your default protocols for microsurgery cases. These will auto-fill
+        when you create new free flap cases.
       </ThemedText>
 
       {/* Microsurgery Section */}
@@ -99,7 +101,9 @@ export default function SurgicalPreferencesScreen() {
       </View>
 
       {/* Anticoagulation Protocol */}
-      <ThemedText style={[styles.subsectionTitle, { color: theme.textSecondary }]}>
+      <ThemedText
+        style={[styles.subsectionTitle, { color: theme.textSecondary }]}
+      >
         ANTICOAGULATION PROTOCOL
       </ThemedText>
       <View style={styles.cardList}>
@@ -223,10 +227,7 @@ function ProtocolCard({
                 style={[styles.componentDot, { backgroundColor: theme.link }]}
               />
               <ThemedText
-                style={[
-                  styles.componentText,
-                  { color: theme.textSecondary },
-                ]}
+                style={[styles.componentText, { color: theme.textSecondary }]}
               >
                 {comp}
               </ThemedText>

@@ -148,7 +148,9 @@ export default function EpisodeDetailScreen() {
     );
   }
 
-  const statusColor = (theme as any)[STATUS_COLORS[episode.status] ?? "textTertiary"] as string;
+  const statusColor = (theme as any)[
+    STATUS_COLORS[episode.status] ?? "textTertiary"
+  ] as string;
   const availableTransitions = EPISODE_STATUS_TRANSITIONS[episode.status] ?? [];
 
   // Time span
@@ -164,9 +166,7 @@ export default function EpisodeDetailScreen() {
       : 0;
 
   return (
-    <View
-      style={[styles.container, { backgroundColor: theme.backgroundRoot }]}
-    >
+    <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
       <ScrollView
         contentContainerStyle={[
           styles.scrollContent,
@@ -320,7 +320,10 @@ export default function EpisodeDetailScreen() {
                     onPress={() => handleStatusTransition(status)}
                     style={[
                       styles.transitionButton,
-                      { backgroundColor: color + "15", borderColor: color + "40" },
+                      {
+                        backgroundColor: color + "15",
+                        borderColor: color + "40",
+                      },
                     ]}
                   >
                     <ThemedText
@@ -379,10 +382,7 @@ export default function EpisodeDetailScreen() {
                     ]}
                   >
                     <ThemedText
-                      style={[
-                        styles.sequenceText,
-                        { color: theme.buttonText },
-                      ]}
+                      style={[styles.sequenceText, { color: theme.buttonText }]}
                     >
                       #{caseItem.episodeSequence ?? idx + 1}
                     </ThemedText>

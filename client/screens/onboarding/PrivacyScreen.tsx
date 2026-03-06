@@ -9,10 +9,7 @@ import {
   Alert,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Animated, {
-  FadeInDown,
-  FadeInUp,
-} from "react-native-reanimated";
+import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
 import { StepIndicator } from "@/components/onboarding/StepIndicator";
 import FeatherIcon from "@/components/FeatherIcon";
 import { palette, Colors } from "@/constants/theme";
@@ -30,13 +27,7 @@ interface TrustPoint {
   detail: string;
 }
 
-function TrustPointRow({
-  point,
-  index,
-}: {
-  point: TrustPoint;
-  index: number;
-}) {
+function TrustPointRow({ point, index }: { point: TrustPoint; index: number }) {
   return (
     <Animated.View
       entering={FadeInDown.delay(150 + index * 100).duration(400)}
@@ -113,11 +104,7 @@ export function PrivacyScreen({ onComplete }: Props) {
         {/* Trust points */}
         <View style={styles.trustList}>
           {c.trustPoints.map((point, index) => (
-            <TrustPointRow
-              key={point.icon}
-              point={point}
-              index={index}
-            />
+            <TrustPointRow key={point.icon} point={point} index={index} />
           ))}
         </View>
 

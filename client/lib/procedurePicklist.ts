@@ -1158,8 +1158,7 @@ const HAND_JOINT_PROCEDURES: ProcedurePicklistEntry[] = [
     id: "hand_lig_ucl_repair",
     displayName: "UCL repair — thumb MCP (gamekeeper's / skier's thumb)",
     snomedCtCode: "239227006",
-    snomedCtDisplay:
-      "Repair of ulnar collateral ligament of thumb (procedure)",
+    snomedCtDisplay: "Repair of ulnar collateral ligament of thumb (procedure)",
     specialties: ["hand_wrist"],
     subcategory: "Joint Procedures",
     tags: ["trauma"],
@@ -1589,8 +1588,7 @@ const HAND_DISLOCATION_MANAGEMENT: ProcedurePicklistEntry[] = [
   },
   {
     id: "hand_disloc_perilunate_orif",
-    displayName:
-      "Perilunate dislocation — open reduction + ligament repair",
+    displayName: "Perilunate dislocation — open reduction + ligament repair",
     snomedCtCode: "44806002",
     snomedCtDisplay: "Open reduction of perilunate dislocation (procedure)",
     specialties: ["hand_wrist"],
@@ -1612,8 +1610,7 @@ const HAND_DISLOCATION_MANAGEMENT: ProcedurePicklistEntry[] = [
     id: "hand_disloc_druj_tfcc_repair",
     displayName: "TFCC repair (acute — arthroscopic or open)",
     snomedCtCode: "44806002",
-    snomedCtDisplay:
-      "Repair of triangular fibrocartilage complex (procedure)",
+    snomedCtDisplay: "Repair of triangular fibrocartilage complex (procedure)",
     specialties: ["hand_wrist"],
     subcategory: "Dislocation Management",
     tags: ["trauma"],
@@ -4989,7 +4986,8 @@ const LYMPHOEDEMA_ADDITIONAL: ProcedurePicklistEntry[] = [
     id: "lymph_vlnt_submental",
     displayName: "VLNT — submental donor",
     snomedCtCode: "122465003", // VERIFY
-    snomedCtDisplay: "Vascularised lymph node transfer from submental region (procedure)",
+    snomedCtDisplay:
+      "Vascularised lymph node transfer from submental region (procedure)",
     specialties: ["lymphoedema"],
     subcategory: "Physiological (VLNT)",
     tags: ["free_flap", "microsurgery"],
@@ -4999,7 +4997,8 @@ const LYMPHOEDEMA_ADDITIONAL: ProcedurePicklistEntry[] = [
     id: "lymph_vlnt_supraclavicular",
     displayName: "VLNT — supraclavicular donor",
     snomedCtCode: "122465003", // VERIFY
-    snomedCtDisplay: "Vascularised lymph node transfer from supraclavicular region (procedure)",
+    snomedCtDisplay:
+      "Vascularised lymph node transfer from supraclavicular region (procedure)",
     specialties: ["lymphoedema"],
     subcategory: "Physiological (VLNT)",
     tags: ["free_flap", "microsurgery"],
@@ -5019,7 +5018,8 @@ const LYMPHOEDEMA_ADDITIONAL: ProcedurePicklistEntry[] = [
     id: "lymph_combined_lva_vlnt",
     displayName: "Combined LVA + VLNT",
     snomedCtCode: "122465003", // VERIFY
-    snomedCtDisplay: "Combined lymphovenous anastomosis and lymph node transfer (procedure)",
+    snomedCtDisplay:
+      "Combined lymphovenous anastomosis and lymph node transfer (procedure)",
     specialties: ["lymphoedema"],
     subcategory: "Combined Procedures",
     tags: ["free_flap", "microsurgery"],
@@ -5076,7 +5076,8 @@ const PERIPHERAL_NERVE_BRACHIAL_PLEXUS: ProcedurePicklistEntry[] = [
     id: "pn_bp_nerve_graft",
     displayName: "Brachial plexus nerve graft reconstruction",
     snomedCtCode: "122465003", // VERIFY
-    snomedCtDisplay: "Nerve graft reconstruction of brachial plexus (procedure)",
+    snomedCtDisplay:
+      "Nerve graft reconstruction of brachial plexus (procedure)",
     specialties: ["peripheral_nerve"],
     subcategory: "Brachial Plexus",
     tags: ["trauma"],
@@ -5086,7 +5087,8 @@ const PERIPHERAL_NERVE_BRACHIAL_PLEXUS: ProcedurePicklistEntry[] = [
     id: "pn_transfer_sas",
     displayName: "Nerve transfer — spinal accessory to suprascapular",
     snomedCtCode: "122465003", // VERIFY
-    snomedCtDisplay: "Spinal accessory to suprascapular nerve transfer (procedure)",
+    snomedCtDisplay:
+      "Spinal accessory to suprascapular nerve transfer (procedure)",
     specialties: ["peripheral_nerve"],
     subcategory: "Nerve Transfer",
     tags: ["trauma"],
@@ -5136,7 +5138,8 @@ const PERIPHERAL_NERVE_BRACHIAL_PLEXUS: ProcedurePicklistEntry[] = [
     id: "pn_ffmt_elbow",
     displayName: "Free functioning muscle transfer (gracilis) — elbow flexion",
     snomedCtCode: "122465003", // VERIFY
-    snomedCtDisplay: "Free functioning muscle transfer for elbow flexion (procedure)",
+    snomedCtDisplay:
+      "Free functioning muscle transfer for elbow flexion (procedure)",
     specialties: ["peripheral_nerve"],
     subcategory: "Free Functioning Muscle Transfer",
     tags: ["free_flap", "microsurgery"],
@@ -5146,7 +5149,8 @@ const PERIPHERAL_NERVE_BRACHIAL_PLEXUS: ProcedurePicklistEntry[] = [
     id: "pn_ffmt_finger",
     displayName: "Free functioning muscle transfer (gracilis) — finger flexion",
     snomedCtCode: "122465003", // VERIFY
-    snomedCtDisplay: "Free functioning muscle transfer for finger flexion (procedure)",
+    snomedCtDisplay:
+      "Free functioning muscle transfer for finger flexion (procedure)",
     specialties: ["peripheral_nerve"],
     subcategory: "Free Functioning Muscle Transfer",
     tags: ["free_flap", "microsurgery"],

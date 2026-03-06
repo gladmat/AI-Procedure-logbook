@@ -1677,8 +1677,7 @@ const HAND_DX_DISLOCATIONS: DiagnosisPicklistEntry[] = [
   },
   {
     id: "hand_dx_mcp_dislocation_complex",
-    displayName:
-      "MCP joint dislocation — complex / irreducible (Kaplan)",
+    displayName: "MCP joint dislocation — complex / irreducible (Kaplan)",
     shortName: "Complex MCP dislocation",
     snomedCtCode: "239173003",
     snomedCtDisplay: "Dislocation of metacarpophalangeal joint (disorder)",
@@ -1704,8 +1703,7 @@ const HAND_DX_DISLOCATIONS: DiagnosisPicklistEntry[] = [
   },
   {
     id: "hand_dx_cmc_dislocation",
-    displayName:
-      "CMC joint dislocation / fracture-dislocation (2nd–5th)",
+    displayName: "CMC joint dislocation / fracture-dislocation (2nd–5th)",
     shortName: "CMC dislocation",
     snomedCtCode: "72081002",
     snomedCtDisplay: "Dislocation of carpometacarpal joint (disorder)",
@@ -1733,8 +1731,7 @@ const HAND_DX_DISLOCATIONS: DiagnosisPicklistEntry[] = [
     displayName: "Thumb CMC dislocation",
     shortName: "Thumb CMC dislocation",
     snomedCtCode: "72081002",
-    snomedCtDisplay:
-      "Dislocation of first carpometacarpal joint (disorder)",
+    snomedCtDisplay: "Dislocation of first carpometacarpal joint (disorder)",
     specialty: "hand_wrist",
     subcategory: "Dislocations",
     clinicalGroup: "trauma",
@@ -1854,12 +1851,7 @@ const HAND_DX_DISLOCATIONS: DiagnosisPicklistEntry[] = [
     subcategory: "Dislocations",
     clinicalGroup: "trauma",
     hasStaging: false,
-    searchSynonyms: [
-      "DRUJ",
-      "distal radioulnar",
-      "DRUJ instability",
-      "TFCC",
-    ],
+    searchSynonyms: ["DRUJ", "distal radioulnar", "DRUJ instability", "TFCC"],
     suggestedProcedures: [
       {
         procedurePicklistId: "hand_disloc_druj_reduction_kwire",

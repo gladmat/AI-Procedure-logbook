@@ -195,7 +195,9 @@ export default function AddOperativeMediaScreen() {
         mediaType: selectedType,
         caption: captionInput.trim() || undefined,
         timestamp,
-        createdAt: editMode ? (existingTimestamp || new Date().toISOString()) : new Date().toISOString(),
+        createdAt: editMode
+          ? existingTimestamp || new Date().toISOString()
+          : new Date().toISOString(),
       };
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);

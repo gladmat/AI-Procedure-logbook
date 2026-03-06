@@ -113,7 +113,11 @@ export function SoftTissueSection({
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (level === value.amputationLevel) {
       // Deselect
-      onChange({ ...value, amputationLevel: undefined, isReplantable: undefined });
+      onChange({
+        ...value,
+        amputationLevel: undefined,
+        isReplantable: undefined,
+      });
     } else {
       onChange({ ...value, amputationLevel: level });
     }
@@ -164,12 +168,8 @@ export function SoftTissueSection({
                     style={[
                       styles.checkbox,
                       {
-                        borderColor: isActive
-                          ? theme.link
-                          : theme.textTertiary,
-                        backgroundColor: isActive
-                          ? theme.link
-                          : "transparent",
+                        borderColor: isActive ? theme.link : theme.textTertiary,
+                        backgroundColor: isActive ? theme.link : "transparent",
                       },
                     ]}
                   >
@@ -208,9 +208,7 @@ export function SoftTissueSection({
         <ThemedText style={[styles.subSectionTitle, { color: theme.text }]}>
           Amputation Level
         </ThemedText>
-        <ThemedText
-          style={[styles.hint, { color: theme.textTertiary }]}
-        >
+        <ThemedText style={[styles.hint, { color: theme.textTertiary }]}>
           Select if amputation present — leave empty for soft tissue only
         </ThemedText>
         <View style={styles.pillRow}>

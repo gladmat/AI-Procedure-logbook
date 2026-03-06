@@ -19,9 +19,9 @@ export function EpisodeLinkBanner({
   onLinkEpisode,
 }: EpisodeLinkBannerProps) {
   const { theme } = useTheme();
-  const [matchingEpisodes, setMatchingEpisodes] = useState<
-    TreatmentEpisode[]
-  >([]);
+  const [matchingEpisodes, setMatchingEpisodes] = useState<TreatmentEpisode[]>(
+    [],
+  );
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -37,9 +37,8 @@ export function EpisodeLinkBanner({
 
     debounceRef.current = setTimeout(async () => {
       try {
-        const episodes = await findEpisodesByPatientIdentifier(
-          patientIdentifier,
-        );
+        const episodes =
+          await findEpisodesByPatientIdentifier(patientIdentifier);
         const active = episodes.filter(
           (e) =>
             e.status === "active" ||
@@ -84,9 +83,7 @@ export function EpisodeLinkBanner({
           >
             Active episode: {primary.title}
           </ThemedText>
-          <ThemedText
-            style={[styles.subtitle, { color: theme.textSecondary }]}
-          >
+          <ThemedText style={[styles.subtitle, { color: theme.textSecondary }]}>
             Tap to link this case
             {moreCount > 0 ? ` (+${moreCount} more)` : ""}
           </ThemedText>

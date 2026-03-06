@@ -159,7 +159,8 @@ export function ProcedureEntryCard({
               {
                 id: uuidv4(),
                 vesselType: "vein" as const,
-                recipientVesselName: BREAST_RECON_DEFAULT_RECIPIENT_VESSELS.vein,
+                recipientVesselName:
+                  BREAST_RECON_DEFAULT_RECIPIENT_VESSELS.vein,
                 couplingMethod: "coupler" as const,
               },
             ]

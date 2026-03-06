@@ -116,9 +116,10 @@ export const DIEP_BILATERAL_DEFAULTS: Partial<FlapSpecificDetails> = {
 // Gracilis and Fibula defaults depend on diagnosis/recipient context
 // ═══════════════════════════════════════════════════════════════════════════
 
-export function getGracilisContextDefaults(
-  diagnosisId: string,
-): { flapSpecificDetails: Partial<FlapSpecificDetails>; skinIsland?: boolean } {
+export function getGracilisContextDefaults(diagnosisId: string): {
+  flapSpecificDetails: Partial<FlapSpecificDetails>;
+  skinIsland?: boolean;
+} {
   if (
     diagnosisId === "hn_dx_facial_nerve_chronic" ||
     diagnosisId === "hn_dx_facial_nerve_acute"
@@ -203,7 +204,8 @@ export const ARTERY_TO_CONCOMITANT_VEIN: Record<string, string> = {
   // Thigh
   "Superficial femoral artery": "Femoral vein",
   "Profunda femoris artery": "Profunda femoris vein",
-  "Descending branch of lateral circumflex femoral artery": "Great saphenous vein",
+  "Descending branch of lateral circumflex femoral artery":
+    "Great saphenous vein",
 
   // Hand
   "Radial artery at anatomical snuffbox": "Cephalic vein",
@@ -252,12 +254,13 @@ export function normalizeVesselName(name: string): string {
     .trim();
 }
 
-const NORMALIZED_ARTERY_TO_CONCOMITANT_VEIN: Record<string, string> = Object.fromEntries(
-  Object.entries(ARTERY_TO_CONCOMITANT_VEIN).map(([artery, vein]) => [
-    normalizeVesselName(artery),
-    vein,
-  ]),
-);
+const NORMALIZED_ARTERY_TO_CONCOMITANT_VEIN: Record<string, string> =
+  Object.fromEntries(
+    Object.entries(ARTERY_TO_CONCOMITANT_VEIN).map(([artery, vein]) => [
+      normalizeVesselName(artery),
+      vein,
+    ]),
+  );
 
 export function resolveConcomitantVeinName(
   arteryCandidates: string[],
@@ -275,7 +278,10 @@ export function resolveConcomitantVeinName(
     for (const [mappedArtery, mappedVein] of Object.entries(
       NORMALIZED_ARTERY_TO_CONCOMITANT_VEIN,
     )) {
-      if (normalized.includes(mappedArtery) || mappedArtery.includes(normalized)) {
+      if (
+        normalized.includes(mappedArtery) ||
+        mappedArtery.includes(normalized)
+      ) {
         return mappedVein;
       }
     }

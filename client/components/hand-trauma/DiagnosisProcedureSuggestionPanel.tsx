@@ -143,12 +143,8 @@ export function DiagnosisProcedureSuggestionPanel({
                   style={[
                     styles.checkbox,
                     {
-                      borderColor: isChecked
-                        ? theme.link
-                        : theme.textTertiary,
-                      backgroundColor: isChecked
-                        ? theme.link
-                        : "transparent",
+                      borderColor: isChecked ? theme.link : theme.textTertiary,
+                      backgroundColor: isChecked ? theme.link : "transparent",
                     },
                   ]}
                 >

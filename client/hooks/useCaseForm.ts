@@ -405,7 +405,9 @@ function loadCaseIntoFormState(
     priorRadiotherapy: caseData.priorRadiotherapy ?? false,
     priorChemotherapy: caseData.priorChemotherapy ?? false,
     intraoperativeTransfusion: caseData.intraoperativeTransfusion ?? false,
-    transfusionUnits: caseData.transfusionUnits ? String(caseData.transfusionUnits) : "",
+    transfusionUnits: caseData.transfusionUnits
+      ? String(caseData.transfusionUnits)
+      : "",
     episodeId: caseData.episodeId ?? "",
     episodeSequence: caseData.episodeSequence ?? 0,
     encounterClass: (caseData.encounterClass as EncounterClass) ?? "",
@@ -422,7 +424,10 @@ export function formStateToDraft(
   const showInjuryDate =
     state.admissionUrgency === "acute" ||
     state.diagnosisGroups.some(
-      (g) => g.specialty === "hand_wrist" || g.specialty === "orthoplastic" || g.specialty === "peripheral_nerve",
+      (g) =>
+        g.specialty === "hand_wrist" ||
+        g.specialty === "orthoplastic" ||
+        g.specialty === "peripheral_nerve",
     );
 
   return {
@@ -729,7 +734,10 @@ interface UseCaseFormParams {
 function hasProcedureFreeFlap(
   procedure: Pick<CaseProcedure, "picklistEntryId" | "tags">,
 ): boolean {
-  if (procedure.picklistEntryId && PICKLIST_TO_FLAP_TYPE[procedure.picklistEntryId]) {
+  if (
+    procedure.picklistEntryId &&
+    PICKLIST_TO_FLAP_TYPE[procedure.picklistEntryId]
+  ) {
     return true;
   }
   return procedure.tags?.includes("free_flap") ?? false;
@@ -748,38 +756,39 @@ export function buildEpisodePrefillState(
   //       fractures (patient-level), procedure names/codes.
   // Strip: clinicalDetails on procedures (FreeFlapDetails, ischemia times,
   //        anastomoses), woundAssessment, lesionInstances, handTrauma.
-  const clonedGroups: DiagnosisGroup[] = prefill.diagnosisGroups?.map((g) => ({
-    ...g,
-    id: uuidv4(),
-    procedures: g.procedures.map((p) => {
-      const clonedProcedure: CaseProcedure = {
-        ...p,
-        id: uuidv4(),
-        clinicalDetails: undefined, // Strip per-operation FreeFlapDetails etc.
-      };
+  const clonedGroups: DiagnosisGroup[] =
+    prefill.diagnosisGroups?.map((g) => ({
+      ...g,
+      id: uuidv4(),
+      procedures: g.procedures.map((p) => {
+        const clonedProcedure: CaseProcedure = {
+          ...p,
+          id: uuidv4(),
+          clinicalDetails: undefined, // Strip per-operation FreeFlapDetails etc.
+        };
 
-      // Re-apply defaults from surgical preferences (never cloned from previous case).
-      if (defaultAnticoagulation && hasProcedureFreeFlap(clonedProcedure)) {
-        clonedProcedure.clinicalDetails = {
-          anticoagulationProtocol: defaultAnticoagulation,
-        } as FreeFlapDetails;
-      }
-
-      return clonedProcedure;
-    }),
-    diagnosisClinicalDetails: g.diagnosisClinicalDetails
-      ? {
-          laterality: g.diagnosisClinicalDetails.laterality,
-          injuryMechanism: g.diagnosisClinicalDetails.injuryMechanism,
-          // handTrauma stripped — per-operation structure repairs
+        // Re-apply defaults from surgical preferences (never cloned from previous case).
+        if (defaultAnticoagulation && hasProcedureFreeFlap(clonedProcedure)) {
+          clonedProcedure.clinicalDetails = {
+            anticoagulationProtocol: defaultAnticoagulation,
+          } as FreeFlapDetails;
         }
-      : undefined,
-    diagnosisStagingSelections: g.diagnosisStagingSelections
-      ? { ...g.diagnosisStagingSelections }
-      : undefined,
-    woundAssessment: undefined, // Strip — per-operation wound data
-    lesionInstances: undefined, // Strip — new excisions are new lesions
-  })) ?? defaults.diagnosisGroups;
+
+        return clonedProcedure;
+      }),
+      diagnosisClinicalDetails: g.diagnosisClinicalDetails
+        ? {
+            laterality: g.diagnosisClinicalDetails.laterality,
+            injuryMechanism: g.diagnosisClinicalDetails.injuryMechanism,
+            // handTrauma stripped — per-operation structure repairs
+          }
+        : undefined,
+      diagnosisStagingSelections: g.diagnosisStagingSelections
+        ? { ...g.diagnosisStagingSelections }
+        : undefined,
+      woundAssessment: undefined, // Strip — per-operation wound data
+      lesionInstances: undefined, // Strip — new excisions are new lesions
+    })) ?? defaults.diagnosisGroups;
 
   return {
     ...defaults,
@@ -987,7 +996,10 @@ export function useCaseForm({
   const showInjuryDate =
     state.admissionUrgency === "acute" ||
     state.diagnosisGroups.some(
-      (g) => g.specialty === "hand_wrist" || g.specialty === "orthoplastic" || g.specialty === "peripheral_nerve",
+      (g) =>
+        g.specialty === "hand_wrist" ||
+        g.specialty === "orthoplastic" ||
+        g.specialty === "peripheral_nerve",
     );
 
   // ── Side effects ────────────────────────────────────────────────────────
@@ -1066,7 +1078,9 @@ export function useCaseForm({
       let groupChanged = false;
       const nextProcedures = group.procedures.map((procedure) => {
         if (!hasProcedureFreeFlap(procedure)) return procedure;
-        const details = procedure.clinicalDetails as FreeFlapDetails | undefined;
+        const details = procedure.clinicalDetails as
+          | FreeFlapDetails
+          | undefined;
         if (details?.anticoagulationProtocol) return procedure;
 
         groupChanged = true;
@@ -1491,8 +1505,11 @@ export function useCaseForm({
           reconstructionTiming: state.reconstructionTiming || undefined,
           priorRadiotherapy: state.priorRadiotherapy || undefined,
           priorChemotherapy: state.priorChemotherapy || undefined,
-          intraoperativeTransfusion: state.intraoperativeTransfusion || undefined,
-          transfusionUnits: state.transfusionUnits ? parseInt(state.transfusionUnits) : undefined,
+          intraoperativeTransfusion:
+            state.intraoperativeTransfusion || undefined,
+          transfusionUnits: state.transfusionUnits
+            ? parseInt(state.transfusionUnits)
+            : undefined,
           episodeId: state.episodeId || undefined,
           episodeSequence: computedEpisodeSequence || undefined,
           encounterClass: state.encounterClass || undefined,

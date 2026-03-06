@@ -141,8 +141,7 @@ function buildEncounter(c: Case, conditionRefs: string[]): FhirResource {
     classCode = mapping.code;
     classDisplay = mapping.display;
   } else {
-    classCode =
-      c.stayType === "day_case" || !c.admissionDate ? "AMB" : "IMP";
+    classCode = c.stayType === "day_case" || !c.admissionDate ? "AMB" : "IMP";
     classDisplay = classCode === "AMB" ? "ambulatory" : "inpatient encounter";
   }
 
@@ -351,9 +350,9 @@ export function exportCasesAsFhir(
   cases: Case[],
   episodes?: TreatmentEpisode[],
 ): string {
-  const episodeEntries: FhirBundleEntry[] = (episodes || []).map(
-    (episode) => ({ resource: buildEpisodeOfCare(episode) }),
-  );
+  const episodeEntries: FhirBundleEntry[] = (episodes || []).map((episode) => ({
+    resource: buildEpisodeOfCare(episode),
+  }));
 
   const masterBundle: FhirBundle = {
     resourceType: "Bundle",

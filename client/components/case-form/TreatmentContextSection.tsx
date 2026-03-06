@@ -8,7 +8,10 @@ import { FormField } from "@/components/FormField";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { CollapsibleFormSection } from "@/components/case-form/CollapsibleFormSection";
-import { useCaseFormState, useCaseFormDispatch } from "@/contexts/CaseFormContext";
+import {
+  useCaseFormState,
+  useCaseFormDispatch,
+} from "@/contexts/CaseFormContext";
 import { setField } from "@/hooks/useCaseForm";
 import { RECONSTRUCTION_TIMING_LABELS } from "@/types/case";
 import type { ReconstructionTiming } from "@/types/case";

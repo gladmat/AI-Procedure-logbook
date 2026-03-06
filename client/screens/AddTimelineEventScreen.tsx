@@ -23,7 +23,11 @@ import {
   ClavienDindoGrade,
   CLAVIEN_DINDO_LABELS,
 } from "@/types/case";
-import { FormField, SelectField, DatePickerField } from "@/components/FormField";
+import {
+  FormField,
+  SelectField,
+  DatePickerField,
+} from "@/components/FormField";
 import { SectionHeader } from "@/components/SectionHeader";
 import { Button } from "@/components/Button";
 import { MediaCapture } from "@/components/MediaCapture";

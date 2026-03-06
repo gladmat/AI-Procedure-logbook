@@ -101,7 +101,9 @@ export function FractureSection({
   // Auto-select finger if only one digit is selected
   const firstDigit = selectedDigits[0];
   const autoFinger =
-    selectedDigits.length === 1 && firstDigit ? DIGIT_TO_FINGER[firstDigit] : "";
+    selectedDigits.length === 1 && firstDigit
+      ? DIGIT_TO_FINGER[firstDigit]
+      : "";
 
   const resetFrom = (field: string) => {
     if (field === "category") {
@@ -248,8 +250,7 @@ export function FractureSection({
     selectedType,
   ]);
 
-  const canSubmit =
-    currentAOCode !== "" && validateAOCode(currentAOCode).valid;
+  const canSubmit = currentAOCode !== "" && validateAOCode(currentAOCode).valid;
 
   const getBoneName = (): string => {
     if (boneCategory === "carpal" && selectedCarpal) return selectedCarpal.name;
@@ -370,7 +371,10 @@ export function FractureSection({
               key={f.id}
               style={[
                 styles.fractureChip,
-                { backgroundColor: theme.link + "15", borderColor: theme.link + "30" },
+                {
+                  backgroundColor: theme.link + "15",
+                  borderColor: theme.link + "30",
+                },
               ]}
             >
               <View style={styles.fractureChipContent}>
@@ -447,7 +451,10 @@ export function FractureSection({
               key={key}
               style={[
                 styles.regionButton,
-                { backgroundColor: theme.backgroundSecondary, borderColor: theme.border },
+                {
+                  backgroundColor: theme.backgroundSecondary,
+                  borderColor: theme.border,
+                },
               ]}
               onPress={() => handleCategorySelect(key)}
             >
@@ -456,7 +463,10 @@ export function FractureSection({
                 {label}
               </ThemedText>
               <ThemedText
-                style={[styles.regionSub, { color: theme.textTertiary, fontFamily: Fonts?.mono }]}
+                style={[
+                  styles.regionSub,
+                  { color: theme.textTertiary, fontFamily: Fonts?.mono },
+                ]}
               >
                 {sub}
               </ThemedText>
@@ -544,7 +554,8 @@ export function FractureSection({
         <View style={styles.subSection}>
           <View style={styles.subSectionHeader}>
             <ThemedText style={[styles.subSectionTitle, { color: theme.text }]}>
-              {boneCategory === "metacarpal" ? "Metacarpal" : "Phalanx"} — Finger
+              {boneCategory === "metacarpal" ? "Metacarpal" : "Phalanx"} —
+              Finger
             </ThemedText>
             <Pressable
               onPress={() => {
@@ -606,15 +617,11 @@ export function FractureSection({
       {/* Phalanx selector */}
       {showPhalanxSelector ? (
         <View style={styles.subSection}>
-          <ThemedText
-            style={[styles.subSectionTitle, { color: theme.text }]}
-          >
+          <ThemedText style={[styles.subSectionTitle, { color: theme.text }]}>
             Phalanx
           </ThemedText>
           {effectiveFinger === "1" ? (
-            <ThemedText
-              style={[styles.hint, { color: theme.textTertiary }]}
-            >
+            <ThemedText style={[styles.hint, { color: theme.textTertiary }]}>
               Thumb has no middle phalanx
             </ThemedText>
           ) : null}
@@ -639,9 +646,7 @@ export function FractureSection({
       {/* Segment selector */}
       {showSegmentSelector ? (
         <View style={styles.subSection}>
-          <ThemedText
-            style={[styles.subSectionTitle, { color: theme.text }]}
-          >
+          <ThemedText style={[styles.subSectionTitle, { color: theme.text }]}>
             Fracture Location
           </ThemedText>
           {renderPills(
@@ -663,9 +668,7 @@ export function FractureSection({
       {/* Type selector */}
       {showTypeSelector ? (
         <View style={styles.subSection}>
-          <ThemedText
-            style={[styles.subSectionTitle, { color: theme.text }]}
-          >
+          <ThemedText style={[styles.subSectionTitle, { color: theme.text }]}>
             Fracture Type
           </ThemedText>
           {renderPills(
@@ -686,9 +689,7 @@ export function FractureSection({
       {/* Scaphoid qualifications */}
       {needsQualifications ? (
         <View style={styles.subSection}>
-          <ThemedText
-            style={[styles.subSectionTitle, { color: theme.text }]}
-          >
+          <ThemedText style={[styles.subSectionTitle, { color: theme.text }]}>
             Scaphoid Location
           </ThemedText>
           <View style={styles.pillRow}>
