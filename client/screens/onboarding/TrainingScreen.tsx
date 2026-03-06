@@ -15,44 +15,11 @@ import Animated, {
   Easing,
 } from "react-native-reanimated";
 import { StepIndicator } from "@/components/onboarding/StepIndicator";
+import { TRAINING_OPTIONS } from "@/constants/trainingProgrammes";
 import { palette, Colors } from "@/constants/theme";
 import { copy } from "@/constants/onboardingCopy";
 
 const dark = Colors.dark;
-
-// ── Training programme options ──────────────────────────────────────────────
-
-export interface TrainingOption {
-  id: string;
-  name: string;
-  detail?: string;
-}
-
-export const TRAINING_OPTIONS: TrainingOption[] = [
-  {
-    id: "iscp",
-    name: "ISCP",
-    detail: "Intercollegiate Surgical Curriculum Programme (UK/Ireland)",
-  },
-  {
-    id: "febopras",
-    name: "FEBOPRAS",
-    detail:
-      "European Board of Plastic, Reconstructive and Aesthetic Surgery",
-  },
-  {
-    id: "acgme",
-    name: "ACGME",
-    detail: "Accreditation Council for Graduate Medical Education (USA)",
-  },
-  {
-    id: "racs",
-    name: "RACS",
-    detail: "Royal Australasian College of Surgeons (ANZ)",
-  },
-  { id: "other", name: "Other" },
-  { id: "none", name: "Not currently in training" },
-];
 
 const SIDE_PADDING = 24;
 
@@ -66,7 +33,7 @@ function RadioIndicator({ selected }: { selected: boolean }) {
       duration: 200,
       easing: Easing.out(Easing.ease),
     });
-  }, [selected]);
+  }, [progress, selected]);
 
   const innerStyle = useAnimatedStyle(() => ({
     transform: [{ scale: progress.value }],
@@ -74,12 +41,7 @@ function RadioIndicator({ selected }: { selected: boolean }) {
   }));
 
   return (
-    <View
-      style={[
-        styles.radioOuter,
-        selected && styles.radioOuterSelected,
-      ]}
-    >
+    <View style={[styles.radioOuter, selected && styles.radioOuterSelected]}>
       <Animated.View style={[styles.radioInner, innerStyle]} />
     </View>
   );
@@ -88,16 +50,18 @@ function RadioIndicator({ selected }: { selected: boolean }) {
 // ── Training Screen ─────────────────────────────────────────────────────────
 
 interface Props {
-  onComplete: (trainingProgramme: string | null) => void;
+  onComplete: (trainingProgramme: string | null) => Promise<void> | void;
 }
 
 export function TrainingScreen({ onComplete }: Props) {
   const insets = useSafeAreaInsets();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [otherText, setOtherText] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const isNoneSelected = selectedId === "none";
   const canContinue =
+    !isSubmitting &&
     selectedId !== null &&
     (selectedId !== "other" || otherText.trim().length > 0);
 
@@ -105,18 +69,29 @@ export function TrainingScreen({ onComplete }: Props) {
     setSelectedId((prev) => (prev === id ? null : id));
   }, []);
 
-  const handleContinue = () => {
-    if (selectedId === "none") {
-      onComplete(null);
-    } else if (selectedId === "other") {
-      onComplete(otherText.trim());
-    } else {
-      onComplete(selectedId);
+  const handleContinue = async () => {
+    let nextProgramme: string | null = null;
+    if (selectedId === "other") {
+      nextProgramme = otherText.trim();
+    } else if (selectedId !== "none") {
+      nextProgramme = selectedId;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await onComplete(nextProgramme);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const handleSkip = () => {
-    onComplete(null);
+  const handleSkip = async () => {
+    setIsSubmitting(true);
+    try {
+      await onComplete(null);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const c = copy.training;
@@ -211,7 +186,7 @@ export function TrainingScreen({ onComplete }: Props) {
           disabled={!canContinue}
         >
           <Text style={styles.ctaText}>
-            {isNoneSelected ? "Skip" : c.cta}
+            {isSubmitting ? "Saving..." : isNoneSelected ? "Skip" : c.cta}
           </Text>
         </Pressable>
 
@@ -219,6 +194,7 @@ export function TrainingScreen({ onComplete }: Props) {
         <Pressable
           style={styles.skipButton}
           onPress={handleSkip}
+          disabled={isSubmitting}
           hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
         >
           <Text style={styles.skipText}>{c.skip}</Text>

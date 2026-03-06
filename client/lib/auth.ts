@@ -3,6 +3,7 @@ import * as SecureStore from "expo-secure-store";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getApiUrl } from "./query-client";
 import type { SurgicalPreferences } from "@/types/surgicalPreferences";
+import type { ProfessionalRegistrations } from "@shared/professionalRegistrations";
 
 const AUTH_TOKEN_KEY = "surgical_logbook_auth_token";
 
@@ -22,6 +23,7 @@ export interface UserProfile {
   profilePictureUrl: string | null;
   countryOfPractice: string | null;
   medicalCouncilNumber: string | null;
+  professionalRegistrations?: ProfessionalRegistrations;
   verificationStatus: string;
   careerStage: string | null;
   surgicalPreferences?: SurgicalPreferences;

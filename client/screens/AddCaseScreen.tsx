@@ -9,6 +9,8 @@ import { ThemedText } from "@/components/ThemedText";
 import { SpecialtyIcon } from "@/components/SpecialtyIcon";
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 import { useTheme } from "@/hooks/useTheme";
+import { useAuth } from "@/contexts/AuthContext";
+import { getVisibleSpecialties } from "@/lib/personalization";
 import { Spacing, BorderRadius, Shadows } from "@/constants/theme";
 import { Specialty, SPECIALTY_LABELS } from "@/types/case";
 import { getProceduresForSpecialty } from "@/lib/procedurePicklist";
@@ -18,9 +20,14 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function AddCaseScreen() {
   const { theme } = useTheme();
+  const { profile } = useAuth();
   const navigation = useNavigation<NavigationProp>();
   const insets = useSafeAreaInsets();
   const headerHeight = useHeaderHeight();
+  const visibleSpecialties = React.useMemo(
+    () => getVisibleSpecialties(profile),
+    [profile],
+  );
 
   const handleSpecialtySelect = (specialty: Specialty) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -39,7 +46,7 @@ export default function AddCaseScreen() {
       ]}
     >
       <View style={styles.specialtyGrid}>
-        {(Object.keys(SPECIALTY_LABELS) as Specialty[]).map((specialty) => (
+        {visibleSpecialties.map((specialty) => (
           <Pressable
             key={specialty}
             onPress={() => handleSpecialtySelect(specialty)}

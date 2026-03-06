@@ -17,28 +17,12 @@ import Animated, {
   Easing,
 } from "react-native-reanimated";
 import { StepIndicator } from "@/components/onboarding/StepIndicator";
+import { PROCEDURE_CATEGORIES } from "@/constants/procedureCategories";
 import { palette, Colors } from "@/constants/theme";
 import { copy } from "@/constants/onboardingCopy";
 import type { Specialty } from "@/types/case";
 
 const dark = Colors.dark;
-
-// ── Category data ────────────────────────────────────────────────────────────
-
-export const PROCEDURE_CATEGORIES = [
-  { id: "breast" as Specialty, label: "Breast" },
-  { id: "hand_wrist" as Specialty, label: "Hand & Wrist" },
-  { id: "head_neck" as Specialty, label: "Head & Neck" },
-  { id: "cleft_cranio" as Specialty, label: "Cleft & Craniofacial" },
-  { id: "skin_cancer" as Specialty, label: "Skin Cancer" },
-  { id: "orthoplastic" as Specialty, label: "Orthoplastic & Limb" },
-  { id: "burns" as Specialty, label: "Burns" },
-  { id: "lymphoedema" as Specialty, label: "Lymphoedema" },
-  { id: "body_contouring" as Specialty, label: "Body Contouring" },
-  { id: "aesthetics" as Specialty, label: "Aesthetics" },
-  { id: "peripheral_nerve" as Specialty, label: "Peripheral Nerve" },
-  { id: "general" as Specialty, label: "General / Other" },
-] as const;
 
 const GRID_GAP = 12;
 const SIDE_PADDING = 24;
@@ -64,7 +48,7 @@ function CategoryCard({
       duration: 200,
       easing: Easing.out(Easing.ease),
     });
-  }, [selected]);
+  }, [selected, selectionProgress]);
 
   const handlePress = () => {
     // Spring scale animation on tap
@@ -117,16 +101,17 @@ function CategoryCard({
 // ── Categories Screen ────────────────────────────────────────────────────────
 
 interface Props {
-  onComplete: (selectedCategories: Specialty[]) => void;
+  onComplete: (selectedCategories: Specialty[]) => Promise<void> | void;
 }
 
 export function CategoriesScreen({ onComplete }: Props) {
   const { width: screenWidth } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const [selected, setSelected] = useState<Set<Specialty>>(new Set());
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const cardWidth = (screenWidth - SIDE_PADDING * 2 - GRID_GAP) / 2;
-  const canContinue = selected.size > 0;
+  const canContinue = selected.size > 0 && !isSubmitting;
 
   const toggleCategory = useCallback((id: Specialty) => {
     setSelected((prev) => {
@@ -140,12 +125,22 @@ export function CategoriesScreen({ onComplete }: Props) {
     });
   }, []);
 
-  const handleContinue = () => {
-    onComplete(Array.from(selected));
+  const handleContinue = async () => {
+    setIsSubmitting(true);
+    try {
+      await onComplete(Array.from(selected));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleSkip = () => {
-    onComplete([]);
+  const handleSkip = async () => {
+    setIsSubmitting(true);
+    try {
+      await onComplete(PROCEDURE_CATEGORIES.map((category) => category.id));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const c = copy.categories;
@@ -192,13 +187,16 @@ export function CategoriesScreen({ onComplete }: Props) {
           onPress={handleContinue}
           disabled={!canContinue}
         >
-          <Text style={styles.ctaText}>{c.cta}</Text>
+          <Text style={styles.ctaText}>
+            {isSubmitting ? "Saving..." : c.cta}
+          </Text>
         </Pressable>
 
         {/* Skip link */}
         <Pressable
           style={styles.skipButton}
           onPress={handleSkip}
+          disabled={isSubmitting}
           hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
         >
           <Text style={styles.skipText}>{c.skip}</Text>

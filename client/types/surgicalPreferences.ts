@@ -2,6 +2,8 @@
 // SURGICAL PREFERENCES — Protocol bundles and preference types
 // ═══════════════════════════════════════════════════════════════════════════
 
+import type { Specialty } from "@/types/case";
+
 // ── Anticoagulation Protocols ────────────────────────────────────────────
 
 export type AnticoagulationProtocolId =
@@ -52,8 +54,7 @@ export const ANTICOAGULATION_PROTOCOLS: AnticoagulationProtocol[] = [
   {
     id: "aspirin_plus_lmwh",
     label: "Aspirin + LMWH",
-    description:
-      "Oral aspirin with postoperative low-molecular-weight heparin",
+    description: "Oral aspirin with postoperative low-molecular-weight heparin",
     components: [
       "Aspirin (75\u2013325 mg daily)",
       "LMWH (e.g., enoxaparin 40 mg daily)",
@@ -121,8 +122,7 @@ export const FLAP_MONITORING_PROTOCOLS: FlapMonitoringProtocol[] = [
   {
     id: "clinical_plus_handheld_doppler",
     label: "Clinical + Handheld Doppler",
-    description:
-      "Clinical observation supplemented by handheld Doppler checks",
+    description: "Clinical observation supplemented by handheld Doppler checks",
     components: [
       "Clinical observation",
       "Handheld Doppler (perforator/pedicle signal)",
@@ -191,8 +191,16 @@ export interface MicrosurgeryPreferences {
   monitoringProtocol?: FlapMonitoringProtocolId;
 }
 
+export interface PersonalizationPreferences {
+  selectedSpecialties?: Specialty[];
+  trainingProgramme?: string | null;
+  trainingProgrammeAnswered?: boolean;
+  hospitalAnswered?: boolean;
+}
+
 export interface SurgicalPreferences {
   microsurgery?: MicrosurgeryPreferences;
+  personalization?: PersonalizationPreferences;
   // Future domains (zero schema changes):
   // skinCancer?: SkinCancerPreferences;
   // handSurgery?: HandSurgeryPreferences;

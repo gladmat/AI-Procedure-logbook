@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useRef, useState } from "react";
 import {
   View,
   Text,
@@ -7,7 +7,6 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
-  Alert,
   ActivityIndicator,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -17,6 +16,7 @@ import Animated, {
   withTiming,
   Easing,
 } from "react-native-reanimated";
+import { OpusMark } from "@/components/brand";
 import { useAuth } from "@/contexts/AuthContext";
 import { palette, Colors } from "@/constants/theme";
 import { copy } from "@/constants/onboardingCopy";
@@ -25,38 +25,45 @@ const dark = Colors.dark;
 const MIN_PASSWORD_LENGTH = 8;
 const easeOut = Easing.out(Easing.ease);
 
-/**
- * Email/password signup screen — pushed from OnboardingAuthScreen.
- * Password strength shown as a progress bar. Button disabled until valid.
- */
-export function EmailSignupScreen() {
+export interface EmailSignupScreenProps {
+  initialMode?: "signup" | "signin";
+}
+
+export function EmailSignupScreen({
+  initialMode = "signup",
+}: EmailSignupScreenProps) {
   const insets = useSafeAreaInsets();
   const { signup, login } = useAuth();
 
+  const [mode, setMode] = useState<"signup" | "signin">(initialMode);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [emailFocused, setEmailFocused] = useState(false);
   const [passwordFocused, setPasswordFocused] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showSignIn, setShowSignIn] = useState(false);
 
   const passwordRef = useRef<TextInput>(null);
   const progressWidth = useSharedValue(0);
 
-  // Validate fields
+  React.useEffect(() => {
+    setMode(initialMode);
+  }, [initialMode]);
+
+  const isSignup = mode === "signup";
   const emailValid = email.includes("@") && email.includes(".");
-  const passwordValid = password.length >= MIN_PASSWORD_LENGTH;
+  const passwordValid = isSignup
+    ? password.length >= MIN_PASSWORD_LENGTH
+    : password.length > 0;
   const canSubmit = emailValid && passwordValid && !isLoading;
 
-  // Update progress bar when password changes
   React.useEffect(() => {
     const progress = Math.min(password.length / MIN_PASSWORD_LENGTH, 1);
     progressWidth.value = withTiming(progress, {
       duration: 200,
       easing: easeOut,
     });
-  }, [password]);
+  }, [password, progressWidth]);
 
   const progressStyle = useAnimatedStyle(() => ({
     width: `${progressWidth.value * 100}%`,
@@ -69,56 +76,45 @@ export function EmailSignupScreen() {
 
   const handleSubmit = async () => {
     if (!canSubmit) return;
+
     setError(null);
     setIsLoading(true);
 
     try {
-      if (showSignIn) {
-        await login(email.trim().toLowerCase(), password);
-      } else {
+      if (isSignup) {
         await signup(email.trim().toLowerCase(), password);
+      } else {
+        await login(email.trim().toLowerCase(), password);
       }
-      // Success — AuthContext sets isAuthenticated = true,
-      // navigator automatically advances to next phase
     } catch (e: any) {
-      const msg = e.message || "";
+      const message = String(e?.message || "");
+      const normalizedMessage = message.toLowerCase();
 
-      // Handle "already registered" specifically
       if (
-        msg.toLowerCase().includes("already") ||
-        msg.toLowerCase().includes("exists") ||
-        msg.toLowerCase().includes("registered")
+        isSignup &&
+        (normalizedMessage.includes("already") ||
+          normalizedMessage.includes("exists") ||
+          normalizedMessage.includes("registered"))
       ) {
+        setMode("signin");
         setError(copy.emailSignup.alreadyRegistered);
-        setShowSignIn(true);
       } else if (
-        msg.toLowerCase().includes("network") ||
-        msg.toLowerCase().includes("connect") ||
-        msg.toLowerCase().includes("fetch")
+        normalizedMessage.includes("network") ||
+        normalizedMessage.includes("connect") ||
+        normalizedMessage.includes("fetch")
       ) {
         setError(copy.emailSignup.networkError);
       } else {
-        setError(msg || "Something went wrong. Please try again.");
+        setError(message || "Something went wrong. Please try again.");
       }
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleSignInInstead = async () => {
+  const toggleMode = () => {
     setError(null);
-    setShowSignIn(true);
-    // If fields are valid, try login immediately
-    if (canSubmit) {
-      setIsLoading(true);
-      try {
-        await login(email.trim().toLowerCase(), password);
-      } catch (e: any) {
-        setError(e.message || "Sign in failed. Please try again.");
-      } finally {
-        setIsLoading(false);
-      }
-    }
+    setMode((prevMode) => (prevMode === "signup" ? "signin" : "signup"));
   };
 
   const c = copy.emailSignup;
@@ -131,31 +127,26 @@ export function EmailSignupScreen() {
       <View
         style={[
           styles.container,
-          { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 32 },
+          { paddingTop: insets.top + 24, paddingBottom: insets.bottom + 32 },
         ]}
       >
-        {/* Error / already-registered banner */}
-        {error && (
+        <View style={styles.header}>
+          <OpusMark size={32} />
+          <Text style={styles.headline}>
+            {isSignup ? c.signupHeadline : c.signinHeadline}
+          </Text>
+          <Text style={styles.subhead}>{c.subhead}</Text>
+        </View>
+
+        {error ? (
           <View style={styles.errorBanner}>
             <Text style={styles.errorText}>{error}</Text>
-            {showSignIn && !error.includes("Sign in") && (
-              <Pressable onPress={handleSignInInstead}>
-                <Text style={styles.signInLink}>
-                  {c.signInInstead}
-                </Text>
-              </Pressable>
-            )}
           </View>
-        )}
+        ) : null}
 
-        {/* Form */}
         <View style={styles.form}>
-          {/* Email field */}
           <View
-            style={[
-              styles.inputContainer,
-              emailFocused && styles.inputFocused,
-            ]}
+            style={[styles.inputContainer, emailFocused && styles.inputFocused]}
           >
             <TextInput
               style={styles.input}
@@ -175,7 +166,6 @@ export function EmailSignupScreen() {
             />
           </View>
 
-          {/* Password field */}
           <View
             style={[
               styles.inputContainer,
@@ -192,7 +182,7 @@ export function EmailSignupScreen() {
               onFocus={() => setPasswordFocused(true)}
               onBlur={() => setPasswordFocused(false)}
               secureTextEntry
-              textContentType={showSignIn ? "password" : "newPassword"}
+              textContentType={isSignup ? "newPassword" : "password"}
               autoCapitalize="none"
               autoCorrect={false}
               returnKeyType="done"
@@ -200,33 +190,43 @@ export function EmailSignupScreen() {
             />
           </View>
 
-          {/* Password strength progress bar */}
-          {!showSignIn && (
+          {isSignup ? (
             <View style={styles.progressTrack}>
               <Animated.View
                 style={[styles.progressFill, progressStyle, progressColor]}
               />
             </View>
-          )}
+          ) : null}
         </View>
 
-        {/* Spacer */}
         <View style={styles.spacer} />
 
-        {/* Submit button */}
-        <Pressable
-          style={[styles.submitButton, !canSubmit && styles.submitDisabled]}
-          onPress={handleSubmit}
-          disabled={!canSubmit}
-        >
-          {isLoading ? (
-            <ActivityIndicator color={palette.charcoal[950]} />
-          ) : (
-            <Text style={styles.submitText}>
-              {showSignIn ? "Sign In" : c.cta}
+        <View style={styles.bottomArea}>
+          <Pressable
+            style={[styles.submitButton, !canSubmit && styles.submitDisabled]}
+            onPress={handleSubmit}
+            disabled={!canSubmit}
+          >
+            {isLoading ? (
+              <ActivityIndicator color={palette.charcoal[950]} />
+            ) : (
+              <Text style={styles.submitText}>
+                {isSignup ? c.cta : "Sign In"}
+              </Text>
+            )}
+          </Pressable>
+
+          <View style={styles.switchRow}>
+            <Text style={styles.switchText}>
+              {isSignup ? c.haveAccountAlready : c.noAccountYet}
             </Text>
-          )}
-        </Pressable>
+            <Pressable onPress={toggleMode}>
+              <Text style={styles.switchLink}>
+                {isSignup ? c.signInNow : c.createAccountInstead}
+              </Text>
+            </Pressable>
+          </View>
+        </View>
       </View>
     </KeyboardAvoidingView>
   );
@@ -241,6 +241,23 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 24,
   },
+  header: {
+    alignItems: "center",
+  },
+  headline: {
+    fontSize: 28,
+    fontWeight: "600",
+    color: dark.text,
+    textAlign: "center",
+    marginTop: 24,
+  },
+  subhead: {
+    fontSize: 15,
+    fontWeight: "400",
+    color: "#AEAEB2",
+    textAlign: "center",
+    marginTop: 8,
+  },
   errorBanner: {
     backgroundColor: palette.charcoal[900],
     borderWidth: 1,
@@ -248,24 +265,17 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingVertical: 12,
     paddingHorizontal: 16,
-    marginBottom: 16,
+    marginTop: 24,
     alignItems: "center",
-    gap: 8,
   },
   errorText: {
     fontSize: 14,
     color: dark.text,
     textAlign: "center",
   },
-  signInLink: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: palette.amber[600],
-    textDecorationLine: "underline",
-  },
   form: {
     gap: 12,
-    marginTop: 8,
+    marginTop: 32,
   },
   inputContainer: {
     height: 56,
@@ -297,6 +307,9 @@ const styles = StyleSheet.create({
   spacer: {
     flex: 1,
   },
+  bottomArea: {
+    gap: 16,
+  },
   submitButton: {
     height: 56,
     borderRadius: 14,
@@ -311,5 +324,19 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: "600",
     color: dark.buttonText,
+  },
+  switchRow: {
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 6,
+  },
+  switchText: {
+    fontSize: 14,
+    color: "#AEAEB2",
+  },
+  switchLink: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: palette.amber[600],
   },
 });

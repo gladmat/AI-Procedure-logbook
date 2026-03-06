@@ -9,26 +9,33 @@ import AddCaseScreen from "@/screens/AddCaseScreen";
 import AddTimelineEventScreen from "@/screens/AddTimelineEventScreen";
 import MediaManagementScreen from "@/screens/MediaManagementScreen";
 import AddOperativeMediaScreen from "@/screens/AddOperativeMediaScreen";
-import AuthScreen from "@/screens/AuthScreen";
-import { OnboardingNavigator } from "@/navigation/OnboardingNavigator";
 import { OnboardingAuthScreen } from "@/screens/onboarding/AuthScreen";
 import { EmailSignupScreen } from "@/screens/onboarding/EmailSignupScreen";
 import { CategoriesScreen } from "@/screens/onboarding/CategoriesScreen";
 import { TrainingScreen } from "@/screens/onboarding/TrainingScreen";
-import { HospitalScreen } from "@/screens/onboarding/HospitalScreen";
+import {
+  HospitalScreen,
+  type HospitalSelection,
+} from "@/screens/onboarding/HospitalScreen";
 import { PrivacyScreen } from "@/screens/onboarding/PrivacyScreen";
-import OnboardingScreen from "@/screens/OnboardingScreen";
 import LockScreen from "@/screens/LockScreen";
 import SetupAppLockScreen from "@/screens/SetupAppLockScreen";
 import EditProfileScreen from "@/screens/EditProfileScreen";
 import EpisodeDetailScreen from "@/screens/EpisodeDetailScreen";
 import EpisodeListScreen from "@/screens/EpisodeListScreen";
+import PersonalisationScreen from "@/screens/PersonalisationScreen";
 import SurgicalPreferencesScreen from "@/screens/SurgicalPreferencesScreen";
 import { WelcomeScreen } from "@/screens/onboarding/WelcomeScreen";
 import { FeaturePager } from "@/screens/onboarding/FeaturePager";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAppLock } from "@/contexts/AppLockContext";
+import {
+  buildSurgicalPreferencesUpdate,
+  hasAnsweredCategoryPersonalization,
+  hasAnsweredHospitalAffiliation,
+  hasAnsweredTrainingProgramme,
+} from "@/lib/personalization";
 import {
   Specialty,
   TimelineEventType,
@@ -37,15 +44,9 @@ import {
 } from "@/types/case";
 import type { EpisodePrefillData } from "@/types/episode";
 import { useTheme } from "@/hooks/useTheme";
-import { palette } from "@/constants/theme";
 
 const WELCOME_SEEN_KEY = "@opus_has_seen_welcome";
 const FEATURES_SEEN_KEY = "@opus_has_seen_features";
-const CATEGORIES_SEEN_KEY = "@opus_has_seen_categories";
-const TRAINING_SEEN_KEY = "@opus_has_seen_training";
-const HOSPITAL_SEEN_KEY = "@opus_has_seen_hospital";
-const PRIVACY_SEEN_KEY = "@opus_has_seen_privacy";
-const TRAINING_PROGRAMME_KEY = "@opus_training_programme";
 
 export type RootStackParamList = {
   Welcome: undefined;
@@ -56,7 +57,6 @@ export type RootStackParamList = {
   Training: undefined;
   Hospital: undefined;
   Privacy: undefined;
-  Onboarding: undefined;
   Main: undefined;
   CaseDetail: { caseId: string; showComplicationForm?: boolean };
   CaseForm: {
@@ -96,61 +96,56 @@ export type RootStackParamList = {
   SetupAppLock: undefined;
   EditProfile: undefined;
   SurgicalPreferences: undefined;
+  Personalisation: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function RootStackNavigator() {
   const screenOptions = useScreenOptions();
-  const { isAuthenticated, onboardingComplete, isLoading } = useAuth();
+  const {
+    isAuthenticated,
+    onboardingComplete,
+    isLoading,
+    profile,
+    facilities,
+    updateProfile,
+    addFacility,
+  } = useAuth();
   const { isLocked, isAppLockConfigured } = useAppLock();
   const { theme: colors } = useTheme();
 
   const [hasSeenWelcome, setHasSeenWelcome] = useState<boolean | null>(null);
   const [hasSeenFeatures, setHasSeenFeatures] = useState<boolean | null>(null);
-  const [hasSeenCategories, setHasSeenCategories] = useState<boolean | null>(
-    null,
-  );
-  const [hasSeenTraining, setHasSeenTraining] = useState<boolean | null>(null);
-  const [hasSeenHospital, setHasSeenHospital] = useState<boolean | null>(null);
-  const [hasSeenPrivacy, setHasSeenPrivacy] = useState<boolean | null>(null);
-  const [trainingProgramme, setTrainingProgramme] = useState<string | null>(
-    null,
+  const [showEmailAuth, setShowEmailAuth] = useState(false);
+  const [emailAuthMode, setEmailAuthMode] = useState<"signup" | "signin">(
+    "signup",
   );
 
   useEffect(() => {
     Promise.all([
       AsyncStorage.getItem(WELCOME_SEEN_KEY),
       AsyncStorage.getItem(FEATURES_SEEN_KEY),
-      AsyncStorage.getItem(CATEGORIES_SEEN_KEY),
-      AsyncStorage.getItem(TRAINING_SEEN_KEY),
-      AsyncStorage.getItem(HOSPITAL_SEEN_KEY),
-      AsyncStorage.getItem(PRIVACY_SEEN_KEY),
-      AsyncStorage.getItem(TRAINING_PROGRAMME_KEY),
-    ]).then(
-      ([
-        welcomeVal,
-        featuresVal,
-        categoriesVal,
-        trainingVal,
-        hospitalVal,
-        privacyVal,
-        programmeVal,
-      ]) => {
-        setHasSeenWelcome(welcomeVal === "true");
-        setHasSeenFeatures(featuresVal === "true");
-        setHasSeenCategories(categoriesVal === "true");
-        setHasSeenTraining(trainingVal === "true");
-        setHasSeenHospital(hospitalVal === "true");
-        setHasSeenPrivacy(privacyVal === "true");
-        setTrainingProgramme(programmeVal);
-      },
-    );
+    ]).then(([welcomeVal, featuresVal]) => {
+      setHasSeenWelcome(welcomeVal === "true");
+      setHasSeenFeatures(featuresVal === "true");
+    });
   }, []);
 
   const handleWelcomeComplete = useCallback(async () => {
     await AsyncStorage.setItem(WELCOME_SEEN_KEY, "true");
     setHasSeenWelcome(true);
+  }, []);
+
+  const handleWelcomeSignIn = useCallback(async () => {
+    await Promise.all([
+      AsyncStorage.setItem(WELCOME_SEEN_KEY, "true"),
+      AsyncStorage.setItem(FEATURES_SEEN_KEY, "true"),
+    ]);
+    setHasSeenWelcome(true);
+    setHasSeenFeatures(true);
+    setEmailAuthMode("signin");
+    setShowEmailAuth(true);
   }, []);
 
   const handleFeaturesComplete = useCallback(async () => {
@@ -160,48 +155,84 @@ export default function RootStackNavigator() {
 
   const handleCategoriesComplete = useCallback(
     async (selectedCategories: Specialty[]) => {
-      // TODO: persist selectedCategories to profile/preferences
-      await AsyncStorage.setItem(CATEGORIES_SEEN_KEY, "true");
-      setHasSeenCategories(true);
+      await updateProfile({
+        surgicalPreferences: buildSurgicalPreferencesUpdate(
+          profile?.surgicalPreferences,
+          {
+            selectedSpecialties: selectedCategories,
+          },
+        ),
+      });
     },
-    [],
+    [profile?.surgicalPreferences, updateProfile],
   );
 
   const handleTrainingComplete = useCallback(
     async (programme: string | null) => {
-      if (programme) {
-        await AsyncStorage.setItem(TRAINING_PROGRAMME_KEY, programme);
-        setTrainingProgramme(programme);
-      }
-      await AsyncStorage.setItem(TRAINING_SEEN_KEY, "true");
-      setHasSeenTraining(true);
+      await updateProfile({
+        surgicalPreferences: buildSurgicalPreferencesUpdate(
+          profile?.surgicalPreferences,
+          {
+            trainingProgramme: programme,
+            trainingProgrammeAnswered: true,
+          },
+        ),
+      });
     },
-    [],
+    [profile?.surgicalPreferences, updateProfile],
   );
 
   const handleHospitalComplete = useCallback(
-    async (hospital: string | null) => {
-      // TODO: persist hospital to profile/preferences
-      await AsyncStorage.setItem(HOSPITAL_SEEN_KEY, "true");
-      setHasSeenHospital(true);
+    async (hospital: HospitalSelection | null) => {
+      if (hospital) {
+        const alreadyExists = facilities.some((facility) => {
+          if (
+            hospital.facilityId &&
+            facility.facilityId === hospital.facilityId
+          ) {
+            return true;
+          }
+
+          return (
+            facility.facilityName.trim().toLowerCase() ===
+            hospital.name.trim().toLowerCase()
+          );
+        });
+
+        if (!alreadyExists) {
+          await addFacility(
+            hospital.name,
+            facilities.length === 0,
+            hospital.facilityId,
+          );
+        }
+      }
+
+      await updateProfile({
+        surgicalPreferences: buildSurgicalPreferencesUpdate(
+          profile?.surgicalPreferences,
+          {
+            hospitalAnswered: true,
+          },
+        ),
+      });
     },
-    [],
+    [addFacility, facilities, profile?.surgicalPreferences, updateProfile],
   );
 
-  const handlePrivacyComplete = useCallback(async () => {
-    await AsyncStorage.setItem(PRIVACY_SEEN_KEY, "true");
-    setHasSeenPrivacy(true);
-  }, []);
+  useEffect(() => {
+    if (isAuthenticated) {
+      setShowEmailAuth(false);
+      setEmailAuthMode("signup");
+    }
+  }, [isAuthenticated]);
 
-  if (
-    isLoading ||
-    hasSeenWelcome === null ||
-    hasSeenFeatures === null ||
-    hasSeenCategories === null ||
-    hasSeenTraining === null ||
-    hasSeenHospital === null ||
-    hasSeenPrivacy === null
-  ) {
+  const hasCompletedCategories = hasAnsweredCategoryPersonalization(profile);
+  const hasCompletedTraining = hasAnsweredTrainingProgramme(profile);
+  const hasCompletedHospital =
+    hasAnsweredHospitalAffiliation(profile) || facilities.length > 0;
+
+  if (isLoading || hasSeenWelcome === null || hasSeenFeatures === null) {
     return (
       <View
         style={[
@@ -223,60 +254,60 @@ export default function RootStackNavigator() {
     <Stack.Navigator screenOptions={screenOptions}>
       {!hasSeenWelcome && !isAuthenticated ? (
         <Stack.Screen name="Welcome" options={{ headerShown: false }}>
-          {() => <WelcomeScreen onComplete={handleWelcomeComplete} />}
+          {() => (
+            <WelcomeScreen
+              onComplete={handleWelcomeComplete}
+              onSignIn={handleWelcomeSignIn}
+            />
+          )}
         </Stack.Screen>
       ) : !hasSeenFeatures && !isAuthenticated ? (
         <Stack.Screen name="Features" options={{ headerShown: false }}>
           {() => <FeaturePager onComplete={handleFeaturesComplete} />}
         </Stack.Screen>
+      ) : !isAuthenticated && showEmailAuth ? (
+        <Stack.Screen name="EmailSignup" options={{ headerShown: false }}>
+          {() => <EmailSignupScreen initialMode={emailAuthMode} />}
+        </Stack.Screen>
       ) : !isAuthenticated ? (
-        <>
-          <Stack.Screen
-            name="Auth"
-            component={OnboardingAuthScreen}
-            options={{ headerShown: false }}
-          />
-          <Stack.Screen
-            name="EmailSignup"
-            component={EmailSignupScreen}
-            options={{
-              headerTitle: "",
-              headerBackTitle: "Back",
-              headerStyle: { backgroundColor: palette.charcoal[950] },
-              headerTintColor: palette.amber[600],
-              headerShadowVisible: false,
-            }}
-          />
-        </>
-      ) : !onboardingComplete && !hasSeenCategories ? (
-        <Stack.Screen name="Categories" options={{ headerShown: false }}>
+        <Stack.Screen name="Auth" options={{ headerShown: false }}>
           {() => (
-            <CategoriesScreen onComplete={handleCategoriesComplete} />
+            <OnboardingAuthScreen
+              onContinueWithEmail={() => {
+                setEmailAuthMode("signup");
+                setShowEmailAuth(true);
+              }}
+              onSignIn={() => {
+                setEmailAuthMode("signin");
+                setShowEmailAuth(true);
+              }}
+            />
           )}
         </Stack.Screen>
-      ) : !onboardingComplete && !hasSeenTraining ? (
+      ) : !onboardingComplete && !hasCompletedCategories ? (
+        <Stack.Screen name="Categories" options={{ headerShown: false }}>
+          {() => <CategoriesScreen onComplete={handleCategoriesComplete} />}
+        </Stack.Screen>
+      ) : !onboardingComplete && !hasCompletedTraining ? (
         <Stack.Screen name="Training" options={{ headerShown: false }}>
           {() => <TrainingScreen onComplete={handleTrainingComplete} />}
         </Stack.Screen>
-      ) : !onboardingComplete && !hasSeenHospital ? (
+      ) : !onboardingComplete && !hasCompletedHospital ? (
         <Stack.Screen name="Hospital" options={{ headerShown: false }}>
           {() => (
             <HospitalScreen
               onComplete={handleHospitalComplete}
-              trainingProgramme={trainingProgramme}
+              trainingProgramme={
+                profile?.surgicalPreferences?.personalization
+                  ?.trainingProgramme ?? null
+              }
             />
           )}
         </Stack.Screen>
-      ) : !onboardingComplete && !hasSeenPrivacy ? (
-        <Stack.Screen name="Privacy" options={{ headerShown: false }}>
-          {() => <PrivacyScreen onComplete={handlePrivacyComplete} />}
-        </Stack.Screen>
       ) : !onboardingComplete ? (
-        <Stack.Screen
-          name="Onboarding"
-          component={OnboardingNavigator}
-          options={{ headerShown: false }}
-        />
+        <Stack.Screen name="Privacy" options={{ headerShown: false }}>
+          {() => <PrivacyScreen onComplete={() => undefined} />}
+        </Stack.Screen>
       ) : (
         <>
           <Stack.Screen
@@ -362,6 +393,13 @@ export default function RootStackNavigator() {
             component={SurgicalPreferencesScreen}
             options={{
               headerTitle: "Surgical Preferences",
+            }}
+          />
+          <Stack.Screen
+            name="Personalisation"
+            component={PersonalisationScreen}
+            options={{
+              headerTitle: "Personalisation",
             }}
           />
         </>

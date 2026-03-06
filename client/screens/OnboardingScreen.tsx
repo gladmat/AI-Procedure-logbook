@@ -19,6 +19,10 @@ import { useTheme } from "@/hooks/useTheme";
 import { FacilitySelector } from "@/components/FacilitySelector";
 import { FacilityAutocomplete } from "@/components/FacilityAutocomplete";
 import { MasterFacility } from "@/data/facilities";
+import {
+  getRegistrationJurisdictionForCountry,
+  normalizeProfessionalRegistrations,
+} from "@shared/professionalRegistrations";
 
 const COUNTRIES = [
   { value: "new_zealand", label: "New Zealand" },
@@ -115,12 +119,19 @@ export default function OnboardingScreen() {
       }
       setIsLoading(true);
       try {
+        const registrationJurisdiction =
+          getRegistrationJurisdictionForCountry(countryOfPractice) ?? "other";
+        const professionalRegistrations = normalizeProfessionalRegistrations({
+          [registrationJurisdiction]: medicalCouncilNumber.trim() || null,
+        });
+
         await updateProfile({
           firstName: firstName.trim(),
           lastName: lastName.trim(),
           fullName: `${firstName.trim()} ${lastName.trim()}`,
           countryOfPractice,
           medicalCouncilNumber: medicalCouncilNumber.trim() || null,
+          professionalRegistrations: professionalRegistrations ?? {},
           careerStage,
           onboardingComplete: true,
         });

@@ -27,8 +27,6 @@ const SIDE_PADDING = 24;
 const MAX_VISIBLE_RESULTS = 5;
 const RESULT_ROW_HEIGHT = 48;
 
-// ── Country mapping from training programme ─────────────────────────────────
-
 const PROGRAMME_COUNTRY_MAP: Record<string, string[]> = {
   iscp: ["UK"],
   racs: ["NZ", "AU"],
@@ -36,10 +34,13 @@ const PROGRAMME_COUNTRY_MAP: Record<string, string[]> = {
   febopras: ["UK", "CH", "DE", "AT"],
 };
 
-// ── Hospital Screen ─────────────────────────────────────────────────────────
+export interface HospitalSelection {
+  name: string;
+  facilityId?: string;
+}
 
 interface Props {
-  onComplete: (hospital: string | null) => void;
+  onComplete: (hospital: HospitalSelection | null) => Promise<void> | void;
   trainingProgramme?: string | null;
 }
 
@@ -48,33 +49,28 @@ export function HospitalScreen({ onComplete, trainingProgramme }: Props) {
   const inputRef = useRef<TextInput>(null);
 
   const [query, setQuery] = useState("");
-  const [selectedHospital, setSelectedHospital] = useState<string | null>(null);
+  const [selectedHospital, setSelectedHospital] = useState<Hospital | null>(
+    null,
+  );
   const [isFocused, setIsFocused] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const dropdownOpacity = useSharedValue(0);
 
-  // Filter hospitals by query and optionally by country
   const filteredHospitals = useMemo(() => {
     if (query.trim().length < 1) return [];
 
-    const q = query.toLowerCase();
-
-    // Get country filter from training programme
+    const normalizedQuery = query.toLowerCase();
     const countryFilter =
       trainingProgramme && PROGRAMME_COUNTRY_MAP[trainingProgramme];
 
-    return HOSPITALS.filter((h) => {
-      const matchesQuery =
-        h.name.toLowerCase().includes(q) ||
-        h.city.toLowerCase().includes(q) ||
-        h.country.toLowerCase().includes(q);
-
-      if (!matchesQuery) return false;
-
-      // If we have a country filter, prioritise those countries
-      // but still show all results (filtered hospitals come first via sort)
-      return true;
+    return HOSPITALS.filter((hospital) => {
+      return (
+        hospital.name.toLowerCase().includes(normalizedQuery) ||
+        hospital.city.toLowerCase().includes(normalizedQuery) ||
+        hospital.country.toLowerCase().includes(normalizedQuery)
+      );
     }).sort((a, b) => {
       if (!countryFilter) return 0;
       const aMatch = countryFilter.includes(a.country) ? 0 : 1;
@@ -98,12 +94,11 @@ export function HospitalScreen({ onComplete, trainingProgramme }: Props) {
 
   const handleBlur = useCallback(() => {
     setIsFocused(false);
-    // Delay hiding dropdown so tap on result can register
     setTimeout(() => setShowDropdown(false), 200);
   }, []);
 
   const handleSelectHospital = useCallback((hospital: Hospital) => {
-    setSelectedHospital(hospital.name);
+    setSelectedHospital(hospital);
     setQuery(hospital.name);
     setShowDropdown(false);
     Keyboard.dismiss();
@@ -114,23 +109,40 @@ export function HospitalScreen({ onComplete, trainingProgramme }: Props) {
       showDropdown && filteredHospitals.length > 0 ? 1 : 0,
       { duration: 150, easing: Easing.out(Easing.ease) },
     );
-  }, [showDropdown, filteredHospitals.length]);
+  }, [dropdownOpacity, filteredHospitals.length, showDropdown]);
 
   const dropdownStyle = useAnimatedStyle(() => ({
     opacity: dropdownOpacity.value,
-    pointerEvents: dropdownOpacity.value > 0.5 ? "auto" : "none",
   }));
 
-  // Can continue if a hospital is selected or free-text is entered
   const canContinue =
-    selectedHospital !== null || query.trim().length > 0;
+    !isSubmitting && (selectedHospital !== null || query.trim().length > 0);
 
-  const handleContinue = () => {
-    onComplete(selectedHospital ?? (query.trim() || null));
+  const handleContinue = async () => {
+    const hospitalSelection = selectedHospital
+      ? {
+          name: selectedHospital.name,
+          facilityId: selectedHospital.id,
+        }
+      : query.trim()
+        ? { name: query.trim() }
+        : null;
+
+    setIsSubmitting(true);
+    try {
+      await onComplete(hospitalSelection);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleSkip = () => {
-    onComplete(null);
+  const handleSkip = async () => {
+    setIsSubmitting(true);
+    try {
+      await onComplete(null);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const c = copy.hospital;
@@ -140,154 +152,147 @@ export function HospitalScreen({ onComplete, trainingProgramme }: Props) {
       style={styles.flex}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-    <View style={[styles.root, { paddingBottom: insets.bottom + 20 }]}>
-      {/* Step indicator */}
-      <View style={styles.stepArea}>
-        <StepIndicator currentStep={3} />
-      </View>
+      <View style={[styles.root, { paddingBottom: insets.bottom + 20 }]}>
+        <View style={styles.stepArea}>
+          <StepIndicator currentStep={3} />
+        </View>
 
-      {/* Content */}
-      <View style={styles.content}>
-        {/* Headline */}
-        <Text style={styles.headline}>{c.headline}</Text>
+        <View style={styles.content}>
+          <Text style={styles.headline}>{c.headline}</Text>
+          <Text style={styles.subhead}>{c.subhead}</Text>
 
-        {/* Subhead */}
-        <Text style={styles.subhead}>{c.subhead}</Text>
-
-        {/* Search field */}
-        <View style={styles.searchContainer}>
-          <View
-            style={[
-              styles.searchField,
-              isFocused && styles.searchFieldFocused,
-            ]}
-          >
-            <Text style={styles.searchIcon}>⌕</Text>
-            <TextInput
-              ref={inputRef}
-              style={styles.searchInput}
-              placeholder={c.searchPlaceholder}
-              placeholderTextColor="#636366"
-              value={query}
-              onChangeText={handleQueryChange}
-              onFocus={handleFocus}
-              onBlur={handleBlur}
-              autoCapitalize="words"
-              autoCorrect={false}
-              returnKeyType="done"
-              accessibilityLabel="Search hospitals"
-              accessibilityHint="Type to search for your hospital"
-            />
-            {query.length > 0 && (
-              <Pressable
-                onPress={() => {
-                  setQuery("");
-                  setSelectedHospital(null);
-                  inputRef.current?.focus();
-                }}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                accessibilityLabel="Clear search"
-                accessibilityRole="button"
-              >
-                <Text style={styles.clearButton}>✕</Text>
-              </Pressable>
-            )}
-          </View>
-
-          {/* Results dropdown */}
-          <Animated.View style={[styles.dropdown, dropdownStyle]}>
-            <ScrollView
-              style={{
-                maxHeight: MAX_VISIBLE_RESULTS * RESULT_ROW_HEIGHT,
-              }}
-              keyboardShouldPersistTaps="handled"
-              bounces={false}
+          <View style={styles.searchContainer}>
+            <View
+              style={[
+                styles.searchField,
+                isFocused && styles.searchFieldFocused,
+              ]}
             >
-              {filteredHospitals.map((hospital, index) => (
+              <Text style={styles.searchIcon}>⌕</Text>
+              <TextInput
+                ref={inputRef}
+                style={styles.searchInput}
+                placeholder={c.searchPlaceholder}
+                placeholderTextColor="#636366"
+                value={query}
+                onChangeText={handleQueryChange}
+                onFocus={handleFocus}
+                onBlur={handleBlur}
+                autoCapitalize="words"
+                autoCorrect={false}
+                returnKeyType="done"
+                accessibilityLabel="Search hospitals"
+                accessibilityHint="Type to search for your hospital"
+              />
+              {query.length > 0 ? (
                 <Pressable
-                  key={`${hospital.name}-${hospital.city}`}
-                  style={[
-                    styles.resultRow,
-                    index < filteredHospitals.length - 1 &&
-                      styles.resultSeparator,
-                  ]}
-                  onPress={() => handleSelectHospital(hospital)}
+                  onPress={() => {
+                    setQuery("");
+                    setSelectedHospital(null);
+                    inputRef.current?.focus();
+                  }}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  accessibilityLabel="Clear search"
+                  accessibilityRole="button"
                 >
-                  <Text style={styles.resultName} numberOfLines={1}>
-                    {hospital.name}
-                  </Text>
-                  <Text style={styles.resultLocation} numberOfLines={1}>
-                    {hospital.city}, {hospital.country}
-                  </Text>
+                  <Text style={styles.clearButton}>✕</Text>
                 </Pressable>
-              ))}
-            </ScrollView>
-          </Animated.View>
+              ) : null}
+            </View>
 
-          {/* Empty state — no results */}
-          {showDropdown &&
+            <Animated.View
+              style={[styles.dropdown, dropdownStyle]}
+              pointerEvents={
+                showDropdown && filteredHospitals.length > 0 ? "auto" : "none"
+              }
+            >
+              <ScrollView
+                style={{ maxHeight: MAX_VISIBLE_RESULTS * RESULT_ROW_HEIGHT }}
+                keyboardShouldPersistTaps="handled"
+                bounces={false}
+              >
+                {filteredHospitals.map((hospital, index) => (
+                  <Pressable
+                    key={hospital.id}
+                    style={[
+                      styles.resultRow,
+                      index < filteredHospitals.length - 1 &&
+                        styles.resultSeparator,
+                    ]}
+                    onPress={() => handleSelectHospital(hospital)}
+                  >
+                    <Text style={styles.resultName} numberOfLines={1}>
+                      {hospital.name}
+                    </Text>
+                    <Text style={styles.resultLocation} numberOfLines={1}>
+                      {hospital.city}, {hospital.country}
+                    </Text>
+                  </Pressable>
+                ))}
+              </ScrollView>
+            </Animated.View>
+
+            {showDropdown &&
             filteredHospitals.length === 0 &&
-            query.trim().length > 0 && (
+            query.trim().length > 0 ? (
               <Text style={styles.emptyState}>
                 No results found. Type your hospital name to add it.
               </Text>
-            )}
+            ) : null}
+          </View>
+
+          {selectedHospital && !showDropdown ? (
+            <View
+              style={styles.selectedBadge}
+              accessible
+              accessibilityLabel={`Selected hospital: ${selectedHospital.name}`}
+              accessibilityRole="text"
+            >
+              <Text style={styles.selectedText}>{selectedHospital.name}</Text>
+              <Pressable
+                onPress={() => {
+                  setSelectedHospital(null);
+                  setQuery("");
+                  inputRef.current?.focus();
+                }}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                accessibilityLabel="Remove selected hospital"
+                accessibilityRole="button"
+              >
+                <Text style={styles.selectedRemove}>✕</Text>
+              </Pressable>
+            </View>
+          ) : null}
         </View>
 
-        {/* Selected hospital display */}
-        {selectedHospital && !showDropdown && (
-          <View
-            style={styles.selectedBadge}
-            accessible
-            accessibilityLabel={`Selected hospital: ${selectedHospital}`}
-            accessibilityRole="text"
+        <View style={styles.spacer} />
+
+        <View style={styles.bottomArea}>
+          <Pressable
+            style={[styles.ctaButton, !canContinue && styles.ctaDisabled]}
+            onPress={handleContinue}
+            disabled={!canContinue}
+            accessibilityLabel={c.cta}
+            accessibilityRole="button"
+            accessibilityState={{ disabled: !canContinue }}
           >
-            <Text style={styles.selectedText}>{selectedHospital}</Text>
-            <Pressable
-              onPress={() => {
-                setSelectedHospital(null);
-                setQuery("");
-                inputRef.current?.focus();
-              }}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              accessibilityLabel="Remove selected hospital"
-              accessibilityRole="button"
-            >
-              <Text style={styles.selectedRemove}>✕</Text>
-            </Pressable>
-          </View>
-        )}
+            <Text style={styles.ctaText}>
+              {isSubmitting ? "Saving..." : c.cta}
+            </Text>
+          </Pressable>
+
+          <Pressable
+            style={styles.skipButton}
+            onPress={handleSkip}
+            disabled={isSubmitting}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            accessibilityLabel={c.skip}
+            accessibilityRole="link"
+          >
+            <Text style={styles.skipText}>{c.skip}</Text>
+          </Pressable>
+        </View>
       </View>
-
-      {/* Spacer */}
-      <View style={styles.spacer} />
-
-      {/* Bottom actions */}
-      <View style={styles.bottomArea}>
-        {/* Continue button */}
-        <Pressable
-          style={[styles.ctaButton, !canContinue && styles.ctaDisabled]}
-          onPress={handleContinue}
-          disabled={!canContinue}
-          accessibilityLabel={c.cta}
-          accessibilityRole="button"
-          accessibilityState={{ disabled: !canContinue }}
-        >
-          <Text style={styles.ctaText}>{c.cta}</Text>
-        </Pressable>
-
-        {/* Skip link */}
-        <Pressable
-          style={styles.skipButton}
-          onPress={handleSkip}
-          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-          accessibilityLabel={c.skip}
-          accessibilityRole="link"
-        >
-          <Text style={styles.skipText}>{c.skip}</Text>
-        </Pressable>
-      </View>
-    </View>
     </KeyboardAvoidingView>
   );
 }
@@ -380,23 +385,22 @@ const styles = StyleSheet.create({
     marginTop: 1,
   },
   emptyState: {
-    fontSize: 14,
-    fontWeight: "400",
+    fontSize: 13,
     color: "#636366",
-    textAlign: "center",
     marginTop: 12,
-    lineHeight: 20,
   },
   selectedBadge: {
-    flexDirection: "row",
-    alignItems: "center",
+    marginTop: 20,
+    marginHorizontal: SIDE_PADDING,
     backgroundColor: "rgba(229, 160, 13, 0.08)",
     borderWidth: 1,
-    borderColor: palette.amber[600],
+    borderColor: "#E5A00D",
     borderRadius: 12,
     paddingVertical: 12,
     paddingHorizontal: 16,
-    marginTop: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     gap: 12,
   },
   selectedText: {
@@ -407,7 +411,8 @@ const styles = StyleSheet.create({
   },
   selectedRemove: {
     fontSize: 14,
-    color: "#636366",
+    color: palette.amber[600],
+    padding: 4,
   },
   spacer: {
     flex: 1,

@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   View,
   StyleSheet,
@@ -29,18 +29,15 @@ import { Spacing, BorderRadius, Shadows } from "@/constants/theme";
 import {
   Case,
   Specialty,
-  Role,
   SPECIALTY_LABELS,
   ROLE_LABELS,
   getPrimaryDiagnosisName,
 } from "@/types/case";
-import {
-  INFECTION_SYNDROME_LABELS,
-  InfectionSyndrome,
-} from "@/types/infection";
+import { INFECTION_SYNDROME_LABELS } from "@/types/infection";
 import {
   getCases,
   getCasesPendingFollowUp,
+  getLatestCaseForEpisode,
   markNoComplications,
   updateCase,
 } from "@/lib/storage";
@@ -48,9 +45,10 @@ import { CaseCard } from "@/components/CaseCard";
 import { SkeletonCard } from "@/components/LoadingState";
 import { ActiveEpisodesSection } from "@/components/ActiveEpisodesSection";
 import { useActiveEpisodes } from "@/hooks/useActiveEpisodes";
-import { getLatestCaseForEpisode } from "@/lib/storage";
 import type { TreatmentEpisode, EpisodePrefillData } from "@/types/episode";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
+import { useAuth } from "@/contexts/AuthContext";
+import { getVisibleSpecialties } from "@/lib/personalization";
 import {
   StatisticsFilters,
   TimePeriod,
@@ -70,26 +68,7 @@ import {
   BaseStatistics,
   FreeFlapStatistics,
   HandSurgeryStatistics,
-  OrthoplasticStatistics,
-  BreastStatistics,
-  InfectionStatistics,
 } from "@/lib/statistics";
-
-const SPECIALTY_FILTERS: (Specialty | "all")[] = [
-  "all",
-  "breast",
-  "hand_wrist",
-  "head_neck",
-  "cleft_cranio",
-  "skin_cancer",
-  "orthoplastic",
-  "burns",
-  "lymphoedema",
-  "body_contouring",
-  "aesthetics",
-  "peripheral_nerve",
-  "general",
-];
 
 const TIME_PERIODS: TimePeriod[] = [
   "this_year",
@@ -99,6 +78,15 @@ const TIME_PERIODS: TimePeriod[] = [
 ];
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+
+function getCaseSpecialties(caseData: Case): Specialty[] {
+  return Array.from(
+    new Set([
+      caseData.specialty,
+      ...caseData.diagnosisGroups.map((group) => group.specialty),
+    ]),
+  );
+}
 
 interface StatCardProps {
   title: string;
@@ -221,6 +209,7 @@ function DropdownSelect({ label, value, onPress }: DropdownSelectProps) {
 
 export default function DashboardScreen() {
   const { theme } = useTheme();
+  const { profile } = useAuth();
   const navigation = useNavigation<NavigationProp>();
   const insets = useSafeAreaInsets();
   const headerHeight = useHeaderHeight();
@@ -234,6 +223,14 @@ export default function DashboardScreen() {
 
   const { episodes: activeEpisodes, refresh: refreshEpisodes } =
     useActiveEpisodes();
+  const visibleSpecialties = useMemo(
+    () => getVisibleSpecialties(profile),
+    [profile],
+  );
+  const specialtyFilters = useMemo(
+    () => ["all", ...visibleSpecialties] as (Specialty | "all")[],
+    [visibleSpecialties],
+  );
 
   const [filters, setFilters] = useState<StatisticsFilters>({
     specialty: "all",
@@ -275,12 +272,15 @@ export default function DashboardScreen() {
     );
   };
 
-  const handleAddComplication = (caseData: Case) => {
-    navigation.navigate("CaseDetail", {
-      caseId: caseData.id,
-      showComplicationForm: true,
-    });
-  };
+  const handleAddComplication = useCallback(
+    (caseData: Case) => {
+      navigation.navigate("CaseDetail", {
+        caseId: caseData.id,
+        showComplicationForm: true,
+      });
+    },
+    [navigation],
+  );
 
   useFocusEffect(
     useCallback(() => {
@@ -299,9 +299,46 @@ export default function DashboardScreen() {
     setRefreshing(false);
   };
 
+  useEffect(() => {
+    if (
+      filters.specialty !== "all" &&
+      !visibleSpecialties.includes(filters.specialty)
+    ) {
+      setFilters((prev) => ({ ...prev, specialty: "all" }));
+    }
+  }, [filters.specialty, visibleSpecialties]);
+
+  const personalizedCases = useMemo(
+    () =>
+      cases.filter((caseData) =>
+        getCaseSpecialties(caseData).some((specialty) =>
+          visibleSpecialties.includes(specialty),
+        ),
+      ),
+    [cases, visibleSpecialties],
+  );
+
+  const visiblePendingFollowUps = useMemo(
+    () =>
+      pendingFollowUps.filter((caseData) =>
+        getCaseSpecialties(caseData).some((specialty) =>
+          visibleSpecialties.includes(specialty),
+        ),
+      ),
+    [pendingFollowUps, visibleSpecialties],
+  );
+
+  const visibleEpisodes = useMemo(
+    () =>
+      activeEpisodes.filter(({ episode }) =>
+        visibleSpecialties.includes(episode.specialty),
+      ),
+    [activeEpisodes, visibleSpecialties],
+  );
+
   const filteredCases = useMemo(
-    () => filterCases(cases, filters),
-    [cases, filters],
+    () => filterCases(personalizedCases, filters),
+    [personalizedCases, filters],
   );
   const statistics = useMemo(
     () => calculateStatistics(filteredCases, filters.specialty),
@@ -312,7 +349,10 @@ export default function DashboardScreen() {
     [filteredCases],
   );
   const recentCases = useMemo(() => filteredCases.slice(0, 5), [filteredCases]);
-  const facilities = useMemo(() => getUniqueFacilities(cases), [cases]);
+  const facilities = useMemo(
+    () => getUniqueFacilities(personalizedCases),
+    [personalizedCases],
+  );
   const topPairs = useMemo(
     () => calculateTopDiagnosisProcedurePairs(filteredCases, 5),
     [filteredCases],
@@ -327,24 +367,24 @@ export default function DashboardScreen() {
   );
 
   const activeCases = useMemo(() => {
-    return cases
+    return personalizedCases
       .filter((c) => c.infectionOverlay && !c.dischargeDate)
       .sort(
         (a, b) =>
           new Date(b.procedureDate).getTime() -
           new Date(a.procedureDate).getTime(),
       );
-  }, [cases]);
+  }, [personalizedCases]);
 
   const currentInpatients = useMemo(() => {
-    return cases
+    return personalizedCases
       .filter((c) => !c.dischargeDate)
       .sort(
         (a, b) =>
           new Date(b.procedureDate).getTime() -
           new Date(a.procedureDate).getTime(),
       );
-  }, [cases]);
+  }, [personalizedCases]);
 
   const [showInpatients, setShowInpatients] = useState(true);
   const [showActiveCases, setShowActiveCases] = useState(true);
@@ -435,7 +475,7 @@ export default function DashboardScreen() {
   const handleLogCase = useCallback(
     async (episode: TreatmentEpisode) => {
       const lastCase = await getLatestCaseForEpisode(episode.id);
-      const linkedCases = activeEpisodes.find(
+      const linkedCases = visibleEpisodes.find(
         (e) => e.episode.id === episode.id,
       )?.cases;
       const seq = (linkedCases?.length ?? 0) + 1;
@@ -458,7 +498,7 @@ export default function DashboardScreen() {
         episodePrefill: prefill,
       });
     },
-    [navigation, activeEpisodes],
+    [navigation, visibleEpisodes],
   );
 
   const handleViewAllEpisodes = useCallback(() => {
@@ -510,7 +550,7 @@ export default function DashboardScreen() {
           contentContainerStyle={styles.filterContainer}
           style={styles.filterScroll}
         >
-          {SPECIALTY_FILTERS.map((specialty) => (
+          {specialtyFilters.map((specialty) => (
             <FilterChip
               key={specialty}
               label={specialty === "all" ? "All" : SPECIALTY_LABELS[specialty]}
@@ -580,7 +620,7 @@ export default function DashboardScreen() {
         </View>
 
         <ActiveEpisodesSection
-          episodes={activeEpisodes}
+          episodes={visibleEpisodes}
           onNavigateEpisode={handleNavigateEpisode}
           onLogCase={handleLogCase}
           onViewAll={handleViewAllEpisodes}
@@ -863,7 +903,7 @@ export default function DashboardScreen() {
           </View>
         ) : null}
 
-        {pendingFollowUps.length > 0 && showFollowUps ? (
+        {visiblePendingFollowUps.length > 0 && showFollowUps ? (
           <View style={styles.followUpSection}>
             <Pressable
               onPress={() => setShowFollowUps(false)}
@@ -874,7 +914,7 @@ export default function DashboardScreen() {
                 <ThemedText
                   style={[styles.followUpTitle, { color: theme.warning }]}
                 >
-                  Follow-ups Due ({pendingFollowUps.length})
+                  Follow-ups Due ({visiblePendingFollowUps.length})
                 </ThemedText>
               </View>
               <Feather
@@ -884,7 +924,7 @@ export default function DashboardScreen() {
               />
             </Pressable>
 
-            {pendingFollowUps.slice(0, 3).map((caseItem) => (
+            {visiblePendingFollowUps.slice(0, 3).map((caseItem) => (
               <View
                 key={caseItem.id}
                 style={[
@@ -955,15 +995,15 @@ export default function DashboardScreen() {
               </View>
             ))}
 
-            {pendingFollowUps.length > 3 ? (
+            {visiblePendingFollowUps.length > 3 ? (
               <ThemedText
                 style={[styles.moreFollowUps, { color: theme.textSecondary }]}
               >
-                +{pendingFollowUps.length - 3} more cases pending review
+                +{visiblePendingFollowUps.length - 3} more cases pending review
               </ThemedText>
             ) : null}
           </View>
-        ) : pendingFollowUps.length > 0 ? (
+        ) : visiblePendingFollowUps.length > 0 ? (
           <Pressable
             onPress={() => setShowFollowUps(true)}
             style={[
@@ -975,8 +1015,8 @@ export default function DashboardScreen() {
             <ThemedText
               style={[styles.collapsedFollowUpText, { color: theme.warning }]}
             >
-              {pendingFollowUps.length} follow-up
-              {pendingFollowUps.length !== 1 ? "s" : ""} due
+              {visiblePendingFollowUps.length} follow-up
+              {visiblePendingFollowUps.length !== 1 ? "s" : ""} due
             </ThemedText>
             <Feather name="chevron-down" size={18} color={theme.warning} />
           </Pressable>
@@ -1581,7 +1621,6 @@ export default function DashboardScreen() {
     [
       theme,
       filters,
-      facilities,
       statistics,
       infectionStats,
       topPairs,
@@ -1589,14 +1628,19 @@ export default function DashboardScreen() {
       suggestionStats,
       activeCases,
       currentInpatients,
-      pendingFollowUps,
+      visiblePendingFollowUps,
       filteredCases,
       showActiveCases,
       showInpatients,
       showFollowUps,
-      activeEpisodes,
-      loading,
+      specialtyFilters,
+      visibleEpisodes,
       navigation,
+      handleAddComplication,
+      handleCasePress,
+      handleLogCase,
+      handleNavigateEpisode,
+      handleViewAllEpisodes,
     ],
   );
 

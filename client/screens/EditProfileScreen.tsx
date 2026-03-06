@@ -19,9 +19,17 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import { ThemedText } from "@/components/ThemedText";
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 import { useTheme } from "@/hooks/useTheme";
-import { Spacing, BorderRadius, Shadows, Typography } from "@/constants/theme";
+import { Spacing, BorderRadius, Shadows } from "@/constants/theme";
 import { useAuth } from "@/contexts/AuthContext";
 import { getApiUrl } from "@/lib/query-client";
+import {
+  PROFESSIONAL_REGISTRATION_OPTIONS,
+  getLegacyMedicalCouncilNumber,
+  getProfessionalRegistrations,
+  type ProfessionalRegistrationJurisdiction,
+  type ProfessionalRegistrations,
+  normalizeProfessionalRegistrations,
+} from "@shared/professionalRegistrations";
 
 const SEX_OPTIONS = [
   { value: "male", label: "Male" },
@@ -67,11 +75,42 @@ export default function EditProfileScreen() {
     profile?.countryOfPractice || "",
   );
   const [careerStage, setCareerStage] = useState(profile?.careerStage || "");
-  const [medicalCouncilNumber, setMedicalCouncilNumber] = useState(
-    profile?.medicalCouncilNumber || "",
-  );
+  const [professionalRegistrations, setProfessionalRegistrations] =
+    useState<ProfessionalRegistrations>(
+      () =>
+        getProfessionalRegistrations(
+          profile?.professionalRegistrations,
+          profile?.medicalCouncilNumber,
+          profile?.countryOfPractice,
+        ) ?? {},
+    );
+
+  const handleRegistrationChange = (
+    jurisdiction: ProfessionalRegistrationJurisdiction,
+    value: string,
+  ) => {
+    setProfessionalRegistrations((prev) => ({
+      ...prev,
+      [jurisdiction]: value,
+    }));
+  };
+
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingPicture, setIsUploadingPicture] = useState(false);
+
+  useEffect(() => {
+    setProfessionalRegistrations(
+      getProfessionalRegistrations(
+        profile?.professionalRegistrations,
+        profile?.medicalCouncilNumber,
+        profile?.countryOfPractice,
+      ) ?? {},
+    );
+  }, [
+    profile?.countryOfPractice,
+    profile?.medicalCouncilNumber,
+    profile?.professionalRegistrations,
+  ]);
 
   // Derive legacy fullName from first + last for backward compat
   const derivedFullName =
@@ -147,6 +186,9 @@ export default function EditProfileScreen() {
 
     setIsSaving(true);
     try {
+      const normalizedProfessionalRegistrations =
+        normalizeProfessionalRegistrations(professionalRegistrations);
+
       await updateProfile({
         firstName: firstName.trim(),
         lastName: lastName.trim(),
@@ -157,7 +199,11 @@ export default function EditProfileScreen() {
         sex,
         countryOfPractice: countryOfPractice || null,
         careerStage: careerStage || null,
-        medicalCouncilNumber: medicalCouncilNumber.trim() || null,
+        professionalRegistrations: normalizedProfessionalRegistrations ?? {},
+        medicalCouncilNumber: getLegacyMedicalCouncilNumber(
+          normalizedProfessionalRegistrations,
+          countryOfPractice || null,
+        ),
       });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       navigation.goBack();
@@ -516,29 +562,57 @@ export default function EditProfileScreen() {
 
           <View style={[styles.divider, { backgroundColor: theme.border }]} />
 
-          {/* Medical Council Number */}
+          {/* Professional registrations */}
           <View style={styles.fieldRow}>
             <ThemedText
               style={[styles.fieldLabel, { color: theme.textSecondary }]}
             >
-              Registration Number
+              Professional Registrations
             </ThemedText>
-            <TextInput
-              style={[
-                styles.fieldInput,
-                {
-                  color: theme.text,
-                  backgroundColor: theme.backgroundSecondary,
-                  borderColor: theme.border,
-                },
-              ]}
-              value={medicalCouncilNumber}
-              onChangeText={setMedicalCouncilNumber}
-              placeholder="e.g. MCNZ 12345"
-              placeholderTextColor={theme.textTertiary}
-              testID="input-registration"
-            />
+            <ThemedText
+              style={[styles.fieldHelper, { color: theme.textSecondary }]}
+            >
+              Add every active registration you hold. Leave unused jurisdictions
+              blank.
+            </ThemedText>
           </View>
+          <View style={[styles.divider, { backgroundColor: theme.border }]} />
+
+          {PROFESSIONAL_REGISTRATION_OPTIONS.map((option, index) => (
+            <React.Fragment key={option.id}>
+              <View style={styles.fieldRow}>
+                <ThemedText
+                  style={[styles.fieldLabel, { color: theme.textSecondary }]}
+                >
+                  {option.authority === "Other"
+                    ? option.label
+                    : `${option.label} (${option.authority})`}
+                </ThemedText>
+                <TextInput
+                  style={[
+                    styles.fieldInput,
+                    {
+                      color: theme.text,
+                      backgroundColor: theme.backgroundSecondary,
+                      borderColor: theme.border,
+                    },
+                  ]}
+                  value={professionalRegistrations[option.id] ?? ""}
+                  onChangeText={(value) =>
+                    handleRegistrationChange(option.id, value)
+                  }
+                  placeholder={option.placeholder}
+                  placeholderTextColor={theme.textTertiary}
+                  testID={`input-registration-${option.id}`}
+                />
+              </View>
+              {index < PROFESSIONAL_REGISTRATION_OPTIONS.length - 1 ? (
+                <View
+                  style={[styles.divider, { backgroundColor: theme.border }]}
+                />
+              ) : null}
+            </React.Fragment>
+          ))}
         </View>
       </View>
 
@@ -637,6 +711,10 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     letterSpacing: 0.5,
     marginBottom: Spacing.sm,
+  },
+  fieldHelper: {
+    fontSize: 13,
+    lineHeight: 18,
   },
   fieldInput: {
     height: Spacing.inputHeight,

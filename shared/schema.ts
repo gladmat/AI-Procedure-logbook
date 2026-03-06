@@ -14,6 +14,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+import type { ProfessionalRegistrations } from "./professionalRegistrations";
 
 export const users = pgTable("users", {
   id: varchar("id")
@@ -144,6 +145,9 @@ export const profiles = pgTable("profiles", {
   profilePictureUrl: text("profile_picture_url"),
   countryOfPractice: varchar("country_of_practice", { length: 50 }),
   medicalCouncilNumber: varchar("medical_council_number", { length: 50 }),
+  professionalRegistrations: jsonb("professional_registrations")
+    .$type<ProfessionalRegistrations>()
+    .default(sql`'{}'::jsonb`),
   verificationStatus: varchar("verification_status", { length: 20 })
     .default("unverified")
     .notNull(),

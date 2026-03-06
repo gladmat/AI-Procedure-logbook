@@ -11,7 +11,6 @@ import {
   ActivityIndicator,
   Image,
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "@/navigation/RootStackNavigator";
@@ -26,23 +25,20 @@ import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollV
 import { FacilitySelector } from "@/components/FacilitySelector";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, Shadows } from "@/constants/theme";
-import {
-  clearAllData,
-  getCases,
-  getSettings,
-  AppSettings,
-} from "@/lib/storage";
+import { clearAllData, getCases } from "@/lib/storage";
 import { exportCases, ExportFormat, EXPORT_FORMAT_LABELS } from "@/lib/export";
 import { validateMigrationCorpus } from "@/lib/migrationValidator";
 import { getCodingSystemForProfile } from "@/lib/snomedCt";
+import { getAuthToken } from "@/lib/auth";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAppLock } from "@/contexts/AppLockContext";
 import {
-  MasterFacility,
-  getFacilityById,
-  SUPPORTED_COUNTRIES,
-} from "@/data/facilities";
+  getStoredSelectedSpecialties,
+  getVisibleSpecialties,
+} from "@/lib/personalization";
+import { MasterFacility } from "@/data/facilities";
 import { getApiUrl } from "@/lib/query-client";
+import { getProfessionalRegistrationEntries } from "@shared/professionalRegistrations";
 
 const APP_VERSION = Constants.expoConfig?.version || "1.0.0";
 const BUILD_NUMBER =
@@ -151,7 +147,6 @@ const COUNTRY_OF_PRACTICE_LABELS: Record<string, string> = {
 
 export default function SettingsScreen() {
   const { theme, preference, setColorScheme } = useTheme();
-  const insets = useSafeAreaInsets();
   const headerHeight = useHeaderHeight();
   const tabBarHeight = useBottomTabBarHeight();
   const navigation =
@@ -168,7 +163,6 @@ export default function SettingsScreen() {
   } = useAuth();
 
   const [caseCount, setCaseCount] = useState<number | null>(null);
-  const [settings, setSettings] = useState<AppSettings | null>(null);
   const [showFacilitiesModal, setShowFacilitiesModal] = useState(false);
   const [showFacilitySelector, setShowFacilitySelector] = useState(false);
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
@@ -195,10 +189,33 @@ export default function SettingsScreen() {
   const selectedFacilityIds = useMemo(() => {
     return facilities.map((f) => f.facilityId).filter(Boolean) as string[];
   }, [facilities]);
+  const storedSelectedSpecialties = useMemo(
+    () => getStoredSelectedSpecialties(profile),
+    [profile],
+  );
+  const visibleSpecialties = useMemo(
+    () => getVisibleSpecialties(profile),
+    [profile],
+  );
+  const personalisationSubtitle = storedSelectedSpecialties
+    ? `${visibleSpecialties.length} ${visibleSpecialties.length === 1 ? "category" : "categories"} shown in Dashboard and Add Case`
+    : "All categories shown in Dashboard and Add Case";
+  const professionalRegistrationEntries = useMemo(
+    () =>
+      getProfessionalRegistrationEntries(
+        profile?.professionalRegistrations,
+        profile?.medicalCouncilNumber,
+        profile?.countryOfPractice,
+      ),
+    [
+      profile?.countryOfPractice,
+      profile?.medicalCouncilNumber,
+      profile?.professionalRegistrations,
+    ],
+  );
 
   useEffect(() => {
     getCases().then((cases) => setCaseCount(cases.length));
-    getSettings().then(setSettings);
   }, []);
 
   const handleExport = () => {
@@ -242,7 +259,6 @@ export default function SettingsScreen() {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             Alert.alert("Data Cleared", "All data has been deleted");
             setCaseCount(0);
-            getSettings().then(setSettings);
           },
         },
       ],
@@ -367,7 +383,7 @@ export default function SettingsScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     try {
       await Linking.openURL(url);
-    } catch (error) {
+    } catch {
       Alert.alert("Error", "Could not open the link");
     }
   };
@@ -464,12 +480,6 @@ export default function SettingsScreen() {
     } finally {
       setIsChangingPassword(false);
     }
-  };
-
-  const getAuthToken = async (): Promise<string> => {
-    const AsyncStorage =
-      require("@react-native-async-storage/async-storage").default;
-    return (await AsyncStorage.getItem("authToken")) || "";
   };
 
   return (
@@ -589,8 +599,9 @@ export default function SettingsScreen() {
                 </ThemedText>
               </View>
             </View>
-            {profile?.medicalCouncilNumber ? (
+            {professionalRegistrationEntries.map((entry) => (
               <View
+                key={entry.jurisdiction}
                 style={[
                   styles.profileDetailsRow,
                   { borderTopColor: theme.border },
@@ -603,14 +614,16 @@ export default function SettingsScreen() {
                       { color: theme.textSecondary },
                     ]}
                   >
-                    Registration
+                    {entry.authority === "Other"
+                      ? entry.label
+                      : `${entry.authority} (${entry.label})`}
                   </ThemedText>
                   <ThemedText style={styles.profileDetailValue}>
-                    {profile.medicalCouncilNumber}
+                    {entry.number}
                   </ThemedText>
                 </View>
               </View>
-            ) : null}
+            ))}
           </View>
         </View>
 
@@ -748,6 +761,13 @@ export default function SettingsScreen() {
               { backgroundColor: theme.backgroundDefault },
             ]}
           >
+            <SettingsItem
+              icon="grid"
+              label="Personalisation"
+              subtitle={personalisationSubtitle}
+              onPress={() => navigation.navigate("Personalisation")}
+            />
+            <View style={[styles.divider, { backgroundColor: theme.border }]} />
             <SettingsItem
               icon="sliders"
               label="Surgical Preferences"

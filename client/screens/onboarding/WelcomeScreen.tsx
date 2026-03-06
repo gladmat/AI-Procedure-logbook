@@ -22,12 +22,13 @@ import { copy } from "@/constants/onboardingCopy";
 
 interface Props {
   onComplete: () => void;
+  onSignIn: () => void;
 }
 
 const dark = Colors.dark;
 const easeOut = Easing.out(Easing.ease);
 
-export function WelcomeScreen({ onComplete }: Props) {
+export function WelcomeScreen({ onComplete, onSignIn }: Props) {
   const insets = useSafeAreaInsets();
   const [reduceMotion, setReduceMotion] = React.useState(false);
 
@@ -118,7 +119,19 @@ export function WelcomeScreen({ onComplete }: Props) {
       2200,
       withTiming(1, { duration: 300, easing: easeOut }),
     );
-  }, [reduceMotion]);
+  }, [
+    ctaOpacity,
+    ctaY,
+    glowOpacity,
+    reduceMotion,
+    signInOpacity,
+    subtitleOpacity,
+    subtitleY,
+    taglineOpacity,
+    taglineY,
+    wordmarkOpacity,
+    wordmarkY,
+  ]);
 
   // ── Animated styles ──────────────────────────────────────────────────────────
 
@@ -197,13 +210,11 @@ export function WelcomeScreen({ onComplete }: Props) {
         <Animated.View style={signInStyle}>
           <Pressable
             style={styles.secondaryBtn}
-            onPress={onComplete}
+            onPress={onSignIn}
             accessibilityLabel="Already have an account? Sign in"
             accessibilityRole="link"
           >
-            <Text style={styles.secondaryBtnText}>
-              {copy.welcome.signIn}
-            </Text>
+            <Text style={styles.secondaryBtnText}>{copy.welcome.signIn}</Text>
           </Pressable>
         </Animated.View>
       </View>

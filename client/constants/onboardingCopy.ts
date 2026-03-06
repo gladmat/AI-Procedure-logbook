@@ -29,19 +29,26 @@ export const copy = {
   auth: {
     headline: "Create your account",
     subhead: "Your data is encrypted and never shared.",
-    dividerLabel: "or",
     emailCta: "Continue with email",
+    signInCta: "I already have an account",
     legal:
       "By continuing you agree to our Terms of Service and Privacy Policy.",
     termsLabel: "Terms of Service",
     privacyLabel: "Privacy Policy",
   },
   emailSignup: {
+    signupHeadline: "Create your account",
+    signinHeadline: "Sign in to Opus",
+    subhead: "Your data stays private and encrypted.",
     emailPlaceholder: "Email address",
     passwordPlaceholder: "Password",
     cta: "Create Account",
     alreadyRegistered: "This email is already registered.",
     signInInstead: "Sign in instead?",
+    noAccountYet: "Need an account?",
+    createAccountInstead: "Create one instead",
+    haveAccountAlready: "Already have an account?",
+    signInNow: "Sign in instead",
     networkError: "Unable to connect. Please check your connection.",
   },
   categories: {
@@ -50,7 +57,7 @@ export const copy = {
     subhead:
       "We\u2019ll surface the right procedures first. You can change this any time.",
     cta: "Continue",
-    skip: "Skip for now",
+    skip: "Use all categories for now",
   },
   training: {
     step: "2 of 4",

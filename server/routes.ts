@@ -24,7 +24,13 @@ import {
   insertAnastomosisSchema,
   insertUserFacilitySchema,
   insertProcedureOutcomeSchema,
+  type Profile,
 } from "@shared/schema";
+import {
+  getLegacyMedicalCouncilNumber,
+  getProfessionalRegistrations,
+  professionalRegistrationsSchema,
+} from "@shared/professionalRegistrations";
 import { env } from "./env";
 import { z } from "zod";
 
@@ -74,6 +80,7 @@ const profileUpdateSchema = insertProfileSchema
     sex: true,
     countryOfPractice: true,
     medicalCouncilNumber: true,
+    professionalRegistrations: true,
     careerStage: true,
     onboardingComplete: true,
     surgicalPreferences: true,
@@ -177,6 +184,35 @@ function parseJsonObject(
   return { ok: false };
 }
 
+function serializeProfile(profile: Profile | undefined | null) {
+  if (!profile) {
+    return null;
+  }
+
+  const parsedPrefs = parseJsonObject(profile.surgicalPreferences);
+  const parsedProfessionalRegistrations = parseJsonObject(
+    profile.professionalRegistrations,
+  );
+  const professionalRegistrationsResult =
+    professionalRegistrationsSchema.safeParse(
+      parsedProfessionalRegistrations.ok
+        ? (parsedProfessionalRegistrations.value ?? {})
+        : {},
+    );
+
+  return {
+    ...profile,
+    surgicalPreferences: parsedPrefs.ok ? parsedPrefs.value : undefined,
+    professionalRegistrations: getProfessionalRegistrations(
+      professionalRegistrationsResult.success
+        ? professionalRegistrationsResult.data
+        : undefined,
+      profile.medicalCouncilNumber,
+      profile.countryOfPractice,
+    ),
+  };
+}
+
 const authRateLimiter = new Map<string, { count: number; resetTime: number }>();
 const AUTH_RATE_LIMIT = 10;
 const AUTH_RATE_WINDOW_MS = 60 * 1000;
@@ -250,7 +286,7 @@ const authenticateToken = async (
     }
     req.userId = decoded.userId;
     next();
-  } catch (error) {
+  } catch {
     res.status(403).json({ error: "Invalid or expired token" });
   }
 };
@@ -369,7 +405,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.json({
           token,
           user: { id: user.id, email: user.email },
-          profile,
+          profile: serializeProfile(profile),
           facilities,
           onboardingComplete: profile?.onboardingComplete ?? false,
         });
@@ -399,7 +435,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         res.json({
           user: { id: user.id, email: user.email },
-          profile,
+          profile: serializeProfile(profile),
           facilities,
           onboardingComplete: profile?.onboardingComplete ?? false,
         });
@@ -661,16 +697,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     async (req: AuthenticatedRequest, res: Response) => {
       try {
         const profile = await storage.getProfile(req.userId!);
-        if (profile) {
-          const parsedPrefs = parseJsonObject(profile.surgicalPreferences);
-          const responseProfile = {
-            ...profile,
-            surgicalPreferences: parsedPrefs.ok ? parsedPrefs.value : undefined,
-          };
-          res.json(responseProfile);
-        } else {
-          res.json(null);
-        }
+        res.json(serializeProfile(profile));
       } catch (error) {
         console.error(
           "Profile fetch error:",
@@ -699,6 +726,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
           body.surgicalPreferences = parsedPrefs.value ?? {};
         }
 
+        if ("professionalRegistrations" in body) {
+          const parsedProfessionalRegistrations = parseJsonObject(
+            body.professionalRegistrations,
+          );
+          if (!parsedProfessionalRegistrations.ok) {
+            res.status(400).json({
+              error: "Invalid profile data",
+              details: {
+                professionalRegistrations: ["Must be a JSON object"],
+              },
+            });
+            return;
+          }
+
+          const registrationsResult = professionalRegistrationsSchema.safeParse(
+            parsedProfessionalRegistrations.value ?? {},
+          );
+          if (!registrationsResult.success) {
+            res.status(400).json({
+              error: "Invalid profile data",
+              details: registrationsResult.error.flatten(),
+            });
+            return;
+          }
+
+          body.professionalRegistrations = registrationsResult.data;
+        }
+
         const parseResult = profileUpdateSchema.safeParse(body);
         if (!parseResult.success) {
           res.status(400).json({
@@ -708,17 +763,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return;
         }
 
-        const profile = await storage.updateProfile(
-          req.userId!,
-          parseResult.data,
-        );
+        const existingProfile = await storage.getProfile(req.userId!);
+        const profileData = { ...parseResult.data };
+        if ("professionalRegistrations" in profileData) {
+          profileData.medicalCouncilNumber = getLegacyMedicalCouncilNumber(
+            profileData.professionalRegistrations,
+            profileData.countryOfPractice ??
+              existingProfile?.countryOfPractice ??
+              null,
+          );
+        }
 
-        const parsedPrefs = parseJsonObject(profile?.surgicalPreferences);
-        const responseProfile = {
-          ...profile,
-          surgicalPreferences: parsedPrefs.ok ? parsedPrefs.value : undefined,
-        };
-        res.json(responseProfile);
+        const profile = await storage.updateProfile(req.userId!, profileData);
+        res.json(serializeProfile(profile));
       } catch (error) {
         console.error(
           "Profile update error:",
@@ -768,7 +825,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const profile = await storage.updateProfile(req.userId!, {
             profilePictureUrl: pictureUrl,
           });
-          res.json(profile);
+          res.json(serializeProfile(profile));
         } catch (error) {
           console.error(
             "Profile picture upload error:",
@@ -798,7 +855,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const profile = await storage.updateProfile(req.userId!, {
           profilePictureUrl: null,
         });
-        res.json(profile);
+        res.json(serializeProfile(profile));
       } catch (error) {
         console.error(
           "Profile picture delete error:",
@@ -1524,7 +1581,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           ...o,
           details: (() => {
             const parsedDetails = parseJsonObject(o.details);
-            return parsedDetails.ok ? parsedDetails.value ?? {} : {};
+            return parsedDetails.ok ? (parsedDetails.value ?? {}) : {};
           })(),
         }));
         res.json(parsed);
@@ -1580,7 +1637,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const parsedDetails = parseJsonObject(outcome.details);
         res.status(201).json({
           ...outcome,
-          details: parsedDetails.ok ? parsedDetails.value ?? {} : {},
+          details: parsedDetails.ok ? (parsedDetails.value ?? {}) : {},
         });
       } catch (error) {
         console.error(
@@ -1643,7 +1700,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const parsedDetails = parseJsonObject(outcome.details);
         res.json({
           ...outcome,
-          details: parsedDetails.ok ? parsedDetails.value ?? {} : {},
+          details: parsedDetails.ok ? (parsedDetails.value ?? {}) : {},
         });
       } catch (error) {
         console.error(
