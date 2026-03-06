@@ -66,6 +66,34 @@ if (
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
+function parseIsoDate(date: string | null | undefined): Date | null {
+  if (!date) {
+    return null;
+  }
+
+  const [yearRaw, monthRaw, dayRaw] = date.split("-");
+  const year = Number(yearRaw);
+  const month = Number(monthRaw);
+  const day = Number(dayRaw);
+
+  if (
+    !Number.isFinite(year) ||
+    !Number.isFinite(month) ||
+    !Number.isFinite(day)
+  ) {
+    return null;
+  }
+
+  return new Date(year, month - 1, day);
+}
+
+function toIsoDate(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 function getFilledRegistrationJurisdictions(
   registrations: ProfessionalRegistrations | undefined,
 ) {
@@ -85,7 +113,7 @@ export default function EditProfileScreen() {
   const [firstName, setFirstName] = useState(profile?.firstName || "");
   const [lastName, setLastName] = useState(profile?.lastName || "");
   const [dateOfBirth, setDateOfBirth] = useState<Date | null>(
-    profile?.dateOfBirth ? new Date(profile.dateOfBirth) : null,
+    parseIsoDate(profile?.dateOfBirth),
   );
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [sex, setSex] = useState<string | null>(profile?.sex || null);
@@ -149,7 +177,7 @@ export default function EditProfileScreen() {
 
     setFirstName(profile.firstName || "");
     setLastName(profile.lastName || "");
-    setDateOfBirth(profile.dateOfBirth ? new Date(profile.dateOfBirth) : null);
+    setDateOfBirth(parseIsoDate(profile.dateOfBirth));
     setSex(profile.sex || null);
     setCountryOfPractice(profile.countryOfPractice || "");
     setCareerStage(profile.careerStage || "");
@@ -301,9 +329,7 @@ export default function EditProfileScreen() {
         firstName: firstName.trim(),
         lastName: lastName.trim(),
         fullName: derivedFullName,
-        dateOfBirth: dateOfBirth
-          ? dateOfBirth.toISOString().split("T")[0]
-          : null,
+        dateOfBirth: dateOfBirth ? toIsoDate(dateOfBirth) : null,
         sex,
         countryOfPractice: countryOfPractice || null,
         careerStage: careerStage || null,

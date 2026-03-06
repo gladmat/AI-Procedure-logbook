@@ -7,6 +7,7 @@ import React, {
   useCallback,
 } from "react";
 import { Platform } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   AuthUser,
   UserProfile,
@@ -55,6 +56,48 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const PROFILE_CACHE_KEY = "@auth_profile_cache_v1";
+
+function mergeDefinedFields<T>(base: T, patch: Partial<T>): T {
+  const next = { ...base };
+  for (const [key, value] of Object.entries(patch)) {
+    if (value !== undefined) {
+      (next as Record<string, unknown>)[key] = value;
+    }
+  }
+  return next;
+}
+
+async function cacheProfile(profile: UserProfile | null): Promise<void> {
+  if (profile) {
+    await AsyncStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(profile));
+  } else {
+    await AsyncStorage.removeItem(PROFILE_CACHE_KEY);
+  }
+}
+
+async function loadCachedProfile(): Promise<UserProfile | null> {
+  try {
+    const raw = await AsyncStorage.getItem(PROFILE_CACHE_KEY);
+    if (!raw) {
+      return null;
+    }
+
+    const parsed = JSON.parse(raw);
+    if (
+      parsed &&
+      typeof parsed === "object" &&
+      typeof parsed.id === "string" &&
+      typeof parsed.userId === "string"
+    ) {
+      return parsed as UserProfile;
+    }
+  } catch {
+    // Ignore cache parse errors and continue with server state.
+  }
+
+  return null;
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -67,7 +110,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const data = await getCurrentUser();
       if (data) {
         setUser(data.user);
-        setProfile(data.profile || null);
+        if (data.profile) {
+          setProfile(data.profile);
+          void cacheProfile(data.profile);
+        } else {
+          setProfile((prev) => (prev?.userId === data.user.id ? prev : null));
+        }
         setFacilities((data.facilities || []).map(normalizeUserFacility));
 
         try {
@@ -84,6 +132,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(null);
           setProfile(null);
           setFacilities([]);
+          void cacheProfile(null);
         }
         // If token still exists, user is offline — keep cached state
       }
@@ -94,6 +143,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const init = async () => {
+      const cachedProfile = await loadCachedProfile();
+      if (cachedProfile) {
+        setProfile(cachedProfile);
+      }
       await refreshUser();
       setIsLoading(false);
     };
@@ -103,7 +156,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string) => {
     const data = await authLogin(email, password);
     setUser(data.user);
-    setProfile(data.profile || null);
+    if (data.profile) {
+      setProfile(data.profile);
+      void cacheProfile(data.profile);
+    } else {
+      const cachedProfile = await loadCachedProfile();
+      if (cachedProfile?.userId === data.user.id) {
+        setProfile(cachedProfile);
+      } else {
+        setProfile(null);
+        void cacheProfile(null);
+      }
+    }
     setFacilities((data.facilities || []).map(normalizeUserFacility));
 
     try {
@@ -117,7 +181,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signup = async (email: string, password: string) => {
     const data = await authSignup(email, password);
     setUser(data.user);
-    setProfile(data.profile || null);
+    if (data.profile) {
+      setProfile(data.profile);
+      void cacheProfile(data.profile);
+    } else {
+      setProfile(null);
+      void cacheProfile(null);
+    }
     setFacilities([]);
 
     try {
@@ -134,6 +204,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     setProfile(null);
     setFacilities([]);
+    await cacheProfile(null);
   };
 
   const deleteAccount = async (password: string) => {
@@ -143,21 +214,77 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     setProfile(null);
     setFacilities([]);
+    await cacheProfile(null);
   };
 
   const updateProfile = async (profileData: Partial<UserProfile>) => {
     const updated = await authUpdateProfile(profileData);
-    setProfile(updated);
+    setProfile((prev) => {
+      let nextProfile: UserProfile | null = null;
+
+      if (updated?.id && updated?.userId) {
+        nextProfile = prev
+          ? mergeDefinedFields(prev, updated)
+          : (updated as UserProfile);
+      } else if (prev) {
+        nextProfile = mergeDefinedFields(prev, profileData);
+      } else if (user?.id) {
+        nextProfile = mergeDefinedFields(
+          {
+            id: `local-${user.id}`,
+            userId: user.id,
+            fullName: null,
+            firstName: null,
+            lastName: null,
+            dateOfBirth: null,
+            sex: null,
+            profilePictureUrl: null,
+            countryOfPractice: null,
+            medicalCouncilNumber: null,
+            verificationStatus: "unverified",
+            careerStage: null,
+            onboardingComplete: false,
+          },
+          profileData,
+        );
+      }
+
+      if (nextProfile) {
+        void cacheProfile(nextProfile);
+      }
+
+      return nextProfile ?? prev;
+    });
   };
 
   const uploadProfilePicture = async (imageUri: string) => {
     const updated = await authUploadProfilePicture(imageUri);
-    setProfile(updated);
+    setProfile((prev) => {
+      const nextProfile = prev
+        ? mergeDefinedFields(prev, updated)
+        : (updated as UserProfile);
+
+      if (nextProfile?.id && nextProfile?.userId) {
+        void cacheProfile(nextProfile);
+      }
+
+      return nextProfile;
+    });
   };
 
   const deleteProfilePicture = async () => {
     const updated = await authDeleteProfilePicture();
-    setProfile(updated);
+    setProfile((prev) => {
+      const nextProfile = prev
+        ? mergeDefinedFields(prev, updated)
+        : (updated as UserProfile);
+
+      if (nextProfile?.id && nextProfile?.userId) {
+        void cacheProfile(nextProfile);
+      }
+
+      return nextProfile;
+    });
   };
 
   const addFacility = async (
