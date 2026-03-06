@@ -49,6 +49,7 @@ import { useTheme } from "@/hooks/useTheme";
 const WELCOME_SEEN_KEY = "@opus_has_seen_welcome";
 const FEATURES_SEEN_KEY = "@opus_has_seen_features";
 type OnboardingStep = "categories" | "training" | "hospital" | "privacy";
+type ReplayIntroStep = "welcome" | "features";
 type OnboardingDraft = {
   selectedCategories: Specialty[];
   trainingSelectionId: string | null;
@@ -205,6 +206,8 @@ export default function RootStackNavigator() {
   const [emailAuthMode, setEmailAuthMode] = useState<"signup" | "signin">(
     "signup",
   );
+  const [replayIntroStep, setReplayIntroStep] =
+    useState<ReplayIntroStep | null>(null);
   const [currentOnboardingStep, setCurrentOnboardingStep] =
     useState<OnboardingStep | null>(null);
   const [onboardingDraft, setOnboardingDraft] = useState<OnboardingDraft>(
@@ -222,11 +225,21 @@ export default function RootStackNavigator() {
   }, []);
 
   const handleWelcomeComplete = useCallback(async () => {
+    if (replayIntroStep === "welcome") {
+      setReplayIntroStep("features");
+      return;
+    }
+
     await AsyncStorage.setItem(WELCOME_SEEN_KEY, "true");
     setHasSeenWelcome(true);
-  }, []);
+  }, [replayIntroStep]);
 
   const handleWelcomeSignIn = useCallback(async () => {
+    if (replayIntroStep === "welcome") {
+      setReplayIntroStep("features");
+      return;
+    }
+
     await Promise.all([
       AsyncStorage.setItem(WELCOME_SEEN_KEY, "true"),
       AsyncStorage.setItem(FEATURES_SEEN_KEY, "true"),
@@ -235,12 +248,17 @@ export default function RootStackNavigator() {
     setHasSeenFeatures(true);
     setEmailAuthMode("signin");
     setShowEmailAuth(true);
-  }, []);
+  }, [replayIntroStep]);
 
   const handleFeaturesComplete = useCallback(async () => {
+    if (replayIntroStep === "features") {
+      setReplayIntroStep(null);
+      return;
+    }
+
     await AsyncStorage.setItem(FEATURES_SEEN_KEY, "true");
     setHasSeenFeatures(true);
-  }, []);
+  }, [replayIntroStep]);
 
   const handleCategoriesComplete = useCallback(
     async (selectedCategories: Specialty[]) => {
@@ -407,6 +425,7 @@ export default function RootStackNavigator() {
 
     if (!isAuthenticated || onboardingComplete || !user?.id) {
       initializedOnboardingUserIdRef.current = null;
+      setReplayIntroStep(null);
       setCurrentOnboardingStep(null);
       setOnboardingDraft(EMPTY_ONBOARDING_DRAFT);
       return;
@@ -419,16 +438,15 @@ export default function RootStackNavigator() {
     const initializeOnboarding = async () => {
       initializedOnboardingUserIdRef.current = user.id;
 
-      const shouldRestartFromCategories = await consumeOnboardingRestartRequest(
-        user.id,
-      );
+      const restartMode = await consumeOnboardingRestartRequest(user.id);
       if (isCancelled) {
         return;
       }
 
       setOnboardingDraft(buildOnboardingDraft(profile, facilities));
+      setReplayIntroStep(restartMode === "full" ? "welcome" : null);
       setCurrentOnboardingStep(
-        shouldRestartFromCategories
+        restartMode === "full" || restartMode === "resume"
           ? "categories"
           : getFirstIncompleteOnboardingStep(profile, facilities),
       );
@@ -465,7 +483,29 @@ export default function RootStackNavigator() {
 
   return (
     <Stack.Navigator screenOptions={screenOptions}>
-      {!hasSeenWelcome && !isAuthenticated ? (
+      {isAuthenticated && replayIntroStep === "welcome" ? (
+        <Stack.Screen
+          key="replay-welcome"
+          name="Welcome"
+          options={{ headerShown: false }}
+        >
+          {() => (
+            <WelcomeScreen
+              onComplete={handleWelcomeComplete}
+              onSignIn={handleWelcomeSignIn}
+              showSignIn={false}
+            />
+          )}
+        </Stack.Screen>
+      ) : isAuthenticated && replayIntroStep === "features" ? (
+        <Stack.Screen
+          key="replay-features"
+          name="Features"
+          options={{ headerShown: false }}
+        >
+          {() => <FeaturePager onComplete={handleFeaturesComplete} />}
+        </Stack.Screen>
+      ) : !hasSeenWelcome && !isAuthenticated ? (
         <Stack.Screen
           key="welcome"
           name="Welcome"

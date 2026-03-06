@@ -246,15 +246,15 @@ export default function SettingsScreen() {
     }
 
     Alert.alert(
-      "Run Onboarding Again",
-      "This will reopen the onboarding flow with your current answers prefilled so you can test it again.",
+      "Preview Onboarding From Start",
+      "This will replay the welcome and feature pages, then reopen the onboarding flow with your current answers prefilled so you can review the full experience.",
       [
         { text: "Cancel", style: "cancel" },
         {
-          text: "Run Again",
+          text: "Preview",
           onPress: async () => {
             try {
-              await requestOnboardingRestart(user.id);
+              await requestOnboardingRestart(user.id, "full");
               await updateProfile({ onboardingComplete: false });
               Haptics.notificationAsync(
                 Haptics.NotificationFeedbackType.Success,
@@ -750,8 +750,8 @@ export default function SettingsScreen() {
             <View style={[styles.divider, { backgroundColor: theme.border }]} />
             <SettingsItem
               icon="refresh-cw"
-              label="Run Onboarding Again"
-              subtitle="Reopen categories, training, hospitals, and privacy flow"
+              label="Preview Onboarding From Start"
+              subtitle="Replay welcome, feature slides, and onboarding steps"
               onPress={handleRestartOnboarding}
             />
           </View>

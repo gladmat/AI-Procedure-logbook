@@ -23,12 +23,17 @@ import { copy } from "@/constants/onboardingCopy";
 interface Props {
   onComplete: () => void;
   onSignIn: () => void;
+  showSignIn?: boolean;
 }
 
 const dark = Colors.dark;
 const easeOut = Easing.out(Easing.ease);
 
-export function WelcomeScreen({ onComplete, onSignIn }: Props) {
+export function WelcomeScreen({
+  onComplete,
+  onSignIn,
+  showSignIn = true,
+}: Props) {
   const insets = useSafeAreaInsets();
   const [reduceMotion, setReduceMotion] = React.useState(false);
 
@@ -207,16 +212,18 @@ export function WelcomeScreen({ onComplete, onSignIn }: Props) {
           </Pressable>
         </Animated.View>
 
-        <Animated.View style={signInStyle}>
-          <Pressable
-            style={styles.secondaryBtn}
-            onPress={onSignIn}
-            accessibilityLabel="Already have an account? Sign in"
-            accessibilityRole="link"
-          >
-            <Text style={styles.secondaryBtnText}>{copy.welcome.signIn}</Text>
-          </Pressable>
-        </Animated.View>
+        {showSignIn ? (
+          <Animated.View style={signInStyle}>
+            <Pressable
+              style={styles.secondaryBtn}
+              onPress={onSignIn}
+              accessibilityLabel="Already have an account? Sign in"
+              accessibilityRole="link"
+            >
+              <Text style={styles.secondaryBtnText}>{copy.welcome.signIn}</Text>
+            </Pressable>
+          </Animated.View>
+        ) : null}
       </View>
     </View>
   );
