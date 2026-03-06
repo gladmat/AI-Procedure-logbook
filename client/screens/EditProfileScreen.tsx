@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   View,
   StyleSheet,
@@ -8,6 +8,8 @@ import {
   ActivityIndicator,
   Image,
   Platform,
+  LayoutAnimation,
+  UIManager,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
@@ -26,6 +28,7 @@ import {
   PROFESSIONAL_REGISTRATION_OPTIONS,
   getLegacyMedicalCouncilNumber,
   getProfessionalRegistrations,
+  getRegistrationJurisdictionForCountry,
   type ProfessionalRegistrationJurisdiction,
   type ProfessionalRegistrations,
   normalizeProfessionalRegistrations,
@@ -56,6 +59,21 @@ const CAREER_STAGES = [
   { value: "moss", label: "Medical Officer Special Scale" },
 ];
 
+if (
+  Platform.OS === "android" &&
+  UIManager.setLayoutAnimationEnabledExperimental
+) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
+
+function getFilledRegistrationJurisdictions(
+  registrations: ProfessionalRegistrations | undefined,
+) {
+  return PROFESSIONAL_REGISTRATION_OPTIONS.flatMap((option) =>
+    registrations?.[option.id]?.trim() ? [option.id] : [],
+  );
+}
+
 export default function EditProfileScreen() {
   const { theme, isDark } = useTheme();
   const insets = useSafeAreaInsets();
@@ -84,11 +102,27 @@ export default function EditProfileScreen() {
           profile?.countryOfPractice,
         ) ?? {},
     );
+  const [activeRegistrationJurisdictions, setActiveRegistrationJurisdictions] =
+    useState<ProfessionalRegistrationJurisdiction[]>(() =>
+      getFilledRegistrationJurisdictions(
+        getProfessionalRegistrations(
+          profile?.professionalRegistrations,
+          profile?.medicalCouncilNumber,
+          profile?.countryOfPractice,
+        ),
+      ),
+    );
+  const [showRegistrations, setShowRegistrations] = useState(
+    activeRegistrationJurisdictions.length > 0,
+  );
+  const [showRegistrationPicker, setShowRegistrationPicker] = useState(false);
+  const [hasLocalEdits, setHasLocalEdits] = useState(false);
 
   const handleRegistrationChange = (
     jurisdiction: ProfessionalRegistrationJurisdiction,
     value: string,
   ) => {
+    setHasLocalEdits(true);
     setProfessionalRegistrations((prev) => ({
       ...prev,
       [jurisdiction]: value,
@@ -97,28 +131,41 @@ export default function EditProfileScreen() {
 
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingPicture, setIsUploadingPicture] = useState(false);
-  const hasInitialized = useRef(false);
 
-  useEffect(() => {
-    if (!profile || hasInitialized.current) {
+  const hydrateForm = useCallback(() => {
+    if (!profile) {
       return;
     }
 
-    hasInitialized.current = true;
+    const resolvedRegistrations =
+      getProfessionalRegistrations(
+        profile.professionalRegistrations,
+        profile.medicalCouncilNumber,
+        profile.countryOfPractice,
+      ) ?? {};
+    const filledRegistrationJurisdictions = getFilledRegistrationJurisdictions(
+      resolvedRegistrations,
+    );
+
     setFirstName(profile.firstName || "");
     setLastName(profile.lastName || "");
     setDateOfBirth(profile.dateOfBirth ? new Date(profile.dateOfBirth) : null);
     setSex(profile.sex || null);
     setCountryOfPractice(profile.countryOfPractice || "");
     setCareerStage(profile.careerStage || "");
-    setProfessionalRegistrations(
-      getProfessionalRegistrations(
-        profile?.professionalRegistrations,
-        profile?.medicalCouncilNumber,
-        profile?.countryOfPractice,
-      ) ?? {},
-    );
+    setProfessionalRegistrations(resolvedRegistrations);
+    setActiveRegistrationJurisdictions(filledRegistrationJurisdictions);
+    setShowRegistrations(filledRegistrationJurisdictions.length > 0);
+    setShowRegistrationPicker(false);
+    setHasLocalEdits(false);
   }, [profile]);
+
+  useEffect(() => {
+    if (hasLocalEdits) {
+      return;
+    }
+    hydrateForm();
+  }, [hasLocalEdits, hydrateForm]);
 
   // Derive legacy fullName from first + last for backward compat
   const derivedFullName =
@@ -127,6 +174,59 @@ export default function EditProfileScreen() {
   const avatarUrl = profile?.profilePictureUrl
     ? `${getApiUrl()}${profile.profilePictureUrl}`
     : null;
+  const suggestedRegistrationJurisdiction =
+    getRegistrationJurisdictionForCountry(countryOfPractice || null);
+  const availableRegistrationOptions = useMemo(
+    () =>
+      PROFESSIONAL_REGISTRATION_OPTIONS.filter(
+        (option) => !activeRegistrationJurisdictions.includes(option.id),
+      ),
+    [activeRegistrationJurisdictions],
+  );
+  const activeRegistrationOptions = useMemo(
+    () =>
+      PROFESSIONAL_REGISTRATION_OPTIONS.filter((option) =>
+        activeRegistrationJurisdictions.includes(option.id),
+      ),
+    [activeRegistrationJurisdictions],
+  );
+
+  const toggleRegistrations = () => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setShowRegistrations((prev) => !prev);
+    if (showRegistrationPicker) {
+      setShowRegistrationPicker(false);
+    }
+  };
+
+  const addRegistrationJurisdiction = useCallback(
+    (jurisdiction: ProfessionalRegistrationJurisdiction) => {
+      setHasLocalEdits(true);
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+      setActiveRegistrationJurisdictions((prev) =>
+        prev.includes(jurisdiction) ? prev : [...prev, jurisdiction],
+      );
+      setShowRegistrations(true);
+      setShowRegistrationPicker(false);
+    },
+    [],
+  );
+
+  const removeRegistrationJurisdiction = useCallback(
+    (jurisdiction: ProfessionalRegistrationJurisdiction) => {
+      setHasLocalEdits(true);
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+      setActiveRegistrationJurisdictions((prev) =>
+        prev.filter((value) => value !== jurisdiction),
+      );
+      setProfessionalRegistrations((prev) => {
+        const next = { ...prev };
+        delete next[jurisdiction];
+        return next;
+      });
+    },
+    [],
+  );
 
   const handlePickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -213,6 +313,7 @@ export default function EditProfileScreen() {
           countryOfPractice || null,
         ),
       });
+      setHasLocalEdits(false);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       navigation.goBack();
     } catch (error: any) {
@@ -227,6 +328,7 @@ export default function EditProfileScreen() {
       setShowDatePicker(false);
     }
     if (selectedDate) {
+      setHasLocalEdits(true);
       setDateOfBirth(selectedDate);
     }
   };
@@ -347,7 +449,10 @@ export default function EditProfileScreen() {
                 },
               ]}
               value={firstName}
-              onChangeText={setFirstName}
+              onChangeText={(value) => {
+                setHasLocalEdits(true);
+                setFirstName(value);
+              }}
               placeholder="First name"
               placeholderTextColor={theme.textTertiary}
               autoCapitalize="words"
@@ -371,7 +476,10 @@ export default function EditProfileScreen() {
                 },
               ]}
               value={lastName}
-              onChangeText={setLastName}
+              onChangeText={(value) => {
+                setHasLocalEdits(true);
+                setLastName(value);
+              }}
               placeholder="Last name"
               placeholderTextColor={theme.textTertiary}
               autoCapitalize="words"
@@ -417,6 +525,7 @@ export default function EditProfileScreen() {
                 <Pressable
                   style={styles.clearDateButton}
                   onPress={() => {
+                    setHasLocalEdits(true);
                     setDateOfBirth(null);
                     setShowDatePicker(false);
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -488,6 +597,7 @@ export default function EditProfileScreen() {
                       },
                     ]}
                     onPress={() => {
+                      setHasLocalEdits(true);
                       setSex(isSelected ? null : option.value);
                       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                     }}
@@ -547,6 +657,7 @@ export default function EditProfileScreen() {
                       },
                     ]}
                     onPress={() => {
+                      setHasLocalEdits(true);
                       setCountryOfPractice(country.value);
                       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                     }}
@@ -593,6 +704,7 @@ export default function EditProfileScreen() {
                       },
                     ]}
                     onPress={() => {
+                      setHasLocalEdits(true);
                       setCareerStage(stage.value);
                       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                     }}
@@ -615,56 +727,222 @@ export default function EditProfileScreen() {
           <View style={[styles.divider, { backgroundColor: theme.border }]} />
 
           {/* Professional registrations */}
-          <View style={styles.fieldRow}>
-            <ThemedText
-              style={[styles.fieldLabel, { color: theme.textSecondary }]}
-            >
-              Professional Registrations
-            </ThemedText>
-            <ThemedText
-              style={[styles.fieldHelper, { color: theme.textSecondary }]}
-            >
-              Add every active registration you hold. Leave unused jurisdictions
-              blank.
-            </ThemedText>
-          </View>
-          <View style={[styles.divider, { backgroundColor: theme.border }]} />
-
-          {PROFESSIONAL_REGISTRATION_OPTIONS.map((option, index) => (
-            <React.Fragment key={option.id}>
-              <View style={styles.fieldRow}>
+          <Pressable style={styles.fieldRow} onPress={toggleRegistrations}>
+            <View style={styles.registrationHeader}>
+              <View style={styles.registrationHeaderCopy}>
                 <ThemedText
                   style={[styles.fieldLabel, { color: theme.textSecondary }]}
                 >
-                  {option.authority === "Other"
-                    ? option.label
-                    : `${option.label} (${option.authority})`}
+                  Professional Registrations
                 </ThemedText>
-                <TextInput
+                <ThemedText
+                  style={[styles.fieldHelper, { color: theme.textSecondary }]}
+                >
+                  Add only the jurisdictions you actively hold.
+                </ThemedText>
+              </View>
+              <View style={styles.registrationHeaderMeta}>
+                <View
                   style={[
-                    styles.fieldInput,
-                    {
-                      color: theme.text,
-                      backgroundColor: theme.backgroundSecondary,
-                      borderColor: theme.border,
-                    },
+                    styles.registrationCountBadge,
+                    { backgroundColor: theme.link + "15" },
                   ]}
-                  value={professionalRegistrations[option.id] ?? ""}
-                  onChangeText={(value) =>
-                    handleRegistrationChange(option.id, value)
-                  }
-                  placeholder={option.placeholder}
-                  placeholderTextColor={theme.textTertiary}
-                  testID={`input-registration-${option.id}`}
+                >
+                  <ThemedText
+                    style={[
+                      styles.registrationCountText,
+                      { color: theme.link },
+                    ]}
+                  >
+                    {activeRegistrationJurisdictions.length === 0
+                      ? "Optional"
+                      : `${activeRegistrationJurisdictions.length} active`}
+                  </ThemedText>
+                </View>
+                <Feather
+                  name={showRegistrations ? "chevron-up" : "chevron-down"}
+                  size={18}
+                  color={theme.textSecondary}
                 />
               </View>
-              {index < PROFESSIONAL_REGISTRATION_OPTIONS.length - 1 ? (
-                <View
-                  style={[styles.divider, { backgroundColor: theme.border }]}
-                />
-              ) : null}
-            </React.Fragment>
-          ))}
+            </View>
+          </Pressable>
+
+          {showRegistrations ? (
+            <>
+              <View
+                style={[styles.divider, { backgroundColor: theme.border }]}
+              />
+              <View style={styles.registrationContent}>
+                {suggestedRegistrationJurisdiction &&
+                !activeRegistrationJurisdictions.includes(
+                  suggestedRegistrationJurisdiction,
+                ) ? (
+                  <Pressable
+                    style={[
+                      styles.recommendedRegistrationButton,
+                      {
+                        backgroundColor: theme.link + "12",
+                        borderColor: theme.link + "40",
+                      },
+                    ]}
+                    onPress={() =>
+                      addRegistrationJurisdiction(
+                        suggestedRegistrationJurisdiction,
+                      )
+                    }
+                  >
+                    <Feather name="plus-circle" size={16} color={theme.link} />
+                    <ThemedText
+                      style={[
+                        styles.recommendedRegistrationText,
+                        { color: theme.link },
+                      ]}
+                    >
+                      Add recommended registration for your country of practice
+                    </ThemedText>
+                  </Pressable>
+                ) : null}
+
+                {activeRegistrationOptions.length > 0 ? (
+                  activeRegistrationOptions.map((option) => (
+                    <View
+                      key={option.id}
+                      style={[
+                        styles.registrationCard,
+                        {
+                          backgroundColor: theme.backgroundSecondary,
+                          borderColor: theme.border,
+                        },
+                      ]}
+                    >
+                      <View style={styles.registrationCardHeader}>
+                        <View style={styles.registrationCardCopy}>
+                          <ThemedText style={styles.registrationCardTitle}>
+                            {option.authority === "Other"
+                              ? option.label
+                              : `${option.label} (${option.authority})`}
+                          </ThemedText>
+                          <ThemedText
+                            style={[
+                              styles.registrationCardSubtitle,
+                              { color: theme.textSecondary },
+                            ]}
+                          >
+                            Registration number
+                          </ThemedText>
+                        </View>
+                        <Pressable
+                          onPress={() =>
+                            removeRegistrationJurisdiction(option.id)
+                          }
+                          hitSlop={8}
+                        >
+                          <Feather
+                            name="x"
+                            size={18}
+                            color={theme.textTertiary}
+                          />
+                        </Pressable>
+                      </View>
+                      <TextInput
+                        style={[
+                          styles.fieldInput,
+                          {
+                            color: theme.text,
+                            backgroundColor: theme.backgroundDefault,
+                            borderColor: theme.border,
+                          },
+                        ]}
+                        value={professionalRegistrations[option.id] ?? ""}
+                        onChangeText={(value) =>
+                          handleRegistrationChange(option.id, value)
+                        }
+                        placeholder={option.placeholder}
+                        placeholderTextColor={theme.textTertiary}
+                        testID={`input-registration-${option.id}`}
+                      />
+                    </View>
+                  ))
+                ) : (
+                  <View style={styles.registrationEmptyState}>
+                    <ThemedText
+                      style={[
+                        styles.registrationEmptyTitle,
+                        { color: theme.textSecondary },
+                      ]}
+                    >
+                      No registrations added yet
+                    </ThemedText>
+                    <ThemedText
+                      style={[
+                        styles.registrationEmptyText,
+                        { color: theme.textTertiary },
+                      ]}
+                    >
+                      Add the jurisdictions you currently hold and leave the
+                      rest hidden.
+                    </ThemedText>
+                  </View>
+                )}
+
+                {availableRegistrationOptions.length > 0 ? (
+                  <>
+                    <Pressable
+                      style={[
+                        styles.addRegistrationButton,
+                        {
+                          backgroundColor: theme.backgroundDefault,
+                          borderColor: theme.border,
+                        },
+                      ]}
+                      onPress={() => setShowRegistrationPicker((prev) => !prev)}
+                    >
+                      <Feather
+                        name={showRegistrationPicker ? "minus" : "plus"}
+                        size={16}
+                        color={theme.link}
+                      />
+                      <ThemedText
+                        style={[
+                          styles.addRegistrationButtonText,
+                          { color: theme.link },
+                        ]}
+                      >
+                        Add jurisdiction
+                      </ThemedText>
+                    </Pressable>
+
+                    {showRegistrationPicker ? (
+                      <View style={styles.registrationPicker}>
+                        {availableRegistrationOptions.map((option) => (
+                          <Pressable
+                            key={option.id}
+                            style={[
+                              styles.registrationPickerChip,
+                              {
+                                borderColor: theme.border,
+                                backgroundColor: theme.backgroundDefault,
+                              },
+                            ]}
+                            onPress={() =>
+                              addRegistrationJurisdiction(option.id)
+                            }
+                          >
+                            <ThemedText style={styles.registrationPickerText}>
+                              {option.authority === "Other"
+                                ? option.label
+                                : `${option.label} (${option.authority})`}
+                            </ThemedText>
+                          </Pressable>
+                        ))}
+                      </View>
+                    ) : null}
+                  </>
+                ) : null}
+              </View>
+            </>
+          ) : null}
         </View>
       </View>
 
@@ -767,6 +1045,112 @@ const styles = StyleSheet.create({
   fieldHelper: {
     fontSize: 13,
     lineHeight: 18,
+  },
+  registrationHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: Spacing.md,
+  },
+  registrationHeaderCopy: {
+    flex: 1,
+  },
+  registrationHeaderMeta: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+  },
+  registrationCountBadge: {
+    borderRadius: BorderRadius.full,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 6,
+  },
+  registrationCountText: {
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  registrationContent: {
+    padding: Spacing.lg,
+    gap: Spacing.md,
+  },
+  recommendedRegistrationButton: {
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+  },
+  recommendedRegistrationText: {
+    flex: 1,
+    fontSize: 13,
+    fontWeight: "500",
+    lineHeight: 18,
+  },
+  registrationCard: {
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    padding: Spacing.md,
+    gap: Spacing.sm,
+  },
+  registrationCardHeader: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: Spacing.md,
+  },
+  registrationCardCopy: {
+    flex: 1,
+  },
+  registrationCardTitle: {
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  registrationCardSubtitle: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  registrationEmptyState: {
+    paddingVertical: Spacing.sm,
+    gap: Spacing.xs,
+  },
+  registrationEmptyTitle: {
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  registrationEmptyText: {
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  addRegistrationButton: {
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    minHeight: 44,
+    paddingHorizontal: Spacing.md,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Spacing.sm,
+  },
+  addRegistrationButtonText: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  registrationPicker: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: Spacing.sm,
+  },
+  registrationPickerChip: {
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+  },
+  registrationPickerText: {
+    fontSize: 13,
+    fontWeight: "500",
   },
   fieldInput: {
     height: Spacing.inputHeight,

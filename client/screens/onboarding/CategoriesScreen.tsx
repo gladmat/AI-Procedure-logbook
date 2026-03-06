@@ -6,6 +6,7 @@ import {
   ScrollView,
   useWindowDimensions,
   StyleSheet,
+  Alert,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, {
@@ -16,7 +17,7 @@ import Animated, {
   interpolateColor,
   Easing,
 } from "react-native-reanimated";
-import { StepIndicator } from "@/components/onboarding/StepIndicator";
+import { StepHeader } from "@/components/onboarding/StepHeader";
 import { PROCEDURE_CATEGORIES } from "@/constants/procedureCategories";
 import { palette, Colors } from "@/constants/theme";
 import { copy } from "@/constants/onboardingCopy";
@@ -101,13 +102,21 @@ function CategoryCard({
 // ── Categories Screen ────────────────────────────────────────────────────────
 
 interface Props {
+  initialSelectedCategories?: Specialty[];
   onComplete: (selectedCategories: Specialty[]) => Promise<void> | void;
+  onBack?: () => void;
 }
 
-export function CategoriesScreen({ onComplete }: Props) {
+export function CategoriesScreen({
+  initialSelectedCategories = [],
+  onComplete,
+  onBack,
+}: Props) {
   const { width: screenWidth } = useWindowDimensions();
   const insets = useSafeAreaInsets();
-  const [selected, setSelected] = useState<Set<Specialty>>(new Set());
+  const [selected, setSelected] = useState<Set<Specialty>>(
+    () => new Set(initialSelectedCategories),
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const cardWidth = (screenWidth - SIDE_PADDING * 2 - GRID_GAP) / 2;
@@ -129,6 +138,11 @@ export function CategoriesScreen({ onComplete }: Props) {
     setIsSubmitting(true);
     try {
       await onComplete(Array.from(selected));
+    } catch (error: any) {
+      Alert.alert(
+        "Unable to save categories",
+        error?.message || "Please try again.",
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -138,6 +152,11 @@ export function CategoriesScreen({ onComplete }: Props) {
     setIsSubmitting(true);
     try {
       await onComplete(PROCEDURE_CATEGORIES.map((category) => category.id));
+    } catch (error: any) {
+      Alert.alert(
+        "Unable to save categories",
+        error?.message || "Please try again.",
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -146,11 +165,15 @@ export function CategoriesScreen({ onComplete }: Props) {
   const c = copy.categories;
 
   return (
-    <View style={[styles.root, { paddingBottom: insets.bottom + 20 }]}>
-      {/* Step indicator */}
-      <View style={styles.stepArea}>
-        <StepIndicator currentStep={1} />
-      </View>
+    <View
+      style={[
+        styles.root,
+        {
+          paddingBottom: insets.bottom + 20,
+        },
+      ]}
+    >
+      <StepHeader currentStep={1} onBack={onBack} />
 
       {/* Content */}
       <ScrollView
@@ -210,10 +233,6 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: palette.charcoal[950],
-  },
-  stepArea: {
-    paddingTop: 12,
-    paddingBottom: 20,
   },
   scrollView: {
     flex: 1,

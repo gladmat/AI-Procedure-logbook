@@ -8,6 +8,7 @@ import { OpusLogo } from "@/components/brand";
 import { useTheme } from "@/hooks/useTheme";
 import { useAppLock } from "@/contexts/AppLockContext";
 import { isBiometricPreferenceEnabled } from "@/lib/appLockStorage";
+import { isFaceIdUnsupportedInCurrentRuntime } from "@/lib/biometrics";
 import { Spacing, BorderRadius, Typography } from "@/constants/theme";
 
 const PIN_LENGTH = 6;
@@ -24,6 +25,7 @@ export default function LockScreen() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [showBiometricButton, setShowBiometricButton] = useState(false);
   const [biometricType, setBiometricType] = useState<string>("Biometrics");
+  const [biometricHint, setBiometricHint] = useState<string | null>(null);
   const shakeAnim = useRef(new Animated.Value(0)).current;
 
   const handleBiometricUnlock = useCallback(async () => {
@@ -46,6 +48,7 @@ export default function LockScreen() {
 
       if (hasHardware && isEnrolled) {
         setShowBiometricButton(true);
+        setBiometricHint(null);
 
         const types =
           await LocalAuthentication.supportedAuthenticationTypesAsync();
@@ -59,6 +62,14 @@ export default function LockScreen() {
           types.includes(LocalAuthentication.AuthenticationType.FINGERPRINT)
         ) {
           setBiometricType("Touch ID");
+        }
+
+        if (isFaceIdUnsupportedInCurrentRuntime(types)) {
+          setShowBiometricButton(false);
+          setBiometricHint(
+            "Face ID can't be tested in Expo Go. Use your PIN here; TestFlight should prompt Face ID.",
+          );
+          return;
         }
 
         // Auto-trigger biometric on mount
@@ -216,6 +227,16 @@ export default function LockScreen() {
           >
             {error}
           </Text>
+        ) : biometricHint ? (
+          <Text
+            style={[
+              Typography.small,
+              styles.biometricHint,
+              { color: colors.textSecondary },
+            ]}
+          >
+            {biometricHint}
+          </Text>
         ) : null}
       </View>
 
@@ -283,7 +304,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
   },
   errorContainer: {
-    height: 24,
+    minHeight: 40,
     justifyContent: "center",
     marginTop: Spacing.md,
   },
@@ -313,5 +334,10 @@ const styles = StyleSheet.create({
   biometricLabel: {
     marginTop: Spacing.lg,
     padding: Spacing.sm,
+  },
+  biometricHint: {
+    textAlign: "center",
+    lineHeight: 18,
+    paddingHorizontal: Spacing.xl,
   },
 });

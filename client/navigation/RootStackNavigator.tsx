@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { View, ActivityIndicator, StyleSheet } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
@@ -23,6 +23,7 @@ import SetupAppLockScreen from "@/screens/SetupAppLockScreen";
 import EditProfileScreen from "@/screens/EditProfileScreen";
 import EpisodeDetailScreen from "@/screens/EpisodeDetailScreen";
 import EpisodeListScreen from "@/screens/EpisodeListScreen";
+import ManageFacilitiesScreen from "@/screens/ManageFacilitiesScreen";
 import PersonalisationScreen from "@/screens/PersonalisationScreen";
 import SurgicalPreferencesScreen from "@/screens/SurgicalPreferencesScreen";
 import { WelcomeScreen } from "@/screens/onboarding/WelcomeScreen";
@@ -32,10 +33,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useAppLock } from "@/contexts/AppLockContext";
 import {
   buildSurgicalPreferencesUpdate,
-  hasAnsweredCategoryPersonalization,
-  hasAnsweredHospitalAffiliation,
-  hasAnsweredTrainingProgramme,
+  getStoredSelectedSpecialties,
 } from "@/lib/personalization";
+import { TRAINING_OPTIONS } from "@/constants/trainingProgrammes";
 import {
   Specialty,
   TimelineEventType,
@@ -47,6 +47,84 @@ import { useTheme } from "@/hooks/useTheme";
 
 const WELCOME_SEEN_KEY = "@opus_has_seen_welcome";
 const FEATURES_SEEN_KEY = "@opus_has_seen_features";
+type OnboardingStep = "categories" | "training" | "hospital" | "privacy";
+type OnboardingDraft = {
+  selectedCategories: Specialty[];
+  trainingSelectionId: string | null;
+  trainingProgramme: string | null;
+  selectedHospitals: HospitalSelection[];
+};
+
+const EMPTY_ONBOARDING_DRAFT: OnboardingDraft = {
+  selectedCategories: [],
+  trainingSelectionId: null,
+  trainingProgramme: null,
+  selectedHospitals: [],
+};
+
+function normalizeHospitalName(name: string) {
+  return name.trim().toLowerCase();
+}
+
+function isSameHospitalSelection(
+  left: HospitalSelection,
+  right: HospitalSelection,
+) {
+  if (left.facilityId && right.facilityId) {
+    return left.facilityId === right.facilityId;
+  }
+
+  return normalizeHospitalName(left.name) === normalizeHospitalName(right.name);
+}
+
+function getFirstIncompleteOnboardingStep(
+  profile: ReturnType<typeof useAuth>["profile"],
+  facilities: ReturnType<typeof useAuth>["facilities"],
+): OnboardingStep {
+  const personalization = profile?.surgicalPreferences?.personalization;
+
+  if (!Array.isArray(personalization?.selectedSpecialties)) {
+    return "categories";
+  }
+
+  if (personalization?.trainingProgrammeAnswered !== true) {
+    return "training";
+  }
+
+  if (personalization?.hospitalAnswered !== true && facilities.length === 0) {
+    return "hospital";
+  }
+
+  return "privacy";
+}
+
+function buildOnboardingDraft(
+  profile: ReturnType<typeof useAuth>["profile"],
+  facilities: ReturnType<typeof useAuth>["facilities"],
+): OnboardingDraft {
+  const personalization = profile?.surgicalPreferences?.personalization;
+  const storedTrainingProgramme = personalization?.trainingProgramme ?? null;
+  const selectedTrainingOption = storedTrainingProgramme
+    ? TRAINING_OPTIONS.find((option) => option.id === storedTrainingProgramme)
+    : null;
+
+  return {
+    selectedCategories: getStoredSelectedSpecialties(profile) ?? [],
+    trainingSelectionId:
+      personalization?.trainingProgrammeAnswered === true
+        ? storedTrainingProgramme === null
+          ? "none"
+          : selectedTrainingOption
+            ? selectedTrainingOption.id
+            : "other"
+        : null,
+    trainingProgramme: storedTrainingProgramme,
+    selectedHospitals: facilities.map((facility) => ({
+      name: facility.facilityName,
+      facilityId: facility.facilityId,
+    })),
+  };
+}
 
 export type RootStackParamList = {
   Welcome: undefined;
@@ -95,6 +173,7 @@ export type RootStackParamList = {
   EpisodeList: undefined;
   SetupAppLock: undefined;
   EditProfile: undefined;
+  ManageFacilities: undefined;
   SurgicalPreferences: undefined;
   Personalisation: undefined;
 };
@@ -104,6 +183,7 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 export default function RootStackNavigator() {
   const screenOptions = useScreenOptions();
   const {
+    user,
     isAuthenticated,
     onboardingComplete,
     isLoading,
@@ -111,15 +191,23 @@ export default function RootStackNavigator() {
     facilities,
     updateProfile,
     addFacility,
+    removeFacility,
+    setFacilityPrimary,
   } = useAuth();
   const { isLocked, isAppLockConfigured } = useAppLock();
   const { theme: colors } = useTheme();
+  const initializedOnboardingUserIdRef = useRef<string | null>(null);
 
   const [hasSeenWelcome, setHasSeenWelcome] = useState<boolean | null>(null);
   const [hasSeenFeatures, setHasSeenFeatures] = useState<boolean | null>(null);
   const [showEmailAuth, setShowEmailAuth] = useState(false);
   const [emailAuthMode, setEmailAuthMode] = useState<"signup" | "signin">(
     "signup",
+  );
+  const [currentOnboardingStep, setCurrentOnboardingStep] =
+    useState<OnboardingStep | null>(null);
+  const [onboardingDraft, setOnboardingDraft] = useState<OnboardingDraft>(
+    EMPTY_ONBOARDING_DRAFT,
   );
 
   useEffect(() => {
@@ -163,48 +251,119 @@ export default function RootStackNavigator() {
           },
         ),
       });
+      setOnboardingDraft((prev) => ({ ...prev, selectedCategories }));
+      setCurrentOnboardingStep("training");
     },
     [profile?.surgicalPreferences, updateProfile],
   );
 
   const handleTrainingComplete = useCallback(
-    async (programme: string | null) => {
+    async ({
+      selectionId,
+      trainingProgramme,
+    }: {
+      selectionId: string;
+      trainingProgramme: string | null;
+    }) => {
       await updateProfile({
         surgicalPreferences: buildSurgicalPreferencesUpdate(
           profile?.surgicalPreferences,
           {
-            trainingProgramme: programme,
+            trainingProgramme,
             trainingProgrammeAnswered: true,
           },
         ),
       });
+      setOnboardingDraft((prev) => ({
+        ...prev,
+        trainingSelectionId: selectionId,
+        trainingProgramme,
+      }));
+      setCurrentOnboardingStep("hospital");
     },
     [profile?.surgicalPreferences, updateProfile],
   );
 
   const handleHospitalComplete = useCallback(
-    async (hospital: HospitalSelection | null) => {
-      if (hospital) {
-        const alreadyExists = facilities.some((facility) => {
-          if (
-            hospital.facilityId &&
-            facility.facilityId === hospital.facilityId
-          ) {
-            return true;
+    async (selectedHospitals: HospitalSelection[]) => {
+      const hospitalsToSave = selectedHospitals.reduce<HospitalSelection[]>(
+        (acc, hospital) => {
+          if (acc.some((item) => isSameHospitalSelection(item, hospital))) {
+            return acc;
           }
 
-          return (
-            facility.facilityName.trim().toLowerCase() ===
-            hospital.name.trim().toLowerCase()
-          );
-        });
+          return [...acc, hospital];
+        },
+        [],
+      );
 
-        if (!alreadyExists) {
-          await addFacility(
+      const resolvedSelections = [...hospitalsToSave];
+
+      if (hospitalsToSave.length > 0) {
+        const retainedFacilities = facilities.filter((facility) =>
+          hospitalsToSave.some((hospital) =>
+            isSameHospitalSelection(hospital, {
+              name: facility.facilityName,
+              facilityId: facility.facilityId,
+            }),
+          ),
+        );
+
+        const facilitiesToRemove = facilities.filter(
+          (facility) =>
+            !hospitalsToSave.some((hospital) =>
+              isSameHospitalSelection(hospital, {
+                name: facility.facilityName,
+                facilityId: facility.facilityId,
+              }),
+            ),
+        );
+
+        for (const facility of facilitiesToRemove) {
+          await removeFacility(facility.id);
+        }
+
+        let firstSelectedFacilityId: string | undefined;
+        for (let index = 0; index < hospitalsToSave.length; index += 1) {
+          const hospital = hospitalsToSave[index];
+          if (!hospital) {
+            continue;
+          }
+
+          const existingFacility = facilities.find((facility) =>
+            isSameHospitalSelection(hospital, {
+              name: facility.facilityName,
+              facilityId: facility.facilityId,
+            }),
+          );
+
+          if (existingFacility) {
+            if (index === 0) {
+              firstSelectedFacilityId = existingFacility.id;
+            }
+            continue;
+          }
+
+          const createdFacility = await addFacility(
             hospital.name,
-            facilities.length === 0,
+            retainedFacilities.length === 0 && index === 0,
             hospital.facilityId,
           );
+          if (index === 0) {
+            firstSelectedFacilityId = createdFacility.id;
+          }
+
+          resolvedSelections[index] = {
+            name: createdFacility.facilityName,
+            facilityId: createdFacility.facilityId,
+          };
+        }
+
+        const selectedPrimaryFacility =
+          retainedFacilities.find((facility) => facility.isPrimary) ?? null;
+
+        if (!selectedPrimaryFacility && firstSelectedFacilityId) {
+          await setFacilityPrimary(firstSelectedFacilityId);
         }
       }
 
@@ -216,8 +375,23 @@ export default function RootStackNavigator() {
           },
         ),
       });
+      setOnboardingDraft((prev) => ({
+        ...prev,
+        selectedHospitals:
+          hospitalsToSave.length > 0
+            ? resolvedSelections
+            : prev.selectedHospitals,
+      }));
+      setCurrentOnboardingStep("privacy");
     },
-    [addFacility, facilities, profile?.surgicalPreferences, updateProfile],
+    [
+      addFacility,
+      facilities,
+      profile?.surgicalPreferences,
+      removeFacility,
+      setFacilityPrimary,
+      updateProfile,
+    ],
   );
 
   useEffect(() => {
@@ -227,10 +401,28 @@ export default function RootStackNavigator() {
     }
   }, [isAuthenticated]);
 
-  const hasCompletedCategories = hasAnsweredCategoryPersonalization(profile);
-  const hasCompletedTraining = hasAnsweredTrainingProgramme(profile);
-  const hasCompletedHospital =
-    hasAnsweredHospitalAffiliation(profile) || facilities.length > 0;
+  useEffect(() => {
+    if (!isAuthenticated || onboardingComplete || !user?.id) {
+      initializedOnboardingUserIdRef.current = null;
+      setCurrentOnboardingStep(null);
+      setOnboardingDraft(EMPTY_ONBOARDING_DRAFT);
+      return;
+    }
+
+    if (initializedOnboardingUserIdRef.current === user.id) {
+      return;
+    }
+
+    initializedOnboardingUserIdRef.current = user.id;
+    setOnboardingDraft(buildOnboardingDraft(profile, facilities));
+    setCurrentOnboardingStep(
+      getFirstIncompleteOnboardingStep(profile, facilities),
+    );
+  }, [facilities, isAuthenticated, onboardingComplete, profile, user?.id]);
+
+  const activeOnboardingStep =
+    currentOnboardingStep ??
+    getFirstIncompleteOnboardingStep(profile, facilities);
 
   if (isLoading || hasSeenWelcome === null || hasSeenFeatures === null) {
     return (
@@ -253,7 +445,11 @@ export default function RootStackNavigator() {
   return (
     <Stack.Navigator screenOptions={screenOptions}>
       {!hasSeenWelcome && !isAuthenticated ? (
-        <Stack.Screen name="Welcome" options={{ headerShown: false }}>
+        <Stack.Screen
+          key="welcome"
+          name="Welcome"
+          options={{ headerShown: false }}
+        >
           {() => (
             <WelcomeScreen
               onComplete={handleWelcomeComplete}
@@ -262,15 +458,23 @@ export default function RootStackNavigator() {
           )}
         </Stack.Screen>
       ) : !hasSeenFeatures && !isAuthenticated ? (
-        <Stack.Screen name="Features" options={{ headerShown: false }}>
+        <Stack.Screen
+          key="features"
+          name="Features"
+          options={{ headerShown: false }}
+        >
           {() => <FeaturePager onComplete={handleFeaturesComplete} />}
         </Stack.Screen>
       ) : !isAuthenticated && showEmailAuth ? (
-        <Stack.Screen name="EmailSignup" options={{ headerShown: false }}>
+        <Stack.Screen
+          key={`email-auth-${emailAuthMode}`}
+          name="EmailSignup"
+          options={{ headerShown: false }}
+        >
           {() => <EmailSignupScreen initialMode={emailAuthMode} />}
         </Stack.Screen>
       ) : !isAuthenticated ? (
-        <Stack.Screen name="Auth" options={{ headerShown: false }}>
+        <Stack.Screen key="auth" name="Auth" options={{ headerShown: false }}>
           {() => (
             <OnboardingAuthScreen
               onContinueWithEmail={() => {
@@ -284,29 +488,65 @@ export default function RootStackNavigator() {
             />
           )}
         </Stack.Screen>
-      ) : !onboardingComplete && !hasCompletedCategories ? (
-        <Stack.Screen name="Categories" options={{ headerShown: false }}>
-          {() => <CategoriesScreen onComplete={handleCategoriesComplete} />}
+      ) : !onboardingComplete && activeOnboardingStep === "categories" ? (
+        <Stack.Screen
+          key="onboarding-categories"
+          name="Categories"
+          options={{ headerShown: false }}
+        >
+          {() => (
+            <CategoriesScreen
+              initialSelectedCategories={onboardingDraft.selectedCategories}
+              onComplete={handleCategoriesComplete}
+            />
+          )}
         </Stack.Screen>
-      ) : !onboardingComplete && !hasCompletedTraining ? (
-        <Stack.Screen name="Training" options={{ headerShown: false }}>
-          {() => <TrainingScreen onComplete={handleTrainingComplete} />}
+      ) : !onboardingComplete && activeOnboardingStep === "training" ? (
+        <Stack.Screen
+          key="onboarding-training"
+          name="Training"
+          options={{ headerShown: false }}
+        >
+          {() => (
+            <TrainingScreen
+              initialSelectionId={onboardingDraft.trainingSelectionId}
+              initialOtherText={
+                onboardingDraft.trainingSelectionId === "other"
+                  ? (onboardingDraft.trainingProgramme ?? "")
+                  : ""
+              }
+              onBack={() => setCurrentOnboardingStep("categories")}
+              onComplete={handleTrainingComplete}
+            />
+          )}
         </Stack.Screen>
-      ) : !onboardingComplete && !hasCompletedHospital ? (
-        <Stack.Screen name="Hospital" options={{ headerShown: false }}>
+      ) : !onboardingComplete && activeOnboardingStep === "hospital" ? (
+        <Stack.Screen
+          key="onboarding-hospital"
+          name="Hospital"
+          options={{ headerShown: false }}
+        >
           {() => (
             <HospitalScreen
+              initialHospitals={onboardingDraft.selectedHospitals}
+              onBack={() => setCurrentOnboardingStep("training")}
               onComplete={handleHospitalComplete}
-              trainingProgramme={
-                profile?.surgicalPreferences?.personalization
-                  ?.trainingProgramme ?? null
-              }
+              trainingProgramme={onboardingDraft.trainingProgramme}
             />
           )}
         </Stack.Screen>
       ) : !onboardingComplete ? (
-        <Stack.Screen name="Privacy" options={{ headerShown: false }}>
-          {() => <PrivacyScreen onComplete={() => undefined} />}
+        <Stack.Screen
+          key="onboarding-privacy"
+          name="Privacy"
+          options={{ headerShown: false }}
+        >
+          {() => (
+            <PrivacyScreen
+              onBack={() => setCurrentOnboardingStep("hospital")}
+              onComplete={() => undefined}
+            />
+          )}
         </Stack.Screen>
       ) : (
         <>
@@ -386,6 +626,13 @@ export default function RootStackNavigator() {
             component={EditProfileScreen}
             options={{
               headerTitle: "Edit Profile",
+            }}
+          />
+          <Stack.Screen
+            name="ManageFacilities"
+            component={ManageFacilitiesScreen}
+            options={{
+              headerTitle: "My Hospitals",
             }}
           />
           <Stack.Screen

@@ -10,6 +10,7 @@ import {
 import { SectionHeader } from "@/components/SectionHeader";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/contexts/AuthContext";
+import { resolveFacilityName } from "@/lib/facilities";
 import {
   useCaseFormState,
   useCaseFormDispatch,
@@ -58,10 +59,13 @@ export const PatientInfoSection = React.memo(function PatientInfoSection() {
         <PickerField
           label="Facility"
           value={state.facility}
-          options={facilities.map((f) => ({
-            value: f.facilityName,
-            label: f.facilityName,
-          }))}
+          options={facilities.map((facility) => {
+            const facilityName = resolveFacilityName(facility);
+            return {
+              value: facilityName,
+              label: facilityName,
+            };
+          })}
           onSelect={(v: string) => {
             dispatch(setField("facility", v));
             onFieldBlur("facility");

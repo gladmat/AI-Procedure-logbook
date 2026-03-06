@@ -1,26 +1,33 @@
-import React, { useState, useMemo, useRef, useCallback } from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
-  View,
-  Text,
-  TextInput,
-  Pressable,
-  ScrollView,
-  StyleSheet,
+  Alert,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
   Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
 } from "react-native-reanimated";
-import { StepIndicator } from "@/components/onboarding/StepIndicator";
-import { palette, Colors } from "@/constants/theme";
+import { StepHeader } from "@/components/onboarding/StepHeader";
+import {
+  getFacilityById,
+  searchFacilities,
+  SUPPORTED_COUNTRIES,
+  type MasterFacility,
+  type SupportedCountryCode,
+} from "@/data/facilities";
 import { copy } from "@/constants/onboardingCopy";
-import { HOSPITALS, type Hospital } from "@/constants/hospitals";
+import { Colors, palette } from "@/constants/theme";
 
 const dark = Colors.dark;
 const SIDE_PADDING = 24;
@@ -40,18 +47,93 @@ export interface HospitalSelection {
 }
 
 interface Props {
-  onComplete: (hospital: HospitalSelection | null) => Promise<void> | void;
+  initialHospitals?: HospitalSelection[];
+  onBack?: () => void;
+  onComplete: (hospitals: HospitalSelection[]) => Promise<void> | void;
   trainingProgramme?: string | null;
 }
 
-export function HospitalScreen({ onComplete, trainingProgramme }: Props) {
+function normalizeHospitalName(name: string) {
+  return name.trim().toLowerCase();
+}
+
+function isSameHospitalSelection(
+  left: HospitalSelection,
+  right: HospitalSelection,
+) {
+  if (left.facilityId && right.facilityId) {
+    return left.facilityId === right.facilityId;
+  }
+
+  return normalizeHospitalName(left.name) === normalizeHospitalName(right.name);
+}
+
+function dedupeHospitals(hospitals: HospitalSelection[]) {
+  return hospitals.reduce<HospitalSelection[]>((acc, hospital) => {
+    if (acc.some((item) => isSameHospitalSelection(item, hospital))) {
+      return acc;
+    }
+
+    return [...acc, hospital];
+  }, []);
+}
+
+function getInitialCountryCode(
+  initialHospitals: HospitalSelection[],
+  trainingProgramme: string | null | undefined,
+): SupportedCountryCode | null {
+  const supportedCountryCodes = new Set(
+    SUPPORTED_COUNTRIES.map((country) => country.code),
+  );
+
+  for (const hospital of initialHospitals) {
+    if (!hospital.facilityId) {
+      continue;
+    }
+
+    const facilityCountryCode = getFacilityById(hospital.facilityId)?.country;
+    if (
+      facilityCountryCode &&
+      supportedCountryCodes.has(facilityCountryCode as SupportedCountryCode)
+    ) {
+      return facilityCountryCode as SupportedCountryCode;
+    }
+  }
+
+  const suggestedCountryCodes = trainingProgramme
+    ? (PROGRAMME_COUNTRY_MAP[trainingProgramme] ?? [])
+    : [];
+  const supportedSuggestedCountryCode = suggestedCountryCodes.find((country) =>
+    supportedCountryCodes.has(country as SupportedCountryCode),
+  );
+  if (supportedSuggestedCountryCode) {
+    return supportedSuggestedCountryCode as SupportedCountryCode;
+  }
+
+  if (SUPPORTED_COUNTRIES.length === 1) {
+    return SUPPORTED_COUNTRIES[0]?.code ?? null;
+  }
+
+  return null;
+}
+
+export function HospitalScreen({
+  initialHospitals = [],
+  onBack,
+  onComplete,
+  trainingProgramme,
+}: Props) {
   const insets = useSafeAreaInsets();
   const inputRef = useRef<TextInput>(null);
 
   const [query, setQuery] = useState("");
-  const [selectedHospital, setSelectedHospital] = useState<Hospital | null>(
-    null,
-  );
+  const [selectedHospitals, setSelectedHospitals] = useState<
+    HospitalSelection[]
+  >(() => dedupeHospitals(initialHospitals));
+  const [selectedCountryCode, setSelectedCountryCode] =
+    useState<SupportedCountryCode | null>(() =>
+      getInitialCountryCode(initialHospitals, trainingProgramme),
+    );
   const [isFocused, setIsFocused] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -59,50 +141,67 @@ export function HospitalScreen({ onComplete, trainingProgramme }: Props) {
   const dropdownOpacity = useSharedValue(0);
 
   const filteredHospitals = useMemo(() => {
-    if (query.trim().length < 1) return [];
+    if (!selectedCountryCode || query.trim().length < 1) {
+      return [];
+    }
 
-    const normalizedQuery = query.toLowerCase();
-    const countryFilter =
-      trainingProgramme && PROGRAMME_COUNTRY_MAP[trainingProgramme];
+    return searchFacilities(query, selectedCountryCode).filter(
+      (hospital) =>
+        !selectedHospitals.some((selectedHospital) =>
+          isSameHospitalSelection(selectedHospital, {
+            name: hospital.name,
+            facilityId: hospital.id,
+          }),
+        ),
+    );
+  }, [query, selectedCountryCode, selectedHospitals]);
 
-    return HOSPITALS.filter((hospital) => {
-      return (
-        hospital.name.toLowerCase().includes(normalizedQuery) ||
-        hospital.city.toLowerCase().includes(normalizedQuery) ||
-        hospital.country.toLowerCase().includes(normalizedQuery)
-      );
-    }).sort((a, b) => {
-      if (!countryFilter) return 0;
-      const aMatch = countryFilter.includes(a.country) ? 0 : 1;
-      const bMatch = countryFilter.includes(b.country) ? 0 : 1;
-      return aMatch - bMatch;
-    });
-  }, [query, trainingProgramme]);
-
-  const handleQueryChange = useCallback((text: string) => {
-    setQuery(text);
-    setSelectedHospital(null);
-    setShowDropdown(true);
+  const addHospitalSelection = useCallback((hospital: HospitalSelection) => {
+    setSelectedHospitals((prev) => dedupeHospitals([...prev, hospital]));
   }, []);
+
+  const removeHospitalSelection = useCallback((hospital: HospitalSelection) => {
+    setSelectedHospitals((prev) =>
+      prev.filter((item) => !isSameHospitalSelection(item, hospital)),
+    );
+  }, []);
+
+  const handleQueryChange = useCallback(
+    (text: string) => {
+      if (!selectedCountryCode) {
+        return;
+      }
+
+      setQuery(text);
+      setShowDropdown(true);
+    },
+    [selectedCountryCode],
+  );
 
   const handleFocus = useCallback(() => {
     setIsFocused(true);
-    if (query.trim().length > 0) {
+    if (selectedCountryCode && query.trim().length > 0) {
       setShowDropdown(true);
     }
-  }, [query]);
+  }, [query, selectedCountryCode]);
 
   const handleBlur = useCallback(() => {
     setIsFocused(false);
     setTimeout(() => setShowDropdown(false), 200);
   }, []);
 
-  const handleSelectHospital = useCallback((hospital: Hospital) => {
-    setSelectedHospital(hospital);
-    setQuery(hospital.name);
-    setShowDropdown(false);
-    Keyboard.dismiss();
-  }, []);
+  const handleSelectHospital = useCallback(
+    (hospital: MasterFacility) => {
+      addHospitalSelection({
+        name: hospital.name,
+        facilityId: hospital.id,
+      });
+      setQuery("");
+      setShowDropdown(false);
+      inputRef.current?.focus();
+    },
+    [addHospitalSelection],
+  );
 
   React.useEffect(() => {
     dropdownOpacity.value = withTiming(
@@ -115,22 +214,22 @@ export function HospitalScreen({ onComplete, trainingProgramme }: Props) {
     opacity: dropdownOpacity.value,
   }));
 
-  const canContinue =
-    !isSubmitting && (selectedHospital !== null || query.trim().length > 0);
+  const canContinue = !isSubmitting && selectedHospitals.length > 0;
 
   const handleContinue = async () => {
-    const hospitalSelection = selectedHospital
-      ? {
-          name: selectedHospital.name,
-          facilityId: selectedHospital.id,
-        }
-      : query.trim()
-        ? { name: query.trim() }
-        : null;
+    if (selectedHospitals.length === 0) {
+      return;
+    }
 
     setIsSubmitting(true);
     try {
-      await onComplete(hospitalSelection);
+      await onComplete(selectedHospitals);
+      setQuery("");
+    } catch (error: any) {
+      Alert.alert(
+        "Unable to save hospitals",
+        error?.message || "Please try again.",
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -139,7 +238,12 @@ export function HospitalScreen({ onComplete, trainingProgramme }: Props) {
   const handleSkip = async () => {
     setIsSubmitting(true);
     try {
-      await onComplete(null);
+      await onComplete([]);
+    } catch (error: any) {
+      Alert.alert(
+        "Unable to save hospitals",
+        error?.message || "Please try again.",
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -153,18 +257,56 @@ export function HospitalScreen({ onComplete, trainingProgramme }: Props) {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <View style={[styles.root, { paddingBottom: insets.bottom + 20 }]}>
-        <View style={styles.stepArea}>
-          <StepIndicator currentStep={3} />
-        </View>
+        <StepHeader currentStep={3} onBack={onBack} />
 
-        <View style={styles.content}>
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          bounces={false}
+        >
           <Text style={styles.headline}>{c.headline}</Text>
           <Text style={styles.subhead}>{c.subhead}</Text>
+          <Text style={styles.countryLabel}>Country</Text>
+          <View style={styles.countryRow}>
+            {SUPPORTED_COUNTRIES.map((country) => {
+              const isSelected = selectedCountryCode === country.code;
+              return (
+                <Pressable
+                  key={country.code}
+                  style={[
+                    styles.countryChip,
+                    isSelected && styles.countryChipSelected,
+                  ]}
+                  onPress={() => {
+                    setSelectedCountryCode(country.code);
+                    setQuery("");
+                    setShowDropdown(false);
+                    inputRef.current?.focus();
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.countryChipText,
+                      isSelected && styles.countryChipTextSelected,
+                    ]}
+                  >
+                    {country.name}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+          <Text style={styles.countryHelp}>
+            Curated hospital lists are currently available for New Zealand only.
+          </Text>
 
           <View style={styles.searchContainer}>
             <View
               style={[
                 styles.searchField,
+                !selectedCountryCode && styles.searchFieldDisabled,
                 isFocused && styles.searchFieldFocused,
               ]}
             >
@@ -172,23 +314,28 @@ export function HospitalScreen({ onComplete, trainingProgramme }: Props) {
               <TextInput
                 ref={inputRef}
                 style={styles.searchInput}
-                placeholder={c.searchPlaceholder}
+                placeholder={
+                  selectedCountryCode
+                    ? c.searchPlaceholder
+                    : "Select a country first"
+                }
                 placeholderTextColor="#636366"
                 value={query}
                 onChangeText={handleQueryChange}
                 onFocus={handleFocus}
                 onBlur={handleBlur}
+                onSubmitEditing={() => Keyboard.dismiss()}
                 autoCapitalize="words"
                 autoCorrect={false}
                 returnKeyType="done"
+                editable={!!selectedCountryCode}
                 accessibilityLabel="Search hospitals"
-                accessibilityHint="Type to search for your hospital"
+                accessibilityHint="Type to search the curated hospital list"
               />
               {query.length > 0 ? (
                 <Pressable
                   onPress={() => {
                     setQuery("");
-                    setSelectedHospital(null);
                     inputRef.current?.focus();
                   }}
                   hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -225,7 +372,8 @@ export function HospitalScreen({ onComplete, trainingProgramme }: Props) {
                       {hospital.name}
                     </Text>
                     <Text style={styles.resultLocation} numberOfLines={1}>
-                      {hospital.city}, {hospital.country}
+                      {hospital.region} •{" "}
+                      {hospital.type === "public" ? "Public" : "Private"}
                     </Text>
                   </Pressable>
                 ))}
@@ -234,38 +382,36 @@ export function HospitalScreen({ onComplete, trainingProgramme }: Props) {
 
             {showDropdown &&
             filteredHospitals.length === 0 &&
+            !!selectedCountryCode &&
             query.trim().length > 0 ? (
-              <Text style={styles.emptyState}>
-                No results found. Type your hospital name to add it.
-              </Text>
+              <Text style={styles.emptyState}>No curated hospitals found.</Text>
             ) : null}
           </View>
 
-          {selectedHospital && !showDropdown ? (
-            <View
-              style={styles.selectedBadge}
-              accessible
-              accessibilityLabel={`Selected hospital: ${selectedHospital.name}`}
-              accessibilityRole="text"
-            >
-              <Text style={styles.selectedText}>{selectedHospital.name}</Text>
-              <Pressable
-                onPress={() => {
-                  setSelectedHospital(null);
-                  setQuery("");
-                  inputRef.current?.focus();
-                }}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                accessibilityLabel="Remove selected hospital"
-                accessibilityRole="button"
-              >
-                <Text style={styles.selectedRemove}>✕</Text>
-              </Pressable>
+          {selectedHospitals.length > 0 ? (
+            <View style={styles.selectedList}>
+              {selectedHospitals.map((hospital) => (
+                <View
+                  key={hospital.facilityId ?? hospital.name}
+                  style={styles.selectedBadge}
+                  accessible
+                  accessibilityLabel={`Selected hospital: ${hospital.name}`}
+                  accessibilityRole="text"
+                >
+                  <Text style={styles.selectedText}>{hospital.name}</Text>
+                  <Pressable
+                    onPress={() => removeHospitalSelection(hospital)}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    accessibilityLabel={`Remove ${hospital.name}`}
+                    accessibilityRole="button"
+                  >
+                    <Text style={styles.selectedRemove}>✕</Text>
+                  </Pressable>
+                </View>
+              ))}
             </View>
           ) : null}
-        </View>
-
-        <View style={styles.spacer} />
+        </ScrollView>
 
         <View style={styles.bottomArea}>
           <Pressable
@@ -305,12 +451,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: palette.charcoal[950],
   },
-  stepArea: {
-    paddingTop: 12,
-    paddingBottom: 20,
+  scrollView: {
+    flex: 1,
   },
-  content: {
+  scrollContent: {
     paddingHorizontal: SIDE_PADDING,
+    paddingBottom: 24,
   },
   headline: {
     fontSize: 28,
@@ -324,8 +470,48 @@ const styles = StyleSheet.create({
     marginTop: 8,
     lineHeight: 22,
   },
-  searchContainer: {
+  countryLabel: {
+    fontSize: 13,
+    fontWeight: "600",
+    letterSpacing: 0.4,
+    textTransform: "uppercase",
+    color: "#AEAEB2",
     marginTop: 28,
+  },
+  countryRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 12,
+    marginTop: 12,
+  },
+  countryChip: {
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "#38383A",
+    backgroundColor: "#1C1C1E",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  countryChipSelected: {
+    borderColor: palette.amber[600],
+    backgroundColor: "rgba(229, 160, 13, 0.08)",
+  },
+  countryChipText: {
+    fontSize: 15,
+    fontWeight: "500",
+    color: dark.text,
+  },
+  countryChipTextSelected: {
+    color: palette.amber[600],
+  },
+  countryHelp: {
+    fontSize: 13,
+    lineHeight: 20,
+    color: "#636366",
+    marginTop: 10,
+  },
+  searchContainer: {
+    marginTop: 24,
     zIndex: 10,
   },
   searchField: {
@@ -341,6 +527,9 @@ const styles = StyleSheet.create({
   },
   searchFieldFocused: {
     borderColor: palette.amber[600],
+  },
+  searchFieldDisabled: {
+    opacity: 0.6,
   },
   searchIcon: {
     fontSize: 16,
@@ -389,9 +578,11 @@ const styles = StyleSheet.create({
     color: "#636366",
     marginTop: 12,
   },
-  selectedBadge: {
+  selectedList: {
     marginTop: 20,
-    marginHorizontal: SIDE_PADDING,
+    gap: 12,
+  },
+  selectedBadge: {
     backgroundColor: "rgba(229, 160, 13, 0.08)",
     borderWidth: 1,
     borderColor: "#E5A00D",
@@ -413,9 +604,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: palette.amber[600],
     padding: 4,
-  },
-  spacer: {
-    flex: 1,
   },
   bottomArea: {
     paddingHorizontal: SIDE_PADDING,

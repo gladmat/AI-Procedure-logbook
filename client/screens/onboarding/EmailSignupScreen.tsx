@@ -24,6 +24,7 @@ import { copy } from "@/constants/onboardingCopy";
 const dark = Colors.dark;
 const MIN_PASSWORD_LENGTH = 8;
 const easeOut = Easing.out(Easing.ease);
+const HEADER_TOP_OFFSET = 32;
 
 export interface EmailSignupScreenProps {
   initialMode?: "signup" | "signin";
@@ -127,7 +128,10 @@ export function EmailSignupScreen({
       <View
         style={[
           styles.container,
-          { paddingTop: insets.top + 24, paddingBottom: insets.bottom + 32 },
+          {
+            paddingTop: Math.max(insets.top, 44) + HEADER_TOP_OFFSET,
+            paddingBottom: insets.bottom + 32,
+          },
         ]}
       >
         <View style={styles.header}>

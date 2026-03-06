@@ -6,6 +6,7 @@ import {
   TextInput,
   ScrollView,
   StyleSheet,
+  Alert,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, {
@@ -14,7 +15,7 @@ import Animated, {
   withTiming,
   Easing,
 } from "react-native-reanimated";
-import { StepIndicator } from "@/components/onboarding/StepIndicator";
+import { StepHeader } from "@/components/onboarding/StepHeader";
 import { TRAINING_OPTIONS } from "@/constants/trainingProgrammes";
 import { palette, Colors } from "@/constants/theme";
 import { copy } from "@/constants/onboardingCopy";
@@ -50,13 +51,26 @@ function RadioIndicator({ selected }: { selected: boolean }) {
 // ── Training Screen ─────────────────────────────────────────────────────────
 
 interface Props {
-  onComplete: (trainingProgramme: string | null) => Promise<void> | void;
+  initialSelectionId?: string | null;
+  initialOtherText?: string;
+  onBack?: () => void;
+  onComplete: (selection: {
+    selectionId: string;
+    trainingProgramme: string | null;
+  }) => Promise<void> | void;
 }
 
-export function TrainingScreen({ onComplete }: Props) {
+export function TrainingScreen({
+  initialSelectionId = null,
+  initialOtherText = "",
+  onBack,
+  onComplete,
+}: Props) {
   const insets = useSafeAreaInsets();
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [otherText, setOtherText] = useState("");
+  const [selectedId, setSelectedId] = useState<string | null>(
+    initialSelectionId,
+  );
+  const [otherText, setOtherText] = useState(initialOtherText);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const isNoneSelected = selectedId === "none";
@@ -79,7 +93,15 @@ export function TrainingScreen({ onComplete }: Props) {
 
     setIsSubmitting(true);
     try {
-      await onComplete(nextProgramme);
+      await onComplete({
+        selectionId: selectedId ?? "none",
+        trainingProgramme: nextProgramme,
+      });
+    } catch (error: any) {
+      Alert.alert(
+        "Unable to save training programme",
+        error?.message || "Please try again.",
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -88,7 +110,15 @@ export function TrainingScreen({ onComplete }: Props) {
   const handleSkip = async () => {
     setIsSubmitting(true);
     try {
-      await onComplete(null);
+      await onComplete({
+        selectionId: "none",
+        trainingProgramme: null,
+      });
+    } catch (error: any) {
+      Alert.alert(
+        "Unable to save training programme",
+        error?.message || "Please try again.",
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -98,10 +128,7 @@ export function TrainingScreen({ onComplete }: Props) {
 
   return (
     <View style={[styles.root, { paddingBottom: insets.bottom + 20 }]}>
-      {/* Step indicator */}
-      <View style={styles.stepArea}>
-        <StepIndicator currentStep={2} />
-      </View>
+      <StepHeader currentStep={2} onBack={onBack} />
 
       {/* Content */}
       <ScrollView
@@ -208,10 +235,6 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: palette.charcoal[950],
-  },
-  stepArea: {
-    paddingTop: 12,
-    paddingBottom: 20,
   },
   scrollView: {
     flex: 1,

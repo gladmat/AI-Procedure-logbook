@@ -57,6 +57,7 @@ import { CaseSummaryView } from "@/components/case-form/CaseSummaryView";
 import { EpisodeLinkBanner } from "@/components/EpisodeLinkBanner";
 import { TreatmentContextSection } from "@/components/case-form/TreatmentContextSection";
 import { caseHasFreeFlap } from "@/lib/moduleVisibility";
+import { resolveFacilityName } from "@/lib/facilities";
 import { useFavouritesRecents } from "@/hooks/useFavouritesRecents";
 import type { TreatmentEpisode } from "@/types/episode";
 
@@ -125,9 +126,14 @@ export default function CaseFormScreen() {
   } = route.params;
   const [showDuplicateBanner, setShowDuplicateBanner] =
     useState(!!duplicateFrom);
+  const primarySelectedFacility = facilities.find(
+    (facility) => facility.isPrimary,
+  );
   const primaryFacility =
-    facilities.find((f) => f.isPrimary)?.facilityName ||
-    facilities[0]?.facilityName ||
+    (primarySelectedFacility
+      ? resolveFacilityName(primarySelectedFacility)
+      : null) ||
+    (facilities[0] ? resolveFacilityName(facilities[0]) : null) ||
     "";
 
   const form = useCaseForm({

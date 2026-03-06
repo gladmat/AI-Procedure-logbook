@@ -22,7 +22,6 @@ import * as MailComposer from "expo-mail-composer";
 import Constants from "expo-constants";
 import { ThemedText } from "@/components/ThemedText";
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
-import { FacilitySelector } from "@/components/FacilitySelector";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, Shadows } from "@/constants/theme";
 import { clearAllData, getCases } from "@/lib/storage";
@@ -36,7 +35,6 @@ import {
   getStoredSelectedSpecialties,
   getVisibleSpecialties,
 } from "@/lib/personalization";
-import { MasterFacility } from "@/data/facilities";
 import { getApiUrl } from "@/lib/query-client";
 import { getProfessionalRegistrationEntries } from "@shared/professionalRegistrations";
 
@@ -152,19 +150,9 @@ export default function SettingsScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { isAppLockConfigured } = useAppLock();
-  const {
-    user,
-    profile,
-    facilities,
-    logout,
-    deleteAccount,
-    addFacility,
-    removeFacility,
-  } = useAuth();
+  const { user, profile, facilities, logout, deleteAccount } = useAuth();
 
   const [caseCount, setCaseCount] = useState<number | null>(null);
-  const [showFacilitiesModal, setShowFacilitiesModal] = useState(false);
-  const [showFacilitySelector, setShowFacilitySelector] = useState(false);
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -174,21 +162,6 @@ export default function SettingsScreen() {
   const [deleteAccountPassword, setDeleteAccountPassword] = useState("");
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
-  const countryCode = useMemo(() => {
-    if (!profile?.countryOfPractice) return "NZ";
-    const countryMap: Record<string, string> = {
-      new_zealand: "NZ",
-      australia: "AU",
-      united_kingdom: "UK",
-      united_states: "US",
-      poland: "PL",
-    };
-    return countryMap[profile.countryOfPractice] || "NZ";
-  }, [profile?.countryOfPractice]);
-
-  const selectedFacilityIds = useMemo(() => {
-    return facilities.map((f) => f.facilityId).filter(Boolean) as string[];
-  }, [facilities]);
   const storedSelectedSpecialties = useMemo(
     () => getStoredSelectedSpecialties(profile),
     [profile],
@@ -344,39 +317,6 @@ export default function SettingsScreen() {
     } finally {
       setIsDeletingAccount(false);
     }
-  };
-
-  const handleSelectFacility = async (facility: MasterFacility) => {
-    if (selectedFacilityIds.includes(facility.id)) {
-      const existingFacility = facilities.find(
-        (f) => f.facilityId === facility.id,
-      );
-      if (existingFacility) {
-        await removeFacility(existingFacility.id);
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      }
-      return;
-    }
-    try {
-      await addFacility(facility.name, facilities.length === 0, facility.id);
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    } catch (error: any) {
-      Alert.alert("Error", error.message || "Failed to add facility");
-    }
-  };
-
-  const handleRemoveFacility = (id: string, name: string) => {
-    Alert.alert("Remove Facility", `Remove "${name}" from your facilities?`, [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Remove",
-        style: "destructive",
-        onPress: async () => {
-          await removeFacility(id);
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        },
-      },
-    ]);
   };
 
   const handleOpenUrl = async (url: string) => {
@@ -744,7 +684,7 @@ export default function SettingsScreen() {
               icon="home"
               label="My Facilities"
               subtitle={`${facilities.length} ${facilities.length === 1 ? "hospital" : "hospitals"}`}
-              onPress={() => setShowFacilitiesModal(true)}
+              onPress={() => navigation.navigate("ManageFacilities")}
             />
           </View>
         </View>
@@ -1012,150 +952,6 @@ export default function SettingsScreen() {
           </ThemedText>
         </View>
       </KeyboardAwareScrollViewCompat>
-
-      <Modal
-        visible={showFacilitiesModal}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowFacilitiesModal(false)}
-      >
-        <Pressable
-          style={styles.modalOverlay}
-          onPress={() => setShowFacilitiesModal(false)}
-        >
-          <View
-            style={[
-              styles.facilitiesModalContent,
-              { backgroundColor: theme.backgroundDefault },
-            ]}
-            onStartShouldSetResponder={() => true}
-          >
-            <View style={styles.facilitiesModalHeader}>
-              <ThemedText style={styles.modalTitle}>My Hospitals</ThemedText>
-              <Pressable onPress={() => setShowFacilitiesModal(false)}>
-                <Feather name="x" size={24} color={theme.textSecondary} />
-              </Pressable>
-            </View>
-            <ThemedText
-              style={[styles.modalSubtitle, { color: theme.textSecondary }]}
-            >
-              Select the hospitals where you operate. Only these will appear
-              when logging cases.
-            </ThemedText>
-
-            <Pressable
-              style={[
-                styles.addFromListButton,
-                { backgroundColor: theme.link },
-              ]}
-              onPress={() => {
-                setShowFacilitiesModal(false);
-                setShowFacilitySelector(true);
-              }}
-            >
-              <Feather name="plus" size={18} color="#FFF" />
-              <ThemedText style={styles.addFromListButtonText}>
-                Add from Hospital List
-              </ThemedText>
-            </Pressable>
-
-            {facilities.length > 0 ? (
-              facilities.map((facility) => {
-                const displayName =
-                  facility.facilityName ||
-                  (facility as any).facility_name ||
-                  "Unknown Facility";
-                return (
-                  <View
-                    key={facility.id}
-                    style={[
-                      styles.facilityItem,
-                      { backgroundColor: theme.backgroundSecondary },
-                    ]}
-                  >
-                    <View style={styles.facilityItemInfo}>
-                      <Feather
-                        name="home"
-                        size={16}
-                        color={theme.textSecondary}
-                      />
-                      <View style={styles.facilityItemTextContainer}>
-                        <ThemedText style={styles.facilityItemName}>
-                          {displayName}
-                        </ThemedText>
-                        {facility.facilityId ||
-                        (facility as any).facility_id ? (
-                          <ThemedText
-                            style={[
-                              styles.facilityItemId,
-                              { color: theme.textTertiary },
-                            ]}
-                          >
-                            Verified facility
-                          </ThemedText>
-                        ) : null}
-                      </View>
-                      {facility.isPrimary || (facility as any).is_primary ? (
-                        <View
-                          style={[
-                            styles.primaryBadge,
-                            { backgroundColor: theme.link + "20" },
-                          ]}
-                        >
-                          <ThemedText
-                            style={[
-                              styles.primaryBadgeText,
-                              { color: theme.link },
-                            ]}
-                          >
-                            Primary
-                          </ThemedText>
-                        </View>
-                      ) : null}
-                    </View>
-                    <Pressable
-                      onPress={() =>
-                        handleRemoveFacility(facility.id, displayName)
-                      }
-                    >
-                      <Feather name="x" size={18} color={theme.error} />
-                    </Pressable>
-                  </View>
-                );
-              })
-            ) : (
-              <View style={styles.emptyFacilities}>
-                <Feather name="home" size={32} color={theme.textTertiary} />
-                <ThemedText
-                  style={[
-                    styles.emptyFacilitiesText,
-                    { color: theme.textSecondary },
-                  ]}
-                >
-                  No hospitals selected yet
-                </ThemedText>
-                <ThemedText
-                  style={[
-                    styles.emptyFacilitiesHint,
-                    { color: theme.textTertiary },
-                  ]}
-                >
-                  {'Tap "Add from Hospital List" to get started'}
-                </ThemedText>
-              </View>
-            )}
-          </View>
-        </Pressable>
-      </Modal>
-
-      <FacilitySelector
-        visible={showFacilitySelector}
-        onClose={() => setShowFacilitySelector(false)}
-        onSelect={handleSelectFacility}
-        countryCode={countryCode}
-        selectedFacilityIds={selectedFacilityIds}
-        title="Add Hospital"
-      />
 
       <Modal
         visible={showChangePasswordModal}

@@ -7,6 +7,7 @@ import { copy } from "@/constants/onboardingCopy";
 import { getApiUrl } from "@/lib/query-client";
 
 const dark = Colors.dark;
+const HEADER_TOP_OFFSET = 72;
 
 interface Props {
   onContinueWithEmail: () => void;
@@ -27,7 +28,12 @@ export function OnboardingAuthScreen({ onContinueWithEmail, onSignIn }: Props) {
 
   return (
     <View style={[styles.root, { paddingBottom: insets.bottom + 20 }]}>
-      <View style={[styles.contentArea, { paddingTop: insets.top + 60 }]}>
+      <View
+        style={[
+          styles.contentArea,
+          { paddingTop: Math.max(insets.top, 44) + HEADER_TOP_OFFSET },
+        ]}
+      >
         <OpusMark size={32} />
         <Text style={styles.headline}>{c.headline}</Text>
         <Text style={styles.subhead}>{c.subhead}</Text>

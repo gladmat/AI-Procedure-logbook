@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
-import { StepIndicator } from "@/components/onboarding/StepIndicator";
+import { StepHeader } from "@/components/onboarding/StepHeader";
 import FeatherIcon from "@/components/FeatherIcon";
 import { palette, Colors } from "@/constants/theme";
 import { copy } from "@/constants/onboardingCopy";
@@ -55,9 +55,10 @@ function TrustPointRow({ point, index }: { point: TrustPoint; index: number }) {
 
 interface Props {
   onComplete: () => void;
+  onBack?: () => void;
 }
 
-export function PrivacyScreen({ onComplete }: Props) {
+export function PrivacyScreen({ onComplete, onBack }: Props) {
   const insets = useSafeAreaInsets();
   const { updateProfile } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -81,10 +82,7 @@ export function PrivacyScreen({ onComplete }: Props) {
 
   return (
     <View style={[styles.root, { paddingBottom: insets.bottom + 20 }]}>
-      {/* Step indicator */}
-      <View style={styles.stepArea}>
-        <StepIndicator currentStep={4} />
-      </View>
+      <StepHeader currentStep={4} onBack={onBack} />
 
       {/* Content */}
       <ScrollView
@@ -139,10 +137,6 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: palette.charcoal[950],
-  },
-  stepArea: {
-    paddingTop: 12,
-    paddingBottom: 20,
   },
   scrollView: {
     flex: 1,

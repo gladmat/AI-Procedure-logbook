@@ -28,6 +28,7 @@ import {
   setAppLockEnabled,
   clearAllAppLockData,
 } from "@/lib/appLockStorage";
+import { isFaceIdUnsupportedInCurrentRuntime } from "@/lib/biometrics";
 import { Spacing, BorderRadius, Shadows, Typography } from "@/constants/theme";
 
 const PIN_LENGTH = 6;
@@ -51,6 +52,9 @@ export default function SetupAppLockScreen() {
   const [biometricEnabled, setBiometricEnabled] = useState(false);
   const [biometricAvailable, setBiometricAvailable] = useState(false);
   const [biometricLabel, setBiometricLabel] = useState("Biometrics");
+  const [biometricBlockedReason, setBiometricBlockedReason] = useState<
+    string | null
+  >(null);
   const [timeout, setTimeout_] = useState(0);
 
   // PIN setup state
@@ -73,6 +77,7 @@ export default function SetupAppLockScreen() {
       setHasPinSet(pinExists);
       setBiometricEnabled(bioPref);
       setTimeout_(currentTimeout);
+      setBiometricBlockedReason(null);
 
       const hasHardware = await LocalAuthentication.hasHardwareAsync();
       const isEnrolled = await LocalAuthentication.isEnrolledAsync();
@@ -91,6 +96,13 @@ export default function SetupAppLockScreen() {
           types.includes(LocalAuthentication.AuthenticationType.FINGERPRINT)
         ) {
           setBiometricLabel("Touch ID");
+        }
+
+        if (isFaceIdUnsupportedInCurrentRuntime(types)) {
+          setBiometricAvailable(false);
+          setBiometricBlockedReason(
+            "Face ID can't be tested in Expo Go. Use a development build or TestFlight to verify it.",
+          );
         }
       }
     };
@@ -213,11 +225,17 @@ export default function SetupAppLockScreen() {
     }
   }, [pin]);
 
-  const handleToggleBiometric = useCallback(async (value: boolean) => {
-    await setBiometricPreference(value);
-    setBiometricEnabled(value);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-  }, []);
+  const handleToggleBiometric = useCallback(
+    async (value: boolean) => {
+      if (!biometricAvailable && value) {
+        return;
+      }
+      await setBiometricPreference(value);
+      setBiometricEnabled(value);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    },
+    [biometricAvailable],
+  );
 
   const handleSetTimeout = useCallback(async (seconds: number) => {
     await setAutoLockTimeout(seconds);
@@ -458,7 +476,7 @@ export default function SetupAppLockScreen() {
       </View>
 
       {/* Biometrics Section — only visible when PIN is set and hardware available */}
-      {hasPinSet && biometricAvailable && (
+      {hasPinSet && (biometricAvailable || biometricBlockedReason) && (
         <View style={styles.section}>
           <ThemedText
             style={[styles.sectionTitle, { color: colors.textSecondary }]}
@@ -491,12 +509,14 @@ export default function SetupAppLockScreen() {
                 <ThemedText
                   style={[styles.rowSubtitle, { color: colors.textSecondary }]}
                 >
-                  Use {biometricLabel} to unlock the app
+                  {biometricBlockedReason ||
+                    `Use ${biometricLabel} to unlock the app`}
                 </ThemedText>
               </View>
               <Switch
                 value={biometricEnabled}
                 onValueChange={handleToggleBiometric}
+                disabled={!biometricAvailable && !biometricEnabled}
                 trackColor={{
                   false: colors.backgroundTertiary,
                   true: colors.link,

@@ -17,6 +17,7 @@ import {
   isPinSet,
   migratePinIfNeeded,
 } from "@/lib/appLockStorage";
+import { isFaceIdUnsupportedInCurrentRuntime } from "@/lib/biometrics";
 
 interface AppLockContextType {
   isLocked: boolean;
@@ -108,6 +109,12 @@ export function AppLockProvider({ children }: { children: ReactNode }) {
 
       const isEnrolled = await LocalAuthentication.isEnrolledAsync();
       if (!isEnrolled) return false;
+
+      const authenticationTypes =
+        await LocalAuthentication.supportedAuthenticationTypesAsync();
+      if (isFaceIdUnsupportedInCurrentRuntime(authenticationTypes)) {
+        return false;
+      }
 
       const result = await LocalAuthentication.authenticateAsync({
         promptMessage: "Unlock Opus",

@@ -20,7 +20,6 @@ import {
   updateProfile as authUpdateProfile,
   uploadProfilePicture as authUploadProfilePicture,
   deleteProfilePicture as authDeleteProfilePicture,
-  getUserFacilities,
   createFacility as authCreateFacility,
   deleteFacility as authDeleteFacility,
   updateFacility as authUpdateFacility,
@@ -29,6 +28,7 @@ import {
 import { clearAllData } from "@/lib/storage";
 import { getOrCreateDeviceIdentity } from "@/lib/e2ee";
 import { clearAllAppLockData } from "@/lib/appLockStorage";
+import { normalizeUserFacility } from "@/lib/facilities";
 
 interface AuthContextType {
   user: AuthUser | null;
@@ -48,7 +48,7 @@ interface AuthContextType {
     name: string,
     isPrimary?: boolean,
     facilityId?: string,
-  ) => Promise<void>;
+  ) => Promise<UserFacility>;
   removeFacility: (id: string) => Promise<void>;
   setFacilityPrimary: (id: string) => Promise<void>;
   refreshUser: () => Promise<void>;
@@ -68,7 +68,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (data) {
         setUser(data.user);
         setProfile(data.profile || null);
-        setFacilities(data.facilities || []);
+        setFacilities((data.facilities || []).map(normalizeUserFacility));
 
         try {
           const { deviceId, publicKey } = await getOrCreateDeviceIdentity();
@@ -104,7 +104,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const data = await authLogin(email, password);
     setUser(data.user);
     setProfile(data.profile || null);
-    setFacilities(data.facilities || []);
+    setFacilities((data.facilities || []).map(normalizeUserFacility));
 
     try {
       const { deviceId, publicKey } = await getOrCreateDeviceIdentity();
@@ -165,8 +165,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isPrimary: boolean = false,
     facilityId?: string,
   ) => {
-    const facility = await authCreateFacility(name, isPrimary, facilityId);
+    const facility = normalizeUserFacility(
+      await authCreateFacility(name, isPrimary, facilityId),
+    );
     setFacilities((prev) => [...prev, facility]);
+    return facility;
   };
 
   const removeFacility = async (id: string) => {
