@@ -27,6 +27,7 @@ import { Spacing, BorderRadius, Shadows } from "@/constants/theme";
 import { clearAllData, getCases } from "@/lib/storage";
 import { exportCases, ExportFormat, EXPORT_FORMAT_LABELS } from "@/lib/export";
 import { validateMigrationCorpus } from "@/lib/migrationValidator";
+import { requestOnboardingRestart } from "@/lib/onboarding";
 import { getCodingSystemForProfile } from "@/lib/snomedCt";
 import { getAuthToken } from "@/lib/auth";
 import { useAuth } from "@/contexts/AuthContext";
@@ -150,7 +151,8 @@ export default function SettingsScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { isAppLockConfigured } = useAppLock();
-  const { user, profile, facilities, logout, deleteAccount } = useAuth();
+  const { user, profile, facilities, logout, deleteAccount, updateProfile } =
+    useAuth();
 
   const [caseCount, setCaseCount] = useState<number | null>(null);
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
@@ -232,6 +234,37 @@ export default function SettingsScreen() {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             Alert.alert("Data Cleared", "All data has been deleted");
             setCaseCount(0);
+          },
+        },
+      ],
+    );
+  };
+
+  const handleRestartOnboarding = () => {
+    if (!user?.id) {
+      return;
+    }
+
+    Alert.alert(
+      "Run Onboarding Again",
+      "This will reopen the onboarding flow with your current answers prefilled so you can test it again.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Run Again",
+          onPress: async () => {
+            try {
+              await requestOnboardingRestart(user.id);
+              await updateProfile({ onboardingComplete: false });
+              Haptics.notificationAsync(
+                Haptics.NotificationFeedbackType.Success,
+              );
+            } catch (error: any) {
+              Alert.alert(
+                "Could Not Restart",
+                error?.message || "Failed to restart onboarding.",
+              );
+            }
           },
         },
       ],
@@ -713,6 +746,13 @@ export default function SettingsScreen() {
               label="Surgical Preferences"
               subtitle="Anticoagulation & monitoring defaults"
               onPress={() => navigation.navigate("SurgicalPreferences")}
+            />
+            <View style={[styles.divider, { backgroundColor: theme.border }]} />
+            <SettingsItem
+              icon="refresh-cw"
+              label="Run Onboarding Again"
+              subtitle="Reopen categories, training, hospitals, and privacy flow"
+              onPress={handleRestartOnboarding}
             />
           </View>
         </View>

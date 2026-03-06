@@ -35,6 +35,7 @@ import {
   buildSurgicalPreferencesUpdate,
   getStoredSelectedSpecialties,
 } from "@/lib/personalization";
+import { consumeOnboardingRestartRequest } from "@/lib/onboarding";
 import { TRAINING_OPTIONS } from "@/constants/trainingProgrammes";
 import {
   Specialty,
@@ -402,6 +403,8 @@ export default function RootStackNavigator() {
   }, [isAuthenticated]);
 
   useEffect(() => {
+    let isCancelled = false;
+
     if (!isAuthenticated || onboardingComplete || !user?.id) {
       initializedOnboardingUserIdRef.current = null;
       setCurrentOnboardingStep(null);
@@ -413,11 +416,29 @@ export default function RootStackNavigator() {
       return;
     }
 
-    initializedOnboardingUserIdRef.current = user.id;
-    setOnboardingDraft(buildOnboardingDraft(profile, facilities));
-    setCurrentOnboardingStep(
-      getFirstIncompleteOnboardingStep(profile, facilities),
-    );
+    const initializeOnboarding = async () => {
+      initializedOnboardingUserIdRef.current = user.id;
+
+      const shouldRestartFromCategories = await consumeOnboardingRestartRequest(
+        user.id,
+      );
+      if (isCancelled) {
+        return;
+      }
+
+      setOnboardingDraft(buildOnboardingDraft(profile, facilities));
+      setCurrentOnboardingStep(
+        shouldRestartFromCategories
+          ? "categories"
+          : getFirstIncompleteOnboardingStep(profile, facilities),
+      );
+    };
+
+    void initializeOnboarding();
+
+    return () => {
+      isCancelled = true;
+    };
   }, [facilities, isAuthenticated, onboardingComplete, profile, user?.id]);
 
   const activeOnboardingStep =
