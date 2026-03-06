@@ -1555,8 +1555,9 @@ export function ProcedureClinicalDetails({
   const picklistEntry = picklistEntryId
     ? findPicklistEntry(picklistEntryId)
     : undefined;
-  const isFreeFlapProcedure = picklistEntry
-    ? !!picklistEntry.hasFreeFlap
+  const isFreeFlapProcedure = picklistEntryId
+    ? !!PICKLIST_TO_FLAP_TYPE[picklistEntryId] ||
+      (picklistEntry?.tags?.includes("free_flap") ?? false)
     : procedureType.toLowerCase().includes("free flap") ||
       procedureType.toLowerCase().includes("free tissue");
 
@@ -1586,7 +1587,7 @@ export function ProcedureClinicalDetails({
     return null;
   }
 
-  if (specialty === "hand_surgery") {
+  if (specialty === "hand_wrist") {
     const handDetails: HandSurgeryDetails = {
       injuryMechanism: (clinicalDetails as HandSurgeryDetails)?.injuryMechanism,
       fractures: (clinicalDetails as HandSurgeryDetails)?.fractures,

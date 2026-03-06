@@ -74,7 +74,7 @@ import { FlapOutcomeSheet } from "@/components/detail-sheets/FlapOutcomeSheet";
 import { HandTraumaSheet } from "@/components/detail-sheets/HandTraumaSheet";
 import { InfectionSheet } from "@/components/detail-sheets/InfectionSheet";
 import { WoundAssessmentSheet } from "@/components/detail-sheets/WoundAssessmentSheet";
-import { getModuleVisibility } from "@/lib/moduleVisibility";
+import { getModuleVisibility, procedureHasFreeFlap } from "@/lib/moduleVisibility";
 import { generateFlapOutcomeSummary } from "@/components/FlapOutcomeSection";
 import type { FreeFlapOutcomeDetails } from "@/types/case";
 import {
@@ -230,7 +230,7 @@ export function DiagnosisGroupEditor({
         setSelectedSuggestionIds(new Set(procIds));
 
         // Infer hand case type from loaded diagnosis
-        if (group.specialty === "hand_surgery") {
+        if (group.specialty === "hand_wrist") {
           setHandCaseType(
             dx.clinicalGroup === "trauma" ? "trauma" : "elective",
           );
@@ -240,11 +240,11 @@ export function DiagnosisGroupEditor({
   }, [group]);
 
   const hasFractureSubcategory =
-    groupSpecialty === "hand_surgery" &&
+    groupSpecialty === "hand_wrist" &&
     procedures.some((p) => p.subcategory === "Fracture & Joint Fixation");
 
   useEffect(() => {
-    if (groupSpecialty !== "hand_surgery") {
+    if (groupSpecialty !== "hand_wrist") {
       setHandCaseType(null);
       return;
     }
@@ -445,7 +445,7 @@ export function DiagnosisGroupEditor({
       setIsDiagnosisPickerCollapsed(true);
       setShowAllProcedures(false);
 
-      if (groupSpecialty === "hand_surgery" && dx.clinicalGroup) {
+      if (groupSpecialty === "hand_wrist" && dx.clinicalGroup) {
         setHandCaseType(dx.clinicalGroup === "trauma" ? "trauma" : "elective");
       }
 
@@ -465,7 +465,12 @@ export function DiagnosisGroupEditor({
         (picklistId, idx) => {
           const entry = findPicklistEntry(picklistId);
           let clinicalDetails: FreeFlapDetails | undefined = undefined;
-          if (entry?.hasFreeFlap) {
+          if (
+            procedureHasFreeFlap({
+              picklistEntryId: picklistId,
+              tags: entry?.tags,
+            })
+          ) {
             clinicalDetails = buildFreeFlapClinicalDetails(picklistId, dx);
           }
           return {
@@ -539,7 +544,10 @@ export function DiagnosisGroupEditor({
               (picklistId) => {
                 const entry = findPicklistEntry(picklistId);
                 const clinicalDetails =
-                  entry?.hasFreeFlap && selectedDiagnosis
+                  procedureHasFreeFlap({
+                    picklistEntryId: picklistId,
+                    tags: entry?.tags,
+                  }) && selectedDiagnosis
                     ? buildFreeFlapClinicalDetails(picklistId, selectedDiagnosis)
                     : undefined;
                 return {
@@ -586,7 +594,10 @@ export function DiagnosisGroupEditor({
           entry &&
           !procedures.some((p) => p.picklistEntryId === procedurePicklistId)
         ) {
-          const clinicalDetails = entry.hasFreeFlap
+          const clinicalDetails = procedureHasFreeFlap({
+            picklistEntryId: procedurePicklistId,
+            tags: entry.tags,
+          })
             ? buildFreeFlapClinicalDetails(procedurePicklistId, selectedDiagnosis)
             : undefined;
           const newProc: CaseProcedure = {
@@ -655,11 +666,7 @@ export function DiagnosisGroupEditor({
 
   const freeFlapProcedure = useMemo(
     () =>
-      procedures.find((p) => {
-        if (!p.picklistEntryId) return false;
-        const entry = findPicklistEntry(p.picklistEntryId);
-        return entry?.hasFreeFlap;
-      }),
+      procedures.find((p) => procedureHasFreeFlap(p)),
     [procedures],
   );
 
@@ -775,7 +782,10 @@ export function DiagnosisGroupEditor({
           if (!existingPicklistIds.has(picklistId)) {
             const entry = findPicklistEntry(picklistId);
             if (entry) {
-              const clinicalDetails = entry.hasFreeFlap
+              const clinicalDetails = procedureHasFreeFlap({
+                picklistEntryId: picklistId,
+                tags: entry.tags,
+              })
                 ? buildFreeFlapClinicalDetails(picklistId, dx)
                 : undefined;
               newProcedures.push({
@@ -974,7 +984,7 @@ export function DiagnosisGroupEditor({
       // Auto-resolve diagnosis from fractures if present and no diagnosis yet
       if (newFractures.length > 0 && !selectedDiagnosis) {
         const firstFracture = newFractures[0];
-        if (firstFracture?.aoCode && groupSpecialty === "hand_surgery") {
+        if (firstFracture?.aoCode && groupSpecialty === "hand_wrist") {
           const familyCode =
             firstFracture.details?.familyCode ??
             firstFracture.aoCode.slice(0, 2);
@@ -1227,7 +1237,7 @@ export function DiagnosisGroupEditor({
         ) : null}
 
         {/* Feature 3: Hand surgery case type selector */}
-        {groupSpecialty === "hand_surgery" ? (
+        {groupSpecialty === "hand_wrist" ? (
           <View style={styles.caseTypeSelectorContainer}>
             <ThemedText
               style={[styles.caseTypeLabel, { color: theme.textSecondary }]}
@@ -1301,9 +1311,9 @@ export function DiagnosisGroupEditor({
               selectedDiagnosisId={selectedDiagnosis?.id}
               onSelect={handleDiagnosisSelect}
               clinicalGroupFilter={
-                groupSpecialty === "hand_surgery" && handCaseType === "trauma"
+                groupSpecialty === "hand_wrist" && handCaseType === "trauma"
                   ? "trauma"
-                  : groupSpecialty === "hand_surgery" &&
+                  : groupSpecialty === "hand_wrist" &&
                       handCaseType === "elective"
                     ? "non-trauma"
                     : undefined
@@ -1499,7 +1509,8 @@ export function DiagnosisGroupEditor({
 
         {selectedDiagnosis?.hasEnhancedHistology ||
         groupSpecialty === "general" ||
-        groupSpecialty === "head_neck" ? (
+        groupSpecialty === "head_neck" ||
+        groupSpecialty === "skin_cancer" ? (
           <View style={{ marginBottom: Spacing.md }}>
             <Pressable
               onPress={() => {

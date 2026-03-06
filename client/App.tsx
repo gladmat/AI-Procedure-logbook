@@ -1,5 +1,6 @@
-import React, { useEffect, useMemo } from "react";
-import { StyleSheet } from "react-native";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { StyleSheet, View } from "react-native";
+import * as SplashScreen from "expo-splash-screen";
 import {
   NavigationContainer,
   DefaultTheme,
@@ -23,6 +24,9 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { AppLockProvider } from "@/contexts/AppLockContext";
 import { MediaCallbackProvider } from "@/contexts/MediaCallbackContext";
 import { ThemeProvider, useTheme } from "@/hooks/useTheme";
+
+// Keep native splash visible while we load assets
+SplashScreen.preventAutoHideAsync();
 
 function StatusBarThemed() {
   const { isDark } = useTheme();
@@ -60,9 +64,23 @@ function ThemedNavigationContainer({
 }
 
 export default function App() {
+  const [ready, setReady] = useState(false);
+
   useEffect(() => {
-    KeyboardController.preload();
+    async function prepare() {
+      KeyboardController.preload();
+      // Preload onboarding feature images when they exist
+      // await Asset.loadAsync([...]);
+      setReady(true);
+    }
+    prepare();
   }, []);
+
+  const onLayoutRootView = useCallback(async () => {
+    if (ready) await SplashScreen.hideAsync();
+  }, [ready]);
+
+  if (!ready) return null;
 
   return (
     <ErrorBoundary>
@@ -74,10 +92,12 @@ export default function App() {
                 <SafeAreaProvider>
                   <GestureHandlerRootView style={styles.root}>
                     <KeyboardProvider>
-                      <ThemedNavigationContainer>
-                        <RootStackNavigator />
-                      </ThemedNavigationContainer>
-                      <StatusBarThemed />
+                      <View style={styles.root} onLayout={onLayoutRootView}>
+                        <ThemedNavigationContainer>
+                          <RootStackNavigator />
+                        </ThemedNavigationContainer>
+                        <StatusBarThemed />
+                      </View>
                     </KeyboardProvider>
                   </GestureHandlerRootView>
                 </SafeAreaProvider>

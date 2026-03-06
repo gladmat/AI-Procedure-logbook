@@ -9,6 +9,7 @@ import AddTimelineEventScreen from "@/screens/AddTimelineEventScreen";
 import MediaManagementScreen from "@/screens/MediaManagementScreen";
 import AddOperativeMediaScreen from "@/screens/AddOperativeMediaScreen";
 import AuthScreen from "@/screens/AuthScreen";
+import { OnboardingNavigator } from "@/navigation/OnboardingNavigator";
 import OnboardingScreen from "@/screens/OnboardingScreen";
 import LockScreen from "@/screens/LockScreen";
 import SetupAppLockScreen from "@/screens/SetupAppLockScreen";
@@ -109,7 +110,7 @@ export default function RootStackNavigator() {
       ) : !onboardingComplete ? (
         <Stack.Screen
           name="Onboarding"
-          component={OnboardingScreen}
+          component={OnboardingNavigator}
           options={{ headerShown: false }}
         />
       ) : (
