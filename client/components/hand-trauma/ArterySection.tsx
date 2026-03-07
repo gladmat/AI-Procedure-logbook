@@ -4,7 +4,11 @@ import { Feather } from "@/components/FeatherIcon";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
-import type { DigitId, HandTraumaStructure } from "@/types/case";
+import type {
+  DigitId,
+  HandTraumaStructure,
+  PerfusionStatusEntry,
+} from "@/types/case";
 import {
   DIGIT_ARTERY_MAP,
   ARTERY_LABELS,
@@ -21,12 +25,19 @@ interface ArterySectionProps {
     digit?: DigitId,
     side?: "radial" | "ulnar",
   ) => void;
+  perfusionStatuses?: PerfusionStatusEntry[];
+  onPerfusionChange?: (
+    digit: DigitId,
+    status?: PerfusionStatusEntry["status"],
+  ) => void;
 }
 
 export function ArterySection({
   selectedDigits,
   checkedStructures,
   onToggleStructure,
+  perfusionStatuses = [],
+  onPerfusionChange,
 }: ArterySectionProps) {
   const { theme } = useTheme();
 
@@ -48,6 +59,72 @@ export function ArterySection({
 
   return (
     <View style={styles.container}>
+      {selectedDigits.length > 0 ? (
+        <View style={styles.group}>
+          <ThemedText
+            type="small"
+            style={[styles.groupLabel, { color: theme.textSecondary }]}
+          >
+            Perfusion
+          </ThemedText>
+          {selectedDigits.map((digit) => {
+            const selectedStatus = perfusionStatuses.find(
+              (entry) => entry.digit === digit,
+            )?.status;
+
+            return (
+              <View
+                key={`perfusion-${digit}`}
+                style={[styles.perfusionRow, { borderColor: theme.border }]}
+              >
+                <ThemedText
+                  type="small"
+                  style={[styles.perfusionLabel, { color: theme.text }]}
+                >
+                  Dig. {digit}
+                </ThemedText>
+                <View style={styles.perfusionPills}>
+                  {[
+                    { label: "Normal", value: undefined },
+                    { label: "Impaired", value: "impaired" as const },
+                    { label: "Absent", value: "absent" as const },
+                  ].map((option) => {
+                    const isSelected = selectedStatus === option.value;
+                    return (
+                      <Pressable
+                        key={option.label}
+                        style={[
+                          styles.perfusionPill,
+                          {
+                            backgroundColor: isSelected
+                              ? theme.link
+                              : theme.backgroundTertiary,
+                            borderColor: isSelected
+                              ? theme.link
+                              : theme.border,
+                          },
+                        ]}
+                        onPress={() => onPerfusionChange?.(digit, option.value)}
+                      >
+                        <ThemedText
+                          type="small"
+                          style={{
+                            color: isSelected ? theme.buttonText : theme.text,
+                            fontWeight: isSelected ? "600" : "400",
+                          }}
+                        >
+                          {option.label}
+                        </ThemedText>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              </View>
+            );
+          })}
+        </View>
+      ) : null}
+
       {digitalArteries.length > 0 ? (
         <View style={styles.group}>
           <ThemedText
@@ -137,6 +214,26 @@ const styles = StyleSheet.create({
   groupLabel: {
     fontWeight: "600",
     marginBottom: Spacing.xs,
+  },
+  perfusionRow: {
+    borderWidth: 1,
+    borderRadius: BorderRadius.xs,
+    padding: Spacing.sm,
+    gap: Spacing.sm,
+  },
+  perfusionLabel: {
+    fontWeight: "600",
+  },
+  perfusionPills: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: Spacing.xs,
+  },
+  perfusionPill: {
+    paddingVertical: Spacing.xs,
+    paddingHorizontal: Spacing.sm,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
   },
   checkRow: {
     flexDirection: "row",

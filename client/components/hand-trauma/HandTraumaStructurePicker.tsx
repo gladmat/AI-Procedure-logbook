@@ -25,6 +25,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import type {
   DigitId,
+  HandTraumaCompleteness,
   HandTraumaDetails,
   HandTraumaStructure,
   CaseProcedure,
@@ -121,6 +122,10 @@ export function HandTraumaStructurePicker({
   );
   const [flexorZone, setFlexorZone] = useState("");
   const [extensorZone, setExtensorZone] = useState("");
+  const [flexorCompleteness, setFlexorCompleteness] =
+    useState<HandTraumaCompleteness>("complete");
+  const [extensorCompleteness, setExtensorCompleteness] =
+    useState<HandTraumaCompleteness>("complete");
   const initializedRef = useRef(false);
 
   const selectedDigits = useMemo(
@@ -251,6 +256,16 @@ export function HandTraumaStructurePicker({
       );
 
       if (existing) {
+        if (
+          existing.zone !== structure.zone ||
+          existing.completeness !== structure.completeness
+        ) {
+          const updated = injuredStructures.map((entry) =>
+            entry === existing ? { ...existing, ...structure } : entry,
+          );
+          onChange({ ...value, injuredStructures: updated });
+          return;
+        }
         if (existing.generatedProcedureId) {
           removeProcedure(existing.generatedProcedureId);
         }
@@ -399,6 +414,8 @@ export function HandTraumaStructurePicker({
                       checkedStructures={injuredStructures}
                       zone={flexorZone}
                       onZoneChange={setFlexorZone}
+                      completeness={flexorCompleteness}
+                      onCompletenessChange={setFlexorCompleteness}
                       onToggleStructure={handleToggleTendonStructure}
                     />
                   ) : null}
@@ -408,6 +425,8 @@ export function HandTraumaStructurePicker({
                       checkedStructures={injuredStructures}
                       zone={extensorZone}
                       onZoneChange={setExtensorZone}
+                      completeness={extensorCompleteness}
+                      onCompletenessChange={setExtensorCompleteness}
                       onToggleStructure={handleToggleTendonStructure}
                     />
                   ) : null}

@@ -26,6 +26,11 @@ export const AdmissionSection = React.memo(function AdmissionSection() {
   const { theme } = useTheme();
   const { state, showInjuryDate } = useCaseFormState();
   const { dispatch } = useCaseFormDispatch();
+  const hasHandTraumaGroup = state.diagnosisGroups.some(
+    (group) =>
+      group.specialty === "hand_wrist" &&
+      Boolean(group.diagnosisClinicalDetails?.handTrauma),
+  );
 
   return (
     <>
@@ -160,7 +165,7 @@ export const AdmissionSection = React.memo(function AdmissionSection() {
         </View>
       </View>
 
-      {showInjuryDate ? (
+      {showInjuryDate && !hasHandTraumaGroup ? (
         <View style={styles.row}>
           <View style={styles.halfField}>
             <DatePickerField

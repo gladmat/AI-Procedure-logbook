@@ -13,6 +13,7 @@ import { Spacing, BorderRadius } from "@/constants/theme";
 import { DiagnosisGroup } from "@/types/case";
 import type { InfectionOverlay } from "@/types/infection";
 import type { TreatmentEpisode, EpisodeType } from "@/types/episode";
+import { getDiagnosisGroupTitle } from "@/lib/caseDiagnosisSummary";
 
 interface DiagnosisProcedureSectionProps {
   scrollViewRef: React.RefObject<any>;
@@ -138,7 +139,7 @@ export const DiagnosisProcedureSection = React.memo(
         <InlineEpisodeCreator
           visible={showInlineEpisodeCreator}
           specialty={primaryGroup?.specialty ?? "general"}
-          diagnosisName={primaryGroup?.diagnosis?.displayName}
+          diagnosisName={getDiagnosisGroupTitle(primaryGroup)}
           diagnosisCode={primaryGroup?.diagnosis?.snomedCtCode}
           laterality={primaryGroup?.diagnosisClinicalDetails?.laterality}
           subcategory={primaryGroup?.procedures[0]?.subcategory}

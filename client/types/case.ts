@@ -888,6 +888,19 @@ export type Laterality = "left" | "right" | "bilateral" | "not_applicable";
 
 export type DigitId = "I" | "II" | "III" | "IV" | "V";
 
+export type HandTraumaCompleteness = "partial" | "complete";
+
+export interface PerfusionStatusEntry {
+  digit: DigitId;
+  status: "impaired" | "absent";
+}
+
+export interface SoftTissueDescriptor {
+  type: "defect" | "loss" | "degloving" | "contamination";
+  surfaces?: ("palmar" | "dorsal")[];
+  digits?: DigitId[];
+}
+
 export interface HandTraumaStructure {
   category:
     | "flexor_tendon"
@@ -901,22 +914,27 @@ export interface HandTraumaStructure {
   digit?: DigitId;
   zone?: string;
   side?: "radial" | "ulnar";
+  completeness?: HandTraumaCompleteness;
   generatedProcedurePicklistId?: string;
   generatedProcedureId?: string;
 }
 
 export interface DislocationEntry {
   joint: "pip" | "mcp" | "cmc" | "thumb_cmc" | "druj" | "perilunate" | "lunate";
+  digit?: DigitId;
   direction?: "dorsal" | "volar" | "lateral";
   hasFracture?: boolean;
   isComplex?: boolean;
 }
 
 export interface HandTraumaDetails {
+  /** Deprecated write target. Keep for backward compatibility on read. */
   injuryMechanism?: string;
   affectedDigits?: DigitId[];
   injuredStructures?: HandTraumaStructure[];
   dislocations?: DislocationEntry[];
+  perfusionStatuses?: PerfusionStatusEntry[];
+  softTissueDescriptors?: SoftTissueDescriptor[];
   isHighPressureInjection?: boolean;
   isFightBite?: boolean;
   isCompartmentSyndrome?: boolean;
@@ -929,12 +947,14 @@ export interface HandTraumaDetails {
     | "mcp"
     | "ray"
     | "hand_wrist";
+  amputationType?: "complete" | "subtotal";
   isReplantable?: boolean;
 }
 
 export interface DiagnosisClinicalDetails {
   laterality?: Laterality;
   injuryMechanism?: string;
+  injuryMechanismOther?: string;
   handTrauma?: HandTraumaDetails;
 }
 
@@ -1329,6 +1349,8 @@ export interface FractureEntry {
     finger?: string;
     phalanx?: string;
     segment?: string;
+    openStatus?: "open" | "closed";
+    isComminuted?: boolean;
     qualifications?: string[];
   };
 }

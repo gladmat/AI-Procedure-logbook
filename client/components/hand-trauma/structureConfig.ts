@@ -66,7 +66,8 @@ export const DIGIT_ARTERY_MAP: Record<
 export const PROXIMAL_NERVES = [
   { id: "median", label: "Median nerve" },
   { id: "ulnar", label: "Ulnar nerve" },
-  { id: "radial", label: "Radial nerve / PIN / SRN" },
+  { id: "pin", label: "Posterior interosseous nerve (PIN)" },
+  { id: "srn", label: "Superficial radial nerve (SRN)" },
   { id: "dbun", label: "Dorsal branch of ulnar nerve" },
 ] as const;
 
@@ -90,7 +91,8 @@ export const NERVE_LABELS: Record<string, string> = {
   N10: "Ulnar digital nerve — Little",
   median: "Median nerve",
   ulnar: "Ulnar nerve",
-  radial: "Radial nerve / PIN / SRN",
+  pin: "Posterior interosseous nerve (PIN)",
+  srn: "Superficial radial nerve (SRN)",
   dbun: "Dorsal branch of ulnar nerve",
 };
 
@@ -133,7 +135,8 @@ export const STRUCTURE_PROCEDURE_MAP: Record<string, string> = {
   N10: "hand_nerve_digital_repair",
   median: "hand_nerve_median_repair",
   ulnar: "hand_nerve_ulnar_repair",
-  radial: "hand_nerve_radial_repair",
+  pin: "hand_nerve_radial_repair",
+  srn: "hand_nerve_radial_repair",
   dbun: "hand_nerve_ulnar_repair",
   A1: "hand_vasc_digital_artery_repair",
   A2: "hand_vasc_digital_artery_repair",

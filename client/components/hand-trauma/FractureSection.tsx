@@ -6,7 +6,7 @@
  * Same data output as AOFractureCascadingForm (FractureEntry), new UI.
  */
 
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useEffect } from "react";
 import { View, Pressable, StyleSheet, LayoutAnimation } from "react-native";
 import { Feather } from "@/components/FeatherIcon";
 import * as Haptics from "expo-haptics";
@@ -95,6 +95,8 @@ export function FractureSection({
   const [selectedQualifications, setSelectedQualifications] = useState<
     string[]
   >([]);
+  const [openStatus, setOpenStatus] = useState<"" | "open" | "closed">("");
+  const [isComminuted, setIsComminuted] = useState(false);
 
   // Auto-select finger if only one digit is selected
   const firstDigit = selectedDigits[0];
@@ -102,6 +104,22 @@ export function FractureSection({
     selectedDigits.length === 1 && firstDigit
       ? DIGIT_TO_FINGER[firstDigit]
       : "";
+  const availableFingerOptions = useMemo(() => {
+    if (selectedDigits.length === 0) return FINGER_OPTIONS;
+    const allowed = new Set(selectedDigits.map((digit) => DIGIT_TO_FINGER[digit]));
+    return FINGER_OPTIONS.filter((finger) => allowed.has(finger.key));
+  }, [selectedDigits]);
+  const shouldSimplifyToSelectedRays = selectedDigits.length > 0;
+
+  useEffect(() => {
+    if (
+      selectedFinger &&
+      !availableFingerOptions.some((finger) => finger.key === selectedFinger)
+    ) {
+      setSelectedFinger("");
+      resetFrom("finger");
+    }
+  }, [availableFingerOptions, selectedFinger]);
 
   const resetFrom = (field: string) => {
     if (field === "category") {
@@ -111,6 +129,8 @@ export function FractureSection({
       setSelectedSegment("");
       setSelectedType("");
       setSelectedQualifications([]);
+      setOpenStatus("");
+      setIsComminuted(false);
     } else if (field === "bone" || field === "finger") {
       setSelectedPhalanx("");
       setSelectedSegment("");
@@ -155,7 +175,8 @@ export function FractureSection({
 
   const showFingerSelector =
     (boneCategory === "metacarpal" || boneCategory === "phalanx") &&
-    !autoFinger;
+    !autoFinger &&
+    availableFingerOptions.length > 1;
   const showPhalanxSelector =
     boneCategory === "phalanx" && effectiveFinger !== "";
   const showSegmentSelector =
@@ -290,6 +311,8 @@ export function FractureSection({
         finger: effectiveFinger || undefined,
         phalanx: selectedPhalanx || undefined,
         segment: selectedSegment || undefined,
+        openStatus: openStatus || undefined,
+        isComminuted: isComminuted || undefined,
         qualifications:
           selectedQualifications.length > 0
             ? selectedQualifications
@@ -435,16 +458,78 @@ export function FractureSection({
         </View>
       ) : null}
 
+      <View style={styles.subSection}>
+        <ThemedText style={[styles.subSectionTitle, { color: theme.text }]}>
+          Fracture Qualifiers
+        </ThemedText>
+        <View style={styles.pillRow}>
+          {(
+            [
+              { key: "", label: "Unspecified" },
+              { key: "open", label: "Open" },
+              { key: "closed", label: "Closed" },
+            ] as const
+          ).map(({ key, label }) => {
+            const isSelected = openStatus === key;
+            return (
+              <Pressable
+                key={key || "unspecified"}
+                style={[
+                  styles.pill,
+                  {
+                    backgroundColor: isSelected
+                      ? theme.link
+                      : theme.backgroundTertiary,
+                    borderColor: isSelected ? theme.link : theme.border,
+                  },
+                ]}
+                onPress={() =>
+                  setOpenStatus((prev) => (prev === key ? "" : key))
+                }
+              >
+                <ThemedText
+                  style={[
+                    styles.pillText,
+                    { color: isSelected ? theme.buttonText : theme.text },
+                  ]}
+                >
+                  {label}
+                </ThemedText>
+              </Pressable>
+            );
+          })}
+          <Pressable
+            style={[
+              styles.pill,
+              {
+                backgroundColor: isComminuted
+                  ? theme.link + "15"
+                  : theme.backgroundTertiary,
+                borderColor: isComminuted ? theme.link : theme.border,
+              },
+            ]}
+            onPress={() => setIsComminuted((prev) => !prev)}
+          >
+            <ThemedText
+              style={[
+                styles.pillText,
+                { color: isComminuted ? theme.link : theme.text },
+              ]}
+            >
+              Comminuted
+            </ThemedText>
+          </Pressable>
+        </View>
+      </View>
+
       {/* Bone region picker — 3 large buttons */}
       {boneCategory === null ? (
         <View style={styles.regionPicker}>
-          {(
-            [
-              { key: "carpal", label: "Carpal", sub: "71-76" },
-              { key: "metacarpal", label: "Metacarpal", sub: "77" },
-              { key: "phalanx", label: "Phalanx", sub: "78" },
-            ] as const
-          ).map(({ key, label, sub }) => (
+          {[
+            { key: "carpal", label: "Carpal", sub: "71-76" },
+            { key: "metacarpal", label: "Metacarpal", sub: "77" },
+            { key: "phalanx", label: "Phalanx", sub: "78" },
+          ].map(({ key, label, sub }) => (
             <Pressable
               key={key}
               style={[
@@ -454,7 +539,7 @@ export function FractureSection({
                   borderColor: theme.border,
                 },
               ]}
-              onPress={() => handleCategorySelect(key)}
+              onPress={() => handleCategorySelect(key as BoneCategory)}
             >
               <Feather name="hexagon" size={20} color={theme.link} />
               <ThemedText style={[styles.regionLabel, { color: theme.text }]}>
@@ -553,7 +638,7 @@ export function FractureSection({
           <View style={styles.subSectionHeader}>
             <ThemedText style={[styles.subSectionTitle, { color: theme.text }]}>
               {boneCategory === "metacarpal" ? "Metacarpal" : "Phalanx"} —
-              Finger
+              {shouldSimplifyToSelectedRays ? "Selected ray" : "Finger"}
             </ThemedText>
             <Pressable
               onPress={() => {
@@ -570,7 +655,7 @@ export function FractureSection({
             </Pressable>
           </View>
           {renderPills(
-            FINGER_OPTIONS.map((f) => ({ key: f.key, label: f.label })),
+            availableFingerOptions.map((f) => ({ key: f.key, label: f.label })),
             selectedFinger,
             (key) => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);

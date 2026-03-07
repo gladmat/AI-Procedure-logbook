@@ -53,10 +53,10 @@ import {
   PROM_QUESTIONNAIRE_LABELS,
   FOLLOW_UP_INTERVAL_LABELS,
   getAllProcedures,
-  getPrimaryDiagnosisName,
   isExcisionBiopsyDiagnosis,
   CLINICAL_SUSPICION_LABELS,
 } from "@/types/case";
+import { getCasePrimaryTitle } from "@/lib/caseDiagnosisSummary";
 import {
   getCase,
   getTimelineEvents,
@@ -287,8 +287,7 @@ export default function CaseDetailScreen() {
 
     const allProcs = getAllProcedures(caseData);
     const procedureName = allProcs[0]?.procedureName?.toLowerCase() || "";
-    const diagnosisName =
-      getPrimaryDiagnosisName(caseData)?.toLowerCase() || "";
+    const diagnosisName = getCasePrimaryTitle(caseData)?.toLowerCase() || "";
 
     return skinLesionKeywords.some(
       (keyword) =>
@@ -514,7 +513,7 @@ export default function CaseDetailScreen() {
             {userMember ? <RoleBadge role={userMember.role} /> : null}
           </View>
           <ThemedText type="h2" style={styles.procedureType}>
-            {getPrimaryDiagnosisName(caseData) || caseData.procedureType}
+            {getCasePrimaryTitle(caseData) || caseData.procedureType}
           </ThemedText>
 
           {caseData.procedureCode ? (

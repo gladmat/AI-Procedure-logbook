@@ -31,8 +31,8 @@ import {
   Specialty,
   SPECIALTY_LABELS,
   ROLE_LABELS,
-  getPrimaryDiagnosisName,
 } from "@/types/case";
+import { getCasePrimaryTitle } from "@/lib/caseDiagnosisSummary";
 import { INFECTION_SYNDROME_LABELS } from "@/types/infection";
 import {
   getCases,
@@ -831,7 +831,7 @@ export default function DashboardScreen() {
                               style={styles.followUpCaseType}
                               numberOfLines={1}
                             >
-                              {getPrimaryDiagnosisName(caseItem) ||
+                              {getCasePrimaryTitle(caseItem) ||
                                 caseItem.procedureType}
                             </ThemedText>
                           </View>

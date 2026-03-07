@@ -23,8 +23,8 @@ import { Spacing, BorderRadius, Shadows } from "@/constants/theme";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { getEpisodeWithCases, updateEpisode } from "@/lib/episodeStorage";
 import { getLatestCaseForEpisode } from "@/lib/storage";
+import { getCasePrimaryTitle } from "@/lib/caseDiagnosisSummary";
 import type { Case } from "@/types/case";
-import { getPrimaryDiagnosisName } from "@/types/case";
 import type {
   TreatmentEpisode,
   EpisodeStatus,
@@ -354,7 +354,7 @@ export default function EpisodeDetailScreen() {
             </ThemedText>
           ) : (
             cases.map((caseItem, idx) => {
-              const diagName = getPrimaryDiagnosisName(caseItem);
+              const diagName = getCasePrimaryTitle(caseItem);
               const procCount = caseItem.diagnosisGroups.reduce(
                 (s, g) => s + g.procedures.length,
                 0,

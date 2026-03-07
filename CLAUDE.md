@@ -178,13 +178,30 @@ Hand surgery, Orthoplastic, Breast, Body contouring, Burns, Head & neck, Aesthet
 
 Dual-entry flow — when a surgeon picks procedures without a diagnosis first, a "What's the diagnosis?" card appears with smart suggestions derived from reverse-mapping procedures to likely diagnoses. Same-specialty suggestions shown first, cross-specialty grouped separately. Reverse index built lazily in `client/lib/diagnosisPicklists/index.ts` (`getDiagnosesForProcedure`, `getDiagnosesForProcedures`). UI component: `client/components/DiagnosisSuggestions.tsx`, wired into `DiagnosisGroupEditor.tsx`.
 
-### Hand Trauma Structure Picker
+### Unified Hand Trauma Workflow
 
-Zone-and-digit-driven UI accelerator for hand surgery trauma cases (`client/components/hand-trauma/`). Activates when `groupSpecialty === "hand_surgery" && clinicalGroup === "trauma"`. Surgeon selects affected digits (I–V), then checks injured structures across 6 accordion categories: flexor tendons (zone I–V/T1–T3), extensor tendons (zone I–VIII/TI–TV), nerves (digital N1–N10 + proximal median/ulnar/radial/DBUN), arteries (digital A1–A10 + proximal radial/ulnar/palmar arches), ligaments (PIP collateral, MCP I UCL/RCL), and other (bone, nail bed, skin loss, volar plate). Each checked structure auto-generates a `CaseProcedure` via `STRUCTURE_PROCEDURE_MAP` lookup with SNOMED codes and descriptive notes. Smart defaults auto-expand relevant sections based on diagnosis. Data stored in `DiagnosisClinicalDetails.handTrauma: HandTraumaDetails`.
+Hand trauma now uses one inline `HandTraumaAssessment` (`client/components/hand-trauma/HandTraumaAssessment.tsx`) inside `DiagnosisGroupEditor` instead of separate diagnosis-first, fracture-modal, and structure-picker flows.
+
+- **Case-type gate first:** For `hand_wrist`, the user must choose `Trauma` or `Elective` before any diagnosis/procedure UI appears. Explicit case-type taps soft-default `admissionUrgency` (`Trauma -> Acute`, `Elective -> Elective`) but the urgency field remains editable.
+- **Incident-first trauma entry:** Hand trauma starts with mandatory `Left` / `Right` selection, injury mechanism, and injury date. Bilateral / N/A laterality options are hidden from the trauma path. The shared date picker supports `maximumDate`, blocks future injury dates, and on iPhone saves the current day on `Done` even if the spinner was not moved.
+- **Unified structured assessment:** Section 2 uses a wrapped always-visible 7-chip mobile grid: `Fracture`, `Dislocation`, `Tendon`, `Nerve`, `Vessel`, `Soft Tissue`, `Amputation`. Chips appear above digits. `Amputation` is its own section; soft tissue is split into descriptors/coverage, ligament-and-joint soft tissue, and special injuries.
+- **AO fracture integration:** Carpal AO selection remains visible in every scenario. Metacarpal (`77`) and phalanx (`78`) fracture choices are constrained by the currently selected digits/rays. Removing digits clears linked digit-specific fractures, dislocations, perfusion states, and structures, but does not clear carpal fractures.
+- **Expanded trauma anatomy:** PIN and SRN are distinct nerve options. Tendon pickers use compact chip rows on mobile instead of tall vertical stacks. Hand trauma stores optional qualifiers such as fracture open/closed/comminution, tendon completeness, digit-specific dislocations, perfusion, and soft-tissue descriptors without DB migration.
+- **Deterministic diagnosis rendering:** `client/lib/handTraumaDiagnosis.ts` normalizes the selection into a language-independent `MachineSummary`, then renders shorthand English, full English, or controlled-template medical Latin. Rendering is deterministic, category-ordered, AO-aware, and used for the trauma summary title and review UI.
+- **Diagnosis-procedure pair mapping:** `client/lib/handTraumaMapping.ts` now resolves structured trauma into grouped diagnosis-procedure pairs instead of a single vague trauma diagnosis. Fracture pairs support compact mutually exclusive procedure chips (`ORIF`, `CRIF + K-wire`, `CRIF + CCS`, `CRIF + Ex-Fix` etc.); simple tendon/nerve/vessel pairs stay one-tap defaults.
+- **Acceptance workflow:** Point 3 is a true review-and-accept step. `Accept Mapping` collapses into an accepted summary card; later trauma edits invalidate acceptance and reopen review. The old standalone “Representative Diagnosis” block is removed from the default trauma flow. Coding details sit behind a disclosure and now expose all mapped diagnosis codes plus procedure codes in a code-system-agnostic shape.
+- **Procedure editor cleanup:** The full procedure editor stays hidden for accepted trauma mappings unless explicitly opened. Disposable empty placeholder rows are pruned before trauma-mapped procedures are applied or the full editor is opened, so the editor no longer shows a blank first procedure row.
+- **Overview/title behavior:** Hand trauma overview cards and summaries prefer the generated shorthand trauma header line over the first diagnosis display name. Manual diagnosis override still exists for structured coding, but it no longer replaces the trauma summary title.
+- **Compatibility/tests:** Existing hand trauma and fracture payloads remain backward-compatible with no SQL migration. Regression coverage lives in `client/lib/__tests__/handTraumaDiagnosis.test.ts`, `client/lib/__tests__/handTraumaMapping.test.ts`, and `client/lib/__tests__/handTraumaUx.test.ts`.
 
 ### Hand Surgery Form Restructure
 
-Fracture checkbox removed (was UI-only state, not in DB). AO/OTA classification auto-shows when `hasFractureSubcategory` is true. Field order for fracture cases: Laterality → Affected Structures → AO/OTA Classification → Injury Mechanism. AO/OTA entry upgraded to smart inline `AOTAClassificationCard` with classified/unclassified states.
+The hand/wrist form now branches explicitly by case type:
+
+- `Trauma` opens the inline unified hand trauma workflow described above.
+- `Elective` keeps the standard diagnosis-first hand workflow.
+- Generic laterality/injury-mechanism controls are suppressed for trauma because the incident block owns them.
+- Standalone fracture wizard use remains for non-trauma hand workflows only.
 
 ### Multi-Lesion Session
 

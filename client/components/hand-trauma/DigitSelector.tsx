@@ -10,11 +10,13 @@ import { ALL_DIGITS, DIGIT_LABELS } from "./structureConfig";
 interface DigitSelectorProps {
   selectedDigits: DigitId[];
   onChange: (digits: DigitId[]) => void;
+  label?: string;
 }
 
 export function DigitSelector({
   selectedDigits,
   onChange,
+  label = "Affected digits",
 }: DigitSelectorProps) {
   const { theme } = useTheme();
 
@@ -33,7 +35,7 @@ export function DigitSelector({
         type="small"
         style={[styles.label, { color: theme.textSecondary }]}
       >
-        Affected digits
+        {label}
       </ThemedText>
       <View style={styles.chipRow}>
         {ALL_DIGITS.map((digit) => {

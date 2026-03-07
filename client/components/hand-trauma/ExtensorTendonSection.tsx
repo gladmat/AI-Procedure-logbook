@@ -5,7 +5,11 @@ import { Feather } from "@/components/FeatherIcon";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
-import type { DigitId, HandTraumaStructure } from "@/types/case";
+import type {
+  DigitId,
+  HandTraumaCompleteness,
+  HandTraumaStructure,
+} from "@/types/case";
 import {
   DIGIT_EXTENSOR_MAP,
   DIGIT_LABELS,
@@ -18,6 +22,8 @@ interface ExtensorTendonSectionProps {
   checkedStructures: HandTraumaStructure[];
   zone: string;
   onZoneChange: (zone: string) => void;
+  completeness: HandTraumaCompleteness;
+  onCompletenessChange: (value: HandTraumaCompleteness) => void;
   onToggleStructure: (structure: HandTraumaStructure) => void;
 }
 
@@ -26,6 +32,8 @@ export function ExtensorTendonSection({
   checkedStructures,
   zone,
   onZoneChange,
+  completeness,
+  onCompletenessChange,
   onToggleStructure,
 }: ExtensorTendonSectionProps) {
   const { theme } = useTheme();
@@ -57,6 +65,7 @@ export function ExtensorTendonSection({
       displayName,
       digit,
       zone: zone || undefined,
+      completeness,
     });
   };
 
@@ -72,6 +81,49 @@ export function ExtensorTendonSection({
 
   return (
     <View style={styles.container}>
+      <View style={styles.zoneSection}>
+        <ThemedText
+          type="small"
+          style={[styles.zoneLabel, { color: theme.textSecondary }]}
+        >
+          Completeness
+        </ThemedText>
+        <View style={styles.zoneRow}>
+          {(["complete", "partial"] as const).map((value) => {
+            const isSelected = completeness === value;
+            return (
+              <Pressable
+                key={value}
+                style={[
+                  styles.zoneChip,
+                  {
+                    backgroundColor: isSelected
+                      ? theme.link + "15"
+                      : theme.backgroundTertiary,
+                    borderColor: isSelected ? theme.link : theme.border,
+                  },
+                ]}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  onCompletenessChange(value);
+                }}
+              >
+                <ThemedText
+                  type="small"
+                  style={{
+                    color: isSelected ? theme.link : theme.text,
+                    fontWeight: isSelected ? "600" : "400",
+                    fontSize: 13,
+                  }}
+                >
+                  {value === "complete" ? "Complete" : "Partial"}
+                </ThemedText>
+              </Pressable>
+            );
+          })}
+        </View>
+      </View>
+
       <View style={styles.zoneSection}>
         <ThemedText
           type="small"
@@ -119,6 +171,7 @@ export function ExtensorTendonSection({
       {selectedDigits.map((digit) => {
         const tendons = DIGIT_EXTENSOR_MAP[digit];
         if (!tendons) return null;
+        const isTwoColumn = tendons.length === 2;
 
         return (
           <View
@@ -131,37 +184,48 @@ export function ExtensorTendonSection({
             >
               {digit} — {DIGIT_LABELS[digit]}
             </ThemedText>
-            {tendons.map((tendon) => {
-              const checked = isStructureChecked(tendon, digit);
-              return (
-                <Pressable
-                  key={`${digit}-${tendon}`}
-                  testID={`extensor-${digit}-${tendon}`}
-                  style={styles.checkboxRow}
-                  onPress={() => handleToggle(tendon, digit)}
-                >
-                  <View
+            <View style={styles.tendonGrid}>
+              {tendons.map((tendon) => {
+                const checked = isStructureChecked(tendon, digit);
+                return (
+                  <Pressable
+                    key={`${digit}-${tendon}`}
+                    testID={`extensor-${digit}-${tendon}`}
                     style={[
-                      styles.checkbox,
+                      styles.tendonChip,
+                      isTwoColumn ? styles.tendonChipHalf : styles.tendonChipAuto,
                       {
-                        backgroundColor: checked ? theme.link : "transparent",
+                        backgroundColor: checked
+                          ? theme.link + "14"
+                          : theme.backgroundDefault,
                         borderColor: checked ? theme.link : theme.border,
                       },
                     ]}
+                    onPress={() => handleToggle(tendon, digit)}
                   >
-                    {checked ? (
-                      <Feather name="check" size={14} color="#FFFFFF" />
-                    ) : null}
-                  </View>
-                  <ThemedText
-                    type="small"
-                    style={{ color: theme.text, marginLeft: Spacing.sm }}
-                  >
-                    {tendon}
-                  </ThemedText>
-                </Pressable>
-              );
-            })}
+                    <View
+                      style={[
+                        styles.checkbox,
+                        {
+                          backgroundColor: checked ? theme.link : "transparent",
+                          borderColor: checked ? theme.link : theme.border,
+                        },
+                      ]}
+                    >
+                      {checked ? (
+                        <Feather name="check" size={12} color="#FFFFFF" />
+                      ) : null}
+                    </View>
+                    <ThemedText
+                      type="small"
+                      style={[styles.tendonChipLabel, { color: theme.text }]}
+                    >
+                      {tendon}
+                    </ThemedText>
+                  </Pressable>
+                );
+              })}
+            </View>
           </View>
         );
       })}
@@ -203,11 +267,28 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     marginBottom: Spacing.xs,
   },
-  checkboxRow: {
+  tendonGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: Spacing.sm,
+  },
+  tendonChip: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: Spacing.xs,
+    gap: Spacing.sm,
+    borderWidth: 1,
+    borderRadius: BorderRadius.sm,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
     minHeight: 44,
+    minWidth: 88,
+  },
+  tendonChipHalf: {
+    flexBasis: "48%",
+    flexGrow: 1,
+  },
+  tendonChipAuto: {
+    flexGrow: 1,
   },
   checkbox: {
     width: 22,
@@ -216,5 +297,8 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     alignItems: "center",
     justifyContent: "center",
+  },
+  tendonChipLabel: {
+    fontWeight: "600",
   },
 });

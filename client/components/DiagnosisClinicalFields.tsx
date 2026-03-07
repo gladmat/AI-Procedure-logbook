@@ -144,6 +144,7 @@ interface DiagnosisClinicalFieldsProps {
   onFracturesChange?: (fractures: FractureEntry[]) => void;
   showFractureClassification?: boolean;
   onOpenFractureWizard?: () => void;
+  hideTraumaIncidentFields?: boolean;
 }
 
 export function DiagnosisClinicalFields({
@@ -154,6 +155,7 @@ export function DiagnosisClinicalFields({
   onFracturesChange,
   showFractureClassification = false,
   onOpenFractureWizard,
+  hideTraumaIncidentFields = false,
 }: DiagnosisClinicalFieldsProps) {
   const { theme } = useTheme();
   const [showFractureWizard, setShowFractureWizard] = useState(false);
@@ -186,45 +188,47 @@ export function DiagnosisClinicalFields({
 
   return (
     <View style={styles.container}>
-      <View style={styles.lateralitySection}>
-        <ThemedText style={[styles.fieldLabel, { color: theme.text }]}>
-          Laterality
-        </ThemedText>
-        <View style={styles.lateralityOptions}>
-          {LATERALITY_OPTIONS.map((option) => {
-            const isSelected = clinicalDetails.laterality === option.value;
-            return (
-              <Pressable
-                key={option.value}
-                style={[
-                  styles.lateralityOption,
-                  {
-                    backgroundColor: isSelected
-                      ? theme.link
-                      : theme.backgroundSecondary,
-                    borderColor: isSelected ? theme.link : theme.border,
-                  },
-                ]}
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  updateClinicalDetails({
-                    laterality: isSelected ? undefined : option.value,
-                  });
-                }}
-              >
-                <ThemedText
+      {!hideTraumaIncidentFields ? (
+        <View style={styles.lateralitySection}>
+          <ThemedText style={[styles.fieldLabel, { color: theme.text }]}>
+            Laterality
+          </ThemedText>
+          <View style={styles.lateralityOptions}>
+            {LATERALITY_OPTIONS.map((option) => {
+              const isSelected = clinicalDetails.laterality === option.value;
+              return (
+                <Pressable
+                  key={option.value}
                   style={[
-                    styles.lateralityOptionText,
-                    { color: isSelected ? "#FFF" : theme.text },
+                    styles.lateralityOption,
+                    {
+                      backgroundColor: isSelected
+                        ? theme.link
+                        : theme.backgroundSecondary,
+                      borderColor: isSelected ? theme.link : theme.border,
+                    },
                   ]}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    updateClinicalDetails({
+                      laterality: isSelected ? undefined : option.value,
+                    });
+                  }}
                 >
-                  {option.label}
-                </ThemedText>
-              </Pressable>
-            );
-          })}
+                  <ThemedText
+                    style={[
+                      styles.lateralityOptionText,
+                      { color: isSelected ? "#FFF" : theme.text },
+                    ]}
+                  >
+                    {option.label}
+                  </ThemedText>
+                </Pressable>
+              );
+            })}
+          </View>
         </View>
-      </View>
+      ) : null}
 
       {showFractureClassification && onFracturesChange ? (
         <View style={styles.fractureSection}>
@@ -248,7 +252,7 @@ export function DiagnosisClinicalFields({
         </View>
       ) : null}
 
-      {isHandSurgery ? (
+      {isHandSurgery && !hideTraumaIncidentFields ? (
         <View style={styles.fieldContainer}>
           <ThemedText style={[styles.fieldLabel, { color: theme.text }]}>
             Injury Mechanism

@@ -13,10 +13,10 @@ import { useTheme } from "@/hooks/useTheme";
 import { BorderRadius, Spacing, Shadows } from "@/constants/theme";
 import {
   Case,
-  getPrimaryDiagnosisName,
   getPrimarySiteLabel,
   isExcisionBiopsyDiagnosis,
 } from "@/types/case";
+import { getCasePrimaryTitle } from "@/lib/caseDiagnosisSummary";
 import { RoleBadge } from "@/components/RoleBadge";
 import { SpecialtyBadge } from "@/components/SpecialtyBadge";
 
@@ -123,7 +123,7 @@ export const CaseCard = React.memo(function CaseCard({
   const userRole =
     caseData.teamMembers.find((m) => m.id === caseData.ownerId)?.role || "PS";
 
-  const caseTitle = getPrimaryDiagnosisName(caseData) || caseData.procedureType;
+  const caseTitle = getCasePrimaryTitle(caseData) || caseData.procedureType;
 
   const hasHistologyPending = caseData.diagnosisGroups?.some(
     (g) =>

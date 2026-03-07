@@ -62,12 +62,14 @@ export function DislocationSection({
     useState<DirectionType | null>(null);
   const [hasFracture, setHasFracture] = useState(false);
   const [isComplex, setIsComplex] = useState(false);
+  const [selectedDigit, setSelectedDigit] = useState<DigitId | null>(null);
 
   const resetBuilder = () => {
     setSelectedJoint(null);
     setSelectedDirection(null);
     setHasFracture(false);
     setIsComplex(false);
+    setSelectedDigit(null);
   };
 
   const jointConfig = JOINT_OPTIONS.find((j) => j.key === selectedJoint);
@@ -82,11 +84,23 @@ export function DislocationSection({
     jointConfig &&
     jointConfig.directions !== "simple_complex" &&
     jointConfig.directions.length === 0;
+  const requiresDigit =
+    selectedJoint === "pip" ||
+    selectedJoint === "mcp" ||
+    selectedJoint === "cmc" ||
+    selectedJoint === "thumb_cmc";
+  const digitOptions =
+    selectedJoint === "thumb_cmc"
+      ? (["I"] as DigitId[])
+      : selectedJoint === "cmc"
+        ? selectedDigits.filter((digit) => digit !== "I")
+        : selectedDigits;
 
   // Can add when joint is selected and either: no direction needed, direction picked, or MCP
   const canAdd =
     selectedJoint !== null &&
-    (noSubSelection || selectedDirection !== null || isMCPStyle);
+    (noSubSelection || selectedDirection !== null || isMCPStyle) &&
+    (!requiresDigit || selectedDigit !== null);
 
   const handleAddDislocation = useCallback(() => {
     if (!selectedJoint) return;
@@ -94,6 +108,7 @@ export function DislocationSection({
 
     const entry: DislocationEntry = {
       joint: selectedJoint,
+      digit: requiresDigit ? selectedDigit ?? undefined : undefined,
       direction: selectedDirection ?? undefined,
       hasFracture: hasFracture || undefined,
       isComplex: isMCPStyle ? isComplex || undefined : undefined,
@@ -107,6 +122,8 @@ export function DislocationSection({
     selectedDirection,
     hasFracture,
     isComplex,
+    selectedDigit,
+    requiresDigit,
     isMCPStyle,
     dislocations,
     onDislocationsChange,
@@ -123,6 +140,7 @@ export function DislocationSection({
     if (d.direction) label += ` ${DIRECTION_LABELS[d.direction]}`;
     if (d.isComplex) label += " (Complex)";
     if (d.hasFracture) label += " + Fx";
+    if (d.digit) label += `, Dig. ${d.digit}`;
     return label;
   };
 
@@ -195,6 +213,13 @@ export function DislocationSection({
                   setSelectedDirection(null);
                   setHasFracture(false);
                   setIsComplex(false);
+                  setSelectedDigit(
+                    key === "thumb_cmc"
+                      ? "I"
+                      : key === "cmc"
+                        ? selectedDigits.find((digit) => digit !== "I") ?? null
+                        : selectedDigits[0] ?? null,
+                  );
                 }}
               >
                 <ThemedText
@@ -244,6 +269,46 @@ export function DislocationSection({
                     ]}
                   >
                     {DIRECTION_LABELS[dir]}
+                  </ThemedText>
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
+      ) : null}
+
+      {requiresDigit ? (
+        <View style={styles.subSection}>
+          <ThemedText style={[styles.subSectionTitle, { color: theme.text }]}>
+            Digit
+          </ThemedText>
+          <View style={styles.pillRow}>
+            {digitOptions.map((digit) => {
+              const isSelected = selectedDigit === digit;
+              return (
+                <Pressable
+                  key={digit}
+                  style={[
+                    styles.pill,
+                    {
+                      backgroundColor: isSelected
+                        ? theme.link
+                        : theme.backgroundTertiary,
+                      borderColor: isSelected ? theme.link : theme.border,
+                    },
+                  ]}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    setSelectedDigit(digit);
+                  }}
+                >
+                  <ThemedText
+                    style={[
+                      styles.pillText,
+                      { color: isSelected ? theme.buttonText : theme.text },
+                    ]}
+                  >
+                    Dig. {digit}
                   </ThemedText>
                 </Pressable>
               );

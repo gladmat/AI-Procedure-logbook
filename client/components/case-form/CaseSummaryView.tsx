@@ -22,6 +22,7 @@ import {
   type HandSurgeryDetails,
   type BodyContouringDetails,
 } from "@/types/case";
+import { getDiagnosisGroupTitle } from "@/lib/caseDiagnosisSummary";
 import { Button } from "@/components/Button";
 import { validateRequiredFields } from "@/hooks/useCaseForm";
 
@@ -286,7 +287,7 @@ export function CaseSummaryView({
             />
             <SummaryRow
               label="Diagnosis"
-              value={group.diagnosis?.displayName}
+              value={getDiagnosisGroupTitle(group)}
               snomedCode={group.diagnosis?.snomedCtCode}
             />
             {group.diagnosisStagingSelections &&

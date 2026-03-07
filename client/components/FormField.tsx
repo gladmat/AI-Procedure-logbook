@@ -558,6 +558,40 @@ interface DatePickerFieldProps {
   error?: string;
   disabled?: boolean;
   clearable?: boolean;
+  minimumDate?: Date;
+  maximumDate?: Date;
+}
+
+function parseIsoDateValue(dateStr?: string): Date | null {
+  if (!dateStr) return null;
+  const [year, month, day] = dateStr.split("-").map(Number);
+  if (!year || !month || !day) return null;
+  return new Date(year, month - 1, day, 12, 0, 0, 0);
+}
+
+function toIsoDateValue(date: Date): string {
+  const year = date.getFullYear();
+  const month = `${date.getMonth() + 1}`.padStart(2, "0");
+  const day = `${date.getDate()}`.padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function clampDate(
+  date: Date,
+  minimumDate?: Date,
+  maximumDate?: Date,
+): Date {
+  const timestamp = date.getTime();
+  const min = minimumDate?.getTime();
+  const max = maximumDate?.getTime();
+
+  if (typeof min === "number" && timestamp < min) {
+    return minimumDate!;
+  }
+  if (typeof max === "number" && timestamp > max) {
+    return maximumDate!;
+  }
+  return date;
 }
 
 export function DatePickerField({
@@ -569,16 +603,20 @@ export function DatePickerField({
   error,
   disabled = false,
   clearable = false,
+  minimumDate,
+  maximumDate,
 }: DatePickerFieldProps) {
-  const { theme } = useTheme();
+  const { theme, isDark } = useTheme();
   const [showPicker, setShowPicker] = useState(false);
-  const pendingDateRef = useRef<string | null>(null);
 
-  const dateValue = value ? new Date(value) : new Date();
+  const dateValue =
+    parseIsoDateValue(value) ??
+    clampDate(new Date(), minimumDate, maximumDate);
+  const [draftDate, setDraftDate] = useState<Date>(dateValue);
 
   const formatDisplayDate = (dateStr: string) => {
     if (!dateStr) return "";
-    const date = new Date(dateStr);
+    const date = parseIsoDateValue(dateStr) ?? new Date();
     return date.toLocaleDateString("en-NZ", {
       day: "numeric",
       month: "short",
@@ -591,27 +629,37 @@ export function DatePickerField({
       if (Platform.OS === "android") {
         setShowPicker(false);
         if (selectedDate) {
-          const isoDate = selectedDate.toISOString().split("T")[0] ?? "";
+          const boundedDate = clampDate(
+            selectedDate,
+            minimumDate,
+            maximumDate,
+          );
+          const isoDate = toIsoDateValue(boundedDate);
           onChange(isoDate);
         }
         return;
       }
       if (selectedDate) {
-        pendingDateRef.current =
-          selectedDate.toISOString().split("T")[0] ?? null;
+        setDraftDate(clampDate(selectedDate, minimumDate, maximumDate));
       }
     },
-    [onChange],
+    [maximumDate, minimumDate, onChange],
   );
 
-  const handleDatePickerClose = useCallback(() => {
+  const openDatePicker = useCallback(() => {
+    setDraftDate(dateValue);
+    setShowPicker(true);
+  }, [dateValue]);
+
+  const closeDatePicker = useCallback(() => {
     setShowPicker(false);
-    if (pendingDateRef.current !== null) {
-      const date = pendingDateRef.current;
-      pendingDateRef.current = null;
-      requestAnimationFrame(() => onChange(date));
-    }
-  }, [onChange]);
+  }, []);
+
+  const handleDatePickerDone = useCallback(() => {
+    const isoDate = toIsoDateValue(draftDate);
+    closeDatePicker();
+    requestAnimationFrame(() => onChange(isoDate));
+  }, [closeDatePicker, draftDate, onChange]);
 
   return (
     <View style={styles.container}>
@@ -639,7 +687,7 @@ export function DatePickerField({
               opacity: disabled ? 0.6 : 1,
             },
           ]}
-          onPress={() => !disabled && setShowPicker(true)}
+          onPress={() => !disabled && openDatePicker()}
           disabled={disabled}
           accessibilityRole="button"
           accessibilityLabel={`${label}: ${value ? formatDisplayDate(value) : "not set"}`}
@@ -685,12 +733,9 @@ export function DatePickerField({
             visible={showPicker}
             transparent
             animationType="slide"
-            onRequestClose={handleDatePickerClose}
+            onRequestClose={closeDatePicker}
           >
-            <Pressable
-              style={styles.modalOverlay}
-              onPress={handleDatePickerClose}
-            >
+            <Pressable style={styles.modalOverlay} onPress={closeDatePicker}>
               <Pressable
                 style={[
                   styles.modalContent,
@@ -711,7 +756,7 @@ export function DatePickerField({
                   </ThemedText>
                   <TouchableOpacity
                     style={styles.modalDoneButton}
-                    onPress={handleDatePickerClose}
+                    onPress={handleDatePickerDone}
                   >
                     <ThemedText
                       style={[styles.modalDoneText, { color: theme.link }]}
@@ -721,10 +766,14 @@ export function DatePickerField({
                   </TouchableOpacity>
                 </View>
                 <DateTimePicker
-                  value={dateValue}
+                  value={draftDate}
                   mode="date"
                   display="spinner"
                   onChange={handleDateChange}
+                  minimumDate={minimumDate}
+                  maximumDate={maximumDate}
+                  textColor={theme.text}
+                  themeVariant={isDark ? "dark" : "light"}
                   style={{ height: 200 }}
                 />
               </Pressable>
@@ -736,6 +785,8 @@ export function DatePickerField({
             mode="date"
             display="default"
             onChange={handleDateChange}
+            minimumDate={minimumDate}
+            maximumDate={maximumDate}
           />
         )
       ) : null}

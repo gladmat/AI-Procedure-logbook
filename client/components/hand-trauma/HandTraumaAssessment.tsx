@@ -4,8 +4,8 @@
  * with one streamlined flow.
  *
  * Layout:
- * 1. DigitSelector — affected digits (I-V)
- * 2. InjuryCategoryChips — Fracture | Dislocation | Tendon | Nerve | Vessel | Soft Tissue
+ * 1. Incident
+ * 2. InjuryCategoryChips + DigitSelector
  * 3. Expandable sections — only visible when chip is active
  * 4. DiagnosisProcedureSuggestionPanel — auto-resolved diagnosis + suggested procedures
  *
@@ -27,19 +27,25 @@ import {
   LayoutAnimation,
   Platform,
   UIManager,
+  Pressable,
 } from "react-native";
 import { v4 as uuidv4 } from "uuid";
 import { Feather } from "@/components/FeatherIcon";
 import { ThemedText } from "@/components/ThemedText";
+import { DatePickerField, FormField } from "@/components/FormField";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import type {
   DigitId,
+  HandTraumaCompleteness,
   HandTraumaDetails,
   HandTraumaStructure,
   FractureEntry,
   DislocationEntry,
   CaseProcedure,
+  Laterality,
+  PerfusionStatusEntry,
+  SoftTissueDescriptor,
 } from "@/types/case";
 import type { DiagnosisPicklistEntry } from "@/lib/diagnosisPicklists";
 import { findPicklistEntry } from "@/lib/procedurePicklist";
@@ -50,21 +56,21 @@ import {
 } from "./structureConfig";
 import type {
   InjuryCategory,
+  TraumaDiagnosisPair,
   TraumaMappingResult,
 } from "@/lib/handTraumaMapping";
 import { resolveTraumaDiagnosis } from "@/lib/handTraumaMapping";
-import { resolveAOToDiagnosis } from "@/lib/aoToDiagnosisMapping";
-import {
-  findDiagnosisById,
-  evaluateSuggestions,
-} from "@/lib/diagnosisPicklists";
 
 // Sub-components
 import { DigitSelector } from "./DigitSelector";
 import { InjuryCategoryChips } from "./InjuryCategoryChips";
 import { FractureSection } from "./FractureSection";
 import { DislocationSection } from "./DislocationSection";
-import { SoftTissueSection, type SoftTissueState } from "./SoftTissueSection";
+import {
+  SoftTissueDescriptorSection,
+  SoftTissueSpecialInjurySection,
+  type SoftTissueState,
+} from "./SoftTissueSection";
 import { DiagnosisProcedureSuggestionPanel } from "./DiagnosisProcedureSuggestionPanel";
 
 // Existing structure sections (reused from old picker)
@@ -74,6 +80,10 @@ import { NerveSection } from "./NerveSection";
 import { ArterySection } from "./ArterySection";
 import { LigamentSection } from "./LigamentSection";
 import { OtherStructuresSection } from "./OtherStructuresSection";
+import {
+  AmputationSection,
+  type AmputationState,
+} from "./AmputationSection";
 
 if (
   Platform.OS === "android" &&
@@ -85,6 +95,8 @@ if (
 interface HandTraumaAssessmentProps {
   value: HandTraumaDetails;
   onChange: (details: HandTraumaDetails) => void;
+  incident?: HandTraumaIncidentValue;
+  onIncidentChange?: (incident: HandTraumaIncidentValue) => void;
   fractures: FractureEntry[];
   onFracturesChange: (fractures: FractureEntry[]) => void;
   procedures: CaseProcedure[];
@@ -96,13 +108,166 @@ interface HandTraumaAssessmentProps {
   onAccept: (payload: HandTraumaAssessmentAcceptPayload) => void;
   /** Reveal manual diagnosis picker in parent container */
   onEditDiagnosis?: () => void;
-  /** Add a manual procedure row in parent container */
-  onAddProcedureManual?: () => void;
+  /** Reveal the full manual procedure editor in the parent container */
+  onReviewProcedures?: (payload: HandTraumaAssessmentAcceptPayload) => void;
+}
+
+export interface HandTraumaIncidentValue {
+  laterality?: Laterality;
+  injuryMechanism?: string;
+  injuryMechanismOther?: string;
+  injuryDate?: string;
 }
 
 export interface HandTraumaAssessmentAcceptPayload {
   mappingResult: TraumaMappingResult | null;
   selectedProcedureIds: string[];
+}
+
+const TRAUMA_MECHANISM_OPTIONS = [
+  { value: "crush", label: "Crush" },
+  { value: "saw_blade", label: "Saw / blade" },
+  { value: "fall", label: "Fall" },
+  { value: "punch_assault", label: "Punch / assault" },
+  { value: "sports", label: "Sports" },
+  { value: "mva", label: "MVA" },
+  { value: "work_related", label: "Work-related" },
+  { value: "other", label: "Other" },
+] as const;
+
+interface AcceptedMappingSnapshot {
+  selectionSignature: string;
+  mappingResult: TraumaMappingResult;
+  selectedProcedureIds: string[];
+}
+
+function buildSelectionSignature({
+  laterality,
+  injuryMechanism,
+  injuryMechanismOther,
+  digits,
+  fractures,
+  dislocations,
+  injuredStructures,
+  perfusionStatuses,
+  softTissueDescriptors,
+  isHighPressureInjection,
+  isFightBite,
+  isCompartmentSyndrome,
+  isRingAvulsion,
+  amputationLevel,
+  amputationType,
+  isReplantable,
+}: {
+  laterality?: Laterality;
+  injuryMechanism?: string;
+  injuryMechanismOther?: string;
+  digits: DigitId[];
+  fractures: FractureEntry[];
+  dislocations: DislocationEntry[];
+  injuredStructures: HandTraumaStructure[];
+  perfusionStatuses: PerfusionStatusEntry[];
+  softTissueDescriptors: SoftTissueDescriptor[];
+  isHighPressureInjection?: boolean;
+  isFightBite?: boolean;
+  isCompartmentSyndrome?: boolean;
+  isRingAvulsion?: boolean;
+  amputationLevel?: HandTraumaDetails["amputationLevel"];
+  amputationType?: HandTraumaDetails["amputationType"];
+  isReplantable?: boolean;
+}) {
+  return JSON.stringify({
+    laterality,
+    injuryMechanism,
+    injuryMechanismOther: injuryMechanismOther?.trim() || undefined,
+    digits: [...digits].sort(),
+    fractures: [...fractures]
+      .map((fracture) => ({
+        id: fracture.id,
+        boneId: fracture.boneId,
+        aoCode: fracture.aoCode,
+        details: fracture.details,
+      }))
+      .sort((a, b) =>
+        `${a.boneId}|${a.aoCode}|${a.id}`.localeCompare(
+          `${b.boneId}|${b.aoCode}|${b.id}`,
+        ),
+      ),
+    dislocations: [...dislocations].sort((a, b) =>
+      [
+        a.joint,
+        a.digit ?? "",
+        a.direction ?? "",
+        a.hasFracture ? "1" : "0",
+        a.isComplex ? "1" : "0",
+      ]
+        .join("|")
+        .localeCompare(
+          [
+            b.joint,
+            b.digit ?? "",
+            b.direction ?? "",
+            b.hasFracture ? "1" : "0",
+            b.isComplex ? "1" : "0",
+          ].join("|"),
+        ),
+    ),
+    injuredStructures: [...injuredStructures]
+      .map((structure) => ({
+        category: structure.category,
+        structureId: structure.structureId,
+        digit: structure.digit,
+        zone: structure.zone,
+        side: structure.side,
+        completeness: structure.completeness,
+      }))
+      .sort((a, b) =>
+        [
+          a.category,
+          a.structureId,
+          a.digit ?? "",
+          a.zone ?? "",
+          a.side ?? "",
+          a.completeness ?? "",
+        ]
+          .join("|")
+          .localeCompare(
+            [
+              b.category,
+              b.structureId,
+              b.digit ?? "",
+              b.zone ?? "",
+              b.side ?? "",
+              b.completeness ?? "",
+            ].join("|"),
+          ),
+      ),
+    perfusionStatuses: [...perfusionStatuses].sort((a, b) =>
+      `${a.digit}|${a.status}`.localeCompare(`${b.digit}|${b.status}`),
+    ),
+    softTissueDescriptors: [...softTissueDescriptors]
+      .map((descriptor) => ({
+        ...descriptor,
+        digits: descriptor.digits ? [...descriptor.digits].sort() : undefined,
+        surfaces: descriptor.surfaces
+          ? [...descriptor.surfaces].sort()
+          : undefined,
+      }))
+      .sort((a, b) =>
+        `${a.type}|${(a.surfaces ?? []).join(",")}|${(a.digits ?? []).join(",")}`.localeCompare(
+          `${b.type}|${(b.surfaces ?? []).join(",")}|${(b.digits ?? []).join(",")}`,
+        ),
+      ),
+    flags: {
+      isHighPressureInjection,
+      isFightBite,
+      isCompartmentSyndrome,
+      isRingAvulsion,
+    },
+    amputationLevel,
+    amputationType,
+    isReplantable,
+  });
 }
 
 function lookupProcedureMap(structureId: string): string | undefined {
@@ -118,6 +283,8 @@ function lookupProcedureMap(structureId: string): string | undefined {
 export function HandTraumaAssessment({
   value,
   onChange,
+  incident,
+  onIncidentChange,
   fractures,
   onFracturesChange,
   procedures,
@@ -125,9 +292,12 @@ export function HandTraumaAssessment({
   selectedDiagnosis,
   onAccept,
   onEditDiagnosis,
-  onAddProcedureManual,
+  onReviewProcedures,
 }: HandTraumaAssessmentProps) {
   const { theme } = useTheme();
+  const [localIncident, setLocalIncident] = useState<HandTraumaIncidentValue>(
+    incident ?? {},
+  );
 
   // Active injury categories
   const [activeCategories, setActiveCategories] = useState<Set<InjuryCategory>>(
@@ -137,13 +307,31 @@ export function HandTraumaAssessment({
   // Tendon zone state (reused from structure picker)
   const [flexorZone, setFlexorZone] = useState("");
   const [extensorZone, setExtensorZone] = useState("");
+  const [flexorCompleteness, setFlexorCompleteness] =
+    useState<HandTraumaCompleteness>("complete");
+  const [extensorCompleteness, setExtensorCompleteness] =
+    useState<HandTraumaCompleteness>("complete");
 
   // Suggested procedure selections
   const [selectedProcedureIds, setSelectedProcedureIds] = useState<Set<string>>(
     new Set(),
   );
+  const [acceptedMapping, setAcceptedMapping] =
+    useState<AcceptedMappingSnapshot | null>(null);
+  const [hasPendingReviewChanges, setHasPendingReviewChanges] =
+    useState(false);
 
   const initializedRef = useRef(false);
+  const effectiveIncident = onIncidentChange ? incident ?? {} : localIncident;
+  const selectedLaterality =
+    effectiveIncident.laterality === "left" ||
+    effectiveIncident.laterality === "right"
+      ? effectiveIncident.laterality
+      : undefined;
+  const selectedMechanism = effectiveIncident.injuryMechanism;
+  const selectedMechanismOther = effectiveIncident.injuryMechanismOther ?? "";
+  const injuryDate = effectiveIncident.injuryDate ?? "";
+  const isIncidentReady = Boolean(selectedLaterality);
 
   const selectedDigits = useMemo(
     () => value.affectedDigits ?? [],
@@ -157,6 +345,38 @@ export function HandTraumaAssessment({
     () => value.dislocations ?? [],
     [value.dislocations],
   );
+  const perfusionStatuses = useMemo(
+    () => value.perfusionStatuses ?? [],
+    [value.perfusionStatuses],
+  );
+  const softTissueDescriptors = useMemo(
+    () => value.softTissueDescriptors ?? [],
+    [value.softTissueDescriptors],
+  );
+
+  const updateIncident = useCallback(
+    (updates: Partial<HandTraumaIncidentValue>) => {
+      const next: HandTraumaIncidentValue = {
+        ...effectiveIncident,
+        ...updates,
+      };
+      if (onIncidentChange) {
+        onIncidentChange(next);
+      } else {
+        setLocalIncident(next);
+      }
+    },
+    [effectiveIncident, onIncidentChange],
+  );
+
+  useEffect(() => {
+    setLocalIncident(incident ?? {});
+  }, [
+    incident?.laterality,
+    incident?.injuryMechanism,
+    incident?.injuryMechanismOther,
+    incident?.injuryDate,
+  ]);
 
   // ─── Initialize from existing data ─────────────────────────────────────────
   useEffect(() => {
@@ -184,12 +404,13 @@ export function HandTraumaAssessment({
       value.isFightBite ||
       value.isCompartmentSyndrome ||
       value.isRingAvulsion ||
-      value.amputationLevel ||
+      (value.softTissueDescriptors?.length ?? 0) > 0 ||
       injuredStructures.some(
         (s) => s.category === "ligament" || s.category === "other",
       )
     )
       cats.add("soft_tissue");
+    if (value.amputationLevel) cats.add("amputation");
 
     // Smart defaults from diagnosis
     if (selectedDiagnosis) {
@@ -237,6 +458,19 @@ export function HandTraumaAssessment({
   const handleDigitsChange = useCallback(
     (digits: DigitId[]) => {
       const removedDigits = selectedDigits.filter((d) => !digits.includes(d));
+      const removedFingerIds = new Set<string>(
+        removedDigits.map((digit) =>
+          digit === "I"
+            ? "1"
+            : digit === "II"
+              ? "2"
+              : digit === "III"
+                ? "3"
+                : digit === "IV"
+                  ? "4"
+                  : "5",
+        ),
+      );
 
       if (removedDigits.length > 0) {
         const structuresToRemove = injuredStructures.filter(
@@ -255,16 +489,60 @@ export function HandTraumaAssessment({
         const remainingStructures = injuredStructures.filter(
           (s) => !s.digit || !removedDigits.includes(s.digit),
         );
+        const remainingFractures = fractures.filter((fracture) => {
+          const finger = fracture.details.finger;
+          return !finger || !removedFingerIds.has(finger);
+        });
+        const remainingDislocations = dislocations.filter(
+          (entry) => !entry.digit || !removedDigits.includes(entry.digit),
+        );
+        const remainingPerfusion = perfusionStatuses.filter(
+          (entry) => !removedDigits.includes(entry.digit),
+        );
+        const remainingSoftTissueDescriptors = (
+          value.softTissueDescriptors ?? []
+        )
+          .map((descriptor) => ({
+            ...descriptor,
+            digits: descriptor.digits?.filter(
+              (digit) => !removedDigits.includes(digit),
+            ),
+          }))
+          .filter(
+            (descriptor) =>
+              !descriptor.digits || descriptor.digits.length > 0,
+          );
         onChange({
           ...value,
           affectedDigits: digits,
           injuredStructures: remainingStructures,
+          dislocations:
+            remainingDislocations.length > 0
+              ? remainingDislocations
+              : undefined,
+          perfusionStatuses:
+            remainingPerfusion.length > 0 ? remainingPerfusion : undefined,
+          softTissueDescriptors:
+            remainingSoftTissueDescriptors.length > 0
+              ? remainingSoftTissueDescriptors
+              : undefined,
         });
+        onFracturesChange(remainingFractures);
       } else {
         onChange({ ...value, affectedDigits: digits });
       }
     },
-    [value, injuredStructures, selectedDigits, onChange, onProceduresChange],
+    [
+      dislocations,
+      fractures,
+      value,
+      injuredStructures,
+      selectedDigits,
+      perfusionStatuses,
+      onChange,
+      onFracturesChange,
+      onProceduresChange,
+    ],
   );
 
   // ─── Structure toggle handlers (reused from HandTraumaStructurePicker) ─────
@@ -324,6 +602,16 @@ export function HandTraumaAssessment({
       );
 
       if (existing) {
+        if (
+          existing.zone !== structure.zone ||
+          existing.completeness !== structure.completeness
+        ) {
+          const updated = injuredStructures.map((entry) =>
+            entry === existing ? { ...existing, ...structure } : entry,
+          );
+          onChange({ ...value, injuredStructures: updated });
+          return;
+        }
         if (existing.generatedProcedureId) {
           removeProcedure(existing.generatedProcedureId);
         }
@@ -398,95 +686,255 @@ export function HandTraumaAssessment({
 
   // ─── Soft tissue state ─────────────────────────────────────────────────────
   const softTissueState = useMemo(
-    () => ({
+    (): SoftTissueState => ({
       isHighPressureInjection: value.isHighPressureInjection ?? false,
       isFightBite: value.isFightBite ?? false,
       isCompartmentSyndrome: value.isCompartmentSyndrome ?? false,
       isRingAvulsion: value.isRingAvulsion ?? false,
-      amputationLevel: value.amputationLevel,
-      isReplantable: value.isReplantable,
+      hasSoftTissueDefect: (value.softTissueDescriptors ?? []).some(
+        (entry) => entry.type === "defect",
+      ),
+      hasSoftTissueLoss: (value.softTissueDescriptors ?? []).some(
+        (entry) => entry.type === "loss",
+      ),
+      hasDegloving: (value.softTissueDescriptors ?? []).some(
+        (entry) => entry.type === "degloving",
+      ),
+      hasGrossContamination: (value.softTissueDescriptors ?? []).some(
+        (entry) => entry.type === "contamination",
+      ),
+      softTissueSurfaces: Array.from(
+        new Set(
+          (value.softTissueDescriptors ?? []).flatMap(
+            (entry) => entry.surfaces ?? [],
+          ),
+        ),
+      ),
     }),
     [value],
   );
 
+  const amputationState = useMemo(
+    (): AmputationState => ({
+      amputationLevel: value.amputationLevel,
+      amputationType: value.amputationType,
+      isReplantable: value.isReplantable,
+    }),
+    [value.amputationLevel, value.amputationType, value.isReplantable],
+  );
+
   const handleSoftTissueChange = useCallback(
     (state: SoftTissueState) => {
+      const descriptors: SoftTissueDescriptor[] = [];
+      const descriptorDigits =
+        selectedDigits.length > 0 ? selectedDigits : undefined;
+
+      if (state.hasSoftTissueDefect) {
+        descriptors.push({
+          type: "defect",
+          surfaces:
+            state.softTissueSurfaces.length > 0
+              ? state.softTissueSurfaces
+              : undefined,
+          digits: descriptorDigits,
+        });
+      }
+
+      if (state.hasSoftTissueLoss) {
+        descriptors.push({
+          type: "loss",
+          surfaces:
+            state.softTissueSurfaces.length > 0
+              ? state.softTissueSurfaces
+              : undefined,
+          digits: descriptorDigits,
+        });
+      }
+
+      if (state.hasDegloving) {
+        descriptors.push({
+          type: "degloving",
+          surfaces:
+            state.softTissueSurfaces.length > 0
+              ? state.softTissueSurfaces
+              : undefined,
+          digits: descriptorDigits,
+        });
+      }
+
+      if (state.hasGrossContamination) {
+        descriptors.push({
+          type: "contamination",
+          digits: descriptorDigits,
+        });
+      }
+
       onChange({
         ...value,
         isHighPressureInjection: state.isHighPressureInjection || undefined,
         isFightBite: state.isFightBite || undefined,
         isCompartmentSyndrome: state.isCompartmentSyndrome || undefined,
         isRingAvulsion: state.isRingAvulsion || undefined,
+        softTissueDescriptors: descriptors.length > 0 ? descriptors : undefined,
+      });
+    },
+    [value, onChange, selectedDigits],
+  );
+
+  const handleAmputationChange = useCallback(
+    (state: AmputationState) => {
+      onChange({
+        ...value,
         amputationLevel: state.amputationLevel,
+        amputationType: state.amputationType,
         isReplantable: state.isReplantable,
       });
     },
     [value, onChange],
   );
 
+  const handlePerfusionChange = useCallback(
+    (digit: DigitId, status?: PerfusionStatusEntry["status"]) => {
+      const next = perfusionStatuses.filter((entry) => entry.digit !== digit);
+      if (status) {
+        next.push({ digit, status });
+      }
+      onChange({
+        ...value,
+        perfusionStatuses: next.length > 0 ? next : undefined,
+      });
+    },
+    [onChange, perfusionStatuses, value],
+  );
+
   // ─── Mapping resolution ────────────────────────────────────────────────────
   const mappingResult = useMemo<TraumaMappingResult | null>(() => {
+    if (!isIncidentReady) return null;
+
     // Build the selection from current state
     const selection = {
+      laterality: selectedLaterality,
+      injuryMechanism: selectedMechanism,
+      injuryMechanismOther: selectedMechanismOther || undefined,
       affectedDigits: selectedDigits,
       activeCategories: Array.from(activeCategories),
       fractures,
       dislocations,
       injuredStructures,
+      perfusionStatuses,
+      softTissueDescriptors,
       isHighPressureInjection: value.isHighPressureInjection,
       isFightBite: value.isFightBite,
       isCompartmentSyndrome: value.isCompartmentSyndrome,
       isRingAvulsion: value.isRingAvulsion,
       amputationLevel: value.amputationLevel,
+      amputationType: value.amputationType,
       isReplantable: value.isReplantable,
     };
 
-    // Try the extended mapping first (dislocations, special injuries, amputation)
-    const traumaResult = resolveTraumaDiagnosis(selection);
-    if (traumaResult) return traumaResult;
-
-    // Fall back to AO fracture mapping
-    const fx = fractures[0];
-    if (fx) {
-      const aoResult = resolveAOToDiagnosis({
-        familyCode: fx.details.familyCode,
-        finger: fx.details.finger,
-        phalanx: fx.details.phalanx,
-        segment: fx.details.segment,
-        type: fx.details.type,
-        subBoneId: fx.details.subBoneId,
-      });
-      if (aoResult) {
-        // Convert AO mapping result to TraumaMappingResult shape
-        const diagEntry = findDiagnosisById(aoResult.diagnosisPicklistId);
-        if (diagEntry) {
-          const evaluated = evaluateSuggestions(diagEntry);
-          return {
-            primaryDiagnosis: {
-              diagnosisPicklistId: diagEntry.id,
-              displayName: diagEntry.displayName,
-              snomedCtCode: diagEntry.snomedCtCode ?? "",
-            },
-            suggestedProcedures: evaluated.map((s) => ({
-              procedurePicklistId: s.procedurePicklistId,
-              displayName: s.displayName ?? s.procedurePicklistId,
-              isDefault: s.isDefault,
-              reason: "Matched from AO classification",
-            })),
-          };
-        }
-      }
-    }
-
-    return null;
+    return resolveTraumaDiagnosis(selection);
   }, [
+    isIncidentReady,
+    selectedLaterality,
+    selectedMechanism,
+    selectedMechanismOther,
     selectedDigits,
     activeCategories,
     fractures,
     dislocations,
     injuredStructures,
-    value,
+    perfusionStatuses,
+    softTissueDescriptors,
+    value.amputationLevel,
+    value.amputationType,
+    value.isCompartmentSyndrome,
+    value.isFightBite,
+    value.isHighPressureInjection,
+    value.isReplantable,
+    value.isRingAvulsion,
   ]);
+
+  const hasTraumaSelection = useMemo(
+    () =>
+      fractures.length > 0 ||
+      dislocations.length > 0 ||
+      injuredStructures.length > 0 ||
+      perfusionStatuses.length > 0 ||
+      softTissueDescriptors.length > 0 ||
+      Boolean(
+        value.isHighPressureInjection ||
+          value.isFightBite ||
+          value.isCompartmentSyndrome ||
+          value.isRingAvulsion ||
+          value.amputationLevel,
+      ),
+    [
+      dislocations.length,
+      fractures.length,
+      injuredStructures.length,
+      perfusionStatuses.length,
+      softTissueDescriptors.length,
+      value.amputationLevel,
+      value.isCompartmentSyndrome,
+      value.isFightBite,
+      value.isHighPressureInjection,
+      value.isRingAvulsion,
+    ],
+  );
+
+  const selectionSignature = useMemo(
+    () =>
+      buildSelectionSignature({
+        laterality: selectedLaterality,
+        injuryMechanism: selectedMechanism,
+        injuryMechanismOther: selectedMechanismOther,
+        digits: selectedDigits,
+        fractures,
+        dislocations,
+        injuredStructures,
+        perfusionStatuses,
+        softTissueDescriptors,
+        isHighPressureInjection: value.isHighPressureInjection,
+        isFightBite: value.isFightBite,
+        isCompartmentSyndrome: value.isCompartmentSyndrome,
+        isRingAvulsion: value.isRingAvulsion,
+        amputationLevel: value.amputationLevel,
+        amputationType: value.amputationType,
+        isReplantable: value.isReplantable,
+      }),
+    [
+      dislocations,
+      fractures,
+      injuredStructures,
+      perfusionStatuses,
+      selectedDigits,
+      selectedLaterality,
+      selectedMechanism,
+      selectedMechanismOther,
+      softTissueDescriptors,
+      value.amputationLevel,
+      value.amputationType,
+      value.isCompartmentSyndrome,
+      value.isFightBite,
+      value.isHighPressureInjection,
+      value.isReplantable,
+      value.isRingAvulsion,
+    ],
+  );
+
+  useEffect(() => {
+    if (!acceptedMapping) return;
+    if (acceptedMapping.selectionSignature === selectionSignature) return;
+
+    setAcceptedMapping(null);
+    setHasPendingReviewChanges(hasTraumaSelection);
+  }, [acceptedMapping, hasTraumaSelection, selectionSignature]);
+
+  useEffect(() => {
+    if (hasTraumaSelection) return;
+    setAcceptedMapping(null);
+    setHasPendingReviewChanges(false);
+  }, [hasTraumaSelection]);
 
   // Auto-select default procedures when mapping changes
   useEffect(() => {
@@ -500,17 +948,31 @@ export function HandTraumaAssessment({
     setSelectedProcedureIds(defaults);
   }, [mappingResult]);
 
-  const handleToggleProcedure = useCallback((procedureId: string) => {
-    setSelectedProcedureIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(procedureId)) {
-        next.delete(procedureId);
-      } else {
-        next.add(procedureId);
-      }
-      return next;
-    });
-  }, []);
+  const handleSelectProcedure = useCallback(
+    (pair: TraumaDiagnosisPair, procedureId: string) => {
+      setSelectedProcedureIds((prev) => {
+        const next = new Set(prev);
+
+        if (pair.selectionMode === "single") {
+          for (const procedure of pair.suggestedProcedures) {
+            if (procedure.procedurePicklistId !== procedureId) {
+              next.delete(procedure.procedurePicklistId);
+            }
+          }
+          next.add(procedureId);
+          return next;
+        }
+
+        if (next.has(procedureId)) {
+          next.delete(procedureId);
+        } else {
+          next.add(procedureId);
+        }
+        return next;
+      });
+    },
+    [],
+  );
 
   // ─── Category counts for badge display ─────────────────────────────────────
   const categoryCounts = useMemo<
@@ -539,12 +1001,13 @@ export function HandTraumaAssessment({
       injuredStructures.filter(
         (s) => s.category === "ligament" || s.category === "other",
       ).length +
+      (value.softTissueDescriptors?.length ?? 0) +
       (value.isHighPressureInjection ? 1 : 0) +
       (value.isFightBite ? 1 : 0) +
       (value.isCompartmentSyndrome ? 1 : 0) +
-      (value.isRingAvulsion ? 1 : 0) +
-      (value.amputationLevel ? 1 : 0);
+      (value.isRingAvulsion ? 1 : 0);
     if (softCount > 0) counts.soft_tissue = softCount;
+    if (value.amputationLevel) counts.amputation = 1;
 
     return counts;
   }, [fractures, dislocations, injuredStructures, value]);
@@ -555,153 +1018,381 @@ export function HandTraumaAssessment({
 
   const handleAccept = useCallback(
     (acceptedProcedureIds: string[]) => {
+      if (!mappingResult) return;
       onAccept({
         mappingResult,
         selectedProcedureIds: acceptedProcedureIds,
       });
+      setAcceptedMapping({
+        selectionSignature,
+        mappingResult,
+        selectedProcedureIds: [...new Set(acceptedProcedureIds)].sort(),
+      });
+      setHasPendingReviewChanges(false);
     },
-    [mappingResult, onAccept],
+    [mappingResult, onAccept, selectionSignature],
   );
+
+  const handleEditMapping = useCallback(() => {
+    setAcceptedMapping(null);
+    setHasPendingReviewChanges(false);
+  }, []);
+
+  const handleReviewProcedures = useCallback(() => {
+    onReviewProcedures?.({
+      mappingResult,
+      selectedProcedureIds: Array.from(selectedProcedureIds),
+    });
+  }, [mappingResult, onReviewProcedures, selectedProcedureIds]);
+
+  const acceptedProcedureIdSet = useMemo(
+    () => new Set(acceptedMapping?.selectedProcedureIds ?? []),
+    [acceptedMapping?.selectedProcedureIds],
+  );
+  const isAcceptedCurrent =
+    Boolean(acceptedMapping) &&
+    acceptedMapping?.selectionSignature === selectionSignature;
+
+  const sideLabel =
+    selectedLaterality === "left"
+      ? "left"
+      : selectedLaterality === "right"
+        ? "right"
+        : undefined;
 
   return (
     <View style={styles.container}>
-      {/* 1. Digit Selector */}
-      <DigitSelector
-        selectedDigits={selectedDigits}
-        onChange={handleDigitsChange}
-      />
+      <SectionWrapper title="1. Incident" icon="flag" theme={theme}>
+        <View style={styles.incidentBlock}>
+          <View style={styles.incidentSection}>
+            <ThemedText
+              style={[styles.incidentLabel, { color: theme.textSecondary }]}
+            >
+              Laterality
+            </ThemedText>
+            <View style={styles.sideButtons}>
+              {(["left", "right"] as const).map((side) => {
+                const isSelected = selectedLaterality === side;
+                return (
+                  <Pressable
+                    key={side}
+                    style={[
+                      styles.sideButton,
+                      {
+                        backgroundColor: isSelected
+                          ? theme.link
+                          : theme.backgroundDefault,
+                        borderColor: isSelected ? theme.link : theme.border,
+                      },
+                    ]}
+                    onPress={() =>
+                      updateIncident({
+                        laterality: selectedLaterality === side ? undefined : side,
+                      })
+                    }
+                  >
+                    <ThemedText
+                      style={[
+                        styles.sideButtonText,
+                        {
+                          color: isSelected ? theme.buttonText : theme.text,
+                        },
+                      ]}
+                    >
+                      {side === "left" ? "Left hand" : "Right hand"}
+                    </ThemedText>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
 
-      {/* 2. Injury Category Chips */}
-      <InjuryCategoryChips
-        activeCategories={activeCategories}
-        onToggle={handleCategoryToggle}
-        categoryCounts={categoryCounts}
-      />
+          <View style={styles.incidentSection}>
+            <ThemedText
+              style={[styles.incidentLabel, { color: theme.textSecondary }]}
+            >
+              Injury mechanism
+            </ThemedText>
+            <View style={styles.incidentPillRow}>
+              {TRAUMA_MECHANISM_OPTIONS.map((option) => {
+                const isSelected = selectedMechanism === option.value;
+                return (
+                  <Pressable
+                    key={option.value}
+                    style={[
+                      styles.incidentPill,
+                      {
+                        backgroundColor: isSelected
+                          ? theme.link
+                          : theme.backgroundTertiary,
+                        borderColor: isSelected ? theme.link : theme.border,
+                      },
+                    ]}
+                    onPress={() =>
+                      updateIncident({
+                        injuryMechanism:
+                          selectedMechanism === option.value
+                            ? undefined
+                            : option.value,
+                        injuryMechanismOther:
+                          option.value === "other"
+                            ? selectedMechanismOther
+                            : undefined,
+                      })
+                    }
+                  >
+                    <ThemedText
+                      style={[
+                        styles.incidentPillText,
+                        {
+                          color: isSelected ? theme.buttonText : theme.text,
+                        },
+                      ]}
+                    >
+                      {option.label}
+                    </ThemedText>
+                  </Pressable>
+                );
+              })}
+            </View>
+            {selectedMechanism === "other" ? (
+              <FormField
+                label="Custom mechanism"
+                value={selectedMechanismOther}
+                onChangeText={(text) =>
+                  updateIncident({
+                    injuryMechanism: "other",
+                    injuryMechanismOther: text,
+                  })
+                }
+                placeholder="Describe mechanism..."
+              />
+            ) : null}
+          </View>
 
-      {/* 3. Expandable Sections */}
+          <DatePickerField
+            label="Day of injury"
+            value={injuryDate}
+            onChange={(value) => updateIncident({ injuryDate: value })}
+            placeholder="Select date..."
+            maximumDate={new Date()}
+          />
 
-      {/* Fracture Section */}
-      {activeCategories.has("fracture") ? (
+          {sideLabel ? (
+            <View
+              style={[
+                styles.sideSummary,
+                {
+                  backgroundColor: theme.link + "12",
+                  borderColor: theme.link + "35",
+                },
+              ]}
+            >
+              <Feather name="check-circle" size={15} color={theme.link} />
+              <ThemedText style={[styles.sideSummaryText, { color: theme.link }]}>
+                All selected injuries belong to the {sideLabel} hand.
+              </ThemedText>
+            </View>
+          ) : (
+            <View
+              style={[
+                styles.sideSummary,
+                {
+                  backgroundColor: theme.warning + "12",
+                  borderColor: theme.warning + "35",
+                },
+              ]}
+            >
+              <Feather name="alert-circle" size={15} color={theme.warning} />
+              <ThemedText
+                style={[styles.sideSummaryText, { color: theme.warning }]}
+              >
+                Select left or right before marking injured structures.
+              </ThemedText>
+            </View>
+          )}
+        </View>
+      </SectionWrapper>
+
+      {isIncidentReady ? (
+        <>
+          <SectionWrapper title="2. Injured Structures" icon="grid" theme={theme}>
+            <InjuryCategoryChips
+              activeCategories={activeCategories}
+              onToggle={handleCategoryToggle}
+              categoryCounts={categoryCounts}
+            />
+
+            <DigitSelector
+              selectedDigits={selectedDigits}
+              onChange={handleDigitsChange}
+              label={`Affected digits on ${sideLabel} hand`}
+            />
+          </SectionWrapper>
+
+          {activeCategories.has("fracture") ? (
+            <SectionWrapper
+              title="Fracture Classification"
+              icon="hexagon"
+              theme={theme}
+            >
+              <FractureSection
+                fractures={fractures}
+                onFracturesChange={onFracturesChange}
+                selectedDigits={selectedDigits}
+              />
+            </SectionWrapper>
+          ) : null}
+
+          {activeCategories.has("dislocation") ? (
+            <SectionWrapper title="Dislocation" icon="shuffle" theme={theme}>
+              <DislocationSection
+                dislocations={dislocations}
+                onDislocationsChange={handleDislocationsChange}
+                selectedDigits={selectedDigits}
+                onAssociatedFractureEnabled={ensureFractureCategory}
+              />
+            </SectionWrapper>
+          ) : null}
+
+          {activeCategories.has("tendon") ? (
+            <SectionWrapper title="Tendons" icon="trending-up" theme={theme}>
+              <View style={styles.tendonSubSections}>
+                <ThemedText
+                  style={[styles.tendonSubLabel, { color: theme.textSecondary }]}
+                >
+                  FLEXOR
+                </ThemedText>
+                <FlexorTendonSection
+                  selectedDigits={selectedDigits}
+                  checkedStructures={injuredStructures}
+                  zone={flexorZone}
+                  onZoneChange={setFlexorZone}
+                  completeness={flexorCompleteness}
+                  onCompletenessChange={setFlexorCompleteness}
+                  onToggleStructure={handleToggleTendonStructure}
+                />
+                <View
+                  style={[
+                    styles.tendonDivider,
+                    { backgroundColor: theme.border },
+                  ]}
+                />
+                <ThemedText
+                  style={[styles.tendonSubLabel, { color: theme.textSecondary }]}
+                >
+                  EXTENSOR
+                </ThemedText>
+                <ExtensorTendonSection
+                  selectedDigits={selectedDigits}
+                  checkedStructures={injuredStructures}
+                  zone={extensorZone}
+                  onZoneChange={setExtensorZone}
+                  completeness={extensorCompleteness}
+                  onCompletenessChange={setExtensorCompleteness}
+                  onToggleStructure={handleToggleTendonStructure}
+                />
+              </View>
+            </SectionWrapper>
+          ) : null}
+
+          {activeCategories.has("nerve") ? (
+            <SectionWrapper title="Nerves" icon="zap" theme={theme}>
+              <NerveSection
+                selectedDigits={selectedDigits}
+                checkedStructures={injuredStructures}
+                onToggleStructure={handleToggleParamStructure}
+              />
+            </SectionWrapper>
+          ) : null}
+
+          {activeCategories.has("vessel") ? (
+            <SectionWrapper title="Vessels" icon="droplet" theme={theme}>
+              <ArterySection
+                selectedDigits={selectedDigits}
+                checkedStructures={injuredStructures}
+                onToggleStructure={handleToggleParamStructure}
+                perfusionStatuses={perfusionStatuses}
+                onPerfusionChange={handlePerfusionChange}
+              />
+            </SectionWrapper>
+          ) : null}
+
+          {activeCategories.has("soft_tissue") ? (
+            <SectionWrapper title="Soft Tissue" icon="layers" theme={theme}>
+              <SoftTissueDescriptorSection
+                value={softTissueState}
+                onChange={handleSoftTissueChange}
+                selectedDigits={selectedDigits}
+              />
+
+              <View
+                style={[styles.tendonDivider, { backgroundColor: theme.border }]}
+              />
+              <View style={styles.ligOtherSections}>
+                <ThemedText
+                  style={[styles.subSectionLabel, { color: theme.textSecondary }]}
+                >
+                  LIGAMENT AND JOINT SOFT TISSUE
+                </ThemedText>
+                <LigamentSection
+                  selectedDigits={selectedDigits}
+                  checkedStructures={injuredStructures}
+                  onToggleStructure={handleToggleParamStructure}
+                />
+                <OtherStructuresSection
+                  selectedDigits={selectedDigits}
+                  checkedStructures={injuredStructures}
+                  onToggleStructure={handleToggleParamStructure}
+                />
+              </View>
+
+              <View
+                style={[styles.tendonDivider, { backgroundColor: theme.border }]}
+              />
+              <SoftTissueSpecialInjurySection
+                value={softTissueState}
+                onChange={handleSoftTissueChange}
+              />
+            </SectionWrapper>
+          ) : null}
+
+          {activeCategories.has("amputation") ? (
+            <SectionWrapper title="Amputation" icon="scissors" theme={theme}>
+              <AmputationSection
+                value={amputationState}
+                onChange={handleAmputationChange}
+                selectedDigits={selectedDigits}
+              />
+            </SectionWrapper>
+          ) : null}
+        </>
+      ) : null}
+
+      {hasTraumaSelection && (mappingResult || structureProcedureCount > 0) ? (
         <SectionWrapper
-          title="Fracture Classification"
-          icon="hexagon"
+          title="3. Summary & Procedures"
+          icon="clipboard"
           theme={theme}
         >
-          <FractureSection
-            fractures={fractures}
-            onFracturesChange={onFracturesChange}
-            selectedDigits={selectedDigits}
+          <DiagnosisProcedureSuggestionPanel
+            mappingResult={mappingResult}
+            acceptedMappingResult={acceptedMapping?.mappingResult ?? null}
+            appliedProcedures={procedures}
+            selectedProcedureIds={selectedProcedureIds}
+            acceptedProcedureIds={acceptedProcedureIdSet}
+            isAccepted={isAcceptedCurrent}
+            hasPendingChanges={hasPendingReviewChanges}
+            onSelectProcedure={handleSelectProcedure}
+            onAccept={handleAccept}
+            onEditMapping={handleEditMapping}
+            onEditDiagnosis={onEditDiagnosis}
+            onReviewProcedures={handleReviewProcedures}
+            hasStructureProcedures={structureProcedureCount > 0}
+            structureProcedureCount={structureProcedureCount}
           />
         </SectionWrapper>
       ) : null}
-
-      {/* Dislocation Section */}
-      {activeCategories.has("dislocation") ? (
-        <SectionWrapper title="Dislocation" icon="shuffle" theme={theme}>
-          <DislocationSection
-            dislocations={dislocations}
-            onDislocationsChange={handleDislocationsChange}
-            selectedDigits={selectedDigits}
-            onAssociatedFractureEnabled={ensureFractureCategory}
-          />
-        </SectionWrapper>
-      ) : null}
-
-      {/* Tendon Section (flexor + extensor) */}
-      {activeCategories.has("tendon") ? (
-        <SectionWrapper title="Tendons" icon="trending-up" theme={theme}>
-          <View style={styles.tendonSubSections}>
-            <ThemedText
-              style={[styles.tendonSubLabel, { color: theme.textSecondary }]}
-            >
-              FLEXOR
-            </ThemedText>
-            <FlexorTendonSection
-              selectedDigits={selectedDigits}
-              checkedStructures={injuredStructures}
-              zone={flexorZone}
-              onZoneChange={setFlexorZone}
-              onToggleStructure={handleToggleTendonStructure}
-            />
-            <View
-              style={[styles.tendonDivider, { backgroundColor: theme.border }]}
-            />
-            <ThemedText
-              style={[styles.tendonSubLabel, { color: theme.textSecondary }]}
-            >
-              EXTENSOR
-            </ThemedText>
-            <ExtensorTendonSection
-              selectedDigits={selectedDigits}
-              checkedStructures={injuredStructures}
-              zone={extensorZone}
-              onZoneChange={setExtensorZone}
-              onToggleStructure={handleToggleTendonStructure}
-            />
-          </View>
-        </SectionWrapper>
-      ) : null}
-
-      {/* Nerve Section */}
-      {activeCategories.has("nerve") ? (
-        <SectionWrapper title="Nerves" icon="zap" theme={theme}>
-          <NerveSection
-            selectedDigits={selectedDigits}
-            checkedStructures={injuredStructures}
-            onToggleStructure={handleToggleParamStructure}
-          />
-        </SectionWrapper>
-      ) : null}
-
-      {/* Vessel Section */}
-      {activeCategories.has("vessel") ? (
-        <SectionWrapper title="Vessels" icon="droplet" theme={theme}>
-          <ArterySection
-            selectedDigits={selectedDigits}
-            checkedStructures={injuredStructures}
-            onToggleStructure={handleToggleParamStructure}
-          />
-        </SectionWrapper>
-      ) : null}
-
-      {/* Soft Tissue Section */}
-      {activeCategories.has("soft_tissue") ? (
-        <SectionWrapper title="Soft Tissue" icon="layers" theme={theme}>
-          {/* Ligaments + Other structures */}
-          <View style={styles.ligOtherSections}>
-            <LigamentSection
-              selectedDigits={selectedDigits}
-              checkedStructures={injuredStructures}
-              onToggleStructure={handleToggleParamStructure}
-            />
-            <OtherStructuresSection
-              selectedDigits={selectedDigits}
-              checkedStructures={injuredStructures}
-              onToggleStructure={handleToggleParamStructure}
-            />
-          </View>
-          <View
-            style={[styles.tendonDivider, { backgroundColor: theme.border }]}
-          />
-          <SoftTissueSection
-            value={softTissueState}
-            onChange={handleSoftTissueChange}
-            selectedDigits={selectedDigits}
-          />
-        </SectionWrapper>
-      ) : null}
-
-      {/* 4. Diagnosis & Procedure Suggestion Panel */}
-      <DiagnosisProcedureSuggestionPanel
-        mappingResult={mappingResult}
-        selectedProcedureIds={selectedProcedureIds}
-        onToggleProcedure={handleToggleProcedure}
-        onAccept={handleAccept}
-        onEditDiagnosis={onEditDiagnosis}
-        onAddProcedureManual={onAddProcedureManual}
-        hasStructureProcedures={structureProcedureCount > 0}
-        structureProcedureCount={structureProcedureCount}
-      />
     </View>
   );
 }
@@ -744,6 +1435,66 @@ const styles = StyleSheet.create({
   container: {
     gap: Spacing.md,
   },
+  incidentBlock: {
+    gap: Spacing.md,
+  },
+  incidentSection: {
+    gap: Spacing.sm,
+  },
+  incidentLabel: {
+    fontSize: 12,
+    fontWeight: "700",
+    letterSpacing: 0.4,
+    textTransform: "uppercase",
+  },
+  sideButtons: {
+    flexDirection: "row",
+    gap: Spacing.sm,
+  },
+  sideButton: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: BorderRadius.md,
+    minHeight: 48,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: Spacing.md,
+  },
+  sideButtonText: {
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  incidentPillRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: Spacing.sm,
+  },
+  incidentPill: {
+    borderWidth: 1,
+    borderRadius: BorderRadius.full,
+    minHeight: 38,
+    paddingHorizontal: Spacing.md,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  incidentPillText: {
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  sideSummary: {
+    borderWidth: 1,
+    borderRadius: BorderRadius.sm,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+  },
+  sideSummaryText: {
+    flex: 1,
+    fontSize: 12,
+    fontWeight: "600",
+  },
   sectionCard: {
     borderRadius: BorderRadius.md,
     borderWidth: 1,
@@ -775,5 +1526,11 @@ const styles = StyleSheet.create({
   },
   ligOtherSections: {
     gap: Spacing.md,
+  },
+  subSectionLabel: {
+    fontSize: 11,
+    fontWeight: "600",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
 });

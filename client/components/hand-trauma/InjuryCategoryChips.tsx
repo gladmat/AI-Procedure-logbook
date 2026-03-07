@@ -1,11 +1,11 @@
 /**
- * Horizontal scrollable row of injury category toggle chips.
+ * Wrapped grid of injury category toggle chips.
  * Multiple chips can be active simultaneously (e.g., spaghetti wrist = Tendon + Nerve + Vessel).
  * Tapping a chip toggles its section visibility in the parent assessment.
  */
 
-import React, { useRef, useCallback } from "react";
-import { View, ScrollView, Pressable, StyleSheet } from "react-native";
+import React, { useCallback } from "react";
+import { View, Pressable, StyleSheet } from "react-native";
 import { Feather } from "@/components/FeatherIcon";
 import * as Haptics from "expo-haptics";
 import { ThemedText } from "@/components/ThemedText";
@@ -31,6 +31,7 @@ const CATEGORY_CONFIG: {
   { key: "nerve", label: "Nerve", icon: "zap" },
   { key: "vessel", label: "Vessel", icon: "droplet" },
   { key: "soft_tissue", label: "Soft Tissue", icon: "layers" },
+  { key: "amputation", label: "Amputation", icon: "scissors" },
 ];
 
 export function InjuryCategoryChips({
@@ -39,7 +40,6 @@ export function InjuryCategoryChips({
   categoryCounts,
 }: InjuryCategoryChipsProps) {
   const { theme } = useTheme();
-  const scrollRef = useRef<ScrollView>(null);
 
   const handlePress = useCallback(
     (category: InjuryCategory) => {
@@ -54,12 +54,7 @@ export function InjuryCategoryChips({
       <ThemedText style={[styles.label, { color: theme.textSecondary }]}>
         INJURY TYPE
       </ThemedText>
-      <ScrollView
-        ref={scrollRef}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-      >
+      <View style={styles.grid}>
         {CATEGORY_CONFIG.map(({ key, label, icon }) => {
           const isActive = activeCategories.has(key);
           const count = categoryCounts?.[key] ?? 0;
@@ -78,22 +73,25 @@ export function InjuryCategoryChips({
               ]}
               onPress={() => handlePress(key)}
             >
-              <Feather
-                name={icon as any}
-                size={14}
-                color={isActive ? theme.buttonText : theme.textSecondary}
-              />
-              <ThemedText
-                style={[
-                  styles.chipLabel,
-                  {
-                    color: isActive ? theme.buttonText : theme.text,
-                  },
-                ]}
-              >
-                {label}
-              </ThemedText>
-              {count > 0 && isActive ? (
+              <View style={styles.chipContent}>
+                <Feather
+                  name={icon as any}
+                  size={14}
+                  color={isActive ? theme.buttonText : theme.textSecondary}
+                />
+                <ThemedText
+                  style={[
+                    styles.chipLabel,
+                    {
+                      color: isActive ? theme.buttonText : theme.text,
+                    },
+                  ]}
+                  numberOfLines={1}
+                >
+                  {label}
+                </ThemedText>
+              </View>
+              {count > 0 ? (
                 <View
                   style={[
                     styles.countBadge,
@@ -119,7 +117,7 @@ export function InjuryCategoryChips({
             </Pressable>
           );
         })}
-      </ScrollView>
+      </View>
     </View>
   );
 }
@@ -136,23 +134,37 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     marginBottom: Spacing.sm,
   },
-  scrollContent: {
+  grid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: Spacing.sm,
-    paddingRight: Spacing.md,
   },
   chip: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
     paddingVertical: 10,
-    paddingHorizontal: Spacing.md,
-    borderRadius: BorderRadius.full,
+    paddingHorizontal: Spacing.sm,
+    borderRadius: BorderRadius.md,
     borderWidth: 1,
     gap: 6,
-    minHeight: 40,
+    minHeight: 44,
+    flexBasis: "31%",
+    flexGrow: 1,
+    minWidth: 96,
+  },
+  chipContent: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    minWidth: 0,
   },
   chipLabel: {
-    fontSize: 14,
+    flex: 1,
+    fontSize: 13,
     fontWeight: "600",
+    flexShrink: 1,
   },
   countBadge: {
     minWidth: 18,
