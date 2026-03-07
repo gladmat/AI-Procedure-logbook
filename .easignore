@@ -16,7 +16,6 @@ drizzle.config.ts
 
 # Git
 .git/
-.gitignore
 
 # Other
 *.md
