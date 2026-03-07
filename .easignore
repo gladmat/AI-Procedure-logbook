@@ -1,6 +1,6 @@
 # Server code — not needed in client builds
 server/
-shared/
+# shared/ is needed — client imports @shared/professionalRegistrations
 migrations/
 server_dist/
 
