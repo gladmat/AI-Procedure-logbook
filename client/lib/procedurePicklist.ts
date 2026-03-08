@@ -2183,6 +2183,16 @@ const HEAD_NECK_SITE_RECONSTRUCTION: ProcedurePicklistEntry[] = [
     sortOrder: 2,
   },
   {
+    id: "hn_recon_lip_wedge",
+    displayName: "Wedge excision of lip",
+    snomedCtCode: "38765008",
+    snomedCtDisplay: "Wedge excision of lip (procedure)",
+    specialties: ["head_neck", "skin_cancer"],
+    subcategory: "Site-Specific Reconstruction",
+    tags: ["oncological"],
+    sortOrder: 3,
+  },
+  {
     id: "hn_recon_lip",
     displayName: "Lip reconstruction (primary closure / flap)",
     snomedCtCode: "83891000", // VERIFY
@@ -2190,7 +2200,7 @@ const HEAD_NECK_SITE_RECONSTRUCTION: ProcedurePicklistEntry[] = [
     specialties: ["head_neck"],
     subcategory: "Site-Specific Reconstruction",
     tags: ["oncological"],
-    sortOrder: 3,
+    sortOrder: 4,
   },
   {
     id: "hn_recon_ear_partial",
@@ -2241,6 +2251,16 @@ const HEAD_NECK_SITE_RECONSTRUCTION: ProcedurePicklistEntry[] = [
     subcategory: "Site-Specific Reconstruction",
     tags: ["oncological"],
     sortOrder: 8,
+  },
+  {
+    id: "hn_recon_tenzel",
+    displayName: "Tenzel semicircular flap (eyelid)",
+    snomedCtCode: "274883006", // VERIFY — rotational advancement flap for eyelid
+    snomedCtDisplay: "Reconstruction of eyelid with flap (procedure)",
+    specialties: ["head_neck", "skin_cancer"],
+    subcategory: "Site-Specific Reconstruction",
+    tags: ["oncological"],
+    sortOrder: 9,
   },
   {
     id: "hn_recon_scalp",
@@ -2783,6 +2803,16 @@ const GENERAL_SKIN_LESION: ProcedurePicklistEntry[] = [
     subcategory: "Skin Lesion Surgery",
     tags: ["elective"],
     sortOrder: 7,
+  },
+  {
+    id: "gen_skin_excision_biopsy",
+    displayName: "Excision biopsy of skin lesion",
+    snomedCtCode: "177300000",
+    snomedCtDisplay: "Excision of lesion of skin (procedure)",
+    specialties: ["skin_cancer", "general", "head_neck"],
+    subcategory: "Skin Lesion Surgery",
+    tags: ["elective"],
+    sortOrder: 8,
   },
 ];
 

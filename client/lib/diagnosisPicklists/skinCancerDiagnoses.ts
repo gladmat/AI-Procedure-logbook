@@ -26,7 +26,7 @@ const SC_DX_PRIMARY: DiagnosisPicklistEntry[] = [
     snomedCtCode: "95324001",
     snomedCtDisplay: "Skin lesion (finding)",
     specialty: "skin_cancer",
-    subcategory: "Diagnostic",
+    subcategory: "Unclear Lesion",
     clinicalGroup: "oncological",
     hasStaging: false,
     hasEnhancedHistology: false,

@@ -34,6 +34,7 @@ import type {
   LesionInstance,
   LesionPathologyType,
   FreeFlapOutcomeDetails,
+  OperativeMediaItem,
 } from "@/types/case";
 import type { InfectionOverlay } from "@/types/infection";
 import { PickerField } from "@/components/FormField";
@@ -90,6 +91,14 @@ import {
   getModuleVisibility,
   procedureHasFreeFlap,
 } from "@/lib/moduleVisibility";
+import {
+  shouldActivateSkinCancerModule,
+  getSkinCancerProcedureSuggestions,
+  getSkinCancerDiagnosisAutoConfig,
+  resolveSkinCancerDiagnosis,
+} from "@/lib/skinCancerConfig";
+import { SkinCancerAssessment } from "@/components/skin-cancer/SkinCancerAssessment";
+import type { SkinCancerLesionAssessment, LesionPhoto } from "@/types/skinCancer";
 import { generateFlapOutcomeSummary } from "@/components/FlapOutcomeSection";
 import { withDefaultFlapOutcome } from "@/lib/flapOutcomeDefaults";
 import {
@@ -124,6 +133,10 @@ interface DiagnosisGroupEditorProps {
   episodeType?: EpisodeType;
   /** Case-level return to theatre flag used for free flap outcome defaults. */
   returnToTheatre?: boolean;
+  /** Scroll view ref for adjusting scroll position after layout changes */
+  scrollViewRef?: React.RefObject<any>;
+  /** Current scroll Y position (tracked by parent scroll handler) */
+  scrollPositionRef?: React.MutableRefObject<number>;
 }
 
 interface HandTraumaDiagnosisResolution {
@@ -148,6 +161,8 @@ export function DiagnosisGroupEditor({
   isFirstInfectionGroup,
   episodeType,
   returnToTheatre,
+  scrollViewRef,
+  scrollPositionRef,
 }: DiagnosisGroupEditorProps) {
   const { theme } = useTheme();
   const { profile } = useAuth();
@@ -219,6 +234,13 @@ export function DiagnosisGroupEditor({
   const [clinicalSuspicion, setClinicalSuspicion] = useState<
     ClinicalSuspicion | undefined
   >(group.clinicalSuspicion);
+
+  // Skin cancer assessment module state
+  const [skinCancerAssessment, setSkinCancerAssessment] = useState<
+    SkinCancerLesionAssessment | undefined
+  >(group.skinCancerAssessment);
+  const [skinCancerProceduresAccepted, setSkinCancerProceduresAccepted] =
+    useState(false);
 
   // Hub-and-spoke sheet visibility
   const [activeFlapSheetProcedureId, setActiveFlapSheetProcedureId] = useState<
@@ -370,6 +392,12 @@ export function DiagnosisGroupEditor({
       lesionInstances: isMultiLesion ? lesionInstances : undefined,
       diagnosisCertainty: isExcBiopsy ? "clinical" : undefined,
       clinicalSuspicion: isExcBiopsy ? clinicalSuspicion : undefined,
+      skinCancerAssessment:
+        isSkinCancerInlineFlow ||
+        shouldActivateSkinCancerModule(selectedDiagnosis) ||
+        !!skinCancerAssessment
+          ? skinCancerAssessment
+          : undefined,
     };
     onChangeRef.current(assembled);
   }, [
@@ -384,6 +412,7 @@ export function DiagnosisGroupEditor({
     isMultiLesion,
     lesionInstances,
     clinicalSuspicion,
+    skinCancerAssessment,
   ]);
 
   const buildDefaultProcedures = useCallback(
@@ -541,6 +570,27 @@ export function DiagnosisGroupEditor({
       setProcedures(
         newProcedures.length > 0 ? newProcedures : buildDefaultProcedures(),
       );
+
+      // Auto-populate skin cancer assessment from diagnosis config
+      if (shouldActivateSkinCancerModule(dx)) {
+        const autoConfig = getSkinCancerDiagnosisAutoConfig(dx.id);
+        const initialAssessment: SkinCancerLesionAssessment = {
+          pathwayStage: autoConfig.autoPathwayStage,
+          ...(autoConfig.autoPathologyCategory
+            ? {
+                priorHistology: {
+                  source: "own_biopsy",
+                  pathologyCategory: autoConfig.autoPathologyCategory,
+                  ...(autoConfig.autoRareSubtype
+                    ? { rareSubtype: autoConfig.autoRareSubtype }
+                    : {}),
+                  marginStatus: "pending",
+                },
+              }
+            : {}),
+        };
+        setSkinCancerAssessment(initialAssessment);
+      }
     },
     [groupSpecialty, buildDefaultProcedures, buildFreeFlapClinicalDetails],
   );
@@ -722,6 +772,8 @@ export function DiagnosisGroupEditor({
   const isInlineHandTraumaFlow =
     groupSpecialty === "hand_wrist" && handCaseType === "trauma";
 
+  const isSkinCancerInlineFlow = groupSpecialty === "skin_cancer";
+
   const currentGroupTitle = useMemo(
     () =>
       getDiagnosisGroupTitle({
@@ -901,6 +953,41 @@ export function DiagnosisGroupEditor({
   const hasSelectedHandCaseType =
     groupSpecialty !== "hand_wrist" || handCaseType !== null;
 
+  // Skin cancer module activation: driven by inline flow, picklist metadata, or saved data
+  const isSkinCancerModule = useMemo(
+    () =>
+      isSkinCancerInlineFlow ||
+      shouldActivateSkinCancerModule(selectedDiagnosis) ||
+      moduleVisibility.skinCancerAssessment,
+    [isSkinCancerInlineFlow, selectedDiagnosis, moduleVisibility.skinCancerAssessment],
+  );
+
+  // Skin cancer procedure suggestions (assessment-driven, not diagnosis-driven)
+  const skinCancerSuggestions = useMemo(() => {
+    if (!isSkinCancerModule) return [];
+    const assessment =
+      group.skinCancerAssessment ??
+      group.lesionInstances?.[0]?.skinCancerAssessment;
+    if (!assessment?.pathwayStage) return [];
+    const ids = getSkinCancerProcedureSuggestions(assessment);
+    return ids
+      .map((id) => {
+        const entry = findPicklistEntry(id);
+        return entry ? { id, displayName: entry.displayName } : null;
+      })
+      .filter((s): s is { id: string; displayName: string } => s !== null);
+  }, [
+    isSkinCancerModule,
+    group.skinCancerAssessment,
+    group.lesionInstances,
+  ]);
+
+  // Skin cancer sequential disclosure: hide procedure section until diagnosis selected
+  const skinCancerHasDiagnosis =
+    !isSkinCancerModule ||
+    !!selectedDiagnosis ||
+    (isSkinCancerInlineFlow && skinCancerProceduresAccepted);
+
   const handleReverseDiagnosisSelect = useCallback(
     (dx: DiagnosisPicklistEntry) => {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -1047,6 +1134,16 @@ export function DiagnosisGroupEditor({
     setShowManualTraumaDiagnosisPicker(false);
     setShowManualTraumaProcedureEditor(false);
     setAutoAppliedTraumaSuggestionIds(new Set());
+
+    // Skin cancer inline flow: auto-initialize empty assessment
+    if (s === "skin_cancer") {
+      setSkinCancerAssessment(undefined); // starts empty, user picks pathway
+      setSkinCancerProceduresAccepted(false);
+    } else {
+      setSkinCancerAssessment(undefined);
+      setSkinCancerProceduresAccepted(false);
+    }
+
     setProcedures([
       {
         id: uuidv4(),
@@ -1074,7 +1171,134 @@ export function DiagnosisGroupEditor({
     setShowManualTraumaDiagnosisPicker(false);
     setShowManualTraumaProcedureEditor(false);
     setAutoAppliedTraumaSuggestionIds(new Set());
+    setSkinCancerAssessment(undefined);
+    setSkinCancerProceduresAccepted(false);
   }, [handCaseType]);
+
+  // Skin cancer accept-mapping handler
+  const handleSkinCancerAcceptProcedures = useCallback(
+    (procedurePicklistIds: string[]) => {
+      const newProcedures: CaseProcedure[] = procedurePicklistIds
+        .map((picklistId, idx) => {
+          const entry = findPicklistEntry(picklistId);
+          if (!entry) return null;
+          return {
+            id: uuidv4(),
+            sequenceOrder: idx + 1,
+            procedureName: entry.displayName,
+            specialty: groupSpecialty,
+            surgeonRole: "PS" as Role,
+            picklistEntryId: picklistId,
+            snomedCtCode: entry.snomedCtCode,
+            snomedCtDisplay: entry.snomedCtDisplay,
+            subcategory: entry.subcategory,
+            tags: entry.tags,
+          };
+        })
+        .filter(Boolean) as CaseProcedure[];
+      setProcedures(newProcedures);
+      setSkinCancerProceduresAccepted(true);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    },
+    [groupSpecialty],
+  );
+
+  // Skin cancer inline flow — resolves BOTH diagnosis AND procedures on accept
+  const handleSkinCancerAcceptMapping = useCallback(
+    (procedurePicklistIds: string[]) => {
+      if (!skinCancerAssessment) return;
+
+      // 1. Resolve diagnosis from assessment pathology
+      const resolved = resolveSkinCancerDiagnosis(skinCancerAssessment);
+      if (resolved) {
+        // Find picklist entry for the resolved diagnosis
+        const dxEntry = findDiagnosisById(resolved.diagnosisPicklistId);
+        if (dxEntry) {
+          setSelectedDiagnosis(dxEntry);
+        }
+        setPrimaryDiagnosis({
+          conceptId: resolved.snomedCtCode,
+          term: resolved.displayName,
+        });
+        setDiagnosis(resolved.displayName);
+        setIsDiagnosisPickerCollapsed(true);
+      }
+
+      // 2. Map procedure picklist IDs to CaseProcedures
+      const newProcedures: CaseProcedure[] = procedurePicklistIds
+        .map((picklistId, idx) => {
+          const entry = findPicklistEntry(picklistId);
+          if (!entry) return null;
+          return {
+            id: uuidv4(),
+            sequenceOrder: idx + 1,
+            procedureName: entry.displayName,
+            specialty: groupSpecialty,
+            surgeonRole: "PS" as Role,
+            picklistEntryId: picklistId,
+            snomedCtCode: entry.snomedCtCode,
+            snomedCtDisplay: entry.snomedCtDisplay,
+            subcategory: entry.subcategory,
+            tags: entry.tags,
+          };
+        })
+        .filter(Boolean) as CaseProcedure[];
+      setProcedures(newProcedures);
+
+      // 3. Mark accepted
+      setSkinCancerProceduresAccepted(true);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    },
+    [skinCancerAssessment, groupSpecialty],
+  );
+
+  // Skin cancer inline flow — add another lesion (transitions to multi-lesion)
+  const handleAddSkinCancerLesion = useCallback(() => {
+    if (!skinCancerAssessment) return;
+
+    // Move current assessment into lesionInstances[0]
+    const firstLesion: LesionInstance = {
+      id: uuidv4(),
+      site: skinCancerAssessment.site ?? "",
+      pathologyType: "other",
+      skinCancerAssessment: structuredClone(skinCancerAssessment),
+      reconstruction: "primary_closure",
+      marginStatus: "pending",
+      histologyConfirmed: false,
+    };
+    // Create blank second lesion (auto-expanded)
+    const secondLesion: LesionInstance = {
+      id: uuidv4(),
+      site: "",
+      pathologyType: "other",
+      reconstruction: "primary_closure",
+      marginStatus: "pending",
+      histologyConfirmed: false,
+    };
+
+    setLesionInstances([firstLesion, secondLesion]);
+    setIsMultiLesion(true);
+    setSkinCancerAssessment(undefined);
+    setSkinCancerProceduresAccepted(false);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+  }, [skinCancerAssessment]);
+
+  // Lesion photo → also add to Case.operativeMedia for dashboard thumbnail
+  const handleLesionPhotoAdded = useCallback(
+    (photo: LesionPhoto) => {
+      const mediaItem: OperativeMediaItem = {
+        id: photo.id,
+        localUri: photo.uri,
+        mimeType: "image/jpeg",
+        mediaType: "preoperative_photo",
+        caption: photo.caption,
+        createdAt: photo.createdAt,
+      };
+      const current = caseFormState.operativeMedia ?? [];
+      caseFormDispatch(setField("operativeMedia", [...current, mediaItem]));
+    },
+    [caseFormState.operativeMedia, caseFormDispatch],
+  );
 
   const specialtyOptions = Object.entries(SPECIALTY_LABELS).map(
     ([value, label]) => ({
@@ -1633,7 +1857,37 @@ export function DiagnosisGroupEditor({
           </>
         ) : null}
 
-        {hasSelectedHandCaseType && showTraumaDiagnosisEditor ? (
+        {/* Inline skin cancer flow — replaces DiagnosisPicker entirely */}
+        {isSkinCancerInlineFlow && !isMultiLesion ? (
+          <SkinCancerAssessment
+            assessment={skinCancerAssessment}
+            onAssessmentChange={(updated) => {
+              setSkinCancerAssessment(updated);
+              setSkinCancerProceduresAccepted(false);
+            }}
+            onAcceptMapping={handleSkinCancerAcceptMapping}
+            isAccepted={skinCancerProceduresAccepted}
+            onAddLesion={handleAddSkinCancerLesion}
+            onPhotoAdded={handleLesionPhotoAdded}
+            onEditMapping={() => setSkinCancerProceduresAccepted(false)}
+            scrollViewRef={scrollViewRef}
+            scrollPositionRef={scrollPositionRef}
+          />
+        ) : null}
+
+        {/* Multi-lesion skin cancer inline flow */}
+        {isSkinCancerInlineFlow && isMultiLesion ? (
+          <MultiLesionEditor
+            lesions={lesionInstances}
+            onChange={setLesionInstances}
+            defaultPathologyType="other"
+            isSkinCancer
+          />
+        ) : null}
+
+        {hasSelectedHandCaseType &&
+        showTraumaDiagnosisEditor &&
+        !isSkinCancerInlineFlow ? (
           <>
             {isInlineHandTraumaFlow && showManualTraumaDiagnosisPicker ? (
               <View
@@ -1799,8 +2053,9 @@ export function DiagnosisGroupEditor({
               </View>
             ) : null}
 
-            {/* Clinical suspicion buttons for excision biopsy diagnoses */}
-            {isExcisionBiopsyDiagnosis(selectedDiagnosis?.id) ? (
+            {/* Clinical suspicion buttons for excision biopsy diagnoses (suppressed when skin cancer module active) */}
+            {!isSkinCancerModule &&
+            isExcisionBiopsyDiagnosis(selectedDiagnosis?.id) ? (
               <View style={styles.stagingContainer}>
                 <ThemedText
                   style={[styles.clinicalSuspicionLabel, { color: theme.text }]}
@@ -1851,7 +2106,25 @@ export function DiagnosisGroupEditor({
               </View>
             ) : null}
 
-            {primaryDiagnosis ? (
+            {/* Skin cancer assessment module (diagnosis-driven, single-lesion mode) */}
+            {isSkinCancerModule && !isMultiLesion && !isSkinCancerInlineFlow ? (
+              <SkinCancerAssessment
+                assessment={skinCancerAssessment}
+                onAssessmentChange={(updated) => {
+                  setSkinCancerAssessment(updated);
+                  setSkinCancerProceduresAccepted(false);
+                }}
+                diagnosisId={selectedDiagnosis?.id}
+                onAcceptProcedures={handleSkinCancerAcceptProcedures}
+                isAccepted={skinCancerProceduresAccepted}
+                onPhotoAdded={handleLesionPhotoAdded}
+                onEditMapping={() => setSkinCancerProceduresAccepted(false)}
+                scrollViewRef={scrollViewRef}
+                scrollPositionRef={scrollPositionRef}
+              />
+            ) : null}
+
+            {primaryDiagnosis && !isSkinCancerModule ? (
               <DiagnosisClinicalFields
                 diagnosis={{
                   snomedCtCode: primaryDiagnosis.conceptId,
@@ -1995,7 +2268,7 @@ export function DiagnosisGroupEditor({
           </View>
         ) : null}
 
-        {hasSelectedHandCaseType && !showTraumaProcedureSummary ? (
+        {hasSelectedHandCaseType && skinCancerHasDiagnosis && !showTraumaProcedureSummary ? (
           <>
             {isInlineHandTraumaFlow && showManualTraumaProcedureEditor ? (
               <Pressable
@@ -2014,10 +2287,10 @@ export function DiagnosisGroupEditor({
               </Pressable>
             ) : null}
 
-            {selectedDiagnosis?.hasEnhancedHistology ||
+            {!isSkinCancerInlineFlow &&
+            (selectedDiagnosis?.hasEnhancedHistology ||
             groupSpecialty === "general" ||
-            groupSpecialty === "head_neck" ||
-            groupSpecialty === "skin_cancer" ? (
+            groupSpecialty === "head_neck") ? (
               <View style={{ marginBottom: Spacing.md }}>
                 <Pressable
                   onPress={() => {
@@ -2080,23 +2353,80 @@ export function DiagnosisGroupEditor({
               </View>
             ) : null}
 
-            {isMultiLesion ? (
+            {isMultiLesion && !isSkinCancerInlineFlow ? (
               <MultiLesionEditor
                 lesions={lesionInstances}
                 onChange={setLesionInstances}
                 defaultPathologyType={deriveDefaultPathologyType(selectedDiagnosis)}
+                isSkinCancer={isSkinCancerModule}
+                diagnosisId={selectedDiagnosis?.id}
               />
-            ) : (
+            ) : !isMultiLesion ? (
               (() => {
                 // Feature 2: procedure filtering
+                const hasSkinCancerSuggestions = skinCancerSuggestions.length > 0;
                 const hasSuggestedProcedures =
-                  showDefaultProcedureSuggestions &&
-                  (selectedDiagnosis?.suggestedProcedures?.length ?? 0) > 0;
+                  (showDefaultProcedureSuggestions &&
+                    (selectedDiagnosis?.suggestedProcedures?.length ?? 0) > 0) ||
+                  hasSkinCancerSuggestions;
                 const showFiltered = hasSuggestedProcedures && !showAllProcedures;
 
                 return (
                   <>
-                    {selectedDiagnosis && showDefaultProcedureSuggestions ? (
+                    {hasSkinCancerSuggestions ? (
+                      <View style={{ marginTop: Spacing.md }}>
+                        <ThemedText type="h4" style={{ marginBottom: Spacing.sm }}>
+                          Suggested Procedures
+                        </ThemedText>
+                        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: Spacing.sm }}>
+                          {skinCancerSuggestions.map((s) => {
+                            const isSelected = selectedSuggestionIds.has(s.id);
+                            return (
+                              <Pressable
+                                key={s.id}
+                                testID={`chip-procedure-${s.id}`}
+                                style={[
+                                  {
+                                    flexDirection: "row",
+                                    alignItems: "center",
+                                    paddingHorizontal: Spacing.md,
+                                    paddingVertical: Spacing.sm,
+                                    borderRadius: BorderRadius.xl,
+                                    borderWidth: 1,
+                                    backgroundColor: isSelected
+                                      ? theme.link
+                                      : theme.backgroundSecondary,
+                                    borderColor: isSelected
+                                      ? theme.link
+                                      : theme.border,
+                                  },
+                                ]}
+                                onPress={() => {
+                                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                  handleToggleProcedureSuggestion(s.id, !isSelected);
+                                }}
+                              >
+                                <Feather
+                                  name={isSelected ? "check-circle" : "circle"}
+                                  size={16}
+                                  color={isSelected ? theme.buttonText : theme.link}
+                                  style={{ marginRight: Spacing.xs }}
+                                />
+                                <ThemedText
+                                  type="small"
+                                  style={{
+                                    color: isSelected ? theme.buttonText : theme.text,
+                                    flexShrink: 1,
+                                  }}
+                                >
+                                  {s.displayName}
+                                </ThemedText>
+                              </Pressable>
+                            );
+                          })}
+                        </View>
+                      </View>
+                    ) : selectedDiagnosis && showDefaultProcedureSuggestions ? (
                       <ProcedureSuggestions
                         diagnosis={selectedDiagnosis}
                         stagingSelections={stagingValues}
@@ -2181,7 +2511,7 @@ export function DiagnosisGroupEditor({
                   </>
                 );
               })()
-            )}
+            ) : null}
           </>
         ) : null}
 

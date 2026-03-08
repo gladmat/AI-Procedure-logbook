@@ -3,7 +3,6 @@ import {
   View,
   StyleSheet,
   Pressable,
-  ScrollView,
   TextInput,
 } from "react-native";
 import { Feather } from "@/components/FeatherIcon";
@@ -151,36 +150,38 @@ export function DiagnosisPicker({
 
   return (
     <View style={styles.container}>
-      <View
-        style={[
-          styles.searchContainer,
-          {
-            backgroundColor: theme.backgroundDefault,
-            borderColor: theme.border,
-          },
-        ]}
-      >
-        <Feather name="search" size={16} color={theme.textTertiary} />
-        <TextInput
-          style={[styles.searchInput, { color: theme.text }]}
-          placeholder="Search diagnoses..."
-          placeholderTextColor={theme.textTertiary}
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          autoCapitalize="none"
-          autoCorrect={false}
-          testID="input-diagnosis-search"
-        />
-        {searchQuery.length > 0 ? (
-          <Pressable
-            onPress={() => setSearchQuery("")}
-            hitSlop={8}
-            testID="button-clear-diagnosis-search"
-          >
-            <Feather name="x" size={16} color={theme.textTertiary} />
-          </Pressable>
-        ) : null}
-      </View>
+      {specialty !== "skin_cancer" ? (
+        <View
+          style={[
+            styles.searchContainer,
+            {
+              backgroundColor: theme.backgroundDefault,
+              borderColor: theme.border,
+            },
+          ]}
+        >
+          <Feather name="search" size={16} color={theme.textTertiary} />
+          <TextInput
+            style={[styles.searchInput, { color: theme.text }]}
+            placeholder="Search diagnoses..."
+            placeholderTextColor={theme.textTertiary}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            autoCapitalize="none"
+            autoCorrect={false}
+            testID="input-diagnosis-search"
+          />
+          {searchQuery.length > 0 ? (
+            <Pressable
+              onPress={() => setSearchQuery("")}
+              hitSlop={8}
+              testID="button-clear-diagnosis-search"
+            >
+              <Feather name="x" size={16} color={theme.textTertiary} />
+            </Pressable>
+          ) : null}
+        </View>
+      ) : null}
 
       {/* Favourites & Recents chips — only when not searching */}
       {!isSearching &&
@@ -196,12 +197,7 @@ export function DiagnosisPicker({
       ) : null}
 
       {!isSearching ? (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.subcatRow}
-          style={styles.subcatScroll}
-        >
+        <View style={styles.subcatGrid}>
           {subcategories.map((subcat) => {
             const isActive = subcat === activeSubcategory;
             return (
@@ -235,7 +231,7 @@ export function DiagnosisPicker({
               </Pressable>
             );
           })}
-        </ScrollView>
+        </View>
       ) : null}
 
       <View style={styles.diagnosisList}>
@@ -333,13 +329,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     height: "100%",
   },
-  subcatScroll: {
-    marginBottom: Spacing.md,
-  },
-  subcatRow: {
+  subcatGrid: {
     flexDirection: "row",
+    flexWrap: "wrap",
     gap: Spacing.sm,
-    paddingRight: Spacing.md,
+    marginBottom: Spacing.md,
   },
   subcatChip: {
     paddingHorizontal: Spacing.md,

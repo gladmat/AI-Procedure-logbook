@@ -133,6 +133,8 @@ export const DiagnosisProcedureSection = React.memo(
             isFirstInfectionGroup={idx === firstInfectionGroupIndex}
             episodeType={episodeType}
             returnToTheatre={state.returnToTheatre}
+            scrollViewRef={scrollViewRef}
+            scrollPositionRef={scrollPositionRef}
           />
         ))}
 

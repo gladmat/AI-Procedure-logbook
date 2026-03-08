@@ -48,7 +48,13 @@ import {
   CaseDraft,
   getCasesByEpisodeId,
 } from "@/lib/storage";
-import { updateEpisode, getEpisode } from "@/lib/episodeStorage";
+import {
+  updateEpisode,
+  getEpisode,
+  saveEpisode,
+  findEpisodesByPatientIdentifier,
+} from "@/lib/episodeStorage";
+import type { TreatmentEpisode } from "@/types/episode";
 import { getDefaultClinicalDetails } from "@/lib/procedureConfig";
 import { PICKLIST_TO_FLAP_TYPE } from "@/lib/procedurePicklist";
 import {
@@ -866,9 +872,18 @@ export function buildDuplicateState(
     diagnosisStagingSelections: g.diagnosisStagingSelections
       ? { ...g.diagnosisStagingSelections }
       : undefined,
+    skinCancerAssessment: g.skinCancerAssessment
+      ? structuredClone(g.skinCancerAssessment)
+      : undefined,
     fractures: g.fractures?.map((f) => ({ ...f, id: uuidv4() })) ?? [],
     lesionInstances:
-      g.lesionInstances?.map((l) => ({ ...l, id: uuidv4() })) ?? [],
+      g.lesionInstances?.map((l) => ({
+        ...l,
+        id: uuidv4(),
+        skinCancerAssessment: l.skinCancerAssessment
+          ? structuredClone(l.skinCancerAssessment)
+          : undefined,
+      })) ?? [],
   })) ?? [
     {
       id: uuidv4(),
@@ -979,6 +994,94 @@ export interface UseCaseFormReturn {
   removeAnastomosis: (id: string) => void;
   // Clinical detail callback
   updateClinicalDetail: (key: string, value: any) => void;
+}
+
+// ─── Skin Cancer Episode Helpers ────────────────────────────────────────────
+
+import {
+  collectPendingSkinCancerLesions,
+  determineSkinCancerEpisodeAction,
+} from "@/lib/skinCancerEpisodeHelpers";
+
+/**
+ * Auto-create a cancer_pathway episode when saving an excision biopsy case
+ * that has pending histology.
+ */
+async function maybeCreateSkinCancerEpisode(savedCase: Case): Promise<void> {
+  const pendingLesions = collectPendingSkinCancerLesions(savedCase);
+  if (pendingLesions.length === 0) return;
+  if (savedCase.episodeId) return; // Already linked to an episode
+
+  // Check if patient already has an active cancer_pathway episode
+  const existing = await findEpisodesByPatientIdentifier(
+    savedCase.patientIdentifier,
+  );
+  const activePathway = existing.find(
+    (e) =>
+      e.type === "cancer_pathway" &&
+      (e.status === "active" || e.status === "planned"),
+  );
+  if (activePathway) return; // Don't duplicate
+
+  const first = pendingLesions[0];
+  if (!first) return; // Guard — should not happen since length > 0
+
+  const title =
+    pendingLesions.length === 1
+      ? `${first.site} ?${first.suspicion.toUpperCase()} — awaiting histology`
+      : `${pendingLesions.length} skin lesions — awaiting histology`;
+
+  const firstGroup = savedCase.diagnosisGroups?.[0];
+  const now = new Date().toISOString();
+  const episode: TreatmentEpisode = {
+    id: uuidv4(),
+    patientIdentifier: savedCase.patientIdentifier,
+    title,
+    primaryDiagnosisCode:
+      firstGroup?.diagnosis?.snomedCtCode ?? "",
+    primaryDiagnosisDisplay:
+      firstGroup?.diagnosis?.displayName ?? "Skin cancer",
+    type: "cancer_pathway",
+    specialty: savedCase.specialty,
+    status: "active",
+    pendingAction: "awaiting_histology",
+    onsetDate: savedCase.procedureDate,
+    notes: `${pendingLesions.length} lesion(s) awaiting histology results`,
+    ownerId: savedCase.ownerId ?? "",
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  await saveEpisode(episode);
+}
+
+/**
+ * Auto-resolve or update a cancer_pathway episode on case edit/save
+ * when histology data has changed.
+ */
+async function maybeResolveSkinCancerEpisode(
+  updatedCase: Case,
+): Promise<void> {
+  if (!updatedCase.episodeId) return;
+
+  const episode = await getEpisode(updatedCase.episodeId);
+  if (!episode || episode.type !== "cancer_pathway") return;
+  if (episode.status === "completed" || episode.status === "cancelled") return;
+
+  const action = determineSkinCancerEpisodeAction(updatedCase);
+
+  if (action === "resolve") {
+    await updateEpisode(updatedCase.episodeId, {
+      status: "completed",
+      resolvedDate: new Date().toISOString(),
+      pendingAction: undefined,
+    });
+  } else if (action === "reexcision") {
+    await updateEpisode(updatedCase.episodeId, {
+      pendingAction: "awaiting_reexcision",
+    });
+  }
+  // "none" → leave as-is (still awaiting_histology)
 }
 
 export function useCaseForm({
@@ -1621,9 +1724,13 @@ export function useCaseForm({
 
         if (isEditMode && existingCase) {
           await updateCase(existingCase.id, casePayload);
+          // Auto-resolve skin cancer episode (fire-and-forget)
+          maybeResolveSkinCancerEpisode(casePayload as Case).catch(() => {});
         } else {
           await saveCase(casePayload);
           savedRef.current = true;
+          // Auto-create skin cancer episode (fire-and-forget)
+          maybeCreateSkinCancerEpisode(casePayload as Case).catch(() => {});
         }
 
         // Fire-and-forget: sync flap outcomes to server procedure_outcomes table (Part 8C)

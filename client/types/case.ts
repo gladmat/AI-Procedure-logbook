@@ -5,6 +5,7 @@ import type {
   AnticoagulationProtocolId,
   FlapMonitoringProtocolId,
 } from "@/types/surgicalPreferences";
+import type { SkinCancerLesionAssessment } from "./skinCancer";
 
 // Case status for active patient tracking
 export type CaseStatus = "active" | "discharged" | "incomplete";
@@ -1520,6 +1521,8 @@ export interface LesionInstance {
   histologyConfirmed?: boolean;
   snomedSiteCode?: string;
   snomedSiteDisplay?: string;
+  /** Skin cancer assessment workflow data (per-lesion in multi-lesion mode) */
+  skinCancerAssessment?: SkinCancerLesionAssessment;
 }
 
 export interface ProcedureCode {
@@ -1604,6 +1607,8 @@ export interface DiagnosisGroup {
   clinicalSuspicion?: ClinicalSuspicion;
   /** Wound assessment data for this diagnosis group (per-group for multi-site burns) */
   woundAssessment?: WoundAssessment;
+  /** Skin cancer assessment workflow data (single-lesion mode) */
+  skinCancerAssessment?: SkinCancerLesionAssessment;
 }
 
 export interface SuggestionAcceptanceEntry {

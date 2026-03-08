@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { View, StyleSheet, Pressable } from "react-native";
 import { Feather } from "@/components/FeatherIcon";
 import Animated, {
@@ -17,10 +17,34 @@ import {
   isExcisionBiopsyDiagnosis,
 } from "@/types/case";
 import { getCasePrimaryTitle } from "@/lib/caseDiagnosisSummary";
+import { getPathwayBadge } from "@/lib/skinCancerConfig";
 import { RoleBadge } from "@/components/RoleBadge";
 import { SpecialtyBadge } from "@/components/SpecialtyBadge";
 
 import { SpecialtyIcon } from "@/components/SpecialtyIcon";
+
+// Badge priority: error > warning > info > success (lower = more urgent)
+const BADGE_PRIORITY: Record<string, number> = {
+  error: 0,
+  warning: 1,
+  info: 2,
+  success: 3,
+};
+
+// Theme color key lookup — avoids TS issues with `theme[colorKey]` since theme has nested objects
+function getThemeColor(
+  theme: ReturnType<typeof useTheme>["theme"],
+  key: string,
+): string {
+  const colorMap: Record<string, string> = {
+    warning: theme.warning,
+    success: theme.success,
+    error: theme.error,
+    info: theme.info,
+    textSecondary: theme.textSecondary,
+  };
+  return colorMap[key] ?? theme.textSecondary;
+}
 
 interface CaseCardProps {
   caseData: Case;
@@ -125,11 +149,42 @@ export const CaseCard = React.memo(function CaseCard({
 
   const caseTitle = getCasePrimaryTitle(caseData) || caseData.procedureType;
 
-  const hasHistologyPending = caseData.diagnosisGroups?.some(
-    (g) =>
-      g.diagnosisCertainty === "clinical" ||
-      isExcisionBiopsyDiagnosis(g.diagnosisPicklistId),
-  );
+  // Skin-cancer-aware badge: find the most urgent badge across all lesions
+  const skinCancerBadge = useMemo(() => {
+    let best: { label: string; colorKey: string } | null = null;
+    let bestPriority = Infinity;
+
+    for (const g of caseData.diagnosisGroups ?? []) {
+      // Single-lesion
+      if (g.skinCancerAssessment) {
+        const b = getPathwayBadge(g.skinCancerAssessment);
+        if (b && (BADGE_PRIORITY[b.colorKey] ?? 99) < bestPriority) {
+          best = b;
+          bestPriority = BADGE_PRIORITY[b.colorKey] ?? 99;
+        }
+      }
+      // Multi-lesion
+      for (const l of g.lesionInstances ?? []) {
+        if (l.skinCancerAssessment) {
+          const b = getPathwayBadge(l.skinCancerAssessment);
+          if (b && (BADGE_PRIORITY[b.colorKey] ?? 99) < bestPriority) {
+            best = b;
+            bestPriority = BADGE_PRIORITY[b.colorKey] ?? 99;
+          }
+        }
+      }
+    }
+    return best;
+  }, [caseData.diagnosisGroups]);
+
+  // Fallback for non-skin-cancer cases
+  const hasHistologyPending =
+    !skinCancerBadge &&
+    caseData.diagnosisGroups?.some(
+      (g) =>
+        g.diagnosisCertainty === "clinical" ||
+        isExcisionBiopsyDiagnosis(g.diagnosisPicklistId),
+    );
 
   return (
     <AnimatedPressable
@@ -150,7 +205,28 @@ export const CaseCard = React.memo(function CaseCard({
         <View style={styles.headerLeft}>
           <SpecialtyBadge specialty={caseData.specialty} size="small" />
           <RoleBadge role={userRole} size="small" />
-          {hasHistologyPending ? (
+          {skinCancerBadge ? (
+            <View
+              style={[
+                chipStyles.chip,
+                {
+                  backgroundColor:
+                    getThemeColor(theme, skinCancerBadge.colorKey) + "20",
+                },
+              ]}
+            >
+              <ThemedText
+                style={[
+                  chipStyles.chipText,
+                  {
+                    color: getThemeColor(theme, skinCancerBadge.colorKey),
+                  },
+                ]}
+              >
+                {skinCancerBadge.label}
+              </ThemedText>
+            </View>
+          ) : hasHistologyPending ? (
             <View style={[chipStyles.chip, { backgroundColor: "#E5A00D20" }]}>
               <ThemedText style={[chipStyles.chipText, { color: "#E5A00D" }]}>
                 Histology pending

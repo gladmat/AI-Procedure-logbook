@@ -7,6 +7,7 @@ import type { DiagnosisGroup } from "@/types/case";
 import type { InfectionOverlay } from "@/types/infection";
 import type { EpisodeType } from "@/types/episode";
 import { PICKLIST_TO_FLAP_TYPE } from "@/lib/procedurePicklist";
+import { shouldActivateSkinCancerModuleForSnomed } from "@/lib/skinCancerConfig";
 
 export interface ModuleVisibility {
   flapDetails: boolean;
@@ -15,6 +16,8 @@ export interface ModuleVisibility {
   handTraumaAssessment: boolean;
   infection: boolean;
   woundAssessment: boolean;
+  /** Skin cancer assessment module — diagnosis-metadata driven */
+  skinCancerAssessment: boolean;
 }
 
 /**
@@ -103,11 +106,23 @@ export function getModuleVisibility(
     episodeType === "burns_management" ||
     !!group.woundAssessment;
 
+  // Skin Cancer Assessment: activated by specialty, diagnosis SNOMED code, or existing data.
+  // The full picklist-entry check (hasEnhancedHistology) is done in DiagnosisGroupEditor
+  // using local selectedDiagnosis state, since getModuleVisibility doesn't receive
+  // the resolved picklist entry.
+  const skinCancerAssessment =
+    group.specialty === "skin_cancer" ||
+    shouldActivateSkinCancerModuleForSnomed(
+      group.diagnosis?.snomedCtCode,
+      group.diagnosis?.displayName,
+    ) || !!group.skinCancerAssessment;
+
   return {
     flapDetails,
     flapOutcome,
     handTraumaAssessment,
     infection,
     woundAssessment,
+    skinCancerAssessment,
   };
 }

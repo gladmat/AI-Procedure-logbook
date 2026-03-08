@@ -102,11 +102,7 @@ const SPECIALTY_MAP: Partial<Record<Specialty, DiagnosisPicklistEntry[]>> = {
   head_neck: [...HEAD_NECK_DIAGNOSES, ...GEN_DX_SKIN_CANCER],
   orthoplastic: ORTHOPLASTIC_DIAGNOSES,
   cleft_cranio: [...CLEFT_CRANIO_DIAGNOSES, ...HN_DX_CLEFT_CRANIOFACIAL],
-  skin_cancer: [
-    ...SKIN_CANCER_DIAGNOSES,
-    ...HN_DX_SKIN_CANCER,
-    ...GEN_DX_SKIN_CANCER,
-  ],
+  skin_cancer: SKIN_CANCER_DIAGNOSES,
   lymphoedema: LYMPHOEDEMA_DIAGNOSES,
   peripheral_nerve: PERIPHERAL_NERVE_DIAGNOSES,
 };

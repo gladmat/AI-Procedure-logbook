@@ -18,6 +18,7 @@ Key capabilities: multi-specialty case logging, SNOMED CT coded diagnoses and pr
 
 - **Phase 1 COMPLETE** — Form state refactor (useReducer, split context, section components, clear/reset)
 - **Phase 2 COMPLETE** — Charcoal+Amber theme, card-based diagnosis groups, section nav, summary view, reordering, specialty modules
+- **Phase 2.5 COMPLETE** — Skin cancer inline assessment module (14 components, 104 tests, pathway logic, margin CDS, SLNB, procedure suggestions with coverage, collapsible sections)
 - **Phase 3 NEXT** — Favourites/recents (partially done), inline validation, keyboard optimisation, haptic audit, duplicate case
 - **Phase 4** — Data migration, export formatting, analytics dashboard
 - **Phase 5** — TestFlight release
@@ -94,9 +95,10 @@ client/
     EpisodeDetailScreen.tsx       # Episode view with linked cases
     onboarding/                   # 9 files: Welcome, FeaturePager, Auth, EmailSignup,
                                   #   Categories, Training, Hospital, Privacy, FeatureSlide
-  components/                    # 92 files across 6 subdirectories
+  components/                    # 106 files across 7 subdirectories
     case-form/                   # 10 section components (see "Case form" below)
     hand-trauma/                 # 15 files — unified hand trauma assessment
+    skin-cancer/                 # 14 files — inline skin cancer assessment module
     detail-sheets/               # 7 bottom-sheet detail views
     brand/                       # OpusMark, OpusLogo, index
     onboarding/                  # StepHeader, StepIndicator
@@ -151,19 +153,21 @@ client/
     moduleVisibility.ts          # Conditional module visibility
     flapOutcomeDefaults.ts       # Default flap outcome values
     skinCancerDiagnoses.ts       # Skin cancer picklist
+    skinCancerConfig.ts          # Activation, pathway logic, margins, SLNB, procedure suggestions (965 lines)
+    skinCancerEpisodeHelpers.ts  # Episode auto-creation for pending lesions
     diagnosisPicklists/          # 12 specialty picklists + lazy-loaded index
       index.ts                   # getDiagnosesForProcedure, reverse mapping
       {specialty}Diagnoses.ts    # Per-specialty (aesthetics, bodyContouring, breast,
                                  #   burns, cleftCranio, general, handSurgery, headNeck,
                                  #   lymphoedema, orthoplastic, peripheralNerve, skinCancer)
-    __tests__/                   # 3 test files (handTraumaDiagnosis, Mapping, Ux)
+    __tests__/                   # 6 test files (handTrauma ×3, skinCancer ×3)
   types/
     case.ts                      # Case, DiagnosisGroup, Procedure, Timeline, Media (2322 lines)
     diagnosis.ts                 # Diagnosis picklist entry
     episode.ts                   # Treatment episode, status machine, encounter classes
     infection.ts                 # Infection episodes, syndromes, microbiology
     wound.ts                     # Wound assessment, TIME, dressings (40+ products)
-    skinCancer.ts                # Multi-lesion session, pathology, reconstruction
+    skinCancer.ts                # Assessment, histology, pathology, SLNB, lesion photos (647 lines)
     skinCancerStagingConfigs.ts  # Breslow, Clark, TNM configs
     surgicalPreferences.ts       # Training programme, role defaults, protocols
   constants/
@@ -427,9 +431,41 @@ Single inline `HandTraumaAssessment` (`client/components/hand-trauma/HandTraumaA
 
 Tests: `client/lib/__tests__/handTraumaDiagnosis.test.ts`, `handTraumaMapping.test.ts`, `handTraumaUx.test.ts`.
 
-### Multi-lesion session
+### Skin cancer assessment module
 
-3-6 skin lesion excisions from one operative session as discrete entries within a single diagnosis group. `MultiLesionEditor` component with collapsible row-per-lesion UI. Types: `LesionInstance`, `LesionPathologyType`, `LesionReconstruction` in `client/types/skinCancer.ts`.
+Inline assessment flow (mirrors hand trauma pattern — no modal, no separate screen) with 14 components in `client/components/skin-cancer/`, config logic in `client/lib/skinCancerConfig.ts` (965 lines), and types in `client/types/skinCancer.ts` (647 lines).
+
+**Two pathways:**
+- **Excision biopsy** — lesion not yet diagnosed. Biopsy method chips (Excision / Incisional / Shave / Punch), conditional fields (peripheral margin for excision, punch size for punch), then accept mapping.
+- **Histology known** — prior biopsy result available. Tier 2 pathology details, excision method (WLE / Mohs), margin inputs (hidden for Mohs), SLNB assessment, site-specific reconstruction, then accept mapping.
+
+**Progressive disclosure sections (numbered, collapsible SectionWrapper cards):**
+1. **Diagnosis** — 7 Tier 1 pathology category chips (BCC, SCC, Melanoma, MCC, Other malig., Benign, Uncertain). Auto-collapses after selection. Switching categories resets all pathway-specific fields but preserves location data.
+2. **Pathology** — Tier 2 type-specific fields per category: BCC subtypes (9), SCC differentiation/risk/depth, Melanoma subtype/Breslow/ulceration/Clark/TNM staging, MCC, rare subtypes (26 via `RareTypeSubtypePicker`). Excision method + margin fields. Collapsible, default collapsed.
+3. **Lesion details** — Site picker (grouped HEAD & NECK / TRUNK / UPPER LIMB / LOWER LIMB), laterality (auto-midline for midline sites), clinical dimensions (length × width mm), lesion photo capture with auto-captioning.
+4. **Margin recommendation badge** — Guideline-based CDS (NCCN melanoma Breslow tiers, BAD BCC/SCC, EXPERT rare types — e.g. DFSP 30mm, EMPD 50mm).
+5. **SLNB** — Auto-offered for melanoma >0.8mm Breslow OR ulcerated, Merkel cell, high-risk SCC. Manual toggle for marginal cases. Site, nodes retrieved, result (pending → negative / positive ITC/micro/macro).
+6. **Excision** — Method chips (WLE / Mohs), peripheral margin input. Margin fields hidden when Mohs selected. In biopsy pathway shows biopsy method + punch size instead.
+7. **Summary & Procedures** — Headline + key facts + suggested procedure IDs. Accept mapping → collapses all sections except summary, populates parent's procedure list. "Edit mapping" pill to revoke acceptance and re-expand.
+
+**Procedure suggestions** (`getSkinCancerProcedureSuggestions`): Excision type varies by category + head/neck vs body site. Coverage procedures suggested alongside excision: FTSG, STSG, local flaps (advancement, rotation, bilobed, rhomboid for H&N; rotation, transposition for body). Site-specific recon for lip/ear/eyelid. SLNB procedure when performed.
+
+**Diagnosis resolution** (inline flow): `resolveSkinCancerDiagnosis()` maps pathology category + rare subtype → SNOMED diagnosis picklist entry. 9 cancer types with verified SNOMED CT codes in `skinCancerDiagnoses.ts`.
+
+**Key components:**
+- `SkinCancerAssessment` — main orchestrator, section collapse state management, scroll position stabilization via `scrollViewRef` + `scrollPositionRef`, LayoutAnimation transitions
+- `PathologySection` — full Tier 2 pathology editor (BCC/SCC/Melanoma/MCC/Rare subfields, excision method, margins, margin status)
+- `HistologySection` — simplified mode for Excision card (WLE/Mohs + margin only) or full mode (source, category, subfields, margins, lab details)
+- `SkinCancerSummaryPanel` — accept/edit mapping UI with procedure chip selection
+- `SectionWrapper` — shared collapsible card with controlled/uncontrolled modes, compact collapsed state, amber Feather icons
+- `MarginRecommendationBadge` — guideline-based margin recommendation display
+- `SLNBSection` — sentinel lymph node assessment with site/result/date capture
+
+**Multi-lesion session:** 3-6 skin lesion excisions from one operative session as discrete entries within a single diagnosis group. `MultiLesionEditor` component with collapsible row-per-lesion UI and per-lesion pathway badges.
+
+**Episode helpers:** `skinCancerEpisodeHelpers.ts` — auto-collect pending lesions, determine re-excision action (resolve / reexcision / none).
+
+Tests: `client/lib/__tests__/skinCancerConfig.test.ts` (80 tests — margins, SLNB, pathway, procedures, diagnosis resolution), `skinCancerPhase4.test.ts` (11 tests), `skinCancerPhase5.test.ts` (13 tests).
 
 ### Free flap / orthoplastic documentation
 
@@ -620,7 +656,7 @@ Configured in both `tsconfig.json` and `babel.config.js` (module-resolver plugin
 
 ## Testing
 
-- **Framework:** Vitest 4.0.18
-- **Client tests:** `client/lib/__tests__/` — handTraumaDiagnosis, handTraumaMapping, handTraumaUx
+- **Framework:** Vitest 4.0.18, **160 tests** across 8 files
+- **Client tests:** `client/lib/__tests__/` — handTraumaDiagnosis, handTraumaMapping, handTraumaUx, skinCancerConfig (80 tests), skinCancerPhase4 (11 tests), skinCancerPhase5 (13 tests)
 - **Server tests:** `server/__tests__/` — auth, validation
 - **Run:** `npm run test` (once) or `npm run test:watch` (watch mode)

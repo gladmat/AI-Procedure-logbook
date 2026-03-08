@@ -13,6 +13,10 @@
  *   - Margin (peripheral mm, optional)
  *   - Status (Clear / Involved / Pending)
  *
+ * When `isSkinCancer` is true, per-lesion SkinCancerAssessment replaces
+ * the standard pathology/site/size/margin fields. Pathway badges show
+ * in collapsed headers. Data syncs back to LesionInstance for stats bar.
+ *
  * SNOMED CT: Each lesion generates a post-coordinated expression at export.
  * Training log: each lesion instance counts as one procedure independently.
  *
@@ -23,7 +27,7 @@
  *   - Swipe-to-delete row or tap trash icon in expanded view
  */
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import {
   View,
   TextInput,
@@ -38,11 +42,21 @@ import { v4 as uuidv4 } from "uuid";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
+import { SkinCancerAssessment } from "@/components/skin-cancer/SkinCancerAssessment";
+import {
+  getPathwayBadge,
+  toQuickMarginStatus,
+  RARE_TYPE_METADATA,
+} from "@/lib/skinCancerConfig";
 import type {
   LesionInstance,
   LesionPathologyType,
   LesionReconstruction,
 } from "@/types/case";
+import type {
+  SkinCancerLesionAssessment,
+  SkinCancerPathologyCategory,
+} from "@/types/skinCancer";
 
 // ─── Common anatomical sites for quick-pick ────────────────────────────────
 
@@ -84,7 +98,7 @@ const PATHOLOGY_OPTIONS: {
 ];
 
 const RECON_OPTIONS: { value: LesionReconstruction; label: string }[] = [
-  { value: "primary_closure", label: "Primary" },
+  { value: "primary_closure", label: "Direct closure" },
   { value: "local_flap", label: "Local flap" },
   { value: "skin_graft", label: "SSG/FTG" },
   { value: "secondary_healing", label: "Secondary" },
@@ -100,6 +114,60 @@ const MARGIN_STATUS_OPTIONS: {
   { value: "involved", label: "Involved" },
 ];
 
+// ─── Skin-cancer-aware summary helper ─────────────────────────────────────
+
+const PATHOLOGY_LABELS: Record<string, string> = {
+  bcc: "BCC",
+  scc: "SCC",
+  melanoma: "Melanoma",
+  merkel_cell: "MCC",
+  benign: "Benign",
+  uncertain: "Uncertain",
+};
+
+function getSkinCancerSummaryParts(lesion: LesionInstance): string[] | null {
+  const assessment = lesion.skinCancerAssessment;
+  if (!assessment) return null;
+  const parts: string[] = [];
+  if (lesion.site) parts.push(lesion.site);
+  const histo = assessment.priorHistology || assessment.currentHistology;
+  if (histo?.pathologyCategory) {
+    if (
+      histo.pathologyCategory === "rare_malignant" &&
+      histo.rareSubtype
+    ) {
+      parts.push(
+        RARE_TYPE_METADATA[histo.rareSubtype]?.label ?? "Rare malignant",
+      );
+    } else {
+      parts.push(
+        PATHOLOGY_LABELS[histo.pathologyCategory] ??
+          histo.pathologyCategory,
+      );
+    }
+  } else if (assessment.clinicalSuspicion) {
+    parts.push(`?${assessment.clinicalSuspicion.toUpperCase()}`);
+  }
+  if (
+    histo?.pathologyCategory === "melanoma" &&
+    histo.melanomaBreslowMm !== undefined
+  ) {
+    parts.push(`Breslow ${histo.melanomaBreslowMm}mm`);
+  }
+  return parts.length > 0 ? parts : null;
+}
+
+// ─── Category-to-pathology type sync map ──────────────────────────────────
+
+const CATEGORY_TO_LESION_TYPE: Partial<
+  Record<SkinCancerPathologyCategory, LesionPathologyType>
+> = {
+  bcc: "bcc",
+  scc: "scc",
+  melanoma: "melanoma",
+  benign: "benign",
+};
+
 // ─── Props ────────────────────────────────────────────────────────────────
 
 interface MultiLesionEditorProps {
@@ -107,6 +175,10 @@ interface MultiLesionEditorProps {
   onChange: (lesions: LesionInstance[]) => void;
   /** Default pathology type to pre-populate from parent diagnosis group */
   defaultPathologyType?: LesionPathologyType;
+  /** When true, skin cancer assessment replaces standard fields */
+  isSkinCancer?: boolean;
+  /** Picklist diagnosis ID — threads to per-lesion SkinCancerAssessment for auto-config */
+  diagnosisId?: string;
 }
 
 // ─── Single lesion row ─────────────────────────────────────────────────────
@@ -119,6 +191,9 @@ interface LesionRowProps {
   onUpdate: (updated: LesionInstance) => void;
   onDelete: () => void;
   onDuplicate: () => void;
+  isSkinCancer?: boolean;
+  onSkinCancerChange?: (assessment: SkinCancerLesionAssessment) => void;
+  diagnosisId?: string;
 }
 
 function LesionRow({
@@ -129,6 +204,9 @@ function LesionRow({
   onUpdate,
   onDelete,
   onDuplicate,
+  isSkinCancer,
+  onSkinCancerChange,
+  diagnosisId,
 }: LesionRowProps) {
   const { theme } = useTheme();
   const [showSitePicker, setShowSitePicker] = useState(false);
@@ -137,18 +215,30 @@ function LesionRow({
     (p) => p.value === lesion.pathologyType,
   );
 
-  // Summary line: "BCC · Forehead · Primary · Pending"
-  const summaryParts = [
-    pathologyOption?.label,
-    lesion.site || "Site not set",
-    lesion.reconstruction
-      ? RECON_OPTIONS.find((r) => r.value === lesion.reconstruction)?.label
-      : null,
-    lesion.marginStatus
-      ? MARGIN_STATUS_OPTIONS.find((m) => m.value === lesion.marginStatus)
-          ?.label
-      : null,
-  ].filter(Boolean);
+  // Summary line: skin-cancer-aware or standard
+  const summaryParts = useMemo(() => {
+    if (isSkinCancer) {
+      const scParts = getSkinCancerSummaryParts(lesion);
+      if (scParts) return scParts;
+    }
+    return [
+      pathologyOption?.label,
+      lesion.site || "Site not set",
+      lesion.reconstruction
+        ? RECON_OPTIONS.find((r) => r.value === lesion.reconstruction)?.label
+        : null,
+      lesion.marginStatus
+        ? MARGIN_STATUS_OPTIONS.find((m) => m.value === lesion.marginStatus)
+            ?.label
+        : null,
+    ].filter(Boolean) as string[];
+  }, [isSkinCancer, lesion, pathologyOption]);
+
+  // Pathway badge for skin cancer lesions
+  const pathwayBadge = useMemo(
+    () => (isSkinCancer ? getPathwayBadge(lesion.skinCancerAssessment) : null),
+    [isSkinCancer, lesion.skinCancerAssessment],
+  );
 
   return (
     <View
@@ -161,7 +251,7 @@ function LesionRow({
         },
       ]}
     >
-      {/* ── Header row: index + summary + expand/collapse ── */}
+      {/* ── Header row: index + summary + badge + expand/collapse ── */}
       <Pressable onPress={onToggleExpand} style={styles.lesionHeader}>
         <View
           style={[
@@ -178,7 +268,7 @@ function LesionRow({
               numberOfLines={1}
               style={[styles.lesionSummaryText, { color: theme.text }]}
             >
-              {summaryParts.join(" · ")}
+              {summaryParts.join(" \u00B7 ")}
             </ThemedText>
           ) : (
             <ThemedText
@@ -187,14 +277,37 @@ function LesionRow({
               Tap to configure lesion {index + 1}
             </ThemedText>
           )}
-          {lesion.lengthMm || lesion.widthMm ? (
+          {!isSkinCancer && (lesion.lengthMm || lesion.widthMm) ? (
             <ThemedText
               style={[styles.lesionSizeText, { color: theme.textSecondary }]}
             >
-              {lesion.lengthMm ?? "?"}×{lesion.widthMm ?? "?"}mm
+              {lesion.lengthMm ?? "?"}\u00D7{lesion.widthMm ?? "?"}mm
             </ThemedText>
           ) : null}
         </View>
+
+        {/* Pathway badge */}
+        {pathwayBadge ? (
+          <View
+            style={{
+              backgroundColor:
+                theme[pathwayBadge.colorKey] + "26",
+              paddingHorizontal: 8,
+              paddingVertical: 3,
+              borderRadius: BorderRadius.xs,
+            }}
+          >
+            <ThemedText
+              style={{
+                fontSize: 11,
+                fontWeight: "600",
+                color: theme[pathwayBadge.colorKey],
+              }}
+            >
+              {pathwayBadge.label}
+            </ThemedText>
+          </View>
+        ) : null}
 
         <Feather
           name={isExpanded ? "chevron-up" : "chevron-down"}
@@ -206,110 +319,34 @@ function LesionRow({
       {/* ── Expanded detail fields ── */}
       {isExpanded && (
         <View style={styles.lesionDetail}>
-          {/* Pathology type chips */}
-          <View style={styles.fieldBlock}>
-            <ThemedText
-              style={[styles.fieldLabel, { color: theme.textSecondary }]}
-            >
-              Pathology
-            </ThemedText>
-            <View style={styles.chipRow}>
-              {PATHOLOGY_OPTIONS.map((opt) => (
-                <Pressable
-                  key={opt.value}
-                  onPress={() =>
-                    onUpdate({ ...lesion, pathologyType: opt.value })
-                  }
-                  style={[
-                    styles.chip,
-                    {
-                      backgroundColor:
-                        lesion.pathologyType === opt.value
-                          ? opt.color + "20"
-                          : theme.backgroundRoot,
-                      borderColor:
-                        lesion.pathologyType === opt.value
-                          ? opt.color
-                          : theme.border,
-                    },
-                  ]}
+          {/* ── Standard fields (hidden when skin cancer active) ── */}
+          {!isSkinCancer && (
+            <>
+              {/* Pathology type chips */}
+              <View style={styles.fieldBlock}>
+                <ThemedText
+                  style={[styles.fieldLabel, { color: theme.textSecondary }]}
                 >
-                  <ThemedText
-                    style={[
-                      styles.chipText,
-                      {
-                        color:
-                          lesion.pathologyType === opt.value
-                            ? opt.color
-                            : theme.textSecondary,
-                        fontWeight:
-                          lesion.pathologyType === opt.value ? "600" : "400",
-                      },
-                    ]}
-                  >
-                    {opt.label}
-                  </ThemedText>
-                </Pressable>
-              ))}
-            </View>
-          </View>
-
-          {/* Anatomical site */}
-          <View style={styles.fieldBlock}>
-            <ThemedText
-              style={[styles.fieldLabel, { color: theme.textSecondary }]}
-            >
-              Site
-            </ThemedText>
-            <TextInput
-              value={lesion.site}
-              onChangeText={(text) => onUpdate({ ...lesion, site: text })}
-              placeholder="e.g. Right temple, Dorsal hand…"
-              placeholderTextColor={theme.textTertiary}
-              style={[
-                styles.textInput,
-                {
-                  backgroundColor: theme.backgroundRoot,
-                  borderColor: theme.border,
-                  color: theme.text,
-                },
-              ]}
-              autoCapitalize="words"
-            />
-            {/* Quick-pick site chips */}
-            <Pressable
-              onPress={() => setShowSitePicker(!showSitePicker)}
-              style={styles.quickPickToggle}
-            >
-              <ThemedText
-                style={[styles.quickPickToggleText, { color: theme.link }]}
-              >
-                {showSitePicker ? "Hide quick-pick" : "Quick-pick site ▾"}
-              </ThemedText>
-            </Pressable>
-            {showSitePicker && (
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                style={styles.siteScrollView}
-              >
-                <View style={styles.siteChipRow}>
-                  {COMMON_SITES.map((site) => (
+                  Pathology
+                </ThemedText>
+                <View style={styles.chipRow}>
+                  {PATHOLOGY_OPTIONS.map((opt) => (
                     <Pressable
-                      key={site}
-                      onPress={() => {
-                        onUpdate({ ...lesion, site });
-                        setShowSitePicker(false);
-                      }}
+                      key={opt.value}
+                      onPress={() =>
+                        onUpdate({ ...lesion, pathologyType: opt.value })
+                      }
                       style={[
-                        styles.siteChip,
+                        styles.chip,
                         {
                           backgroundColor:
-                            lesion.site === site
-                              ? theme.link + "15"
+                            lesion.pathologyType === opt.value
+                              ? opt.color + "20"
                               : theme.backgroundRoot,
                           borderColor:
-                            lesion.site === site ? theme.link : theme.border,
+                            lesion.pathologyType === opt.value
+                              ? opt.color
+                              : theme.border,
                         },
                       ]}
                     >
@@ -318,22 +355,116 @@ function LesionRow({
                           styles.chipText,
                           {
                             color:
-                              lesion.site === site
-                                ? theme.link
+                              lesion.pathologyType === opt.value
+                                ? opt.color
                                 : theme.textSecondary,
+                            fontWeight:
+                              lesion.pathologyType === opt.value
+                                ? "600"
+                                : "400",
                           },
                         ]}
                       >
-                        {site}
+                        {opt.label}
                       </ThemedText>
                     </Pressable>
                   ))}
                 </View>
-              </ScrollView>
-            )}
-          </View>
+              </View>
 
-          {/* Reconstruction */}
+              {/* Anatomical site */}
+              <View style={styles.fieldBlock}>
+                <ThemedText
+                  style={[styles.fieldLabel, { color: theme.textSecondary }]}
+                >
+                  Site
+                </ThemedText>
+                <TextInput
+                  value={lesion.site}
+                  onChangeText={(text) => onUpdate({ ...lesion, site: text })}
+                  placeholder="e.g. Right temple, Dorsal hand\u2026"
+                  placeholderTextColor={theme.textTertiary}
+                  style={[
+                    styles.textInput,
+                    {
+                      backgroundColor: theme.backgroundRoot,
+                      borderColor: theme.border,
+                      color: theme.text,
+                    },
+                  ]}
+                  autoCapitalize="words"
+                />
+                {/* Quick-pick site chips */}
+                <Pressable
+                  onPress={() => setShowSitePicker(!showSitePicker)}
+                  style={styles.quickPickToggle}
+                >
+                  <ThemedText
+                    style={[styles.quickPickToggleText, { color: theme.link }]}
+                  >
+                    {showSitePicker ? "Hide quick-pick" : "Quick-pick site \u25BE"}
+                  </ThemedText>
+                </Pressable>
+                {showSitePicker && (
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    style={styles.siteScrollView}
+                  >
+                    <View style={styles.siteChipRow}>
+                      {COMMON_SITES.map((site) => (
+                        <Pressable
+                          key={site}
+                          onPress={() => {
+                            onUpdate({ ...lesion, site });
+                            setShowSitePicker(false);
+                          }}
+                          style={[
+                            styles.siteChip,
+                            {
+                              backgroundColor:
+                                lesion.site === site
+                                  ? theme.link + "15"
+                                  : theme.backgroundRoot,
+                              borderColor:
+                                lesion.site === site
+                                  ? theme.link
+                                  : theme.border,
+                            },
+                          ]}
+                        >
+                          <ThemedText
+                            style={[
+                              styles.chipText,
+                              {
+                                color:
+                                  lesion.site === site
+                                    ? theme.link
+                                    : theme.textSecondary,
+                              },
+                            ]}
+                          >
+                            {site}
+                          </ThemedText>
+                        </Pressable>
+                      ))}
+                    </View>
+                  </ScrollView>
+                )}
+              </View>
+            </>
+          )}
+
+          {/* ── Skin cancer assessment (replaces standard fields) ── */}
+          {isSkinCancer && (
+            <SkinCancerAssessment
+              assessment={lesion.skinCancerAssessment}
+              onAssessmentChange={(a) => onSkinCancerChange?.(a)}
+              diagnosisId={diagnosisId}
+            />
+          )}
+
+          {/* Reconstruction — always visible */}
           <View style={styles.fieldBlock}>
             <ThemedText
               style={[styles.fieldLabel, { color: theme.textSecondary }]}
@@ -381,171 +512,182 @@ function LesionRow({
             </View>
           </View>
 
-          {/* Size row */}
-          <View style={styles.fieldBlock}>
-            <ThemedText
-              style={[styles.fieldLabel, { color: theme.textSecondary }]}
-            >
-              Lesion size (mm)
-            </ThemedText>
-            <View style={styles.twoColRow}>
-              <View style={styles.halfField}>
+          {/* ── Standard size & margin fields (hidden when skin cancer) ── */}
+          {!isSkinCancer && (
+            <>
+              {/* Size row */}
+              <View style={styles.fieldBlock}>
                 <ThemedText
-                  style={[styles.subLabel, { color: theme.textTertiary }]}
+                  style={[styles.fieldLabel, { color: theme.textSecondary }]}
                 >
-                  Length
+                  Lesion size (mm)
                 </ThemedText>
-                <View
-                  style={[
-                    styles.numInputContainer,
-                    {
-                      backgroundColor: theme.backgroundRoot,
-                      borderColor: theme.border,
-                    },
-                  ]}
-                >
-                  <TextInput
-                    value={lesion.lengthMm?.toString() ?? ""}
-                    onChangeText={(t) =>
-                      onUpdate({
-                        ...lesion,
-                        lengthMm: t ? parseFloat(t) : undefined,
-                      })
-                    }
-                    placeholder="—"
-                    placeholderTextColor={theme.textTertiary}
-                    keyboardType="decimal-pad"
-                    style={[styles.numInput, { color: theme.text }]}
-                  />
-                  <ThemedText
-                    style={[styles.unit, { color: theme.textSecondary }]}
-                  >
-                    mm
-                  </ThemedText>
-                </View>
-              </View>
-              <View style={styles.halfField}>
-                <ThemedText
-                  style={[styles.subLabel, { color: theme.textTertiary }]}
-                >
-                  Width
-                </ThemedText>
-                <View
-                  style={[
-                    styles.numInputContainer,
-                    {
-                      backgroundColor: theme.backgroundRoot,
-                      borderColor: theme.border,
-                    },
-                  ]}
-                >
-                  <TextInput
-                    value={lesion.widthMm?.toString() ?? ""}
-                    onChangeText={(t) =>
-                      onUpdate({
-                        ...lesion,
-                        widthMm: t ? parseFloat(t) : undefined,
-                      })
-                    }
-                    placeholder="—"
-                    placeholderTextColor={theme.textTertiary}
-                    keyboardType="decimal-pad"
-                    style={[styles.numInput, { color: theme.text }]}
-                  />
-                  <ThemedText
-                    style={[styles.unit, { color: theme.textSecondary }]}
-                  >
-                    mm
-                  </ThemedText>
-                </View>
-              </View>
-            </View>
-          </View>
-
-          {/* Peripheral margin */}
-          <View style={styles.fieldBlock}>
-            <ThemedText
-              style={[styles.fieldLabel, { color: theme.textSecondary }]}
-            >
-              Peripheral margin (mm)
-            </ThemedText>
-            <View
-              style={[
-                styles.numInputContainer,
-                {
-                  backgroundColor: theme.backgroundRoot,
-                  borderColor: theme.border,
-                  maxWidth: 120,
-                },
-              ]}
-            >
-              <TextInput
-                value={lesion.peripheralMarginMm?.toString() ?? ""}
-                onChangeText={(t) =>
-                  onUpdate({
-                    ...lesion,
-                    peripheralMarginMm: t ? parseFloat(t) : undefined,
-                  })
-                }
-                placeholder="—"
-                placeholderTextColor={theme.textTertiary}
-                keyboardType="decimal-pad"
-                style={[styles.numInput, { color: theme.text }]}
-              />
-              <ThemedText style={[styles.unit, { color: theme.textSecondary }]}>
-                mm
-              </ThemedText>
-            </View>
-          </View>
-
-          {/* Margin status */}
-          <View style={styles.fieldBlock}>
-            <ThemedText
-              style={[styles.fieldLabel, { color: theme.textSecondary }]}
-            >
-              Margin status
-            </ThemedText>
-            <View style={styles.chipRow}>
-              {MARGIN_STATUS_OPTIONS.map((opt) => {
-                const isSelected = lesion.marginStatus === opt.value;
-                const statusColor =
-                  opt.value === "clear"
-                    ? "#059669"
-                    : opt.value === "involved"
-                      ? "#DC2626"
-                      : "#6B7280";
-                return (
-                  <Pressable
-                    key={opt.value ?? "none"}
-                    onPress={() =>
-                      onUpdate({ ...lesion, marginStatus: opt.value })
-                    }
-                    style={[
-                      styles.chip,
-                      {
-                        backgroundColor: isSelected
-                          ? statusColor + "15"
-                          : theme.backgroundRoot,
-                        borderColor: isSelected ? statusColor : theme.border,
-                      },
-                    ]}
-                  >
+                <View style={styles.twoColRow}>
+                  <View style={styles.halfField}>
                     <ThemedText
+                      style={[styles.subLabel, { color: theme.textTertiary }]}
+                    >
+                      Length
+                    </ThemedText>
+                    <View
                       style={[
-                        styles.chipText,
+                        styles.numInputContainer,
                         {
-                          color: isSelected ? statusColor : theme.textSecondary,
-                          fontWeight: isSelected ? "600" : "400",
+                          backgroundColor: theme.backgroundRoot,
+                          borderColor: theme.border,
                         },
                       ]}
                     >
-                      {opt.label}
+                      <TextInput
+                        value={lesion.lengthMm?.toString() ?? ""}
+                        onChangeText={(t) =>
+                          onUpdate({
+                            ...lesion,
+                            lengthMm: t ? parseFloat(t) : undefined,
+                          })
+                        }
+                        placeholder="\u2014"
+                        placeholderTextColor={theme.textTertiary}
+                        keyboardType="decimal-pad"
+                        style={[styles.numInput, { color: theme.text }]}
+                      />
+                      <ThemedText
+                        style={[styles.unit, { color: theme.textSecondary }]}
+                      >
+                        mm
+                      </ThemedText>
+                    </View>
+                  </View>
+                  <View style={styles.halfField}>
+                    <ThemedText
+                      style={[styles.subLabel, { color: theme.textTertiary }]}
+                    >
+                      Width
                     </ThemedText>
-                  </Pressable>
-                );
-              })}
-            </View>
-          </View>
+                    <View
+                      style={[
+                        styles.numInputContainer,
+                        {
+                          backgroundColor: theme.backgroundRoot,
+                          borderColor: theme.border,
+                        },
+                      ]}
+                    >
+                      <TextInput
+                        value={lesion.widthMm?.toString() ?? ""}
+                        onChangeText={(t) =>
+                          onUpdate({
+                            ...lesion,
+                            widthMm: t ? parseFloat(t) : undefined,
+                          })
+                        }
+                        placeholder="\u2014"
+                        placeholderTextColor={theme.textTertiary}
+                        keyboardType="decimal-pad"
+                        style={[styles.numInput, { color: theme.text }]}
+                      />
+                      <ThemedText
+                        style={[styles.unit, { color: theme.textSecondary }]}
+                      >
+                        mm
+                      </ThemedText>
+                    </View>
+                  </View>
+                </View>
+              </View>
+
+              {/* Peripheral margin */}
+              <View style={styles.fieldBlock}>
+                <ThemedText
+                  style={[styles.fieldLabel, { color: theme.textSecondary }]}
+                >
+                  Peripheral margin (mm)
+                </ThemedText>
+                <View
+                  style={[
+                    styles.numInputContainer,
+                    {
+                      backgroundColor: theme.backgroundRoot,
+                      borderColor: theme.border,
+                      maxWidth: 120,
+                    },
+                  ]}
+                >
+                  <TextInput
+                    value={lesion.peripheralMarginMm?.toString() ?? ""}
+                    onChangeText={(t) =>
+                      onUpdate({
+                        ...lesion,
+                        peripheralMarginMm: t ? parseFloat(t) : undefined,
+                      })
+                    }
+                    placeholder="\u2014"
+                    placeholderTextColor={theme.textTertiary}
+                    keyboardType="decimal-pad"
+                    style={[styles.numInput, { color: theme.text }]}
+                  />
+                  <ThemedText
+                    style={[styles.unit, { color: theme.textSecondary }]}
+                  >
+                    mm
+                  </ThemedText>
+                </View>
+              </View>
+
+              {/* Margin status */}
+              <View style={styles.fieldBlock}>
+                <ThemedText
+                  style={[styles.fieldLabel, { color: theme.textSecondary }]}
+                >
+                  Margin status
+                </ThemedText>
+                <View style={styles.chipRow}>
+                  {MARGIN_STATUS_OPTIONS.map((opt) => {
+                    const isSelected = lesion.marginStatus === opt.value;
+                    const statusColor =
+                      opt.value === "clear"
+                        ? "#059669"
+                        : opt.value === "involved"
+                          ? "#DC2626"
+                          : "#6B7280";
+                    return (
+                      <Pressable
+                        key={opt.value ?? "none"}
+                        onPress={() =>
+                          onUpdate({ ...lesion, marginStatus: opt.value })
+                        }
+                        style={[
+                          styles.chip,
+                          {
+                            backgroundColor: isSelected
+                              ? statusColor + "15"
+                              : theme.backgroundRoot,
+                            borderColor: isSelected
+                              ? statusColor
+                              : theme.border,
+                          },
+                        ]}
+                      >
+                        <ThemedText
+                          style={[
+                            styles.chipText,
+                            {
+                              color: isSelected
+                                ? statusColor
+                                : theme.textSecondary,
+                              fontWeight: isSelected ? "600" : "400",
+                            },
+                          ]}
+                        >
+                          {opt.label}
+                        </ThemedText>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              </View>
+            </>
+          )}
 
           {/* Row actions: duplicate + delete */}
           <View style={[styles.rowActions, { borderTopColor: theme.border }]}>
@@ -582,6 +724,8 @@ export function MultiLesionEditor({
   lesions,
   onChange,
   defaultPathologyType,
+  isSkinCancer,
+  diagnosisId,
 }: MultiLesionEditorProps) {
   const { theme } = useTheme();
   const [expandedIds, setExpandedIds] = useState<Set<string>>(
@@ -604,6 +748,56 @@ export function MultiLesionEditor({
   const handleUpdate = useCallback(
     (id: string, updated: LesionInstance) => {
       onChange(lesions.map((l) => (l.id === id ? updated : l)));
+    },
+    [lesions, onChange],
+  );
+
+  // Skin cancer assessment change → sync data back to LesionInstance fields
+  const handleSkinCancerChange = useCallback(
+    (lesionId: string, assessment: SkinCancerLesionAssessment) => {
+      onChange(
+        lesions.map((l) => {
+          if (l.id !== lesionId) return l;
+          const updated: LesionInstance = {
+            ...l,
+            skinCancerAssessment: assessment,
+          };
+
+          // Sync site from assessment → LesionInstance.site
+          if (assessment.site) {
+            updated.site = assessment.site;
+          }
+
+          // Sync margin status
+          const histo =
+            assessment.currentHistology || assessment.priorHistology;
+          if (histo?.marginStatus) {
+            updated.marginStatus = toQuickMarginStatus(histo.marginStatus);
+          }
+
+          // Sync histologyConfirmed (bidirectional)
+          if (
+            histo?.marginStatus &&
+            histo.marginStatus !== "pending" &&
+            histo.marginStatus !== "unknown"
+          ) {
+            updated.histologyConfirmed = true;
+          } else {
+            updated.histologyConfirmed = false;
+          }
+
+          // Sync pathology type from clinical suspicion or histology
+          const cat =
+            histo?.pathologyCategory ?? assessment.clinicalSuspicion;
+          if (cat) {
+            updated.pathologyType =
+              CATEGORY_TO_LESION_TYPE[cat as SkinCancerPathologyCategory] ??
+              "other";
+          }
+
+          return updated;
+        }),
+      );
     },
     [lesions, onChange],
   );
@@ -642,6 +836,10 @@ export function MultiLesionEditor({
         site: source.site, // keep site — surgeon will edit if different
         marginStatus: "pending", // reset margin status on duplicate
         histologyConfirmed: false,
+        // Deep-copy skin cancer assessment to avoid shared reference
+        skinCancerAssessment: source.skinCancerAssessment
+          ? structuredClone(source.skinCancerAssessment)
+          : undefined,
       };
       const idx = lesions.findIndex((l) => l.id === id);
       const newList = [
@@ -754,6 +952,9 @@ export function MultiLesionEditor({
           onUpdate={(updated) => handleUpdate(lesion.id, updated)}
           onDelete={() => handleDelete(lesion.id)}
           onDuplicate={() => handleDuplicate(lesion.id)}
+          isSkinCancer={isSkinCancer}
+          onSkinCancerChange={(a) => handleSkinCancerChange(lesion.id, a)}
+          diagnosisId={diagnosisId}
         />
       ))}
 

@@ -71,6 +71,7 @@ import { RoleBadge } from "@/components/RoleBadge";
 import { LoadingState } from "@/components/LoadingState";
 import { EmptyState } from "@/components/EmptyState";
 import { SectionHeader } from "@/components/SectionHeader";
+import { SkinCancerDetailSummary } from "@/components/skin-cancer/SkinCancerDetailSummary";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 
 type RouteParams = RouteProp<RootStackParamList, "CaseDetail">;
@@ -1188,6 +1189,30 @@ export default function CaseDetailScreen() {
                         </ThemedText>
                       ) : null}
                     </View>
+                  ) : null}
+
+                  {/* Skin cancer assessment — single-lesion */}
+                  {group.skinCancerAssessment ? (
+                    <SkinCancerDetailSummary
+                      assessment={group.skinCancerAssessment}
+                    />
+                  ) : null}
+
+                  {/* Skin cancer assessment — multi-lesion */}
+                  {group.lesionInstances?.some(
+                    (l) => l.skinCancerAssessment,
+                  ) ? (
+                    <>
+                      {group.lesionInstances
+                        ?.filter((l) => l.skinCancerAssessment)
+                        .map((l, idx) => (
+                          <SkinCancerDetailSummary
+                            key={l.id}
+                            assessment={l.skinCancerAssessment!}
+                            lesionLabel={`Lesion ${idx + 1}`}
+                          />
+                        ))}
+                    </>
                   ) : null}
                 </View>
               );

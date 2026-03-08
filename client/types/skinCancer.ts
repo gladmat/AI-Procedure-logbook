@@ -319,3 +319,328 @@ export function getHistologyReminderDate(
   date.setDate(date.getDate() + daysAfter);
   return date.toISOString();
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SKIN CANCER ASSESSMENT WORKFLOW TYPES (Phase 1)
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// These types power the clinical pathway assessment module, distinct from the
+// histology reporting types above. They capture the treatment journey context
+// (pathway stage, clinical suspicion, SLNB, margin recommendations) while the
+// types above capture pathological findings.
+
+// --- Pathway Stage (entry point gate) ---
+
+export type SkinCancerPathwayStage =
+  | "excision_biopsy"
+  | "histology_known";
+
+// --- Biopsy Method (excision_biopsy pathway only) ---
+
+export type SkinCancerBiopsyType =
+  | "excision_biopsy"
+  | "incisional_biopsy"
+  | "shave_biopsy"
+  | "punch_biopsy";
+
+export type HistologySource =
+  | "own_biopsy"
+  | "external_biopsy"
+  | "current_procedure";
+
+// --- Pathology Types: Two-Tier System ---
+
+/** Tier 1: Primary category — always visible as chip selector */
+export type SkinCancerPathologyCategory =
+  | "bcc"
+  | "scc"
+  | "melanoma"
+  | "merkel_cell"
+  | "rare_malignant"
+  | "benign"
+  | "uncertain";
+
+/** Tier 2: Rare malignant subtypes — shown when rare_malignant is selected */
+export type RareMalignantSubtype =
+  // Adnexal carcinomas
+  | "sebaceous_carcinoma"
+  | "porocarcinoma"
+  | "mac" // Microcystic adnexal carcinoma
+  | "hidradenocarcinoma"
+  | "spiradenocarcinoma"
+  | "trichilemmal_carcinoma"
+  | "mucinous_eccrine_carcinoma"
+  | "apocrine_carcinoma"
+  | "digital_papillary_adenocarcinoma"
+  | "empd" // Extramammary Paget's disease
+  | "adenoid_cystic_cutaneous"
+  | "pilomatrical_carcinoma"
+  | "other_adnexal"
+  // Cutaneous sarcomas
+  | "dfsp"
+  | "afx" // Atypical fibroxanthoma
+  | "pleomorphic_dermal_sarcoma"
+  | "angiosarcoma"
+  | "cutaneous_leiomyosarcoma"
+  | "myxofibrosarcoma"
+  | "epithelioid_sarcoma"
+  | "other_sarcoma"
+  // Other
+  | "cutaneous_lymphoma"
+  | "cutaneous_metastasis"
+  | "other_nos";
+
+// --- BCC Assessment Subtypes (simplified for workflow, distinct from histological) ---
+export type BCCSubtype =
+  | "nodular"
+  | "superficial"
+  | "infiltrative"
+  | "morphoeic"
+  | "micronodular"
+  | "mixed";
+
+// --- SCC Assessment Detail Types ---
+export type SCCAssessmentDifferentiation = "well" | "moderate" | "poor";
+export type SCCRiskLevel = "low" | "high";
+
+// --- Melanoma Assessment Detail Types ---
+export type MelanomaAssessmentSubtype =
+  | "ssm"
+  | "nm"
+  | "lmm"
+  | "alm"
+  | "desmoplastic"
+  | "other";
+export type TILsGrade = "absent" | "non_brisk" | "brisk";
+
+// --- Merkel Cell Detail Types ---
+export type MCPyVStatus = "positive" | "negative" | "unknown";
+
+// --- Margin Status (detailed, histology-level) ---
+export type DetailedMarginStatus =
+  | "complete"
+  | "incomplete"
+  | "close"
+  | "pending"
+  | "unknown";
+
+// --- SLNB Types ---
+export type SLNBSite =
+  | "axilla"
+  | "groin"
+  | "cervical"
+  | "popliteal"
+  | "epitrochlear"
+  | "other";
+
+export type SLNBResult =
+  | "pending"
+  | "negative"
+  | "positive_itc"
+  | "positive_micro"
+  | "positive_macro";
+
+export interface SLNBDetails {
+  offered: boolean;
+  performed: boolean;
+  declinedReason?: string;
+  sites: SLNBSite[];
+  nodesRetrieved?: number;
+  result: SLNBResult;
+  resultDate?: string;
+}
+
+// --- Margin Recommendation (read-only CDS) ---
+export type GuidelineSource = "NCCN" | "ESMO" | "BAD" | "ANZ" | "EXPERT";
+
+export interface MarginRecommendation {
+  recommendedMm: number | null; // null = "no established guideline"
+  guidelineSource: GuidelineSource;
+  guidelineNote: string;
+}
+
+// --- Histology Data (assessment workflow) ---
+export interface SkinCancerHistology {
+  source: HistologySource;
+  pathologyCategory: SkinCancerPathologyCategory;
+  rareSubtype?: RareMalignantSubtype;
+
+  // BCC-specific
+  bccSubtype?: BCCSubtype;
+
+  // SCC-specific
+  sccDifferentiation?: SCCAssessmentDifferentiation;
+  sccDepthMm?: number;
+  sccPerineuralInvasion?: boolean;
+  sccLymphovascularInvasion?: boolean;
+  sccRiskLevel?: SCCRiskLevel;
+
+  // Melanoma-specific
+  melanomaBreslowMm?: number;
+  melanomaUlceration?: boolean;
+  melanomaMitoticRate?: number;
+  melanomaSubtype?: MelanomaAssessmentSubtype;
+  melanomaMicrosatellites?: boolean;
+  melanomaLVI?: boolean;
+  melanomaNeurotropism?: boolean;
+  melanomaRegression?: boolean;
+  melanomaTILs?: TILsGrade;
+  melanomaClarkLevel?: 1 | 2 | 3 | 4 | 5;
+
+  // Merkel cell-specific
+  merkelTumourSizeMm?: number;
+  merkelMCPyVStatus?: MCPyVStatus;
+  merkelDepthMm?: number;
+  merkelLVI?: boolean;
+
+  // Surgical excision margins (recorded at time of surgery)
+  excisionDeepMarginMm?: number;
+  excisionPeripheralMarginMm?: number;
+
+  // Histological margins (reported by pathology lab, 2–3 weeks later)
+  deepMarginMm?: number;
+  peripheralMarginMm?: number;
+  marginStatus?: DetailedMarginStatus;
+
+  // Excision method
+  excisionMethod?: "wle" | "mohs" | "staged_excision" | "other";
+
+  // Meta
+  reportDate?: string;
+  labReference?: string;
+}
+
+// --- Lesion Photo ---
+/** A clinical photo of a lesion, auto-tagged with assessment context */
+export interface LesionPhoto {
+  id: string;
+  uri: string; // encrypted-media:<uuid>
+  caption?: string; // Auto-generated: "BCC — Nose, L"
+  photoType: "clinical" | "dermoscopy";
+  createdAt: string; // ISO timestamp
+}
+
+// --- Per-Lesion Assessment (the main composite type) ---
+export interface SkinCancerLesionAssessment {
+  pathwayStage: SkinCancerPathwayStage;
+  clinicalSuspicion?: SkinCancerPathologyCategory;
+
+  // Anatomical site
+  site?: string;
+  siteDetail?: string;
+  laterality?: "left" | "right" | "midline";
+
+  // Pre-operative clinical dimensions
+  clinicalLengthMm?: number;
+  clinicalWidthMm?: number;
+
+  // Biopsy method (excision_biopsy pathway only)
+  biopsyType?: SkinCancerBiopsyType;
+  biopsyPeripheralMarginMm?: number; // Excision biopsy: peripheral margin taken (mm)
+  punchSizeMm?: number; // Punch biopsy: punch diameter (2, 3, 4, 5, 6, 8 mm)
+
+  // Excision details
+  marginTakenMm?: number;
+  marginRecommendation?: MarginRecommendation;
+
+  // Histology
+  priorHistology?: SkinCancerHistology;
+  currentHistology?: SkinCancerHistology;
+
+  // SLNB
+  slnb?: SLNBDetails;
+
+  // Continuing care context
+  priorProcedureType?: string;
+  indication?:
+    | "incomplete_margins"
+    | "wider_excision"
+    | "slnb"
+    | "delayed_reconstruction"
+    | "local_recurrence"
+    | "mohs_reconstruction"
+    | "mdt_decision";
+
+  // MDT referral (legacy — kept for backwards compat)
+  mdtReferral?:
+    | "ssmdt"
+    | "sarcoma_mdt"
+    | "haematology_mdt"
+    | "other"
+    | "none";
+
+  // Discussed at MDT (simple toggle)
+  discussedAtMdt?: boolean;
+
+  // Clinical photos
+  lesionPhotos?: LesionPhoto[];
+}
+
+// --- Section Completion ---
+export type SectionStatus =
+  | "complete"
+  | "pending"
+  | "not_started"
+  | "not_applicable";
+
+export interface SkinCancerCompletionState {
+  lesionDetails: SectionStatus;
+  procedure: SectionStatus;
+  histology: SectionStatus;
+  slnb: SectionStatus;
+  finalMargins: SectionStatus;
+}
+
+// --- Clinical Pathway Assignment ---
+export type ClinicalPathwayTemplate =
+  | "melanoma_like"
+  | "bcc_scc_like"
+  | "complex_mdt";
+
+// --- Site Groups for Grouped Picker ---
+export interface SkinCancerSiteGroup {
+  label: string;
+  sites: string[];
+}
+
+export const SKIN_CANCER_SITE_GROUPS: SkinCancerSiteGroup[] = [
+  {
+    label: "HEAD & NECK",
+    sites: [
+      "Scalp",
+      "Forehead",
+      "Temple",
+      "Nose",
+      "Cheek",
+      "Ear",
+      "Eyelid",
+      "Upper lip",
+      "Lower lip",
+      "Chin / Jaw",
+      "Neck",
+    ],
+  },
+  {
+    label: "TRUNK",
+    sites: ["Chest", "Back", "Abdomen", "Shoulder", "Flank"],
+  },
+  {
+    label: "UPPER LIMB",
+    sites: ["Upper arm", "Forearm", "Hand", "Finger"],
+  },
+  {
+    label: "LOWER LIMB",
+    sites: ["Thigh", "Leg", "Foot", "Toe"],
+  },
+];
+
+/** Midline sites where laterality defaults to "midline" */
+export const MIDLINE_SITES = new Set([
+  "Scalp",
+  "Forehead",
+  "Nose",
+  "Chin / Jaw",
+  "Chest",
+  "Back",
+  "Abdomen",
+]);
