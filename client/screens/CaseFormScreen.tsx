@@ -119,6 +119,7 @@ export default function CaseFormScreen() {
     specialty: routeSpecialty,
     caseId,
     duplicateFrom,
+    skinCancerFollowUpPrefill,
     episodeId: routeEpisodeId,
     episodePrefill,
   } = route.params;
@@ -138,6 +139,7 @@ export default function CaseFormScreen() {
     specialty: routeSpecialty || "general",
     caseId,
     duplicateFrom,
+    skinCancerFollowUpPrefill,
     episodeId: routeEpisodeId,
     episodePrefill,
     primaryFacility,
@@ -585,13 +587,15 @@ export default function CaseFormScreen() {
                   <ThemedText
                     style={[styles.duplicateBannerText, { color: theme.info }]}
                   >
-                    Duplicated from case{" "}
-                    {duplicateFrom?.procedureDate
-                      ? new Date(
-                          duplicateFrom.procedureDate,
-                        ).toLocaleDateString()
-                      : ""}
-                    . Verify all fields.
+                    {skinCancerFollowUpPrefill
+                      ? "Skin cancer follow-up pre-filled from the current case. Verify the carried-forward histology and planned next-step procedure."
+                      : `Duplicated from case ${
+                          duplicateFrom?.procedureDate
+                            ? new Date(
+                                duplicateFrom.procedureDate,
+                              ).toLocaleDateString()
+                            : ""
+                        }. Verify all fields.`}
                   </ThemedText>
                 </View>
                 <Pressable

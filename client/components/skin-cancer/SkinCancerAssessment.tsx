@@ -34,6 +34,7 @@ import {
   getMarginRecommendation,
   getSkinCancerCompletion,
   getSkinCancerDiagnosisAutoConfig,
+  getSkinCancerPrimaryHistology,
   getSkinCancerProcedureSuggestions,
 } from "@/lib/skinCancerConfig";
 import type {
@@ -43,6 +44,7 @@ import type {
   SkinCancerHistology,
   SkinCancerCompletionState,
   SkinCancerPathologyCategory,
+  SectionStatus,
   SLNBDetails,
   LesionPhoto,
 } from "@/types/skinCancer";
@@ -54,6 +56,8 @@ import { HistologySection } from "./HistologySection";
 import { MarginRecommendationBadge } from "./MarginRecommendationBadge";
 import { SLNBSection } from "./SLNBSection";
 import { SkinCancerSummaryPanel } from "./SkinCancerSummaryPanel";
+import { CompletionSummary } from "./CompletionSummary";
+import { SkinCancerPathwayGate } from "./SkinCancerPathwayGate";
 
 // ═══════════════════════════════════════════════════════════════
 // Constants
@@ -108,12 +112,16 @@ interface SkinCancerAssessmentProps {
   onAcceptMapping?: (procedurePicklistIds: string[]) => void;
   /** Whether procedures have been accepted */
   isAccepted?: boolean;
+  /** Number of procedures currently populated on the parent diagnosis group */
+  procedureCount?: number;
   /** Callback to add another lesion (triggers multi-lesion transition) */
   onAddLesion?: () => void;
   /** Callback when a lesion photo is captured (for case thumbnail wiring) */
   onPhotoAdded?: (photo: LesionPhoto) => void;
   /** Callback to revoke accepted mapping (re-enables editing) */
   onEditMapping?: () => void;
+  /** Trigger duplicate + follow-up prefill flow for re-excision */
+  onCreateFollowUp?: () => void;
   /** Scroll view ref for stabilizing scroll position during collapse/expand */
   scrollViewRef?: React.RefObject<any>;
   /** Current scroll Y position (tracked by parent) */
@@ -127,9 +135,11 @@ export function SkinCancerAssessment({
   onAcceptProcedures,
   onAcceptMapping,
   isAccepted = false,
+  procedureCount = 0,
   onAddLesion,
   onPhotoAdded,
   onEditMapping: onEditMappingProp,
+  onCreateFollowUp,
   scrollViewRef,
   scrollPositionRef,
 }: SkinCancerAssessmentProps) {
@@ -160,10 +170,6 @@ export function SkinCancerAssessment({
     [diagnosisId],
   );
 
-  // ── Pathway auto-set based on Tier 1 selection ──
-  // "uncertain" → auto-set excision_biopsy (gate hidden)
-  // everything else → auto-set histology_known (gate shows collapsed, changeable)
-  const isUncertainCategory = assessment?.clinicalSuspicion === "uncertain";
   const filteredPathwayStages = useMemo(() => {
     return autoConfig.availablePathwayStages ?? [
       "excision_biopsy" as SkinCancerPathwayStage,
@@ -172,21 +178,33 @@ export function SkinCancerAssessment({
   }, [autoConfig.availablePathwayStages]);
 
   // ── Computed values ──
-  const relevantHisto =
-    assessment?.priorHistology || assessment?.currentHistology;
+  const relevantHisto = getSkinCancerPrimaryHistology(assessment);
 
   const autoSlnb = relevantHisto ? shouldOfferSLNB(relevantHisto) : false;
   const considerSlnb = relevantHisto ? canConsiderSLNB(relevantHisto) : false;
-  const showSlnb = autoSlnb || manualSlnbToggle;
+  const showSlnb = autoSlnb || manualSlnbToggle || !!assessment?.slnb;
+
+  const hasAcceptHandler = !!onAcceptMapping || !!onAcceptProcedures;
 
   const marginRec = useMemo(
     () => (relevantHisto ? getMarginRecommendation(relevantHisto) : undefined),
     [relevantHisto],
   );
 
+  const procedureStatus: SectionStatus = hasAcceptHandler
+    ? isAccepted || procedureCount > 0
+      ? "complete"
+      : "not_started"
+    : "not_applicable";
+
   const completion = useMemo(
-    () => (assessment ? getSkinCancerCompletion(assessment) : undefined),
-    [assessment],
+    () =>
+      assessment
+        ? getSkinCancerCompletion(assessment, {
+            procedureStatus,
+          })
+        : undefined,
+    [assessment, procedureStatus],
   );
 
   // ── Has Tier 1 selection? (progressive disclosure gate) ──
@@ -240,7 +258,8 @@ export function SkinCancerAssessment({
   // ── Handlers ──
   const handleStageSelect = useCallback(
     (stage: SkinCancerPathwayStage) => {
-      // Sync Tier 1 category → priorHistology for histology_known
+      if (assessment?.pathwayStage === stage) return;
+
       const priorHistology =
         stage === "histology_known" && assessment?.clinicalSuspicion
           ? {
@@ -254,10 +273,33 @@ export function SkinCancerAssessment({
         ...(assessment ?? {}),
         pathwayStage: stage,
         priorHistology,
+        biopsyType:
+          stage === "excision_biopsy" ? assessment?.biopsyType : undefined,
+        biopsyPeripheralMarginMm:
+          stage === "excision_biopsy"
+            ? assessment?.biopsyPeripheralMarginMm
+            : undefined,
+        punchSizeMm:
+          stage === "excision_biopsy" ? assessment?.punchSizeMm : undefined,
       } as SkinCancerLesionAssessment);
     },
     [assessment, onAssessmentChange],
   );
+
+  useEffect(() => {
+    if (!assessment?.clinicalSuspicion) return;
+    if (
+      filteredPathwayStages.length === 1 &&
+      assessment.pathwayStage !== filteredPathwayStages[0]
+    ) {
+      handleStageSelect(filteredPathwayStages[0]!);
+    }
+  }, [
+    assessment?.clinicalSuspicion,
+    assessment?.pathwayStage,
+    filteredPathwayStages,
+    handleStageSelect,
+  ]);
 
   const handleDetailsChange = useCallback(
     (updated: SkinCancerLesionAssessment) => {
@@ -276,36 +318,28 @@ export function SkinCancerAssessment({
     [assessment, onAssessmentChange],
   );
 
-  /** Tier 1 chip tap — always writes to clinicalSuspicion, auto-sets pathway.
-   *  Switching categories resets all pathway-specific fields (keeps location data). */
+  /** Tier 1 chip tap — writes the clinical category and clears incompatible histology. */
   const handleDiagnosisCategoryTap = useCallback(
     (cat: SkinCancerPathologyCategory) => {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      const newCat =
-        assessment?.clinicalSuspicion === cat ? undefined : cat;
-
-      // Pathway auto-logic
-      let pathwayStage: SkinCancerPathwayStage | undefined;
-      if (!newCat) {
-        pathwayStage = undefined;
-      } else if (newCat === "uncertain") {
-        pathwayStage = "excision_biopsy" as SkinCancerPathwayStage;
-      } else {
-        pathwayStage = "histology_known" as SkinCancerPathwayStage;
-      }
-
-      // When switching categories (or deselecting), reset all pathway-specific
-      // fields but preserve location data (site, laterality, dimensions, photos)
+      const newCat = assessment?.clinicalSuspicion === cat ? undefined : cat;
       const preserved = {
         site: assessment?.site,
         laterality: assessment?.laterality,
         clinicalLengthMm: assessment?.clinicalLengthMm,
         clinicalWidthMm: assessment?.clinicalWidthMm,
         lesionPhotos: assessment?.lesionPhotos,
+        pathwayStage: newCat ? assessment?.pathwayStage : undefined,
+        biopsyType: newCat ? assessment?.biopsyType : undefined,
+        biopsyPeripheralMarginMm: newCat
+          ? assessment?.biopsyPeripheralMarginMm
+          : undefined,
+        punchSizeMm: newCat ? assessment?.punchSizeMm : undefined,
+        discussedAtMdt: newCat ? assessment?.discussedAtMdt : undefined,
       };
 
       const priorHistology =
-        pathwayStage === "histology_known" && newCat
+        preserved.pathwayStage === "histology_known" && newCat
           ? {
               source: "own_biopsy" as const,
               pathologyCategory: newCat,
@@ -315,11 +349,11 @@ export function SkinCancerAssessment({
       onAssessmentChange({
         ...preserved,
         clinicalSuspicion: newCat,
-        pathwayStage,
         priorHistology,
+        currentHistology: undefined,
+        slnb: undefined,
       } as SkinCancerLesionAssessment);
 
-      // Auto-collapse Diagnosis section after selection
       if (newCat) {
         setSectionCollapsedState("diagnosis", true);
       }
@@ -357,7 +391,7 @@ export function SkinCancerAssessment({
     [assessment, onAssessmentChange],
   );
 
-  const handleContinuingCareChange = useCallback(
+  const handleAssessmentMetaChange = useCallback(
     (partial: Partial<SkinCancerLesionAssessment>) => {
       onAssessmentChange({
         ...(assessment ?? {}),
@@ -465,9 +499,6 @@ export function SkinCancerAssessment({
     }
   }, [onEditMappingProp, scrollViewRef, scrollPositionRef]);
 
-  // Determine if we have any accept handler
-  const hasAcceptHandler = !!onAcceptMapping || !!onAcceptProcedures;
-
   // ── Dynamic section numbering ──
   const isHistologyKnown = assessment?.pathwayStage === "histology_known";
   let sectionNum = 0;
@@ -519,8 +550,13 @@ export function SkinCancerAssessment({
         </View>
       </SectionWrapper>
 
-      {/* Pathway auto-set: uncertain→biopsy, everything else→histology_known */}
-      {/* PathwayGate hidden — pathway is always deterministic from Tier 1 */}
+      {hasTier1Selection ? (
+        <SkinCancerPathwayGate
+          selectedStage={assessment?.pathwayStage}
+          onSelectStage={handleStageSelect}
+          availableStages={filteredPathwayStages}
+        />
+      ) : null}
 
       {/* ── After pathway is set ── */}
       {assessment?.pathwayStage ? (
@@ -547,10 +583,7 @@ export function SkinCancerAssessment({
                 }
                 hideTier1
                 defaultSource="own_biopsy"
-                priorProcedureType={assessment.priorProcedureType}
-                onPriorProcedureTypeChange={(value) =>
-                  handleContinuingCareChange({ priorProcedureType: value })
-                }
+                onCreateFollowUp={onCreateFollowUp}
               />
             </SectionWrapper>
           ) : null}
@@ -588,7 +621,7 @@ export function SkinCancerAssessment({
                 slnb={assessment.slnb}
                 onSLNBChange={handleSLNBChange}
                 autoVisible={autoSlnb}
-                canConsider={false}
+                canConsider={considerSlnb}
               />
             </SectionWrapper>
           ) : considerSlnb ? (
@@ -776,6 +809,32 @@ export function SkinCancerAssessment({
             </SectionWrapper>
           )}
 
+          <SectionWrapper
+            title={`${++sectionNum}. Specimen Histology`}
+            icon="file-text"
+            collapsible
+            isCollapsed={isSectionCollapsed("currentHistology")}
+            onCollapsedChange={(v) =>
+              setSectionCollapsedState("currentHistology", v)
+            }
+            subtitle={
+              isBiopsy
+                ? "Enter histology when the specimen report returns"
+                : "Update with final post-excision histology and margins"
+            }
+          >
+            <HistologySection
+              label=""
+              histology={assessment.currentHistology}
+              onHistologyChange={handleCurrentHistologyChange}
+              defaultExpanded={false}
+              defaultSource="current_procedure"
+              lockedPathology={autoConfig.lockedPathology}
+              hideHeader
+              onCreateFollowUp={onCreateFollowUp}
+            />
+          </SectionWrapper>
+
           {/* ── Add another lesion (biopsy pathway only) ── */}
           {onAddLesion &&
             isBiopsy &&
@@ -805,7 +864,7 @@ export function SkinCancerAssessment({
               <Switch
                 value={assessment.discussedAtMdt ?? false}
                 onValueChange={(v) =>
-                  handleContinuingCareChange({ discussedAtMdt: v })
+                  handleAssessmentMetaChange({ discussedAtMdt: v })
                 }
                 trackColor={{
                   false: theme.border,
@@ -840,6 +899,8 @@ export function SkinCancerAssessment({
               </SectionWrapper>
             </View>
           ) : null}
+
+          {completion ? <CompletionSummary completion={completion} /> : null}
         </>
       ) : null}
     </View>

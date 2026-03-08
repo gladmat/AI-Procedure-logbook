@@ -176,6 +176,8 @@ interface HistologySectionProps {
   hideCurrentProcedureSource?: boolean;
   /** When true, the card header + collapse wrapper are hidden (content always visible) */
   hideHeader?: boolean;
+  /** Trigger duplicate + follow-up prefill flow for re-excision */
+  onCreateFollowUp?: () => void;
   /**
    * Initial-logging mode: shows only excision method (WLE / Mohs)
    * and planned margin inputs. Hides source, pathology category,
@@ -223,6 +225,7 @@ export const HistologySection = React.memo(function HistologySection({
   lockedPathology = false,
   hideCurrentProcedureSource = false,
   hideHeader = false,
+  onCreateFollowUp,
   simplifiedMode = false,
 }: HistologySectionProps) {
   const { theme } = useTheme();
@@ -598,9 +601,7 @@ export const HistologySection = React.memo(function HistologySection({
                     style={[styles.marginRecTitle, { color: theme.info }]}
                   >
                     Recommended:{" "}
-                    {marginRec.recommendedMm != null
-                      ? `${marginRec.recommendedMm}mm`
-                      : "See guideline"}{" "}
+                    {marginRec.recommendedText}{" "}
                     ({marginRec.guidelineSource})
                   </ThemedText>
                   {marginRec.guidelineNote ? (
@@ -774,7 +775,9 @@ export const HistologySection = React.memo(function HistologySection({
 
               {/* Re-excision prompt for incomplete/close margins */}
               {(base.marginStatus === "incomplete" ||
-                base.marginStatus === "close") && <ReExcisionPromptCard />}
+                base.marginStatus === "close") && (
+                <ReExcisionPromptCard onCreateFollowUp={onCreateFollowUp} />
+              )}
               </>
               ) : null}
             </View>

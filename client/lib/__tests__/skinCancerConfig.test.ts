@@ -7,6 +7,7 @@ import {
   toQuickMarginStatus,
   getSkinCancerProcedureSuggestions,
   getSkinCancerDiagnosisAutoConfig,
+  getSkinCancerPrimaryHistology,
   resolveSkinCancerDiagnosis,
 } from "@/lib/skinCancerConfig";
 import type {
@@ -48,7 +49,7 @@ describe("getMarginRecommendation", () => {
     const r = getMarginRecommendation(
       makeHistology({ pathologyCategory: "melanoma", melanomaBreslowMm: 0 }),
     );
-    expect(r?.recommendedMm).toBe(5);
+    expect(r?.recommendedText).toBe("5mm");
     expect(r?.guidelineSource).toBe("NCCN");
   });
 
@@ -59,7 +60,7 @@ describe("getMarginRecommendation", () => {
         melanomaBreslowMm: 0.8,
       }),
     );
-    expect(r?.recommendedMm).toBe(10);
+    expect(r?.recommendedText).toBe("1cm");
   });
 
   it("melanoma Breslow 1.5mm → 10mm (1–2cm range)", () => {
@@ -69,8 +70,8 @@ describe("getMarginRecommendation", () => {
         melanomaBreslowMm: 1.5,
       }),
     );
-    expect(r?.recommendedMm).toBe(10);
-    expect(r?.guidelineNote).toContain("1\u20132cm");
+    expect(r?.recommendedText).toBe("1-2cm");
+    expect(r?.maximumMm).toBe(20);
   });
 
   it("melanoma Breslow 3.0mm → 20mm", () => {
@@ -80,7 +81,7 @@ describe("getMarginRecommendation", () => {
         melanomaBreslowMm: 3.0,
       }),
     );
-    expect(r?.recommendedMm).toBe(20);
+    expect(r?.recommendedText).toBe("2cm");
   });
 
   it("melanoma without Breslow → undefined", () => {
@@ -97,7 +98,7 @@ describe("getMarginRecommendation", () => {
         bccSubtype: "nodular",
       }),
     );
-    expect(r?.recommendedMm).toBe(4);
+    expect(r?.recommendedText).toBe("3-4mm");
     expect(r?.guidelineSource).toBe("BAD");
   });
 
@@ -108,14 +109,14 @@ describe("getMarginRecommendation", () => {
         bccSubtype: "morphoeic",
       }),
     );
-    expect(r?.recommendedMm).toBe(5);
+    expect(r?.recommendedText).toBe("5mm");
   });
 
   it("BCC no subtype → 4mm (standard default)", () => {
     const r = getMarginRecommendation(
       makeHistology({ pathologyCategory: "bcc" }),
     );
-    expect(r?.recommendedMm).toBe(4);
+    expect(r?.recommendedText).toBe("3-4mm");
   });
 
   it("SCC low-risk → 5mm", () => {
@@ -125,7 +126,7 @@ describe("getMarginRecommendation", () => {
         sccRiskLevel: "low",
       }),
     );
-    expect(r?.recommendedMm).toBe(5);
+    expect(r?.recommendedText).toBe("4-6mm");
   });
 
   it("SCC high-risk → 6mm", () => {
@@ -135,14 +136,14 @@ describe("getMarginRecommendation", () => {
         sccRiskLevel: "high",
       }),
     );
-    expect(r?.recommendedMm).toBe(6);
+    expect(r?.recommendedText).toBe("6-10mm");
   });
 
   it("MCC → 20mm", () => {
     const r = getMarginRecommendation(
       makeHistology({ pathologyCategory: "merkel_cell" }),
     );
-    expect(r?.recommendedMm).toBe(20);
+    expect(r?.recommendedText).toBe("1-2cm");
     expect(r?.guidelineSource).toBe("NCCN");
   });
 
@@ -153,7 +154,7 @@ describe("getMarginRecommendation", () => {
         rareSubtype: "dfsp",
       }),
     );
-    expect(r?.recommendedMm).toBe(30);
+    expect(r?.recommendedText).toBe("2-3cm");
   });
 
   it("Angiosarcoma → 30mm", () => {
@@ -163,7 +164,7 @@ describe("getMarginRecommendation", () => {
         rareSubtype: "angiosarcoma",
       }),
     );
-    expect(r?.recommendedMm).toBe(30);
+    expect(r?.recommendedText).toBe("\u22653cm");
   });
 
   it("EMPD → 50mm", () => {
@@ -173,7 +174,7 @@ describe("getMarginRecommendation", () => {
         rareSubtype: "empd",
       }),
     );
-    expect(r?.recommendedMm).toBe(50);
+    expect(r?.recommendedText).toBe("\u22655cm");
   });
 
   it("unknown rare type → null (no guideline)", () => {
@@ -183,7 +184,7 @@ describe("getMarginRecommendation", () => {
         rareSubtype: "other_nos",
       }),
     );
-    expect(r?.recommendedMm).toBeNull();
+    expect(r?.recommendedText).toBe("No established guideline");
   });
 
   it("benign → undefined", () => {
@@ -493,17 +494,6 @@ describe("getSkinCancerProcedureSuggestions", () => {
     expect(r).toContain("hn_skin_slnb");
   });
 
-  it("reconstruction indication → []", () => {
-    const r = getSkinCancerProcedureSuggestions(
-      makeAssessment({
-        pathwayStage: "histology_known",
-        indication: "delayed_reconstruction",
-        site: "Nose",
-      }),
-    );
-    expect(r).toEqual([]);
-  });
-
   it("Pathway B + no histology → []", () => {
     const r = getSkinCancerProcedureSuggestions(
       makeAssessment({
@@ -662,7 +652,7 @@ describe("resolveSkinCancerDiagnosis", () => {
     expect(r!.snomedCtCode).toBe("95324001");
   });
 
-  it("Pathway A with clinical suspicion BCC → BCC diagnosis", () => {
+  it("Pathway A with clinical suspicion BCC stays generic until histology returns", () => {
     const r = resolveSkinCancerDiagnosis(
       makeAssessment({
         pathwayStage: "excision_biopsy",
@@ -670,11 +660,10 @@ describe("resolveSkinCancerDiagnosis", () => {
       }),
     );
     expect(r).not.toBeNull();
-    expect(r!.diagnosisPicklistId).toBe("sc_dx_bcc");
-    expect(r!.snomedCtCode).toBe("254701007");
+    expect(r!.diagnosisPicklistId).toBe("sc_dx_skin_lesion_excision_biopsy");
   });
 
-  it("Pathway A with clinical suspicion melanoma → melanoma diagnosis", () => {
+  it("Pathway A with clinical suspicion melanoma stays generic until histology returns", () => {
     const r = resolveSkinCancerDiagnosis(
       makeAssessment({
         pathwayStage: "excision_biopsy",
@@ -682,8 +671,22 @@ describe("resolveSkinCancerDiagnosis", () => {
       }),
     );
     expect(r).not.toBeNull();
+    expect(r!.diagnosisPicklistId).toBe("sc_dx_skin_lesion_excision_biopsy");
+  });
+
+  it("Pathway A with confirmed current histology resolves from current histology", () => {
+    const r = resolveSkinCancerDiagnosis(
+      makeAssessment({
+        pathwayStage: "excision_biopsy",
+        clinicalSuspicion: "melanoma",
+        currentHistology: makeHistology({
+          pathologyCategory: "melanoma",
+          melanomaBreslowMm: 0.9,
+        }),
+      }),
+    );
+    expect(r).not.toBeNull();
     expect(r!.diagnosisPicklistId).toBe("sc_dx_melanoma");
-    expect(r!.snomedCtCode).toBe("93655004");
   });
 
   // ── Histology known with prior histology ──
@@ -770,7 +773,7 @@ describe("resolveSkinCancerDiagnosis", () => {
     expect(r!.snomedCtCode).toBe("404036002");
   });
 
-  it("histology_known + rare_malignant without dedicated subtype → generic", () => {
+  it("histology_known + rare_malignant without dedicated subtype flags manual review", () => {
     const r = resolveSkinCancerDiagnosis(
       makeAssessment({
         pathwayStage: "histology_known",
@@ -781,8 +784,9 @@ describe("resolveSkinCancerDiagnosis", () => {
       }),
     );
     expect(r).not.toBeNull();
-    // Falls through to generic rare_malignant → skin lesion
-    expect(r!.diagnosisPicklistId).toBe("sc_dx_skin_lesion_excision_biopsy");
+    expect(r!.diagnosisPicklistId).toBeUndefined();
+    expect(r!.requiresManualReview).toBe(true);
+    expect(r!.displayName).toContain("Angiosarcoma");
   });
 
   // ── Benign / uncertain ──
@@ -828,16 +832,17 @@ describe("resolveSkinCancerDiagnosis", () => {
     expect(r!.diagnosisPicklistId).toBe("sc_dx_scc");
   });
 
-  // ── Histology known with indication (continuing care context) ──
-  it("histology_known + prior histology BCC + indication → BCC", () => {
-    const r = resolveSkinCancerDiagnosis(
+  it("prefers current definitive histology over prior histology", () => {
+    const histology = getSkinCancerPrimaryHistology(
       makeAssessment({
         pathwayStage: "histology_known",
         priorHistology: makeHistology({ pathologyCategory: "bcc" }),
-        indication: "incomplete_margins",
+        currentHistology: makeHistology({
+          pathologyCategory: "melanoma",
+          melanomaBreslowMm: 1.1,
+        }),
       }),
     );
-    expect(r).not.toBeNull();
-    expect(r!.diagnosisPicklistId).toBe("sc_dx_bcc");
+    expect(histology?.pathologyCategory).toBe("melanoma");
   });
 });

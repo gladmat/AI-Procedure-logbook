@@ -11,7 +11,10 @@ import { View, StyleSheet } from "react-native";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing } from "@/constants/theme";
-import { RARE_TYPE_METADATA } from "@/lib/skinCancerConfig";
+import {
+  RARE_TYPE_METADATA,
+  getSkinCancerPrimaryHistology,
+} from "@/lib/skinCancerConfig";
 import type { SkinCancerLesionAssessment } from "@/types/skinCancer";
 
 // Theme color key lookup — avoids TS issues with `theme[colorKey]` since theme has nested objects
@@ -94,7 +97,12 @@ export function SkinCancerDetailSummary({
   lesionLabel,
 }: SkinCancerDetailSummaryProps) {
   const { theme } = useTheme();
-  const histo = assessment.priorHistology ?? assessment.currentHistology;
+  const histo = getSkinCancerPrimaryHistology(assessment);
+  const priorOnlyHistology =
+    assessment.currentHistology?.pathologyCategory &&
+    assessment.priorHistology?.pathologyCategory
+      ? assessment.priorHistology
+      : undefined;
 
   // Pathology label
   let pathologyText = "";
@@ -166,6 +174,20 @@ export function SkinCancerDetailSummary({
 
       {pathologyText ? (
         <DetailRow label="Pathology" value={pathologyText} />
+      ) : null}
+
+      {priorOnlyHistology?.pathologyCategory ? (
+        <DetailRow
+          label="Prior histology"
+          value={
+            priorOnlyHistology.pathologyCategory === "rare_malignant" &&
+            priorOnlyHistology.rareSubtype
+              ? (RARE_TYPE_METADATA[priorOnlyHistology.rareSubtype]?.label ??
+                "Rare malignant")
+              : (CATEGORY_LABELS[priorOnlyHistology.pathologyCategory] ??
+                priorOnlyHistology.pathologyCategory)
+          }
+        />
       ) : null}
 
       {breslow && <DetailRow label="Breslow" value={breslow} />}

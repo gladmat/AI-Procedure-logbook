@@ -7,7 +7,7 @@
  * After selection, collapses to a single-line summary with "Change" affordance.
  */
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Pressable,
@@ -66,6 +66,10 @@ export function SkinCancerPathwayGate({
 }: SkinCancerPathwayGateProps) {
   const { theme } = useTheme();
   const [isCollapsed, setIsCollapsed] = useState(!!selectedStage);
+
+  useEffect(() => {
+    setIsCollapsed(!!selectedStage);
+  }, [selectedStage]);
 
   const handleSelect = (stage: SkinCancerPathwayStage) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);

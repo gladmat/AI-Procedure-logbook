@@ -16,14 +16,24 @@ import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
 
-export function ReExcisionPromptCard() {
+interface ReExcisionPromptCardProps {
+  onCreateFollowUp?: () => void;
+}
+
+export function ReExcisionPromptCard({
+  onCreateFollowUp,
+}: ReExcisionPromptCardProps) {
   const { theme } = useTheme();
 
   const handlePress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (onCreateFollowUp) {
+      onCreateFollowUp();
+      return;
+    }
     Alert.alert(
-      "Re-excision needed",
-      "To create a follow-up case, duplicate this case from the case detail screen and update the pathway to 'Continuing care'.",
+      "Re-excision follow-up",
+      "Create a duplicate follow-up case to carry the prior histology forward and plan the next excision.",
       [{ text: "OK" }],
     );
   };
@@ -60,7 +70,7 @@ export function ReExcisionPromptCard() {
         accessibilityLabel="Pre-fill re-excision case"
       >
         <ThemedText style={[styles.buttonText, { color: theme.buttonText }]}>
-          How to pre-fill re-excision
+          Create follow-up case
         </ThemedText>
       </Pressable>
     </View>

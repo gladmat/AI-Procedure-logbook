@@ -1,6 +1,9 @@
 import { Case, DiagnosisGroup, CaseProcedure } from "@/types/case";
 import { v4 as uuidv4 } from "uuid";
 import { migrateSnomedCode } from "@/lib/snomedCodeMigration";
+import { resolveSkinCancerDiagnosis } from "@/lib/skinCancerConfig";
+
+const CURRENT_CASE_SCHEMA_VERSION = 5;
 
 /**
  * Rename hand_surgery → hand_wrist in all specialty references.
@@ -92,10 +95,44 @@ function migrateSnomedCodes(c: Case): Case {
   return c;
 }
 
+function migrateSkinCancerDiagnosisConsistency(c: Case): Case {
+  let changed = false;
+
+  const diagnosisGroups = c.diagnosisGroups.map((group) => {
+    if (!group.skinCancerAssessment) return group;
+
+    const resolved = resolveSkinCancerDiagnosis(group.skinCancerAssessment);
+    if (!resolved) return group;
+
+    const nextDiagnosis = {
+      displayName: resolved.displayName,
+      ...(resolved.snomedCtCode ? { snomedCtCode: resolved.snomedCtCode } : {}),
+    };
+
+    if (
+      group.diagnosis?.displayName === nextDiagnosis.displayName &&
+      (group.diagnosis?.snomedCtCode ?? "") ===
+        (nextDiagnosis.snomedCtCode ?? "") &&
+      group.diagnosisPicklistId === resolved.diagnosisPicklistId
+    ) {
+      return group;
+    }
+
+    changed = true;
+    return {
+      ...group,
+      diagnosis: nextDiagnosis,
+      diagnosisPicklistId: resolved.diagnosisPicklistId,
+    };
+  });
+
+  return changed ? { ...c, diagnosisGroups } : c;
+}
+
 export function migrateCase(raw: unknown): Case {
   if (!raw || typeof raw !== "object") {
     console.error("Case migration failed: invalid input (not an object)");
-    return { ...(raw as Case), schemaVersion: 4 };
+    return { ...(raw as Case), schemaVersion: CURRENT_CASE_SCHEMA_VERSION };
   }
 
   try {
@@ -104,8 +141,12 @@ export function migrateCase(raw: unknown): Case {
     if (Array.isArray(obj.diagnosisGroups) && obj.diagnosisGroups.length > 0) {
       let migrated = migrateSpecialty(raw as Case);
       migrated = migrateSnomedCodes(migrated);
-      if (!migrated.schemaVersion || migrated.schemaVersion < 4) {
-        return { ...migrated, schemaVersion: 4 };
+      migrated = migrateSkinCancerDiagnosisConsistency(migrated);
+      if (
+        !migrated.schemaVersion ||
+        migrated.schemaVersion < CURRENT_CASE_SCHEMA_VERSION
+      ) {
+        return { ...migrated, schemaVersion: CURRENT_CASE_SCHEMA_VERSION };
       }
       return migrated;
     }
@@ -138,7 +179,7 @@ export function migrateCase(raw: unknown): Case {
     const migrated: any = {
       ...obj,
       diagnosisGroups: [group],
-      schemaVersion: 4,
+      schemaVersion: CURRENT_CASE_SCHEMA_VERSION,
     };
     delete migrated.preManagementDiagnosis;
     delete migrated.finalDiagnosis;
@@ -149,13 +190,15 @@ export function migrateCase(raw: unknown): Case {
     delete migrated.fractures;
     delete migrated.procedures;
 
-    return migrateSnomedCodes(migrated as Case);
+    return migrateSkinCancerDiagnosisConsistency(
+      migrateSnomedCodes(migrated as Case),
+    );
   } catch (error) {
     console.error(
       "Case migration failed:",
       error instanceof Error ? error.message : "Unknown error",
     );
     // Return raw data with schema version to prevent data loss
-    return { ...(raw as Case), schemaVersion: 4 };
+    return { ...(raw as Case), schemaVersion: CURRENT_CASE_SCHEMA_VERSION };
   }
 }

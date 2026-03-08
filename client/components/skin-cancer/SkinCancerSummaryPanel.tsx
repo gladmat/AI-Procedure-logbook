@@ -19,7 +19,10 @@ import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { findPicklistEntry } from "@/lib/procedurePicklist";
-import { resolveSkinCancerDiagnosis } from "@/lib/skinCancerConfig";
+import {
+  getSkinCancerPrimaryHistology,
+  resolveSkinCancerDiagnosis,
+} from "@/lib/skinCancerConfig";
 import type { SkinCancerLesionAssessment } from "@/types/skinCancer";
 
 // ═══════════════════════════════════════════════════════════════
@@ -50,7 +53,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 
 function buildHeadline(assessment: SkinCancerLesionAssessment): string {
   const pathology =
-    assessment.priorHistology?.pathologyCategory ??
+    getSkinCancerPrimaryHistology(assessment)?.pathologyCategory ??
     assessment.clinicalSuspicion;
   const label = pathology ? CATEGORY_LABELS[pathology] ?? pathology : "—";
   const site = assessment.site;
@@ -66,7 +69,7 @@ function buildHeadline(assessment: SkinCancerLesionAssessment): string {
 
 function buildKeyFacts(assessment: SkinCancerLesionAssessment): string[] {
   const facts: string[] = [];
-  const histo = assessment.priorHistology;
+  const histo = getSkinCancerPrimaryHistology(assessment);
 
   if (histo?.melanomaBreslowMm !== undefined) {
     facts.push(`Breslow ${histo.melanomaBreslowMm}mm`);
@@ -92,6 +95,10 @@ function buildKeyFacts(assessment: SkinCancerLesionAssessment): string[] {
     } else {
       facts.push("SLNB pending");
     }
+  }
+  const resolved = resolveSkinCancerDiagnosis(assessment);
+  if (resolved?.reviewNote) {
+    facts.push(resolved.reviewNote);
   }
   return facts;
 }

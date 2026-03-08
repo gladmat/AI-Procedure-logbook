@@ -6,9 +6,15 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { determineSkinCancerEpisodeAction } from "../skinCancerEpisodeHelpers";
+import {
+  buildSkinCancerEpisodeLinkPlan,
+  buildSkinCancerEpisodeUpdatePlan,
+  buildSkinCancerFollowUpAssessment,
+  determineSkinCancerEpisodeAction,
+} from "../skinCancerEpisodeHelpers";
 import { getPathwayBadge } from "../skinCancerConfig";
 import type { Case, DiagnosisGroup } from "../../types/case";
+import type { TreatmentEpisode } from "../../types/episode";
 import type {
   SkinCancerLesionAssessment,
   SkinCancerHistology,
@@ -52,10 +58,30 @@ function makeCase(groups: Partial<DiagnosisGroup>[]): Case {
       procedures: [],
       ...g,
     })),
-    schemaVersion: 3,
+    schemaVersion: 5,
     createdAt: "2026-03-08T00:00:00Z",
     updatedAt: "2026-03-08T00:00:00Z",
   } as Case;
+}
+
+function makeEpisode(
+  overrides: Partial<TreatmentEpisode> = {},
+): TreatmentEpisode {
+  return {
+    id: "episode-1",
+    patientIdentifier: "TEST001",
+    title: "Skin cancer pathway",
+    primaryDiagnosisCode: "95324001",
+    primaryDiagnosisDisplay: "Skin lesion (finding)",
+    type: "cancer_pathway",
+    specialty: "skin_cancer",
+    status: "active",
+    onsetDate: "2026-03-08",
+    ownerId: "owner-1",
+    createdAt: "2026-03-08T00:00:00Z",
+    updatedAt: "2026-03-08T00:00:00Z",
+    ...overrides,
+  };
 }
 
 // ── determineSkinCancerEpisodeAction ──────────────────────────────────────
@@ -221,6 +247,116 @@ describe("determineSkinCancerEpisodeAction", () => {
       },
     ]);
     expect(determineSkinCancerEpisodeAction(c)).toBe("resolve");
+  });
+});
+
+describe("buildSkinCancerEpisodeLinkPlan", () => {
+  it("creates a new cancer pathway episode for pending biopsy lesions", () => {
+    const caseData = makeCase([
+      {
+        skinCancerAssessment: makeAssessment({
+          pathwayStage: "excision_biopsy",
+          site: "Nose",
+          clinicalSuspicion: "bcc",
+        }),
+      },
+    ]);
+
+    const plan = buildSkinCancerEpisodeLinkPlan(
+      caseData,
+      [],
+      "2026-03-09T00:00:00Z",
+      "episode-new",
+    );
+
+    expect(plan?.linkedEpisodeId).toBe("episode-new");
+    expect(plan?.episodeToCreate?.pendingAction).toBe("awaiting_histology");
+  });
+
+  it("reuses an existing active cancer pathway episode when present", () => {
+    const caseData = makeCase([
+      {
+        skinCancerAssessment: makeAssessment({
+          pathwayStage: "excision_biopsy",
+          clinicalSuspicion: "scc",
+        }),
+      },
+    ]);
+
+    const plan = buildSkinCancerEpisodeLinkPlan(
+      caseData,
+      [makeEpisode({ id: "episode-existing" })],
+      "2026-03-09T00:00:00Z",
+      "episode-new",
+    );
+
+    expect(plan?.linkedEpisodeId).toBe("episode-existing");
+    expect(plan?.episodeToCreate).toBeUndefined();
+  });
+});
+
+describe("buildSkinCancerEpisodeUpdatePlan", () => {
+  it("marks the episode resolved when current-procedure margins are clear", () => {
+    const update = buildSkinCancerEpisodeUpdatePlan(
+      makeCase([
+        {
+          skinCancerAssessment: makeAssessment({
+            pathwayStage: "excision_biopsy",
+            currentHistology: makeHistology({
+              pathologyCategory: "bcc",
+              marginStatus: "complete",
+            }),
+          }),
+        },
+      ]),
+      makeEpisode(),
+      "2026-03-09T00:00:00Z",
+    );
+
+    expect(update?.status).toBe("completed");
+    expect(update?.pendingAction).toBeUndefined();
+  });
+
+  it("marks the episode as awaiting re-excision for close margins", () => {
+    const update = buildSkinCancerEpisodeUpdatePlan(
+      makeCase([
+        {
+          skinCancerAssessment: makeAssessment({
+            pathwayStage: "excision_biopsy",
+            currentHistology: makeHistology({
+              pathologyCategory: "bcc",
+              marginStatus: "close",
+            }),
+          }),
+        },
+      ]),
+      makeEpisode(),
+      "2026-03-09T00:00:00Z",
+    );
+
+    expect(update?.pendingAction).toBe("awaiting_reexcision");
+  });
+});
+
+describe("buildSkinCancerFollowUpAssessment", () => {
+  it("promotes current histology into prior histology for follow-up cases", () => {
+    const followUp = buildSkinCancerFollowUpAssessment(
+      makeAssessment({
+        pathwayStage: "excision_biopsy",
+        biopsyType: "excision_biopsy",
+        currentHistology: makeHistology({
+          source: "current_procedure",
+          pathologyCategory: "bcc",
+          marginStatus: "incomplete",
+        }),
+      }),
+    );
+
+    expect(followUp?.pathwayStage).toBe("histology_known");
+    expect(followUp?.currentHistology).toBeUndefined();
+    expect(followUp?.priorHistology?.pathologyCategory).toBe("bcc");
+    expect(followUp?.priorHistology?.source).toBe("own_biopsy");
+    expect(followUp?.biopsyType).toBeUndefined();
   });
 });
 

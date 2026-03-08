@@ -91,6 +91,7 @@ export const SLNBSection = React.memo(function SLNBSection({
   slnb,
   onSLNBChange,
   autoVisible,
+  canConsider,
 }: SLNBSectionProps) {
   const { theme } = useTheme();
 
@@ -196,7 +197,7 @@ export const SLNBSection = React.memo(function SLNBSection({
   );
 
   // Status badge
-  const badge = getStatusBadge(slnb, autoVisible);
+  const badge = getStatusBadge(slnb, autoVisible || canConsider);
   const badgeColor =
     badge.colorKey === "info"
       ? theme.info

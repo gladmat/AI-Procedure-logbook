@@ -268,26 +268,34 @@ export function getMarginRecommendation(
     if (b === undefined) return undefined;
     if (b === 0)
       return {
-        recommendedMm: 5,
+        recommendedText: "5mm",
         guidelineSource: "NCCN",
         guidelineNote: "5mm for melanoma in situ",
+        minimumMm: 5,
+        maximumMm: 5,
       };
     if (b <= 1.0)
       return {
-        recommendedMm: 10,
+        recommendedText: "1cm",
         guidelineSource: "NCCN",
         guidelineNote: "1cm for melanoma \u22641.0mm",
+        minimumMm: 10,
+        maximumMm: 10,
       };
     if (b <= 2.0)
       return {
-        recommendedMm: 10,
+        recommendedText: "1-2cm",
         guidelineSource: "NCCN",
         guidelineNote: "1\u20132cm for melanoma 1.01\u20132.0mm",
+        minimumMm: 10,
+        maximumMm: 20,
       };
     return {
-      recommendedMm: 20,
+      recommendedText: "2cm",
       guidelineSource: "NCCN",
       guidelineNote: "2cm for melanoma >2.0mm",
+      minimumMm: 20,
+      maximumMm: 20,
     };
   }
 
@@ -299,38 +307,47 @@ export function getMarginRecommendation(
       sub === "micronodular"
     ) {
       return {
-        recommendedMm: 5,
+        recommendedText: "5mm",
         guidelineSource: "BAD",
         guidelineNote: "\u22655mm for aggressive BCC subtypes (or Mohs)",
+        minimumMm: 5,
       };
     }
     return {
-      recommendedMm: 4,
+      recommendedText: "3-4mm",
       guidelineSource: "BAD",
       guidelineNote: "3\u20134mm peripheral for standard BCC",
+      minimumMm: 3,
+      maximumMm: 4,
     };
   }
 
   if (pathologyCategory === "scc") {
     if (histology.sccRiskLevel === "high") {
       return {
-        recommendedMm: 6,
+        recommendedText: "6-10mm",
         guidelineSource: "BAD",
         guidelineNote: "6\u201310mm for high-risk SCC",
+        minimumMm: 6,
+        maximumMm: 10,
       };
     }
     return {
-      recommendedMm: 5,
+      recommendedText: "4-6mm",
       guidelineSource: "BAD",
       guidelineNote: "4\u20136mm for low-risk SCC",
+      minimumMm: 4,
+      maximumMm: 6,
     };
   }
 
   if (pathologyCategory === "merkel_cell") {
     return {
-      recommendedMm: 20,
+      recommendedText: "1-2cm",
       guidelineSource: "NCCN",
       guidelineNote: "1\u20132cm to fascia for MCC",
+      minimumMm: 10,
+      maximumMm: 20,
     };
   }
 
@@ -340,59 +357,72 @@ export function getMarginRecommendation(
       Record<RareMalignantSubtype, MarginRecommendation>
     > = {
       dfsp: {
-        recommendedMm: 30,
+        recommendedText: "2-3cm",
         guidelineSource: "NCCN",
         guidelineNote: "2\u20133cm or Mohs for DFSP",
+        minimumMm: 20,
+        maximumMm: 30,
       },
       mac: {
-        recommendedMm: 20,
+        recommendedText: "\u22652cm",
         guidelineSource: "EXPERT",
         guidelineNote: "\u22652cm or Mohs (preferred) for MAC",
+        minimumMm: 20,
       },
       pleomorphic_dermal_sarcoma: {
-        recommendedMm: 20,
+        recommendedText: "\u22652cm",
         guidelineSource: "EXPERT",
         guidelineNote: "\u22652cm to fascia for PDS",
+        minimumMm: 20,
       },
       angiosarcoma: {
-        recommendedMm: 30,
+        recommendedText: "\u22653cm",
         guidelineSource: "EXPERT",
         guidelineNote: "\u22653cm (often positive regardless)",
+        minimumMm: 30,
       },
       empd: {
-        recommendedMm: 50,
+        recommendedText: "\u22655cm",
         guidelineSource: "EXPERT",
         guidelineNote: "\u22655cm without Mohs; Mohs mapping preferred",
+        minimumMm: 50,
       },
       sebaceous_carcinoma: {
-        recommendedMm: 6,
+        recommendedText: "5-6mm",
         guidelineSource: "EXPERT",
         guidelineNote: "5\u20136mm, clear margins critical",
+        minimumMm: 5,
+        maximumMm: 6,
       },
       afx: {
-        recommendedMm: 10,
+        recommendedText: "1-2cm",
         guidelineSource: "EXPERT",
         guidelineNote: "1\u20132cm for AFX",
+        minimumMm: 10,
+        maximumMm: 20,
       },
       porocarcinoma: {
-        recommendedMm: 20,
+        recommendedText: "\u22652cm",
         guidelineSource: "EXPERT",
         guidelineNote: "\u22652cm for porocarcinoma",
+        minimumMm: 20,
       },
       epithelioid_sarcoma: {
-        recommendedMm: 20,
+        recommendedText: "\u22652cm",
         guidelineSource: "EXPERT",
         guidelineNote: "\u22652cm for epithelioid sarcoma",
+        minimumMm: 20,
       },
       cutaneous_leiomyosarcoma: {
-        recommendedMm: 10,
+        recommendedText: "\u22651cm",
         guidelineSource: "EXPERT",
         guidelineNote: "\u22651cm for cutaneous LMS",
+        minimumMm: 10,
       },
     };
     return (
       RARE_MARGINS[rareSubtype] ?? {
-        recommendedMm: null,
+        recommendedText: "No established guideline",
         guidelineSource: "EXPERT" as const,
         guidelineNote: "No established margin guideline \u2014 discuss at MDT",
       }
@@ -457,17 +487,30 @@ export function toQuickMarginStatus(
   return "involved"; // 'incomplete' and 'close' both map to 'involved'
 }
 
+export function getSkinCancerPrimaryHistology(
+  assessment: SkinCancerLesionAssessment | undefined,
+): SkinCancerHistology | undefined {
+  if (!assessment) return undefined;
+  if (assessment.currentHistology?.pathologyCategory) {
+    return assessment.currentHistology;
+  }
+  return assessment.priorHistology ?? assessment.currentHistology;
+}
+
 // ═══════════════════════════════════════════════════════════
 // COMPLETION STATE
 // ═══════════════════════════════════════════════════════════
 
 export function getSkinCancerCompletion(
   assessment: SkinCancerLesionAssessment | undefined,
+  options?: {
+    procedureStatus?: SectionStatus;
+  },
 ): SkinCancerCompletionState {
   if (!assessment) {
     return {
       lesionDetails: "not_started",
-      procedure: "not_started",
+      procedure: options?.procedureStatus ?? "not_started",
       histology: "not_started",
       slnb: "not_applicable",
       finalMargins: "not_started",
@@ -477,30 +520,33 @@ export function getSkinCancerCompletion(
   const lesionDetails: SectionStatus = assessment.clinicalSuspicion
     ? "complete"
     : "not_started";
-  const procedure: SectionStatus = "not_started"; // Determined by parent — procedures array
+  const procedure: SectionStatus = options?.procedureStatus ?? "not_started";
 
   let histology: SectionStatus = "not_started";
   if (assessment.pathwayStage === "excision_biopsy") {
     histology =
-      assessment.currentHistology?.marginStatus &&
-      assessment.currentHistology.marginStatus !== "pending"
+      assessment.currentHistology?.pathologyCategory
         ? "complete"
-        : "pending";
-  } else if (assessment.priorHistology?.pathologyCategory) {
+        : assessment.biopsyType
+          ? "pending"
+          : "not_started";
+  } else if (getSkinCancerPrimaryHistology(assessment)?.pathologyCategory) {
     histology = "complete";
   }
 
   let slnb: SectionStatus = "not_applicable";
-  const histo = assessment.priorHistology || assessment.currentHistology;
+  const histo = getSkinCancerPrimaryHistology(assessment);
   if (histo && shouldOfferSLNB(histo)) {
     slnb = assessment.slnb?.offered !== undefined ? "complete" : "pending";
   }
 
   const finalMargins: SectionStatus =
     assessment.currentHistology?.marginStatus &&
-    assessment.currentHistology.marginStatus !== "pending"
+    assessment.currentHistology.marginStatus !== "pending" &&
+    assessment.currentHistology.marginStatus !== "unknown"
       ? "complete"
-      : assessment.pathwayStage === "excision_biopsy"
+      : assessment.currentHistology?.pathologyCategory ||
+          assessment.pathwayStage === "excision_biopsy"
         ? "pending"
         : "not_started";
 
@@ -522,7 +568,7 @@ export function getPathwayBadge(
   colorKey: "warning" | "success" | "error" | "info";
 } | null {
   if (!assessment?.pathwayStage) return null;
-  const histo = assessment.currentHistology || assessment.priorHistology;
+  const histo = getSkinCancerPrimaryHistology(assessment);
 
   // Excision biopsy with no definitive histology yet
   if (
@@ -713,15 +759,7 @@ export function getSkinCancerProcedureSuggestions(
   assessment: SkinCancerLesionAssessment,
 ): string[] {
   const hn = !!assessment.site && HEAD_NECK_SITES.has(assessment.site);
-  const histo = assessment.priorHistology || assessment.currentHistology;
-
-  // Reconstruction-only: don't suggest excision
-  if (
-    assessment.indication === "delayed_reconstruction" ||
-    assessment.indication === "mohs_reconstruction"
-  ) {
-    return [];
-  }
+  const histo = getSkinCancerPrimaryHistology(assessment);
 
   const suggestions: string[] = [];
 
@@ -827,10 +865,12 @@ export function getSkinCancerProcedureSuggestions(
  * populate the parent DiagnosisGroup on "Accept".
  */
 export interface ResolvedSkinCancerDiagnosis {
-  diagnosisPicklistId: string;
+  diagnosisPicklistId?: string;
   displayName: string;
   snomedCtCode: string;
   snomedCtDisplay: string;
+  requiresManualReview?: boolean;
+  reviewNote?: string;
 }
 
 /**
@@ -847,27 +887,20 @@ export interface ResolvedSkinCancerDiagnosis {
 export function resolveSkinCancerDiagnosis(
   assessment: SkinCancerLesionAssessment,
 ): ResolvedSkinCancerDiagnosis | null {
-  // Biopsy pathway without histology → generic skin lesion
+  const confirmedCurrentHistology =
+    assessment.currentHistology?.pathologyCategory
+      ? assessment.currentHistology
+      : undefined;
+
   if (assessment.pathwayStage === "excision_biopsy") {
-    // If clinical suspicion is set, use it to resolve a better diagnosis
-    const cat = assessment.clinicalSuspicion;
-    if (cat) {
-      const resolved = resolveFromPathologyCategory(cat);
-      if (resolved) return resolved;
+    if (!confirmedCurrentHistology) {
+      return getAwaitingHistologyDiagnosis();
     }
-    // Otherwise, generic excision biopsy
-    return {
-      diagnosisPicklistId: "sc_dx_skin_lesion_excision_biopsy",
-      displayName: "Skin lesion — excision biopsy (awaiting histology)",
-      snomedCtCode: "95324001",
-      snomedCtDisplay: "Skin lesion (finding)",
-    };
+    return resolveFromHistology(confirmedCurrentHistology);
   }
 
-  // Histology known — use histology (prior first, then current)
-  const histo = assessment.priorHistology ?? assessment.currentHistology;
+  const histo = getSkinCancerPrimaryHistology(assessment);
   if (!histo?.pathologyCategory) {
-    // No histology available — use clinical suspicion if available
     const cat = assessment.clinicalSuspicion;
     if (cat) {
       const resolved = resolveFromPathologyCategory(cat);
@@ -876,13 +909,7 @@ export function resolveSkinCancerDiagnosis(
     return null;
   }
 
-  // Map rare_malignant with specific subtypes
-  if (histo.pathologyCategory === "rare_malignant" && histo.rareSubtype) {
-    const rareResolved = resolveRareSubtype(histo.rareSubtype);
-    if (rareResolved) return rareResolved;
-  }
-
-  return resolveFromPathologyCategory(histo.pathologyCategory);
+  return resolveFromHistology(histo);
 }
 
 /** Maps a pathology category to a standard diagnosis picklist entry */
@@ -919,21 +946,17 @@ function resolveFromPathologyCategory(
         snomedCtDisplay: "Merkel cell carcinoma of skin (disorder)",
       };
     case "rare_malignant":
-      // Generic rare malignant — no specific subtype known
       return {
-        diagnosisPicklistId: "sc_dx_skin_lesion_excision_biopsy",
-        displayName: "Skin lesion — excision biopsy (awaiting histology)",
-        snomedCtCode: "95324001",
-        snomedCtDisplay: "Skin lesion (finding)",
+        displayName: "Rare skin malignancy",
+        snomedCtCode: "",
+        snomedCtDisplay: "",
+        requiresManualReview: true,
+        reviewNote:
+          "Rare skin malignancy has no dedicated diagnosis picklist entry. Review diagnosis coding manually.",
       };
     case "benign":
     case "uncertain":
-      return {
-        diagnosisPicklistId: "sc_dx_skin_lesion_excision_biopsy",
-        displayName: "Skin lesion — excision biopsy (awaiting histology)",
-        snomedCtCode: "95324001",
-        snomedCtDisplay: "Skin lesion (finding)",
-      };
+      return getAwaitingHistologyDiagnosis();
     default:
       return null;
   }
@@ -959,7 +982,36 @@ function resolveRareSubtype(
         snomedCtDisplay: "Atypical fibroxanthoma (disorder)",
       };
     default:
-      // Other rare subtypes don't have dedicated picklist entries
-      return null;
+      return {
+        displayName:
+          RARE_TYPE_METADATA[subtype]?.label ?? "Rare skin malignancy",
+        snomedCtCode: RARE_TYPE_METADATA[subtype]?.snomedCt ?? "",
+        snomedCtDisplay:
+          RARE_TYPE_METADATA[subtype]?.label ?? "Rare skin malignancy",
+        requiresManualReview: true,
+        reviewNote: `No dedicated diagnosis picklist entry exists for ${RARE_TYPE_METADATA[subtype]?.label ?? "this rare skin malignancy"}. Review diagnosis coding manually.`,
+      };
   }
+}
+
+function getAwaitingHistologyDiagnosis(): ResolvedSkinCancerDiagnosis {
+  return {
+    diagnosisPicklistId: "sc_dx_skin_lesion_excision_biopsy",
+    displayName: "Skin lesion — excision biopsy (awaiting histology)",
+    snomedCtCode: "95324001",
+    snomedCtDisplay: "Skin lesion (finding)",
+  };
+}
+
+function resolveFromHistology(
+  histology: SkinCancerHistology,
+): ResolvedSkinCancerDiagnosis | null {
+  if (
+    histology.pathologyCategory === "rare_malignant" &&
+    histology.rareSubtype
+  ) {
+    return resolveRareSubtype(histology.rareSubtype);
+  }
+
+  return resolveFromPathologyCategory(histology.pathologyCategory);
 }

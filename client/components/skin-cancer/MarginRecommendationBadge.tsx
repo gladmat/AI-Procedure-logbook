@@ -24,8 +24,8 @@ export const MarginRecommendationBadge = React.memo(
     const { theme } = useTheme();
 
     const title =
-      recommendation.recommendedMm != null
-        ? `Recommended margin: ${recommendation.recommendedMm}mm`
+      recommendation.recommendedText !== "No established guideline"
+        ? `Recommended margin: ${recommendation.recommendedText}`
         : "No established guideline \u2014 discuss at MDT";
 
     return (

@@ -63,15 +63,6 @@ const CATEGORY_OPTIONS: {
   { value: "uncertain", label: "Uncertain" },
 ];
 
-const PRIOR_PROCEDURE_OPTIONS: { value: string; label: string }[] = [
-  { value: "excision_biopsy", label: "Excision biopsy" },
-  { value: "incisional_biopsy", label: "Incisional biopsy" },
-  { value: "shave_biopsy", label: "Shave biopsy" },
-  { value: "punch_biopsy", label: "Punch biopsy" },
-  { value: "incomplete_excision", label: "Incomplete excision" },
-  { value: "mohs", label: "Mohs" },
-];
-
 const BCC_SUBTYPE_OPTIONS: { value: BCCSubtype; label: string }[] = [
   { value: "nodular", label: "Nodular" },
   { value: "superficial", label: "Superficial" },
@@ -180,9 +171,8 @@ interface PathologySectionProps {
   defaultSource?: HistologySource;
   /** When true, hide the Tier 1 category grid (already shown in Diagnosis section) */
   hideTier1?: boolean;
-  /** Prior procedure type from continuing care context (moved here) */
-  priorProcedureType?: string;
-  onPriorProcedureTypeChange?: (value: string | undefined) => void;
+  /** Trigger duplicate + follow-up prefill flow for re-excision */
+  onCreateFollowUp?: () => void;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -199,8 +189,7 @@ export function PathologySection({
   hideCurrentProcedureSource,
   defaultSource,
   hideTier1 = false,
-  priorProcedureType,
-  onPriorProcedureTypeChange,
+  onCreateFollowUp,
 }: PathologySectionProps) {
   const { theme } = useTheme();
   const [showMelanomaExtras, setShowMelanomaExtras] = useState(false);
@@ -312,59 +301,8 @@ export function PathologySection({
   // ── Show Tier 2 ──
   const showTier2 = !isPathwayA && !!activeCategory;
 
-  const handlePriorProcedureSelect = useCallback(
-    (value: string) => {
-      if (!onPriorProcedureTypeChange) return;
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      onPriorProcedureTypeChange(
-        priorProcedureType === value ? undefined : value,
-      );
-    },
-    [priorProcedureType, onPriorProcedureTypeChange],
-  );
-
   return (
     <View style={styles.container}>
-      {/* ── Prior procedure (moved from Context page) ── */}
-      {onPriorProcedureTypeChange ? (
-        <View style={styles.section}>
-          <ThemedText
-            style={[styles.sectionLabel, { color: theme.textSecondary }]}
-          >
-            PRIOR PROCEDURE
-          </ThemedText>
-          <View style={styles.chipRow}>
-            {PRIOR_PROCEDURE_OPTIONS.map((opt) => {
-              const isSelected = priorProcedureType === opt.value;
-              return (
-                <Pressable
-                  key={opt.value}
-                  style={[
-                    styles.chip,
-                    {
-                      backgroundColor: isSelected
-                        ? theme.link
-                        : theme.backgroundTertiary,
-                      borderColor: isSelected ? theme.link : theme.border,
-                    },
-                  ]}
-                  onPress={() => handlePriorProcedureSelect(opt.value)}
-                >
-                  <ThemedText
-                    style={[
-                      styles.chipText,
-                      { color: isSelected ? theme.buttonText : theme.text },
-                    ]}
-                  >
-                    {opt.label}
-                  </ThemedText>
-                </Pressable>
-              );
-            })}
-          </View>
-        </View>
-      ) : null}
-
       {/* ── Tier 1: Pathology Category (hidden when managed externally) ── */}
       {!hideTier1 ? (
         <View style={styles.section}>
@@ -500,9 +438,7 @@ export function PathologySection({
                   style={[styles.marginRecTitle, { color: theme.info }]}
                 >
                   Recommended:{" "}
-                  {marginRec.recommendedMm != null
-                    ? `${marginRec.recommendedMm}mm`
-                    : "See guideline"}{" "}
+                  {marginRec.recommendedText}{" "}
                   ({marginRec.guidelineSource})
                 </ThemedText>
                 {marginRec.guidelineNote ? (
@@ -651,7 +587,9 @@ export function PathologySection({
 
             {/* Re-excision prompt for incomplete/close margins */}
             {(base.marginStatus === "incomplete" ||
-              base.marginStatus === "close") && <ReExcisionPromptCard />}
+              base.marginStatus === "close") && (
+              <ReExcisionPromptCard onCreateFollowUp={onCreateFollowUp} />
+            )}
           </View> : null}
         </>
       ) : null}

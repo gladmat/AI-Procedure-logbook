@@ -454,9 +454,11 @@ export interface SLNBDetails {
 export type GuidelineSource = "NCCN" | "ESMO" | "BAD" | "ANZ" | "EXPERT";
 
 export interface MarginRecommendation {
-  recommendedMm: number | null; // null = "no established guideline"
+  recommendedText: string;
   guidelineSource: GuidelineSource;
   guidelineNote: string;
+  minimumMm?: number;
+  maximumMm?: number;
 }
 
 // --- Histology Data (assessment workflow) ---
@@ -549,25 +551,6 @@ export interface SkinCancerLesionAssessment {
 
   // SLNB
   slnb?: SLNBDetails;
-
-  // Continuing care context
-  priorProcedureType?: string;
-  indication?:
-    | "incomplete_margins"
-    | "wider_excision"
-    | "slnb"
-    | "delayed_reconstruction"
-    | "local_recurrence"
-    | "mohs_reconstruction"
-    | "mdt_decision";
-
-  // MDT referral (legacy — kept for backwards compat)
-  mdtReferral?:
-    | "ssmdt"
-    | "sarcoma_mdt"
-    | "haematology_mdt"
-    | "other"
-    | "none";
 
   // Discussed at MDT (simple toggle)
   discussedAtMdt?: boolean;

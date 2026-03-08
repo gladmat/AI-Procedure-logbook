@@ -47,6 +47,7 @@ import {
   getPathwayBadge,
   toQuickMarginStatus,
   RARE_TYPE_METADATA,
+  getSkinCancerPrimaryHistology,
 } from "@/lib/skinCancerConfig";
 import type {
   LesionInstance,
@@ -130,7 +131,7 @@ function getSkinCancerSummaryParts(lesion: LesionInstance): string[] | null {
   if (!assessment) return null;
   const parts: string[] = [];
   if (lesion.site) parts.push(lesion.site);
-  const histo = assessment.priorHistology || assessment.currentHistology;
+  const histo = getSkinCancerPrimaryHistology(assessment);
   if (histo?.pathologyCategory) {
     if (
       histo.pathologyCategory === "rare_malignant" &&

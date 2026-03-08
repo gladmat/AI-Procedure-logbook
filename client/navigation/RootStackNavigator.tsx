@@ -143,6 +143,7 @@ export type RootStackParamList = {
     specialty?: Specialty;
     caseId?: string;
     duplicateFrom?: Case;
+    skinCancerFollowUpPrefill?: boolean;
     episodeId?: string;
     episodePrefill?: EpisodePrefillData;
   };

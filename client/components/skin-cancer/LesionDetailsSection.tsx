@@ -27,6 +27,7 @@ import { EncryptedImage } from "@/components/EncryptedImage";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { saveEncryptedMedia, deleteEncryptedMedia } from "@/lib/mediaStorage";
+import { getSkinCancerPrimaryHistology } from "@/lib/skinCancerConfig";
 import type {
   SkinCancerLesionAssessment,
   SkinCancerPathologyCategory,
@@ -66,8 +67,7 @@ export function generateLesionCaption(
 ): string {
   const parts: string[] = [];
   const category =
-    assessment.priorHistology?.pathologyCategory ??
-    assessment.currentHistology?.pathologyCategory ??
+    getSkinCancerPrimaryHistology(assessment)?.pathologyCategory ??
     assessment.clinicalSuspicion;
   if (category) parts.push(CATEGORY_LABELS[category]);
   if (assessment.site) parts.push(assessment.site);
