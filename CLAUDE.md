@@ -18,7 +18,8 @@ Key capabilities: multi-specialty case logging, SNOMED CT coded diagnoses and pr
 
 - **Phase 1 COMPLETE** — Form state refactor (useReducer, split context, section components, clear/reset)
 - **Phase 2 COMPLETE** — Charcoal+Amber theme, card-based diagnosis groups, section nav, summary view, reordering, specialty modules
-- **Phase 2.5 COMPLETE** — Skin cancer inline assessment module (14 components, 104 tests, pathway logic, margin CDS, SLNB, procedure suggestions with coverage, collapsible sections)
+- **Phase 2.5 COMPLETE** — Skin cancer inline assessment module hardened after audit (14 components, 116 tests, hidden auto-routed pathways, episode linkage/reuse, biopsy return-to-histology flow, duplicate follow-up prefill, interactive procedure suggestions, margin CDS, SLNB, stable numeric inputs, collapsible sections)
+- **Dashboard v2 COMPLETE** — Surgical triage surface with 5 phases + refinements (filter bar, needs attention carousel with infections, practice pulse metrics, case cards with thumbnails, FAB, quick actions for histology/events/discharge/next episode, standalone histology screen, needs attention full list, case search)
 - **Phase 3 NEXT** — Favourites/recents (partially done), inline validation, keyboard optimisation, haptic audit, duplicate case
 - **Phase 4** — Data migration, export formatting, analytics dashboard
 - **Phase 5** — TestFlight release
@@ -74,16 +75,17 @@ npm run test:watch     # Vitest (watch mode)
 ```
 client/
   App.tsx                        # Root: 7 nested providers → RootStackNavigator
-  screens/                       # 18 screens + 9 onboarding sub-screens
-    DashboardScreen.tsx           # Case list, filtering, statistics, inpatients (2636 lines)
-    CaseDetailScreen.tsx          # Full case view, timeline, flap outcomes (2660 lines)
-    CaseFormScreen.tsx            # Case entry, delegates to section components (774 lines)
-    SettingsScreen.tsx            # Profile, export, legal, app lock config (1558 lines)
+  screens/                       # 21 screens + 9 onboarding sub-screens
+    DashboardScreen.tsx           # Surgical triage surface, 4-zone layout
+    CaseDetailScreen.tsx          # Full case view, timeline, flap outcomes
+    CaseFormScreen.tsx            # Case entry, delegates to section components
+    SettingsScreen.tsx            # Profile, export, legal, app lock config
     EditProfileScreen.tsx         # Profile editing, picture upload, facilities
     OnboardingScreen.tsx          # Multi-step onboarding coordinator
     AuthScreen.tsx                # Login/signup/password reset
     AddCaseScreen.tsx             # Case entry initiation
     AddTimelineEventScreen.tsx    # Post-op events, complications
+    AddHistologyScreen.tsx        # Standalone histology entry for skin cancer cases
     AddOperativeMediaScreen.tsx   # Intraoperative image capture
     MediaManagementScreen.tsx     # Batch media upload
     ManageFacilitiesScreen.tsx    # Facility CRUD
@@ -93,29 +95,34 @@ client/
     SurgicalPreferencesScreen.tsx # Role, supervision, RACS MALT settings
     EpisodeListScreen.tsx         # Treatment episode list
     EpisodeDetailScreen.tsx       # Episode view with linked cases
+    CaseSearchScreen.tsx          # Global case search with filters
+    NeedsAttentionListScreen.tsx  # Full-screen needs attention list with sections
     onboarding/                   # 9 files: Welcome, FeaturePager, Auth, EmailSignup,
                                   #   Categories, Training, Hospital, Privacy, FeatureSlide
-  components/                    # 106 files across 7 subdirectories
+  components/                    # 116+ files across 8 subdirectories
     case-form/                   # 10 section components (see "Case form" below)
+    dashboard/                   # 10 files — dashboard v2 components (see "Dashboard redesign")
     hand-trauma/                 # 15 files — unified hand trauma assessment
     skin-cancer/                 # 14 files — inline skin cancer assessment module
     detail-sheets/               # 7 bottom-sheet detail views
     brand/                       # OpusMark, OpusLogo, index
     onboarding/                  # StepHeader, StepIndicator
-    [50 top-level components]    # Forms, editors, badges, media, layout
+    [50+ top-level components]   # Forms, editors, badges, media, layout
   contexts/
     AuthContext.tsx               # Auth state, profile, facilities, device keys
     CaseFormContext.tsx           # Split: CaseFormStateContext + CaseFormDispatchContext
     AppLockContext.tsx            # PIN/biometric lock state, auto-lock timeout
     MediaCallbackContext.tsx      # Cross-screen media selection callbacks
   hooks/
-    useCaseForm.ts               # useReducer form state, 15+ actions (1697 lines)
+    useCaseForm.ts               # useReducer form state, 15+ actions
     useCaseDraft.ts              # Auto-save drafts (debounced + AppState flush)
     useFavouritesRecents.ts      # Recent/favourite diagnosis-procedure pairs
     useTheme.ts                  # ThemeProvider, system/light/dark, AsyncStorage
     useActiveEpisodes.ts         # Query hook for active episodes
     useScreenOptions.ts          # Shared navigation header options
     useColorScheme.ts            # System colour scheme detection
+    useAttentionItems.ts         # Merges inpatients + infections + episodes for dashboard
+    usePracticePulse.ts          # Computes totalCases/thisWeek/completion metrics
   lib/
     storage.ts                   # AsyncStorage CRUD, encryption, drafts, case index
     procedurePicklist.ts         # 413 procedures across 12 specialties (5443 lines)
@@ -153,8 +160,8 @@ client/
     moduleVisibility.ts          # Conditional module visibility
     flapOutcomeDefaults.ts       # Default flap outcome values
     skinCancerDiagnoses.ts       # Skin cancer picklist
-    skinCancerConfig.ts          # Activation, pathway logic, margins, SLNB, procedure suggestions (965 lines)
-    skinCancerEpisodeHelpers.ts  # Episode auto-creation for pending lesions
+    skinCancerConfig.ts          # Activation, pathway logic, margins, SLNB, diagnosis resolution, procedure suggestions, caseCanAddHistology
+    skinCancerEpisodeHelpers.ts  # Episode link/update plans + follow-up transforms
     diagnosisPicklists/          # 12 specialty picklists + lazy-loaded index
       index.ts                   # getDiagnosesForProcedure, reverse mapping
       {specialty}Diagnoses.ts    # Per-specialty (aesthetics, bodyContouring, breast,
@@ -167,7 +174,7 @@ client/
     episode.ts                   # Treatment episode, status machine, encounter classes
     infection.ts                 # Infection episodes, syndromes, microbiology
     wound.ts                     # Wound assessment, TIME, dressings (40+ products)
-    skinCancer.ts                # Assessment, histology, pathology, SLNB, lesion photos (647 lines)
+    skinCancer.ts                # Assessment, histology, pathology, SLNB, lesion photos (629 lines)
     skinCancerStagingConfigs.ts  # Breslow, Clark, TNM configs
     surgicalPreferences.ts       # Training programme, role defaults, protocols
   constants/
@@ -240,7 +247,7 @@ Each Case has `diagnosisGroups: DiagnosisGroup[]` instead of flat diagnosis/proc
 
 ### Case form sections
 
-`CaseFormScreen.tsx` (774 lines) delegates to section components via `CaseFormContext`:
+`CaseFormScreen.tsx` (778 lines) delegates to section components via `CaseFormContext`:
 
 1. `PatientInfoSection` — Demographics, ASA, smoking, BMI
 2. `AdmissionSection` — Urgency, stay type, discharge outcome
@@ -433,39 +440,70 @@ Tests: `client/lib/__tests__/handTraumaDiagnosis.test.ts`, `handTraumaMapping.te
 
 ### Skin cancer assessment module
 
-Inline assessment flow (mirrors hand trauma pattern — no modal, no separate screen) with 14 components in `client/components/skin-cancer/`, config logic in `client/lib/skinCancerConfig.ts` (965 lines), and types in `client/types/skinCancer.ts` (647 lines).
+Inline assessment flow (mirrors hand trauma pattern — no modal, no separate screen) with 14 components in `client/components/skin-cancer/`, config logic in `client/lib/skinCancerConfig.ts` (1058 lines), and types in `client/types/skinCancer.ts` (629 lines).
 
-**Two pathways:**
-- **Excision biopsy** — lesion not yet diagnosed. Biopsy method chips (Excision / Incisional / Shave / Punch), conditional fields (peripheral margin for excision, punch size for punch), then accept mapping.
-- **Histology known** — prior biopsy result available. Tier 2 pathology details, excision method (WLE / Mohs), margin inputs (hidden for Mohs), SLNB assessment, site-specific reconstruction, then accept mapping.
+**Current runtime model: 2 pathways only**
+- **Excision biopsy** — lesion not yet pathologically confirmed. Surgeon records biopsy method (Excision / Incisional / Shave / Punch) and can later return to enter definitive specimen histology in the same pathway.
+- **Histology known** — prior biopsy or previously confirmed pathology is already available. Prior histology is captured separately from the current procedure histology.
+
+There is **no continuing-care pathway** in the product model. Re-excision / follow-up uses duplicate-and-prefill within the same two-pathway system.
 
 **Progressive disclosure sections (numbered, collapsible SectionWrapper cards):**
-1. **Diagnosis** — 7 Tier 1 pathology category chips (BCC, SCC, Melanoma, MCC, Other malig., Benign, Uncertain). Auto-collapses after selection. Switching categories resets all pathway-specific fields but preserves location data.
-2. **Pathology** — Tier 2 type-specific fields per category: BCC subtypes (9), SCC differentiation/risk/depth, Melanoma subtype/Breslow/ulceration/Clark/TNM staging, MCC, rare subtypes (26 via `RareTypeSubtypePicker`). Excision method + margin fields. Collapsible, default collapsed.
-3. **Lesion details** — Site picker (grouped HEAD & NECK / TRUNK / UPPER LIMB / LOWER LIMB), laterality (auto-midline for midline sites), clinical dimensions (length × width mm), lesion photo capture with auto-captioning.
-4. **Margin recommendation badge** — Guideline-based CDS (NCCN melanoma Breslow tiers, BAD BCC/SCC, EXPERT rare types — e.g. DFSP 30mm, EMPD 50mm).
-5. **SLNB** — Auto-offered for melanoma >0.8mm Breslow OR ulcerated, Merkel cell, high-risk SCC. Manual toggle for marginal cases. Site, nodes retrieved, result (pending → negative / positive ITC/micro/macro).
-6. **Excision** — Method chips (WLE / Mohs), peripheral margin input. Margin fields hidden when Mohs selected. In biopsy pathway shows biopsy method + punch size instead.
-7. **Summary & Procedures** — Headline + key facts + suggested procedure IDs. Accept mapping → collapses all sections except summary, populates parent's procedure list. "Edit mapping" pill to revoke acceptance and re-expand.
+1. **Diagnosis** — 7 Tier 1 pathology category chips (BCC, SCC, Melanoma, MCC, Other malig., Benign, Uncertain). Switching categories preserves lesion location/photos but clears incompatible downstream state. Pathway stage is internal only: `Uncertain` auto-routes to `excision_biopsy`; all other categories auto-route to `histology_known`.
+2. **Melanoma quick Breslow** — compact mirrored Breslow thickness row shown before prior histology in the melanoma / histology-known flow so margin and SLNB guidance updates earlier.
+3. **Prior histology** — shown for `histology_known`. Captures prior biopsy pathology, subtype detail, excision method, margin status, and exposes re-excision follow-up CTA when margins are incomplete / close.
+4. **Lesion details** — grouped HEAD & NECK / TRUNK / UPPER LIMB / LOWER LIMB site picker, laterality (auto-midline for midline sites), clinical dimensions, encrypted lesion photo capture with auto-captioning.
+5. **Margin recommendation badge** — guideline CDS using text/range output (`5mm`, `3-4mm`, `1-2cm`, `>=2cm`) instead of collapsing ranges to a single numeric mm value.
+6. **SLNB** — auto-offered for melanoma >0.8mm or ulcerated and for Merkel cell; can also be manually considered for selected high-risk SCC / rare malignant patterns. Existing saved SLNB data keeps the section visible.
+7. **Biopsy / Excision** — biopsy pathway shows biopsy method + conditional fields; histology-known pathway uses simplified current-procedure excision planning (`HistologySection` simplified mode) with compact excision + peripheral margin layout.
+8. **Specimen histology** — full structured `currentHistology` editor used as the return-to-update flow for final pathology and margin status. In biopsy-path initial logging it stays hidden until the case is reopened or current histology already exists.
+9. **MDT toggle** — simple `discussedAtMdt` flag for the histology-known pathway.
+10. **Summary & Procedures** — interactive suggested procedures with only the primary procedure preselected by default, coding details, accept/edit mapping, and completion summary.
 
-**Procedure suggestions** (`getSkinCancerProcedureSuggestions`): Excision type varies by category + head/neck vs body site. Coverage procedures suggested alongside excision: FTSG, STSG, local flaps (advancement, rotation, bilobed, rhomboid for H&N; rotation, transposition for body). Site-specific recon for lip/ear/eyelid. SLNB procedure when performed.
+**Histology precedence rules:**
+- `currentHistology` is the authoritative post-procedure record when present.
+- Summaries, CDS, badges, and lesion captions use `getSkinCancerPrimaryHistology()` to prefer current definitive histology over prior context.
+- `priorHistology` remains contextual history rather than the primary displayed result once current histology exists.
 
-**Diagnosis resolution** (inline flow): `resolveSkinCancerDiagnosis()` maps pathology category + rare subtype → SNOMED diagnosis picklist entry. 9 cancer types with verified SNOMED CT codes in `skinCancerDiagnoses.ts`.
+**Procedure suggestions** (`getSkinCancerProcedureSuggestions`): category + site aware. Head/neck vs body excision variants, coverage suggestions (FTSG, STSG, local flaps) across broader excision flows, site-specific reconstruction for lip/ear/eyelid, and SLNB procedure inclusion when performed.
+
+**Diagnosis resolution** (`resolveSkinCancerDiagnosis`):**
+- biopsy-stage cases remain coded as generic "awaiting histology" until `currentHistology.pathologyCategory` is actually confirmed
+- confirmed histology resolves to the correct picklist diagnosis where supported
+- rare malignant subtypes without a dedicated picklist entry return explicit manual-review metadata instead of silently falling back to "awaiting histology"
+- `client/lib/migration.ts` reconciles legacy single-lesion skin-cancer diagnoses on load
+
+**Follow-up / episode behaviour:**
+- `useCaseForm.ts` now creates or reuses `cancer_pathway` episodes for pending biopsy lesions, persists the linked `episodeId`, recomputes `episodeSequence`, and syncs pending action (`awaiting_histology`, `awaiting_reexcision`, resolve)
+- re-excision CTA launches a duplicate-and-prefill follow-up case seeded from the current in-form skin-cancer state
+- `skinCancerEpisodeHelpers.ts` contains pure helpers for pending lesion collection, episode link/update plans, and follow-up assessment transforms
+
+**Input handling:**
+- skin-cancer numeric fields use a shared draft-preserving `SkinCancerNumericInput` so decimal entry (`0.`, `.5`, deletes, quick edits) does not get rewritten mid-typing by parse-on-change logic
 
 **Key components:**
-- `SkinCancerAssessment` — main orchestrator, section collapse state management, scroll position stabilization via `scrollViewRef` + `scrollPositionRef`, LayoutAnimation transitions
-- `PathologySection` — full Tier 2 pathology editor (BCC/SCC/Melanoma/MCC/Rare subfields, excision method, margins, margin status)
-- `HistologySection` — simplified mode for Excision card (WLE/Mohs + margin only) or full mode (source, category, subfields, margins, lab details)
-- `SkinCancerSummaryPanel` — accept/edit mapping UI with procedure chip selection
-- `SectionWrapper` — shared collapsible card with controlled/uncontrolled modes, compact collapsed state, amber Feather icons
-- `MarginRecommendationBadge` — guideline-based margin recommendation display
-- `SLNBSection` — sentinel lymph node assessment with site/result/date capture
+- `SkinCancerAssessment` — main orchestrator, controlled collapse state, scroll stabilization, internal pathway auto-routing, summary wiring, completion summary
+- `PathologySection` — prior histology editor for `histology_known`
+- `HistologySection` — simplified excision planner or full structured current histology editor
+- `SkinCancerSummaryPanel` — accept/edit mapping UI with diagnosis resolution details and rare-type review notes
+- `MarginRecommendationBadge` — text/range-based margin CDS
+- `SLNBSection` — sentinel lymph node assessment
+- `SkinCancerNumericInput` — draft-preserving numeric field wrapper for Breslow, margins, lesion size, and other decimal inputs
+- `ReExcisionPromptCard` — launches duplicate follow-up flow instead of showing obsolete continuing-care instructions
 
-**Multi-lesion session:** 3-6 skin lesion excisions from one operative session as discrete entries within a single diagnosis group. `MultiLesionEditor` component with collapsible row-per-lesion UI and per-lesion pathway badges.
+**Multi-lesion session:** 3-6 skin lesion excisions from one operative session as discrete entries within a single diagnosis group. `MultiLesionEditor` uses per-lesion `SkinCancerAssessment` rows and pathway badges.
 
-**Episode helpers:** `skinCancerEpisodeHelpers.ts` — auto-collect pending lesions, determine re-excision action (resolve / reexcision / none).
+Tests: `client/lib/__tests__/skinCancerConfig.test.ts` (87 tests), `skinCancerPhase4.test.ts` (11 tests), `skinCancerPhase5.test.ts` (18 tests). Total focused skin-cancer suite: **116 tests**.
 
-Tests: `client/lib/__tests__/skinCancerConfig.test.ts` (80 tests — margins, SLNB, pathway, procedures, diagnosis resolution), `skinCancerPhase4.test.ts` (11 tests), `skinCancerPhase5.test.ts` (13 tests).
+### Standalone histology entry
+
+`AddHistologyScreen` provides a focused return-to-histology flow for adding or updating pathology results on existing cases. Accessed via dashboard quick action buttons or CaseDetailScreen.
+
+- **Skin cancer cases:** Shows `HistologySection` in pending/full mode with `hideSource` (always own procedure) and `hideHeader`. Saves `currentHistology` back to the appropriate diagnosis group or lesion instance.
+- **General cases:** Shows a simple `histologyResult` text input for non-skin-cancer cases with `diagnosisCertainty === "clinical"`.
+- **`caseCanAddHistology()`** — broad check in `skinCancerConfig.ts`: returns true for any case with a `skinCancerAssessment` on any group or lesion, or `diagnosisCertainty === "clinical"`.
+- **`getFirstHistologyTarget()`** — two-pass targeting: first prioritises excision-biopsy groups awaiting histology, then falls back to any group with skin cancer assessment.
+- **`caseNeedsHistology()`** — narrow check used by dashboard attention filter: only returns true when histology is actually pending (no `currentHistology` set yet).
 
 ### Free flap / orthoplastic documentation
 
@@ -489,25 +527,9 @@ Serial wound assessment as timeline event type (`wound_assessment`). `WoundAsses
 
 Serial case tracking via `treatment_episodes` table. Episode status machine: planned → active ⇄ on_hold → completed. 7 episode types, 4 encounter classes, 9 pending actions. Types in `client/types/episode.ts`. UI: `EpisodeListScreen`, `EpisodeDetailScreen`, `InlineEpisodeCreator`, `EpisodeLinkBanner`.
 
-### Current inpatients dashboard
+### Dashboard v2 (COMPLETE)
 
-Cases with `stayType === "inpatient"` and no `dischargeDate` shown in collapsible "Current Inpatients" section with day count and quick-discharge button.
-
-### Dashboard redesign (v2)
-
-The dashboard is being rebuilt as a **surgical triage surface** — density-first, optimised for 5–10 second scan sessions. Implementation follows 5 sequential phases, each documented in a standalone markdown file in the project knowledge base.
-
-#### Phase documents (authoritative — implement exactly as specified)
-
-| Phase | File | Scope |
-|-------|------|-------|
-| 1 | `dashboard-phase1-skeleton-filter-fab.md` | SpecialtyFilterBar, AddCaseFAB, header refactor, layout skeleton |
-| 2 | `dashboard-phase2-case-cards.md` | CaseCard with photo thumbnails, RecentCasesList, DashboardEmptyState |
-| 3 | `dashboard-phase3-practice-pulse.md` | PracticePulseRow, PulseMetricCard, usePracticePulse hook |
-| 4 | `dashboard-phase4-needs-attention.md` | NeedsAttentionCarousel, AttentionCard, useAttentionItems hook |
-| 5 | `dashboard-phase5-polish-audit.md` | Dark/light mode audit, animations, haptics, performance, cleanup |
-
-**Read the relevant phase document before starting work.** Each contains exact component specs, TypeScript interfaces, pixel measurements, and testing checklists.
+The dashboard is a **surgical triage surface** — density-first, optimised for 5–10 second scan sessions. All 5 phases + post-launch refinements complete.
 
 #### Locked architectural decisions
 
@@ -527,18 +549,19 @@ The dashboard is being rebuilt as a **surgical triage surface** — density-firs
 ```
 client/components/dashboard/
   SpecialtyFilterBar.tsx       # Zone 0 — sticky horizontal chip bar
-  NeedsAttentionCarousel.tsx   # Zone 1 — horizontal FlatList of AttentionCards
-  AttentionCard.tsx             # Zone 1 — inpatient or episode card
+  NeedsAttentionCarousel.tsx   # Zone 1 — horizontal FlatList of AttentionCards + "View All"
+  AttentionCard.tsx             # Zone 1 — inpatient, infection, or episode card with quick actions
   PracticePulseRow.tsx          # Zone 2 — 3-metric row container
-  PulseMetricCard.tsx           # Zone 2 — individual metric card
-  RecentCasesList.tsx           # Zone 3 — mapped CaseCard list
-  CaseCard.tsx                  # Zone 3 — individual case row with thumbnail
+  PulseMetricCard.tsx           # Zone 2 — individual metric card (totalCases/thisWeek/completion)
+  InfoButton.tsx                # Zone 2 — info popover for metric explanations
+  RecentCasesList.tsx           # Zone 3 — mapped CaseCard list with quick actions
+  CaseCard.tsx                  # Zone 3 — individual case row with thumbnail + action buttons
   AddCaseFAB.tsx                # Floating action button overlay
   DashboardEmptyState.tsx       # Zero-case state
 
 client/hooks/
-  usePracticePulse.ts           # Computes thisMonth/thisWeek/completion metrics
-  useAttentionItems.ts          # Merges inpatients + episodes, sorted by urgency
+  usePracticePulse.ts           # Computes totalCases/thisWeek/completion metrics
+  useAttentionItems.ts          # Merges inpatients + infections + episodes, sorted by urgency
 ```
 
 #### DashboardScreen layout structure
@@ -581,26 +604,39 @@ client/hooks/
 - Never add notification badges or red dot indicators anywhere on the dashboard.
 - Never duplicate inpatient display — the old Current Inpatients section is REPLACED by Zone 1, not supplemented.
 
+#### Quick actions on cards
+
+Both AttentionCard and CaseCard expose quick action buttons:
+- **Histology** — amber chip with file-text icon, shown for skin cancer cases (`caseCanAddHistology`). Navigates to `AddHistologyScreen`.
+- **+ Event** — secondary chip, navigates to `AddTimelineEventScreen` for the case.
+- **Discharge** — amber chip on inpatient cards, opens discharge modal with date picker.
+- **Next Episode** — amber filled button on episode/linked cases, navigates to `AddCase` with episode pre-linked.
+
+#### Needs Attention sources
+
+Three item types merged by `useAttentionItems`:
+1. **Inpatients** — cases with `stayType === "inpatient"` and no `dischargeDate`, sorted by post-op day descending
+2. **Active infections** — cases with `infectionOverlay?.status === "active"` (deduplicated against inpatients)
+3. **Active episodes** — episodes with `status === "active"` or `"on_hold"`, with linked case data
+
+"View All" button (shown when 3+ items) navigates to `NeedsAttentionListScreen` — full-screen SectionList grouped by type with search.
+
+#### Practice Pulse metrics
+
+Three metrics via `usePracticePulse`:
+1. **Total Cases** — lifetime case count
+2. **This Week** — 7-dot sparkline (Mon–Sun) showing cases per day
+3. **Completion** — percentage of last 90 days cases with documented outcome
+
 #### Specialty filter effects
 
 When a specialty is selected (non-null), ALL zones filter simultaneously:
-- Zone 1: only inpatients/episodes matching that specialty
+- Zone 1: only inpatients/episodes/infections matching that specialty
 - Zone 2: all three metrics recalculate for that specialty
 - Zone 3: only cases matching that specialty; section header becomes "{Specialty} Cases"
 - FAB: pre-selects that specialty in the new case form
 
 When "All" is selected (null), all zones show unfiltered aggregate data.
-
-#### Incremental implementation
-
-Phases are designed so the dashboard improves incrementally. After each phase, the app must build, run, and be fully functional:
-- After Phase 1: new layout skeleton with old content + filter + FAB
-- After Phase 2: new case cards replace old ones
-- After Phase 3: metrics row appears
-- After Phase 4: attention carousel replaces old inpatient section
-- After Phase 5: polish pass, old components removed
-
-**Do not jump ahead.** Complete each phase, test against its checklist, then proceed. Each phase doc has a "Testing Checklist" section — use it.
 
 ### App lock
 

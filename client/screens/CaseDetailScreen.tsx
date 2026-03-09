@@ -72,6 +72,11 @@ import { LoadingState } from "@/components/LoadingState";
 import { EmptyState } from "@/components/EmptyState";
 import { SectionHeader } from "@/components/SectionHeader";
 import { SkinCancerDetailSummary } from "@/components/skin-cancer/SkinCancerDetailSummary";
+import {
+  caseNeedsHistology,
+  caseCanAddHistology,
+  getFirstHistologyTarget,
+} from "@/lib/skinCancerConfig";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 
 type RouteParams = RouteProp<RootStackParamList, "CaseDetail">;
@@ -1218,6 +1223,55 @@ export default function CaseDetailScreen() {
               );
             })}
           </>
+        ) : null}
+
+        {caseCanAddHistology(caseData) ? (
+          <Pressable
+            onPress={() => {
+              const target = getFirstHistologyTarget(caseData);
+              if (target) {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                navigation.navigate("AddHistology", {
+                  caseId: caseData.id,
+                  diagnosisGroupIndex: target.groupIndex,
+                  lesionIndex: target.lesionIndex,
+                });
+              }
+            }}
+            style={[
+              styles.histologyButton,
+              {
+                backgroundColor: theme.warning + "15",
+                borderColor: theme.warning + "40",
+              },
+            ]}
+          >
+            <Feather name="file-text" size={18} color={theme.warning} />
+            <View style={styles.histologyButtonText}>
+              <ThemedText
+                style={[styles.histologyButtonTitle, { color: theme.warning }]}
+              >
+                {caseNeedsHistology(caseData)
+                  ? "Add Histology Results"
+                  : "Update Histology"}
+              </ThemedText>
+              <ThemedText
+                style={[
+                  styles.histologyButtonSubtitle,
+                  { color: theme.textSecondary },
+                ]}
+              >
+                {caseNeedsHistology(caseData)
+                  ? "Pathology results are pending for this case"
+                  : "Add or update histology for this case"}
+              </ThemedText>
+            </View>
+            <Feather
+              name="chevron-right"
+              size={18}
+              color={theme.textTertiary}
+            />
+          </Pressable>
         ) : null}
 
         {hasComorbidities ? (
@@ -2681,5 +2735,25 @@ const styles = StyleSheet.create({
   mediaCaptionText: {
     fontSize: 11,
     color: "#fff",
+  },
+  histologyButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: Spacing.md,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    marginBottom: Spacing.lg,
+    gap: Spacing.md,
+  },
+  histologyButtonText: {
+    flex: 1,
+  },
+  histologyButtonTitle: {
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  histologyButtonSubtitle: {
+    fontSize: 13,
+    marginTop: 2,
   },
 });

@@ -25,6 +25,9 @@ import EpisodeDetailScreen from "@/screens/EpisodeDetailScreen";
 import EpisodeListScreen from "@/screens/EpisodeListScreen";
 import ManageFacilitiesScreen from "@/screens/ManageFacilitiesScreen";
 import PersonalisationScreen from "@/screens/PersonalisationScreen";
+import CaseSearchScreen from "@/screens/CaseSearchScreen";
+import AddHistologyScreen from "@/screens/AddHistologyScreen";
+import NeedsAttentionListScreen from "@/screens/NeedsAttentionListScreen";
 import SurgicalPreferencesScreen from "@/screens/SurgicalPreferencesScreen";
 import { WelcomeScreen } from "@/screens/onboarding/WelcomeScreen";
 import { FeaturePager } from "@/screens/onboarding/FeaturePager";
@@ -178,6 +181,13 @@ export type RootStackParamList = {
   ManageFacilities: undefined;
   SurgicalPreferences: undefined;
   Personalisation: undefined;
+  CaseSearch: undefined;
+  NeedsAttentionList: undefined;
+  AddHistology: {
+    caseId: string;
+    diagnosisGroupIndex: number;
+    lesionIndex?: number;
+  };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -708,6 +718,28 @@ export default function RootStackNavigator() {
             component={PersonalisationScreen}
             options={{
               headerTitle: "Personalisation",
+            }}
+          />
+          <Stack.Screen
+            name="CaseSearch"
+            component={CaseSearchScreen}
+            options={{
+              headerTitle: "Search Cases",
+              presentation: "modal",
+            }}
+          />
+          <Stack.Screen
+            name="NeedsAttentionList"
+            component={NeedsAttentionListScreen}
+            options={{
+              headerTitle: "Needs Attention",
+            }}
+          />
+          <Stack.Screen
+            name="AddHistology"
+            component={AddHistologyScreen}
+            options={{
+              headerTitle: "Add Histology",
             }}
           />
         </>

@@ -235,6 +235,12 @@ export function DiagnosisGroupEditor({
     ClinicalSuspicion | undefined
   >(group.clinicalSuspicion);
 
+  // Histology pending toggle — for non-skin-cancer specialties
+  const [histologyPending, setHistologyPending] = useState<boolean>(
+    group.diagnosisCertainty === "clinical" &&
+      !isExcisionBiopsyDiagnosis(group.diagnosisPicklistId),
+  );
+
   // Skin cancer assessment module state
   const [skinCancerAssessment, setSkinCancerAssessment] = useState<
     SkinCancerLesionAssessment | undefined
@@ -390,7 +396,8 @@ export function DiagnosisGroupEditor({
       procedures,
       isMultiLesion,
       lesionInstances: isMultiLesion ? lesionInstances : undefined,
-      diagnosisCertainty: isExcBiopsy ? "clinical" : undefined,
+      diagnosisCertainty:
+        isExcBiopsy || histologyPending ? "clinical" : undefined,
       clinicalSuspicion: isExcBiopsy ? clinicalSuspicion : undefined,
       skinCancerAssessment:
         isSkinCancerInlineFlow ||
@@ -412,6 +419,7 @@ export function DiagnosisGroupEditor({
     isMultiLesion,
     lesionInstances,
     clinicalSuspicion,
+    histologyPending,
     skinCancerAssessment,
   ]);
 
@@ -2513,6 +2521,59 @@ export function DiagnosisGroupEditor({
               })()
             ) : null}
           </>
+        ) : null}
+
+        {/* Histology pending toggle — non-skin-cancer specialties only */}
+        {hasSelectedHandCaseType &&
+        !isSkinCancerModule &&
+        !isExcisionBiopsyDiagnosis(selectedDiagnosis?.id) ? (
+          <View style={{ marginTop: Spacing.md, marginBottom: Spacing.sm }}>
+            <Pressable
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setHistologyPending(!histologyPending);
+              }}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 10,
+                paddingVertical: 10,
+                paddingHorizontal: 14,
+                borderRadius: BorderRadius.sm,
+                borderWidth: 1,
+                borderColor: histologyPending ? theme.warning : theme.border,
+                backgroundColor: histologyPending
+                  ? theme.warning + "10"
+                  : theme.backgroundDefault,
+              }}
+            >
+              <Feather
+                name={histologyPending ? "check-square" : "square"}
+                size={18}
+                color={histologyPending ? theme.warning : theme.textSecondary}
+              />
+              <View style={{ flex: 1 }}>
+                <ThemedText
+                  style={{
+                    fontSize: 14,
+                    fontWeight: "600",
+                    color: histologyPending ? theme.warning : theme.text,
+                  }}
+                >
+                  Histology pending
+                </ThemedText>
+                <ThemedText
+                  style={{
+                    fontSize: 12,
+                    color: theme.textSecondary,
+                    marginTop: 2,
+                  }}
+                >
+                  Specimen sent for pathology — add results later
+                </ThemedText>
+              </View>
+            </Pressable>
+          </View>
         ) : null}
 
         {/* Hub-and-spoke: Clinical Details module rows */}

@@ -176,6 +176,8 @@ interface HistologySectionProps {
   hideCurrentProcedureSource?: boolean;
   /** When true, the card header + collapse wrapper are hidden (content always visible) */
   hideHeader?: boolean;
+  /** When true, the histology source section is completely hidden */
+  hideSource?: boolean;
   /**
    * Initial-logging mode: shows only excision method (WLE / Mohs)
    * and planned margin inputs. Hides source, pathology category,
@@ -223,6 +225,7 @@ export const HistologySection = React.memo(function HistologySection({
   lockedPathology = false,
   hideCurrentProcedureSource = false,
   hideHeader = false,
+  hideSource = false,
   simplifiedMode = false,
 }: HistologySectionProps) {
   const { theme } = useTheme();
@@ -416,8 +419,8 @@ export const HistologySection = React.memo(function HistologySection({
 
   const contentInner = (
     <>
-          {/* 1. Histology Source — hidden in simplified mode */}
-          {!simplifiedMode ? (
+          {/* 1. Histology Source — hidden in simplified mode or when hideSource */}
+          {!simplifiedMode && !hideSource ? (
           <View style={styles.section}>
             <ThemedText
               style={[styles.sectionLabel, { color: theme.textSecondary }]}

@@ -1609,6 +1609,30 @@ export interface DiagnosisGroup {
   woundAssessment?: WoundAssessment;
   /** Skin cancer assessment workflow data (single-lesion mode) */
   skinCancerAssessment?: SkinCancerLesionAssessment;
+  /** General histology result for non-skin-cancer cases (enchondroma, neuroma, etc.) */
+  histologyResult?: GeneralHistologyResult;
+}
+
+export type GeneralHistologyCategory =
+  | "benign"
+  | "malignant"
+  | "uncertain"
+  | "other";
+
+export type HistologyMarginStatus =
+  | "complete"
+  | "close"
+  | "incomplete"
+  | "pending"
+  | "not_applicable";
+
+export interface GeneralHistologyResult {
+  category: GeneralHistologyCategory;
+  report: string;
+  marginStatus?: HistologyMarginStatus;
+  snomedCode?: string;
+  snomedDisplay?: string;
+  reviewedAt?: string;
 }
 
 export interface SuggestionAcceptanceEntry {

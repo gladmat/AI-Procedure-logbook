@@ -44,10 +44,12 @@ type RouteParams = RouteProp<RootStackParamList, "AddTimelineEvent">;
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const EVENT_TYPES: { value: TimelineEventType; label: string }[] =
-  Object.entries(TIMELINE_EVENT_TYPE_LABELS).map(([value, label]) => ({
-    value: value as TimelineEventType,
-    label,
-  }));
+  Object.entries(TIMELINE_EVENT_TYPE_LABELS)
+    .filter(([value]) => value !== "discharge_photo")
+    .map(([value, label]) => ({
+      value: value as TimelineEventType,
+      label,
+    }));
 
 const FOLLOW_UP_INTERVALS: { value: FollowUpInterval; label: string }[] =
   Object.entries(FOLLOW_UP_INTERVAL_LABELS).map(([value, label]) => ({
