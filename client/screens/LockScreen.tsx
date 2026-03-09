@@ -1,5 +1,13 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { View, Text, StyleSheet, Pressable, Animated } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Pressable,
+  Animated,
+  AppState,
+  InteractionManager,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@/components/FeatherIcon";
 import * as Haptics from "expo-haptics";
@@ -27,6 +35,8 @@ export default function LockScreen() {
   const [biometricType, setBiometricType] = useState<string>("Biometrics");
   const [biometricHint, setBiometricHint] = useState<string | null>(null);
   const shakeAnim = useRef(new Animated.Value(0)).current;
+  const autoPromptedRef = useRef(false);
+  const promptTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleBiometricUnlock = useCallback(async () => {
     if (isProcessing) return;
@@ -37,6 +47,28 @@ export default function LockScreen() {
     }
     setIsProcessing(false);
   }, [isProcessing, unlockWithBiometrics]);
+
+  const runBiometricAutoPrompt = useCallback(() => {
+    if (
+      autoPromptedRef.current ||
+      isProcessing ||
+      !showBiometricButton ||
+      AppState.currentState !== "active"
+    ) {
+      return;
+    }
+
+    autoPromptedRef.current = true;
+    InteractionManager.runAfterInteractions(() => {
+      if (promptTimeoutRef.current) {
+        clearTimeout(promptTimeoutRef.current);
+      }
+      promptTimeoutRef.current = setTimeout(() => {
+        promptTimeoutRef.current = null;
+        void handleBiometricUnlock();
+      }, 180);
+    });
+  }, [handleBiometricUnlock, isProcessing, showBiometricButton]);
 
   useEffect(() => {
     const checkBiometrics = async () => {
@@ -71,14 +103,39 @@ export default function LockScreen() {
           );
           return;
         }
-
-        // Auto-trigger biometric on mount
-        handleBiometricUnlock();
       }
     };
     checkBiometrics();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    runBiometricAutoPrompt();
+  }, [runBiometricAutoPrompt]);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", (nextState) => {
+      if (nextState === "background") {
+        autoPromptedRef.current = false;
+        if (promptTimeoutRef.current) {
+          clearTimeout(promptTimeoutRef.current);
+          promptTimeoutRef.current = null;
+        }
+        return;
+      }
+
+      if (nextState === "active") {
+        runBiometricAutoPrompt();
+      }
+    });
+
+    return () => {
+      subscription.remove();
+      if (promptTimeoutRef.current) {
+        clearTimeout(promptTimeoutRef.current);
+        promptTimeoutRef.current = null;
+      }
+    };
+  }, [runBiometricAutoPrompt]);
 
   const triggerShake = useCallback(() => {
     Animated.sequence([

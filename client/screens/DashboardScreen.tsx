@@ -508,7 +508,7 @@ export default function DashboardScreen() {
                   <MediaCapture
                     attachments={dischargePhotos}
                     onAttachmentsChange={setDischargePhotos}
-                    maxAttachments={4}
+                    maxAttachments={15}
                     mediaType="photo"
                     eventType="discharge_photo"
                   />

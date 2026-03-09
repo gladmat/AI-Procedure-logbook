@@ -18,9 +18,7 @@ import * as ImagePicker from "expo-image-picker";
 import * as Haptics from "expo-haptics";
 import { v4 as uuidv4 } from "uuid";
 import {
-  saveEncryptedMedia,
-  consumePendingBase64,
-  setPendingBase64,
+  saveEncryptedMediaFromUri,
   isEncryptedMediaUri,
 } from "@/lib/mediaStorage";
 import { EncryptedImage } from "@/components/EncryptedImage";
@@ -125,15 +123,11 @@ export default function AddOperativeMediaScreen() {
         mediaTypes: ["images"],
         quality: 0.7,
         allowsEditing: false,
-        base64: true,
       });
       if (!result.canceled && result.assets.length > 0) {
         const asset = result.assets[0];
         if (!asset) return;
         const mime = asset.mimeType || "image/jpeg";
-        if (asset.base64) {
-          setPendingBase64(asset.base64, mime);
-        }
         setCurrentUri(asset.uri);
         setCurrentMimeType(mime);
       }
@@ -147,15 +141,11 @@ export default function AddOperativeMediaScreen() {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ["images"],
         quality: 0.7,
-        base64: true,
       });
       if (!result.canceled && result.assets.length > 0) {
         const asset = result.assets[0];
         if (!asset) return;
         const mime = asset.mimeType || "image/jpeg";
-        if (asset.base64) {
-          setPendingBase64(asset.base64, mime);
-        }
         setCurrentUri(asset.uri);
         setCurrentMimeType(mime);
       }
@@ -170,15 +160,16 @@ export default function AddOperativeMediaScreen() {
 
     try {
       let finalUri = currentUri;
-      const pending = consumePendingBase64();
-      if (pending) {
-        finalUri = await saveEncryptedMedia(
-          pending.base64,
-          pending.mimeType,
-          currentUri,
-        );
-      } else if (editMode && isEncryptedMediaUri(currentUri)) {
+      let finalMimeType = currentMimeType;
+      if (editMode && isEncryptedMediaUri(currentUri)) {
         finalUri = currentUri;
+      } else {
+        const savedMedia = await saveEncryptedMediaFromUri(
+          currentUri,
+          currentMimeType,
+        );
+        finalUri = savedMedia.localUri;
+        finalMimeType = savedMedia.mimeType;
       }
 
       // Build timestamp from selected date
@@ -191,7 +182,7 @@ export default function AddOperativeMediaScreen() {
       const mediaData = {
         id: editMode && existingMediaId ? existingMediaId : uuidv4(),
         localUri: finalUri,
-        mimeType: currentMimeType,
+        mimeType: finalMimeType,
         mediaType: selectedType,
         caption: captionInput.trim() || undefined,
         timestamp,

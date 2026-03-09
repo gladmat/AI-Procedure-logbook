@@ -66,6 +66,11 @@ import { findDiagnosisById } from "@/lib/diagnosisPicklists";
 import { UserProfile } from "@/lib/auth";
 import { syncFlapOutcomeToServer } from "@/lib/outcomeSync";
 import { withDefaultFlapOutcome } from "@/lib/flapOutcomeDefaults";
+import {
+  restoreDraftOperativeMedia,
+  restoreDraftProcedureDate,
+  serializeDraftOperativeMedia,
+} from "@/lib/caseDraftFields";
 
 // ─── Default Donor Vessels ──────────────────────────────────────────────────
 
@@ -495,6 +500,7 @@ export function formStateToDraft(
     outcome: state.outcome || undefined,
     mortalityClassification: state.mortalityClassification || undefined,
     discussedAtMDM: state.discussedAtMDM || undefined,
+    operativeMedia: serializeDraftOperativeMedia(state.operativeMedia),
     clinicalDetails: {
       ...state.clinicalDetails,
       ...(state.recipientSiteRegion
@@ -533,12 +539,9 @@ export function draftToFormState(
 
   if (draft.patientIdentifier != null)
     result.patientIdentifier = draft.patientIdentifier;
-  if (draft.procedureDate != null) {
-    const parsedParts = draft.procedureDate.split("-").map(Number);
-    const draftYear = parsedParts[0];
-    if (draftYear && draftYear >= 2000 && draftYear <= 2100) {
-      result.procedureDate = draft.procedureDate;
-    }
+  const restoredProcedureDate = restoreDraftProcedureDate(draft.procedureDate);
+  if (restoredProcedureDate) {
+    result.procedureDate = restoredProcedureDate;
   }
   result.facility = draft.facility ?? primaryFacility;
   if (draft.procedureType != null) result.procedureType = draft.procedureType;
@@ -581,6 +584,7 @@ export function draftToFormState(
   result.outcome = draft.outcome ?? "";
   result.mortalityClassification = draft.mortalityClassification ?? "";
   result.discussedAtMDM = draft.discussedAtMDM ?? false;
+  result.operativeMedia = restoreDraftOperativeMedia(draft.operativeMedia);
   result.episodeId = draft.episodeId ?? "";
   result.episodeSequence = draft.episodeSequence ?? 0;
   result.encounterClass = (draft.encounterClass as EncounterClass) ?? "";

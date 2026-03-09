@@ -59,6 +59,7 @@ import { caseHasFlapProcedure } from "@/lib/moduleVisibility";
 import { resolveFacilityName } from "@/lib/facilities";
 import { useFavouritesRecents } from "@/hooks/useFavouritesRecents";
 import type { TreatmentEpisode } from "@/types/episode";
+import { HeaderTitleText } from "@/components/HeaderTitleText";
 
 type RouteParams = RouteProp<RootStackParamList, "CaseForm">;
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -69,6 +70,12 @@ const REQUIRED_FIELDS = [
   "facility",
   "diagnosisGroups",
 ];
+
+const SPECIALTY_HEADER_LABELS: Partial<Record<string, string>> = {
+  orthoplastic: "Orthoplastic Case",
+  peripheral_nerve: "Peripheral Nerve Case",
+  cleft_craniofacial: "Cleft & Craniofacial Case",
+};
 
 // ── SectionWrapper ────────────────────────────────────────────────────────
 
@@ -417,31 +424,38 @@ export default function CaseFormScreen() {
     setReviewMode(false);
   }, []);
 
+  const headerTitle = reviewMode
+    ? "Review Case"
+    : form.isEditMode
+      ? "Edit Case"
+      : (SPECIALTY_HEADER_LABELS[form.specialty] ??
+        `${SPECIALTY_LABELS[form.specialty]} Case`);
+
   // ── Navigation header ─────────────────────────────────────────────────
 
   useEffect(() => {
     navigation.setOptions({
-      headerTitle: reviewMode
-        ? "Review Case"
-        : form.isEditMode
-          ? "Edit Case"
-          : `${SPECIALTY_LABELS[form.specialty]} Case`,
+      headerTitle: () => (
+        <HeaderTitleText
+          title={headerTitle}
+          reserveWidth={210}
+          fontSize={15}
+        />
+      ),
       headerRight: () => (
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 16 }}>
+        <View style={styles.headerActions}>
           <Pressable
             onPress={showOverflowMenu}
             hitSlop={8}
-            style={{ padding: 6 }}
+            style={styles.headerIconButton}
+            accessibilityRole="button"
+            accessibilityLabel={form.isEditMode ? "Revert changes" : "Clear form"}
           >
-            <ThemedText
-              style={{
-                color: theme.textSecondary,
-                fontWeight: "500",
-                fontSize: 15,
-              }}
-            >
-              {form.isEditMode ? "Revert" : "Clear"}
-            </ThemedText>
+            <Feather
+              name="more-horizontal"
+              size={20}
+              color={theme.textSecondary}
+            />
           </Pressable>
           <Pressable
             onPress={() =>
@@ -470,7 +484,9 @@ export default function CaseFormScreen() {
             }
             disabled={form.state.saving}
             hitSlop={8}
-            style={{ padding: 6 }}
+            style={styles.headerSaveButton}
+            accessibilityRole="button"
+            accessibilityLabel="Save case"
           >
             <ThemedText
               style={{
@@ -491,9 +507,9 @@ export default function CaseFormScreen() {
     theme.link,
     theme.textSecondary,
     theme.textTertiary,
+    headerTitle,
     navigation,
     showOverflowMenu,
-    reviewMode,
   ]);
 
   // ── Section nav press ─────────────────────────────────────────────────
@@ -649,7 +665,7 @@ export default function CaseFormScreen() {
                 onMediaChange={(media) =>
                   form.dispatch(setField("operativeMedia", media))
                 }
-                maxItems={20}
+                maxItems={15}
               />
             </SectionWrapper>
 
@@ -742,6 +758,23 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     zIndex: 10,
+  },
+  headerActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.xs,
+  },
+  headerIconButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerSaveButton: {
+    minHeight: 40,
+    justifyContent: "center",
+    paddingHorizontal: Spacing.xs,
   },
   buttonContainer: {
     marginTop: Spacing.xl,

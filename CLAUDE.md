@@ -85,11 +85,11 @@ client/
     AddCaseScreen.tsx             # Case entry initiation
     AddTimelineEventScreen.tsx    # Post-op events, complications
     AddHistologyScreen.tsx        # Standalone histology entry for skin cancer cases
-    AddOperativeMediaScreen.tsx   # Intraoperative image capture
-    MediaManagementScreen.tsx     # Batch media upload
+    AddOperativeMediaScreen.tsx   # Intraoperative image capture + metadata annotation
+    MediaManagementScreen.tsx     # Batch media upload/editor with save-discard guard
     ManageFacilitiesScreen.tsx    # Facility CRUD
     SetupAppLockScreen.tsx        # PIN setup, biometric config
-    LockScreen.tsx                # PIN/biometric unlock
+    LockScreen.tsx                # PIN/biometric unlock with auto Face ID prompt on resume
     PersonalisationScreen.tsx     # Theme, keyboard prefs, export format
     SurgicalPreferencesScreen.tsx # Role, supervision, RACS MALT settings
     EpisodeListScreen.tsx         # Treatment episode list
@@ -112,8 +112,8 @@ client/
   contexts/
     AuthContext.tsx               # Auth state, profile, facilities, device keys
     CaseFormContext.tsx           # Split: CaseFormStateContext + CaseFormDispatchContext
-    AppLockContext.tsx            # PIN/biometric lock state, auto-lock timeout
-    MediaCallbackContext.tsx      # Cross-screen media selection callbacks
+    AppLockContext.tsx            # PIN/biometric lock state, auto-lock timeout, re-lock handling
+    MediaCallbackContext.tsx      # Attachment callbacks for MediaManagement + generic callbacks
   hooks/
     useCaseForm.ts               # useReducer form state, 15+ actions (1703 lines)
     useCaseDraft.ts              # Auto-save drafts (debounced + AppState flush)
@@ -142,7 +142,10 @@ client/
     snomedCodeMigration.ts       # Old→new SNOMED code mapping
     migration.ts                 # Auto-migrate old case formats on load
     migrationValidator.ts        # Migration validation
-    mediaStorage.ts              # Encrypted media AsyncStorage CRUD
+    mediaStorage.ts              # Encrypted media AsyncStorage CRUD + URI-based import + thumbnails
+    dateValues.ts                # Safe YYYY-MM-DD parsing/formatting (local-noon semantics)
+    caseDraftFields.ts           # Draft procedure-date/media restore helpers
+    operativeMedia.ts            # MediaAttachment <> OperativeMediaItem mapping helpers
     melanomaStaging.ts           # Breslow/Clark/TNM staging rules
     procedureConfig.ts           # Specialty-specific form field config
     export.ts                    # Case export orchestration
@@ -258,14 +261,14 @@ Each Case has `diagnosisGroups: DiagnosisGroup[]` instead of flat diagnosis/proc
 1. `PatientInfoSection` — Demographics, ASA, smoking, BMI
 2. `AdmissionSection` — Urgency, stay type, discharge outcome
 3. `DiagnosisProcedureSection` — Diagnosis groups, specialty-specific UI
-4. `TreatmentContextSection` — Episode linking, PROM
+4. `TreatmentContextSection` — Reconstruction timing, prior radio/chemo, transfusion context for flap cases
 5. `PatientFactorsSection` — Risk factors, comorbidities
 6. `OperativeFactorsSection` — Surgery timing, team, anaesthesia
 7. `OutcomesSection` — Complications, Clavien-Dindo, outcomes
 
 Plus: `CollapsibleFormSection` (card wrapper), `SectionNavBar` (horizontal pill navigation), `CaseSummaryView` (read-only review gating save with validation).
 
-Header right shows "Clear"/"Revert" text button (gray, confirmation dialog) + "Save" (amber). SectionNavBar has no bottom border.
+Header uses a truncating centered title. Header right is compact: overflow icon for Clear/Revert + Save button. `CollapsibleFormSection` now measures closed content safely so default-collapsed sections like Treatment Context open reliably on first tap. SectionNavBar has no bottom border.
 
 ### Edit mode
 
@@ -667,7 +670,7 @@ Specialty counts come from the canonical `getCaseSpecialties()` helper and the `
 
 ### App lock
 
-PIN and biometric unlock via `AppLockContext`. Setup in `SetupAppLockScreen`, unlock in `LockScreen`. PIN hashed in `appLockStorage.ts`, biometric detection in `biometrics.ts`. Auto-lock timeout management.
+PIN and biometric unlock via `AppLockContext`. Setup in `SetupAppLockScreen`, unlock in `LockScreen`. PIN hashed in `appLockStorage.ts`, biometric detection in `biometrics.ts`. Auto-lock timeout management. When biometrics are enabled, `LockScreen` auto-triggers Face ID / Touch ID each time the app resumes into a locked state, while keeping PIN/manual biometric fallback after cancel.
 
 ### Favourites & recents
 
@@ -906,8 +909,11 @@ Touch targets: minimum 48px (`Spacing.touchTarget`)
 ### Encrypted media
 - Photos encrypted with XChaCha20-Poly1305, stored in AsyncStorage (`@surgical_logbook_media_[uuid]`)
 - `encrypted-media:[uuid]` URI scheme; `EncryptedImage` component handles async decryption with in-memory cache
+- URI-based import path: picker returns file URIs, `mediaStorage.ts` converts/encrypts them on save/import instead of requesting base64 up front
+- Thumbnail generation/backfill stored separately (`@surgical_logbook_thumb_[uuid]`) and used for dashboard/case/media strip previews
+- `MediaManagementScreen` stages edits locally, prompts Save/Discard on dirty exit, deletes removed media on save, and cleans up newly imported media on discard
+- User-facing batch media cap standardised to 15 across case/discharge/media-management surfaces
 - Cleanup on case/photo delete
-- Pending base64 pattern for navigation flow (`setPendingBase64`/`consumePendingBase64`)
 
 ### Server security
 - Security headers: HSTS (1yr), CSP, X-Frame-Options DENY, strict Referrer-Policy
@@ -984,7 +990,7 @@ Configured in both `tsconfig.json` and `babel.config.js` (module-resolver plugin
 
 ## Testing
 
-- **Framework:** Vitest 4.0.18, **214 tests** across 10 files
-- **Client tests:** `client/lib/__tests__/` — handTraumaDiagnosis, handTraumaMapping, handTraumaUx, skinCancerConfig (87 tests), skinCancerPhase4 (11 tests), skinCancerPhase5 (18 tests), dashboardSelectors (7 tests), handInfection (42 tests)
+- **Framework:** Vitest 4.0.18, **227 tests** across 13 files
+- **Client tests:** `client/lib/__tests__/` — handTraumaDiagnosis, handTraumaMapping, handTraumaUx, skinCancerConfig (87 tests), skinCancerPhase4 (11 tests), skinCancerPhase5 (18 tests), dashboardSelectors (7 tests), handInfection (42 tests), dateValues (3 tests), operativeMedia (2 tests), caseDraftPersistence (1 test)
 - **Server tests:** `server/__tests__/` — auth, validation
 - **Run:** `npm run test` (once) or `npm run test:watch` (watch mode)

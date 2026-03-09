@@ -18,7 +18,6 @@ import {
 } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { HeaderButton } from "@react-navigation/elements";
 import { Feather } from "@/components/FeatherIcon";
 import * as Haptics from "expo-haptics";
 import { ThemedText } from "@/components/ThemedText";
@@ -79,6 +78,7 @@ import { LoadingState } from "@/components/LoadingState";
 import { EmptyState } from "@/components/EmptyState";
 import { SectionHeader } from "@/components/SectionHeader";
 import { SkinCancerDetailSummary } from "@/components/skin-cancer/SkinCancerDetailSummary";
+import { HeaderTitleText } from "@/components/HeaderTitleText";
 import {
   caseNeedsHistology,
   caseCanAddHistology,
@@ -242,16 +242,27 @@ export default function CaseDetailScreen() {
 
   useEffect(() => {
     navigation.setOptions({
-      headerTitle: caseData?.patientIdentifier || "Case Details",
+      headerTitle: () => (
+        <HeaderTitleText
+          title={caseData?.patientIdentifier || "Case Details"}
+          reserveWidth={164}
+          fontSize={15}
+        />
+      ),
       headerRight: () =>
         caseData ? (
-          <HeaderButton onPress={showHeaderMenu}>
+          <Pressable
+            onPress={showHeaderMenu}
+            style={styles.headerMenuButton}
+            accessibilityRole="button"
+            accessibilityLabel="Case actions"
+          >
             <Feather
               name="more-horizontal"
               size={22}
               color={theme.textSecondary}
             />
-          </HeaderButton>
+          </Pressable>
         ) : null,
     });
   }, [caseData, navigation, theme, showHeaderMenu]);
@@ -2274,6 +2285,13 @@ export default function CaseDetailScreen() {
 }
 
 const styles = StyleSheet.create({
+  headerMenuButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   container: {
     flex: 1,
   },

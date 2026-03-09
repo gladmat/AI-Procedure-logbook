@@ -31,9 +31,9 @@ export const CollapsibleFormSection = React.memo(
   }: CollapsibleFormSectionProps) {
     const { theme } = useTheme();
     const [expanded, setExpanded] = useState(defaultExpanded);
+    const [isMeasured, setIsMeasured] = useState(defaultExpanded);
     const expandedRef = useRef(defaultExpanded);
     const contentHeightRef = useRef(0);
-    const measuredRef = useRef(false);
     const animatedHeight = useSharedValue(defaultExpanded ? -1 : 0);
 
     const toggle = useCallback(() => {
@@ -42,13 +42,13 @@ export const CollapsibleFormSection = React.memo(
       setExpanded(nextExpanded);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
-      if (measuredRef.current) {
+      if (isMeasured) {
         animatedHeight.value = withTiming(
           nextExpanded ? contentHeightRef.current : 0,
           { duration: 250 },
         );
       }
-    }, [animatedHeight]);
+    }, [animatedHeight, isMeasured]);
 
     const contentStyle = useAnimatedStyle(() => {
       if (animatedHeight.value === -1) {
@@ -65,15 +65,15 @@ export const CollapsibleFormSection = React.memo(
         const h = e.nativeEvent.layout.height;
         if (h > 0) {
           contentHeightRef.current = h;
-          if (!measuredRef.current) {
+          if (!isMeasured) {
             animatedHeight.value = expandedRef.current ? h : 0;
-            measuredRef.current = true;
+            setIsMeasured(true);
           } else if (expandedRef.current) {
             animatedHeight.value = h;
           }
         }
       },
-      [animatedHeight],
+      [animatedHeight, isMeasured],
     );
 
     const badgeColor = filledCount > 0 ? theme.link : theme.textTertiary;
@@ -124,8 +124,19 @@ export const CollapsibleFormSection = React.memo(
           </View>
         </Pressable>
 
+        {!isMeasured && !expanded ? (
+          <View
+            pointerEvents="none"
+            style={styles.hiddenMeasurementContainer}
+          >
+            <View onLayout={handleLayout}>{children}</View>
+          </View>
+        ) : null}
+
         <Animated.View style={contentStyle}>
-          <View onLayout={handleLayout}>{children}</View>
+          {isMeasured || expanded ? (
+            <View onLayout={handleLayout}>{children}</View>
+          ) : null}
         </Animated.View>
       </View>
     );
@@ -168,5 +179,11 @@ const styles = StyleSheet.create({
   badgeText: {
     fontSize: 12,
     fontWeight: "600",
+  },
+  hiddenMeasurementContainer: {
+    position: "absolute",
+    opacity: 0,
+    left: 0,
+    right: 0,
   },
 });

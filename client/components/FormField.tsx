@@ -17,6 +17,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { BorderRadius, Spacing } from "@/constants/theme";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { parseIsoDateValue, toIsoDateValue } from "@/lib/dateValues";
 
 interface FormFieldProps {
   label: string;
@@ -560,21 +561,6 @@ interface DatePickerFieldProps {
   clearable?: boolean;
   minimumDate?: Date;
   maximumDate?: Date;
-}
-
-function parseIsoDateValue(dateStr?: string): Date | null {
-  if (!dateStr) return null;
-  const [year, month, day] = dateStr.split("-").map(Number);
-  if (!year || !month || !day) return null;
-  if (year < 2000 || year > 2100) return null;
-  return new Date(year, month - 1, day, 12, 0, 0, 0);
-}
-
-function toIsoDateValue(date: Date): string {
-  const year = date.getFullYear();
-  const month = `${date.getMonth() + 1}`.padStart(2, "0");
-  const day = `${date.getDate()}`.padStart(2, "0");
-  return `${year}-${month}-${day}`;
 }
 
 function clampDate(

@@ -13,7 +13,11 @@ import { Feather } from "@/components/FeatherIcon";
 import * as ImagePicker from "expo-image-picker";
 import * as Haptics from "expo-haptics";
 import { v4 as uuidv4 } from "uuid";
-import { saveEncryptedMedia, deleteEncryptedMedia } from "@/lib/mediaStorage";
+import {
+  deleteEncryptedMedia,
+  importMediaAssets,
+  saveEncryptedMediaFromUri,
+} from "@/lib/mediaStorage";
 import { EncryptedImage } from "@/components/EncryptedImage";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
@@ -37,7 +41,7 @@ interface MediaCaptureProps {
 export function MediaCapture({
   attachments,
   onAttachmentsChange,
-  maxAttachments = 10,
+  maxAttachments = 15,
   mediaType = "all",
   eventType,
 }: MediaCaptureProps) {
@@ -98,20 +102,19 @@ export function MediaCapture({
         mediaTypes: ["images"],
         quality: 0.7,
         allowsEditing: false,
-        base64: true,
       });
 
       if (!result.canceled && result.assets.length > 0) {
         const asset = result.assets[0];
         if (!asset) return;
-        const mime = asset.mimeType || "image/jpeg";
-        const encryptedUri = asset.base64
-          ? await saveEncryptedMedia(asset.base64, mime, asset.uri)
-          : asset.uri;
+        const savedMedia = await saveEncryptedMediaFromUri(
+          asset.uri,
+          asset.mimeType || "image/jpeg",
+        );
         const newAttachment: MediaAttachment = {
           id: uuidv4(),
-          localUri: encryptedUri,
-          mimeType: mime,
+          localUri: savedMedia.localUri,
+          mimeType: savedMedia.mimeType,
           createdAt: new Date().toISOString(),
         };
         onAttachmentsChange([...attachments, newAttachment]);
@@ -131,24 +134,20 @@ export function MediaCapture({
         quality: 0.7,
         allowsMultipleSelection: true,
         selectionLimit: maxAttachments - attachments.length,
-        base64: true,
       });
 
       if (!result.canceled && result.assets.length > 0) {
-        const encryptedAttachments = await Promise.all(
-          result.assets.map(async (asset) => {
-            const mime = asset.mimeType || "image/jpeg";
-            return {
-              id: uuidv4(),
-              localUri: asset.base64
-                ? await saveEncryptedMedia(asset.base64, mime, asset.uri)
-                : asset.uri,
-              mimeType: mime,
-              createdAt: new Date().toISOString(),
-            };
-          }),
-        );
-        onAttachmentsChange([...attachments, ...encryptedAttachments]);
+        const startingAttachments = [...attachments];
+        const importedAttachments: MediaAttachment[] = [];
+        await importMediaAssets(result.assets, (savedAsset) => {
+          importedAttachments.push({
+            id: uuidv4(),
+            localUri: savedAsset.localUri,
+            mimeType: savedAsset.mimeType,
+            createdAt: new Date().toISOString(),
+          });
+          onAttachmentsChange([...startingAttachments, ...importedAttachments]);
+        });
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
     } catch (error) {
@@ -198,6 +197,7 @@ export function MediaCapture({
                 uri={attachment.localUri}
                 style={styles.previewImage}
                 resizeMode="cover"
+                thumbnail
               />
               <Pressable
                 onPress={() => handleRemove(attachment.id)}

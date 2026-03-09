@@ -13,7 +13,7 @@ import { Feather } from "@/components/FeatherIcon";
 import * as ImagePicker from "expo-image-picker";
 import * as Haptics from "expo-haptics";
 import { v4 as uuidv4 } from "uuid";
-import { saveEncryptedMedia, setPendingBase64 } from "@/lib/mediaStorage";
+import { importMediaAssets } from "@/lib/mediaStorage";
 import { EncryptedImage } from "@/components/EncryptedImage";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
@@ -23,41 +23,13 @@ import {
   OperativeMediaType,
   OPERATIVE_MEDIA_TYPE_LABELS,
   MediaAttachment,
-  MediaCategory,
 } from "@/types/case";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { useMediaCallback } from "@/contexts/MediaCallbackContext";
-
-// Mapping between OperativeMediaType and MediaCategory
-const MEDIA_TYPE_TO_CATEGORY: Record<OperativeMediaType, MediaCategory> = {
-  preoperative_photo: "preop",
-  intraoperative_photo: "immediate_postop", // closest match for intraop photos
-  xray: "xray",
-  ct_scan: "ct_angiogram",
-  mri: "ultrasound", // closest imaging category
-  diagram: "other",
-  document: "other",
-  other: "other",
-};
-
-const CATEGORY_TO_MEDIA_TYPE: Partial<
-  Record<MediaCategory, OperativeMediaType>
-> = {
-  preop: "preoperative_photo",
-  flap_harvest: "intraoperative_photo",
-  flap_inset: "intraoperative_photo",
-  anastomosis: "intraoperative_photo",
-  closure: "intraoperative_photo",
-  immediate_postop: "intraoperative_photo",
-  flap_planning: "preoperative_photo",
-  xray: "xray",
-  preop_xray: "xray",
-  intraop_xray: "xray",
-  postop_xray: "xray",
-  ct_angiogram: "ct_scan",
-  ultrasound: "other",
-  other: "other",
-};
+import {
+  operativeMediaToAttachments,
+  attachmentsToOperativeMedia,
+} from "@/lib/operativeMedia";
 
 interface OperativeMediaSectionProps {
   media: OperativeMediaItem[];
@@ -68,50 +40,22 @@ interface OperativeMediaSectionProps {
 export function OperativeMediaSection({
   media,
   onMediaChange,
-  maxItems = 20,
+  maxItems = 15,
 }: OperativeMediaSectionProps) {
   const { theme } = useTheme();
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { registerGenericCallback } = useMediaCallback();
+  const { registerCallback, registerGenericCallback } = useMediaCallback();
   const [cameraPermission, requestCameraPermission] =
     ImagePicker.useCameraPermissions();
   const canAddMore = media.length < maxItems;
 
   const handleManageMedia = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    // Convert OperativeMediaItem[] to MediaAttachment[] for MediaManagementScreen
-    const attachments: MediaAttachment[] = media.map((item) => ({
-      id: item.id,
-      localUri: item.localUri,
-      thumbnailUri: item.thumbnailUri,
-      mimeType: item.mimeType,
-      caption: item.caption,
-      createdAt: item.createdAt,
-      category: MEDIA_TYPE_TO_CATEGORY[item.mediaType],
-      timestamp: item.timestamp,
-    }));
-
-    const callbackId = registerGenericCallback(
-      (updatedAttachments: MediaAttachment[]) => {
-        // Convert back from MediaAttachment[] to OperativeMediaItem[]
-        const updatedMedia: OperativeMediaItem[] = updatedAttachments.map(
-          (att) => ({
-            id: att.id,
-            localUri: att.localUri,
-            thumbnailUri: att.thumbnailUri,
-            mimeType: att.mimeType,
-            caption: att.caption,
-            createdAt: att.createdAt,
-            timestamp: att.timestamp,
-            mediaType:
-              (att.category && CATEGORY_TO_MEDIA_TYPE[att.category]) ||
-              "intraoperative_photo",
-          }),
-        );
-        onMediaChange(updatedMedia);
-      },
-    );
+    const attachments: MediaAttachment[] = operativeMediaToAttachments(media);
+    const callbackId = registerCallback((updatedAttachments) => {
+      onMediaChange(attachmentsToOperativeMedia(updatedAttachments));
+    });
 
     navigation.navigate("MediaManagement", {
       existingAttachments: attachments,
@@ -170,16 +114,12 @@ export function OperativeMediaSection({
         mediaTypes: ["images"],
         quality: 0.7,
         allowsEditing: false,
-        base64: true,
       });
 
       if (!result.canceled && result.assets.length > 0) {
         const asset = result.assets[0];
         if (!asset) return;
         const mime = asset.mimeType || "image/jpeg";
-        if (asset.base64) {
-          setPendingBase64(asset.base64, mime);
-        }
         navigateToAddMedia(asset.uri, mime);
       }
     } catch (error: any) {
@@ -201,7 +141,6 @@ export function OperativeMediaSection({
         quality: 0.7,
         allowsMultipleSelection: true,
         selectionLimit: remaining,
-        base64: true,
       });
 
       if (!result.canceled && result.assets.length > 0) {
@@ -209,27 +148,20 @@ export function OperativeMediaSection({
           const asset = result.assets[0];
           if (!asset) return;
           const mime = asset.mimeType || "image/jpeg";
-          if (asset.base64) {
-            setPendingBase64(asset.base64, mime);
-          }
           navigateToAddMedia(asset.uri, mime);
         } else {
-          const encryptedItems = await Promise.all(
-            result.assets.map(async (asset) => {
-              const mime = asset.mimeType || "image/jpeg";
-              const encryptedUri = asset.base64
-                ? await saveEncryptedMedia(asset.base64, mime, asset.uri)
-                : asset.uri;
-              return {
-                id: uuidv4(),
-                localUri: encryptedUri,
-                mimeType: asset.mimeType || "image/jpeg",
-                mediaType: "intraoperative_photo" as const,
-                createdAt: new Date().toISOString(),
-              };
-            }),
-          );
-          onMediaChange([...media, ...encryptedItems]);
+          const startingMedia = [...media];
+          const importedItems: OperativeMediaItem[] = [];
+          await importMediaAssets(result.assets, (savedAsset) => {
+            importedItems.push({
+              id: uuidv4(),
+              localUri: savedAsset.localUri,
+              mimeType: savedAsset.mimeType,
+              mediaType: "intraoperative_photo",
+              createdAt: new Date().toISOString(),
+            });
+            onMediaChange([...startingMedia, ...importedItems]);
+          });
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         }
       }
@@ -333,6 +265,7 @@ export function OperativeMediaSection({
                 uri={item.localUri}
                 style={styles.previewImage}
                 resizeMode="cover"
+                thumbnail
                 onError={() =>
                   console.warn("Media file missing:", item.localUri)
                 }

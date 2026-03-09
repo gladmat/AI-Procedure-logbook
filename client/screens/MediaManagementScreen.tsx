@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import {
   View,
   StyleSheet,
@@ -17,7 +17,11 @@ import { Feather } from "@/components/FeatherIcon";
 import * as ImagePicker from "expo-image-picker";
 import * as Haptics from "expo-haptics";
 import { v4 as uuidv4 } from "uuid";
-import { saveEncryptedMedia, deleteEncryptedMedia } from "@/lib/mediaStorage";
+import {
+  deleteMultipleEncryptedMedia,
+  importMediaAssets,
+  saveEncryptedMediaFromUri,
+} from "@/lib/mediaStorage";
 import { EncryptedImage } from "@/components/EncryptedImage";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
@@ -52,12 +56,16 @@ export default function MediaManagementScreen() {
   const {
     existingAttachments,
     callbackId,
-    maxAttachments = 20,
+    maxAttachments = 15,
     eventType,
   } = route.params || {};
+  const initialAttachments = useMemo(
+    () => existingAttachments || [],
+    [existingAttachments],
+  );
 
   const [attachments, setAttachments] = useState<MediaAttachment[]>(
-    existingAttachments || [],
+    initialAttachments,
   );
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [lastSelectedCategory, setLastSelectedCategory] =
@@ -65,7 +73,39 @@ export default function MediaManagementScreen() {
   const [saving, setSaving] = useState(false);
   const [cameraPermission, requestCameraPermission] =
     ImagePicker.useCameraPermissions();
+  const allowCloseRef = useRef(false);
+  const addedUrisRef = useRef<Set<string>>(new Set());
   const canAddMore = attachments.length < maxAttachments;
+  const isDirty = useMemo(
+    () => JSON.stringify(attachments) !== JSON.stringify(initialAttachments),
+    [attachments, initialAttachments],
+  );
+
+  const discardPendingNewMedia = useCallback(async () => {
+    const newUris = Array.from(addedUrisRef.current);
+    if (newUris.length > 0) {
+      await deleteMultipleEncryptedMedia(newUris);
+      addedUrisRef.current.clear();
+    }
+  }, []);
+
+  const finalizeRemovedMedia = useCallback(async () => {
+    const currentIds = new Set(attachments.map((attachment) => attachment.id));
+    const currentUris = new Set(
+      attachments.map((attachment) => attachment.localUri),
+    );
+    const removedExistingUris = initialAttachments
+      .filter((attachment) => !currentIds.has(attachment.id))
+      .map((attachment) => attachment.localUri);
+    const removedNewUris = Array.from(addedUrisRef.current).filter(
+      (uri) => !currentUris.has(uri),
+    );
+    const urisToDelete = [...removedExistingUris, ...removedNewUris];
+
+    if (urisToDelete.length > 0) {
+      await deleteMultipleEncryptedMedia(urisToDelete);
+    }
+  }, [attachments, initialAttachments]);
 
   const handleCameraCapture = async () => {
     if (!cameraPermission?.granted) {
@@ -103,22 +143,22 @@ export default function MediaManagementScreen() {
         mediaTypes: ["images"],
         quality: 0.7,
         allowsEditing: false,
-        base64: true,
       });
 
       if (!result.canceled && result.assets.length > 0) {
         const asset = result.assets[0];
         if (!asset) return;
-        const mime = asset.mimeType || "image/jpeg";
-        const encryptedUri = asset.base64
-          ? await saveEncryptedMedia(asset.base64, mime, asset.uri)
-          : asset.uri;
+        const savedMedia = await saveEncryptedMediaFromUri(
+          asset.uri,
+          asset.mimeType || "image/jpeg",
+        );
         const newAttachment: MediaAttachment = {
           id: uuidv4(),
-          localUri: encryptedUri,
-          mimeType: mime,
+          localUri: savedMedia.localUri,
+          mimeType: savedMedia.mimeType,
           createdAt: new Date().toISOString(),
         };
+        addedUrisRef.current.add(newAttachment.localUri);
         setAttachments((prev) => [...prev, newAttachment]);
         setSelectedId(newAttachment.id);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -137,27 +177,23 @@ export default function MediaManagementScreen() {
         quality: 0.7,
         allowsMultipleSelection: true,
         selectionLimit: maxAttachments - attachments.length,
-        base64: true,
       });
 
       if (!result.canceled && result.assets.length > 0) {
-        const encryptedAttachments = await Promise.all(
-          result.assets.map(async (asset) => {
-            const mime = asset.mimeType || "image/jpeg";
-            return {
-              id: uuidv4(),
-              localUri: asset.base64
-                ? await saveEncryptedMedia(asset.base64, mime, asset.uri)
-                : asset.uri,
-              mimeType: mime,
-              createdAt: new Date().toISOString(),
-            };
-          }),
-        );
-        setAttachments((prev) => [...prev, ...encryptedAttachments]);
-        if (encryptedAttachments.length === 1 && encryptedAttachments[0]) {
-          setSelectedId(encryptedAttachments[0].id);
-        }
+        const startingAttachments = [...attachments];
+        const importedAttachments: MediaAttachment[] = [];
+        await importMediaAssets(result.assets, (savedAsset) => {
+          const newAttachment: MediaAttachment = {
+            id: uuidv4(),
+            localUri: savedAsset.localUri,
+            mimeType: savedAsset.mimeType,
+            createdAt: new Date().toISOString(),
+          };
+          addedUrisRef.current.add(newAttachment.localUri);
+          importedAttachments.push(newAttachment);
+          setAttachments([...startingAttachments, ...importedAttachments]);
+          setSelectedId((prev) => prev ?? newAttachment.id);
+        });
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
     } catch (error) {
@@ -167,10 +203,6 @@ export default function MediaManagementScreen() {
   };
 
   const handleRemove = async (id: string) => {
-    const item = attachments.find((a) => a.id === id);
-    if (item) {
-      await deleteEncryptedMedia(item.localUri);
-    }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setAttachments((prev) => prev.filter((a) => a.id !== id));
     if (selectedId === id) {
@@ -215,15 +247,79 @@ export default function MediaManagementScreen() {
     );
   };
 
-  const handleSave = useCallback(() => {
+  const handleSave = useCallback(async () => {
     if (saving) return;
     setSaving(true);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    if (callbackId) {
-      executeCallback(callbackId, attachments);
+    try {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      if (callbackId) {
+        executeCallback(callbackId, attachments);
+      }
+      await finalizeRemovedMedia();
+      allowCloseRef.current = true;
+      navigation.goBack();
+    } catch (error) {
+      console.error("Error saving media changes:", error);
+      Alert.alert("Error", "Failed to save media changes.");
+      setSaving(false);
     }
-    navigation.goBack();
-  }, [attachments, callbackId, executeCallback, navigation, saving]);
+  }, [
+    attachments,
+    callbackId,
+    executeCallback,
+    finalizeRemovedMedia,
+    navigation,
+    saving,
+  ]);
+
+  const discardChanges = useCallback(async () => {
+    try {
+      await discardPendingNewMedia();
+      allowCloseRef.current = true;
+      navigation.goBack();
+    } catch (error) {
+      console.error("Error discarding media changes:", error);
+      Alert.alert("Error", "Failed to discard media changes cleanly.");
+    }
+  }, [discardPendingNewMedia, navigation]);
+
+  const handleAttemptClose = useCallback(() => {
+    if (!isDirty || saving) {
+      allowCloseRef.current = true;
+      navigation.goBack();
+      return;
+    }
+
+    Alert.alert("Save media changes?", "Your photo edits have not been saved.", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Discard",
+        style: "destructive",
+        onPress: () => {
+          void discardChanges();
+        },
+      },
+      {
+        text: "Save",
+        onPress: () => {
+          void handleSave();
+        },
+      },
+    ]);
+  }, [discardChanges, handleSave, isDirty, navigation, saving]);
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener("beforeRemove", (event) => {
+      if (allowCloseRef.current || !isDirty || saving) {
+        return;
+      }
+
+      event.preventDefault();
+      handleAttemptClose();
+    });
+
+    return unsubscribe;
+  }, [handleAttemptClose, isDirty, navigation, saving]);
 
   const selectedAttachment = attachments.find((a) => a.id === selectedId);
 
@@ -264,7 +360,11 @@ export default function MediaManagementScreen() {
         },
       ]}
     >
-      <EncryptedImage uri={item.localUri} style={styles.thumbnailImage} />
+      <EncryptedImage
+        uri={item.localUri}
+        style={styles.thumbnailImage}
+        thumbnail
+      />
       {item.category ? (
         <View style={[styles.categoryBadge, { backgroundColor: theme.link }]}>
           <ThemedText style={styles.categoryBadgeText}>
@@ -291,14 +391,16 @@ export default function MediaManagementScreen() {
       >
         <View style={[styles.header, { paddingTop: insets.top + Spacing.md }]}>
           <Pressable
-            onPress={() => navigation.goBack()}
+            onPress={handleAttemptClose}
             style={styles.headerButton}
           >
             <Feather name="x" size={24} color={theme.text} />
           </Pressable>
           <ThemedText style={styles.headerTitle}>Manage Media</ThemedText>
           <Pressable
-            onPress={handleSave}
+            onPress={() => {
+              void handleSave();
+            }}
             disabled={saving}
             style={styles.headerButton}
           >

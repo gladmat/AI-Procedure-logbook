@@ -10,27 +10,15 @@ const ENCRYPTED_MEDIA_PREFIX = "encrypted-media:";
 const THUMB_SIZE = 128;
 const THUMB_COMPRESS = 0.5;
 
-let _pendingBase64: string | null = null;
-let _pendingMimeType: string = "image/jpeg";
-
-export function setPendingBase64(data: string, mimeType?: string) {
-  _pendingBase64 = data;
-  _pendingMimeType = mimeType || "image/jpeg";
+export interface MediaImportAsset {
+  uri: string;
+  mimeType?: string | null;
 }
 
-export function consumePendingBase64(): {
-  base64: string;
+export interface ImportedMediaAsset {
+  localUri: string;
   mimeType: string;
-} | null {
-  if (!_pendingBase64) return null;
-  const result = { base64: _pendingBase64, mimeType: _pendingMimeType };
-  _pendingBase64 = null;
-  _pendingMimeType = "image/jpeg";
-  return result;
-}
-
-export function hasPendingBase64(): boolean {
-  return _pendingBase64 !== null;
+  sourceUri: string;
 }
 
 export function isEncryptedMediaUri(uri: string): boolean {
@@ -57,6 +45,76 @@ async function generateThumbnailBase64(
   } catch (e) {
     console.warn("Thumbnail generation failed:", e);
     return null;
+  }
+}
+
+function getSaveFormat(mimeType: string): {
+  format: SaveFormat;
+  mimeType: string;
+  compress: number;
+} {
+  if (mimeType.toLowerCase().includes("png")) {
+    return {
+      format: SaveFormat.PNG,
+      mimeType: "image/png",
+      compress: 1,
+    };
+  }
+
+  return {
+    format: SaveFormat.JPEG,
+    mimeType: "image/jpeg",
+    compress: 0.72,
+  };
+}
+
+export async function saveEncryptedMediaFromUri(
+  sourceUri: string,
+  mimeType: string = "image/jpeg",
+): Promise<{ localUri: string; mimeType: string }> {
+  const { format, mimeType: normalizedMimeType, compress } =
+    getSaveFormat(mimeType);
+
+  const context = ImageManipulator.manipulate(sourceUri);
+  const image = await context.renderAsync();
+  const result = await image.saveAsync({
+    format,
+    compress,
+    base64: true,
+  });
+
+  if (!result.base64) {
+    throw new Error("Failed to prepare media for secure storage.");
+  }
+
+  const localUri = await saveEncryptedMedia(
+    result.base64,
+    normalizedMimeType,
+    result.uri || sourceUri,
+  );
+
+  return { localUri, mimeType: normalizedMimeType };
+}
+
+export async function importMediaAssets(
+  assets: MediaImportAsset[],
+  onItemSaved: (item: ImportedMediaAsset, index: number) => void,
+): Promise<void> {
+  for (let index = 0; index < assets.length; index += 1) {
+    const asset = assets[index];
+    if (!asset) continue;
+    const saved = await saveEncryptedMediaFromUri(
+      asset.uri,
+      asset.mimeType || "image/jpeg",
+    );
+    onItemSaved(
+      {
+        localUri: saved.localUri,
+        mimeType: saved.mimeType,
+        sourceUri: asset.uri,
+      },
+      index,
+    );
   }
 }
 

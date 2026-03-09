@@ -27,7 +27,10 @@ import { EncryptedImage } from "@/components/EncryptedImage";
 import { SkinCancerNumericInput } from "./SkinCancerNumericInput";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
-import { saveEncryptedMedia, deleteEncryptedMedia } from "@/lib/mediaStorage";
+import {
+  saveEncryptedMediaFromUri,
+  deleteEncryptedMedia,
+} from "@/lib/mediaStorage";
 import { getSkinCancerPrimaryHistology } from "@/lib/skinCancerConfig";
 import type {
   SkinCancerLesionAssessment,
@@ -170,21 +173,18 @@ export function LesionDetailsSection({
         mediaTypes: ["images"],
         quality: 0.7,
         allowsEditing: false,
-        base64: true,
       });
 
       if (!result.canceled && result.assets.length > 0) {
         const asset = result.assets[0];
-        if (!asset?.base64) return;
-        const mime = asset.mimeType || "image/jpeg";
-        const encryptedUri = await saveEncryptedMedia(
-          asset.base64,
-          mime,
+        if (!asset) return;
+        const savedMedia = await saveEncryptedMediaFromUri(
           asset.uri,
+          asset.mimeType || "image/jpeg",
         );
         const photo: LesionPhoto = {
           id: uuidv4(),
-          uri: encryptedUri,
+          uri: savedMedia.localUri,
           caption: generateLesionCaption(assessment),
           photoType: "clinical",
           createdAt: new Date().toISOString(),
@@ -209,21 +209,18 @@ export function LesionDetailsSection({
         mediaTypes: ["images"],
         quality: 0.7,
         allowsMultipleSelection: false,
-        base64: true,
       });
 
       if (!result.canceled && result.assets.length > 0) {
         const asset = result.assets[0];
-        if (!asset?.base64) return;
-        const mime = asset.mimeType || "image/jpeg";
-        const encryptedUri = await saveEncryptedMedia(
-          asset.base64,
-          mime,
+        if (!asset) return;
+        const savedMedia = await saveEncryptedMediaFromUri(
           asset.uri,
+          asset.mimeType || "image/jpeg",
         );
         const photo: LesionPhoto = {
           id: uuidv4(),
-          uri: encryptedUri,
+          uri: savedMedia.localUri,
           caption: generateLesionCaption(assessment),
           photoType: "clinical",
           createdAt: new Date().toISOString(),

@@ -588,7 +588,7 @@ export default function NeedsAttentionListScreen() {
               <MediaCapture
                 attachments={dischargePhotos}
                 onAttachmentsChange={setDischargePhotos}
-                maxAttachments={4}
+                maxAttachments={15}
               />
             </View>
 
