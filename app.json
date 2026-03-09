@@ -6,7 +6,7 @@
     "orientation": "portrait",
     "icon": "./client/assets/icons/app/opus-icon-1024.png",
     "scheme": "opus",
-    "userInterfaceStyle": "dark",
+    "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
