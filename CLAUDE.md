@@ -74,7 +74,7 @@ npm run test:watch     # Vitest (watch mode)
 ```
 client/
   App.tsx                        # Root: 7 nested providers → RootStackNavigator
-  screens/                       # 21 screens + 9 onboarding sub-screens
+  screens/                       # 22 screens + 9 onboarding sub-screens
     DashboardScreen.tsx           # Surgical triage surface, 4-zone layout
     CaseDetailScreen.tsx          # Full case view, timeline, flap outcomes
     CaseFormScreen.tsx            # Case entry, delegates to section components
@@ -95,12 +95,14 @@ client/
     EpisodeListScreen.tsx         # Treatment episode list
     EpisodeDetailScreen.tsx       # Episode view with linked cases
     CaseSearchScreen.tsx          # Global case search with filters
+    StatisticsScreen.tsx          # 3-tier analytics: career overview, specialty deep-dives, operational insights
     NeedsAttentionListScreen.tsx  # Full-screen needs attention list with sections
     onboarding/                   # 9 files: Welcome, FeaturePager, Auth, EmailSignup,
                                   #   Categories, Training, Hospital, Privacy, FeatureSlide
-  components/                    # 120+ files across 10 subdirectories
+  components/                    # 120+ files across 11 subdirectories
     case-form/                   # 10 section components (see "Case form" below)
     dashboard/                   # 10 files — dashboard v2 components (see "Dashboard redesign")
+    statistics/                  # 6 files — BarChart, HorizontalBarChart, StatCard, MilestoneTimeline, SpecialtyDeepDiveCard, EmptyStatistics
     hand-trauma/                 # 15 files — unified hand trauma assessment
     hand-infection/              # HandInfectionCard — 4-layer progressive disclosure
     acute-hand/                  # AcuteHandAssessment + AcuteHandSummaryPanel
@@ -122,6 +124,7 @@ client/
     useActiveEpisodes.ts         # Query hook for active episodes
     useScreenOptions.ts          # Shared navigation header options
     useColorScheme.ts            # System colour scheme detection
+    useStatistics.ts             # Memoized statistics computation from cases (career, specialty, operational, milestones)
     useAttentionItems.ts         # Shared selector wrapper for dashboard attention items
     usePracticePulse.ts          # Shared selector wrapper for thisMonth/thisWeek/completion metrics
   lib/
@@ -129,6 +132,7 @@ client/
     dashboardSelectors.ts        # Shared dashboard selector layer (counts, filters, attention items, pulse, quick-log params)
     procedurePicklist.ts         # 490 procedures across 12 specialties
     statistics.ts                # Case analytics, filtering, calculations (1053 lines)
+    statisticsHelpers.ts         # Career overview, monthly volume, operational insights, milestones, specialty insights (454 lines)
     handTraumaDiagnosis.ts       # MachineSummary + deterministic rendering (1570 lines)
     handTraumaMapping.ts         # Trauma → diagnosis-procedure pairs (1862 lines)
     handTraumaUx.ts              # Hand trauma UX helpers
@@ -201,8 +205,9 @@ client/
     handInfectionClinicalData.ts # Kanavel signs, organism presets, antibiotic defaults
   navigation/
     RootStackNavigator.tsx       # Auth → Onboarding → Main, modal stack
-    MainTabNavigator.tsx         # Bottom tabs: Dashboard + Settings
+    MainTabNavigator.tsx         # Bottom tabs: Dashboard + Statistics + Settings
     DashboardStackNavigator.tsx  # Dashboard → Case Detail → Add Case
+    StatisticsStackNavigator.tsx # Statistics tab stack
     SettingsStackNavigator.tsx   # Settings → Profile → Facilities → Preferences
     OnboardingNavigator.tsx      # Welcome → Features → Auth → Categories → Training → Hospital → Privacy
   assets/
@@ -240,7 +245,7 @@ ErrorBoundary → ThemeProvider → QueryClientProvider → AuthProvider
 
 ### Navigation flow
 
-Auth → Onboarding → Main (bottom tabs: Dashboard, Settings) with modal stack for case entry/detail/episodes. Headers use solid `theme.backgroundRoot` (no blur/transparency, no shadow). Configured centrally via `useScreenOptions()` (`client/hooks/useScreenOptions.ts`). Screens do NOT use `useHeaderHeight()` — `headerTransparent: false` means content starts below the header automatically.
+Auth → Onboarding → Main (bottom tabs: Dashboard, Statistics, Settings) with modal stack for case entry/detail/episodes. Headers use solid `theme.backgroundRoot` (no blur/transparency, no shadow). Configured centrally via `useScreenOptions()` (`client/hooks/useScreenOptions.ts`). Screens do NOT use `useHeaderHeight()` — `headerTransparent: false` means content starts below the header automatically.
 
 ### Data flow
 
@@ -564,7 +569,7 @@ The dashboard is a **surgical triage surface** — density-first, optimised for 
 | Zone order (top→bottom) | Filter Bar → Needs Attention → Practice Pulse → Recent Cases |
 | Primary action | FAB (bottom-right, 56px, amber). NOT a header button. |
 | Header | Centered `HeaderTitle` lockup (Opus logo + subtitle). Search button on the right. NO greeting. |
-| Statistics | Numbers + deltas only on dashboard. NO charts. Charts behind tap on future Analytics screen. |
+| Statistics | Numbers + deltas only on dashboard. NO charts. Charts live on the dedicated Statistics tab. |
 | Notifications | Zone 1 presence/absence IS the notification. NO red dots, NO badge counts. |
 | Customisation | None. One excellent default. Specialty filter is the only personalisation. |
 | Zone 1 empty behaviour | Returns `null`. NOT an empty View, NOT a placeholder. Zone does not exist when 0 items. |
@@ -700,14 +705,44 @@ Per-field validate-on-blur with errors displayed below fields. Required fields: 
 
 `buildDuplicateState()` in `useCaseForm.ts` deep-clones case data for quick re-entry. Available from action menu in `CaseDetailScreen`.
 
-### Analytics dashboard
+### Statistics tab (COMPLETE)
 
-`client/lib/statistics.ts` (1053 lines) provides:
-- **Base stats:** Total cases, average duration, complication rate, facility breakdown
-- **Specialty stats:** Free flap success rates, hand surgery metrics, orthoplastic outcomes, breast reconstruction, body contouring, infection rates
-- **Entry time tracking:** `entryDurationSeconds` field on cases, avg/median/per-specialty analytics
-- **Suggestion acceptance:** `suggestionAcceptanceLog` field, computed acceptance rates
-- **Top dx-proc pairs:** Function exists but NOT displayed in dashboard UI
+Dedicated bottom tab with 3-tier analytics. Middle tab between Dashboard and Settings, icon `bar-chart-2`.
+
+#### Architecture
+
+- **Screen:** `StatisticsScreen.tsx` — single scrollable screen with collapsible specialty sections
+- **Hook:** `useStatistics.ts` — loads all cases via `useFocusEffect`, computes all metrics via `useMemo`. Returns career overview, monthly volume, base stats, per-specialty stats, operational insights, milestones, entry time stats, and specialty-specific insights (skin cancer, burns, hand case types)
+- **Helpers:** `statisticsHelpers.ts` (454 lines) — pure compute functions: `computeCareerOverview`, `computeMonthlyVolume`, `computeOperationalInsights`, `computeMilestones`, `computeSkinCancerInsights`, `computeBurnsInsights`, `computeHandCaseTypeInsights`
+- **Base stats:** `statistics.ts` (1053 lines) — `calculateBaseStatistics`, `calculateStatistics` (per-specialty dispatcher), `calculateEntryTimeStats`, `calculateTopDiagnosisProcedurePairs`
+
+#### 3-tier content
+
+**Tier 1 — Career Overview:** Total cases, active months, cases/month rate, specialties used. `StatCard` grid with hero metric (total cases or specialty-specific metric).
+
+**Tier 2 — Specialty Deep-Dives:** `SpecialtyDeepDiveCard` per specialty used, collapsible with animated `LayoutAnimation`. Each shows specialty-specific content:
+- **Hand surgery:** Trauma/acute/elective split, nerve + tendon repair counts, top procedures as `HorizontalBarChart`
+- **Skin cancer:** Pathology category distribution (BCC/SCC/melanoma/etc) as `HorizontalBarChart`, histology completion rate
+- **Burns:** Acute/reconstruction split, grafting rate
+- **Orthoplastic/Breast/Body contouring:** Specialty-specific stats from `calculateStatistics`
+- **Other specialties:** Base statistics (complication rate, facility breakdown)
+
+**Tier 3 — Operational Insights:** Monthly volume `BarChart` (animated SVG bars, short labels for >6 bars), avg case duration, data completeness %, complication rate, top 10 diagnosis-procedure pairs (shows both diagnosis and procedure name), `MilestoneTimeline` (ordinal labels, up to 8 visible).
+
+#### Chart components (`client/components/statistics/`)
+
+| Component | Purpose |
+|-----------|---------|
+| `BarChart` | Animated SVG vertical bar chart (react-native-reanimated). Plays animation once only (useRef guard). Short labels for >6 bars. |
+| `HorizontalBarChart` | View-based horizontal bars with labels, values, and overflow count. `ellipsizeMode="tail"` on labels. |
+| `StatCard` | Themed metric card with label, value, optional subtitle. |
+| `MilestoneTimeline` | Vertical timeline with dots, lines, ordinal labels, date formatting with crash guard. Default 8 visible with "See all" expand. |
+| `SpecialtyDeepDiveCard` | Collapsible card per specialty with chevron toggle and specialty colour accent. |
+| `EmptyStatistics` | Zero-case empty state with illustration and prompt. |
+
+#### Data flow
+
+`useStatistics` → loads cases once per focus → fans out to 10+ `useMemo` computations → `StatisticsScreen` renders. `computeOperationalInsights` accepts precomputed `baseStats` to avoid redundant computation. Specialty filtering uses canonical `getCaseSpecialties()` helper.
 
 ### Data migration
 
