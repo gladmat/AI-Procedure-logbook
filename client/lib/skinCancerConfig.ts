@@ -18,7 +18,7 @@
 
 import { isSkinCancerDiagnosis } from "@/lib/skinCancerDiagnoses";
 import type { DiagnosisPicklistEntry } from "@/types/diagnosis";
-import type { LesionInstance } from "@/types/case";
+import type { LesionInstance, Case } from "@/types/case";
 import type {
   SkinCancerPathologyCategory,
   SkinCancerPathwayStage,
@@ -603,6 +603,192 @@ export function getPathwayBadge(
   // Stage-specific defaults
   if (assessment.pathwayStage === "histology_known") {
     return { label: "Histology known", colorKey: "info" };
+  }
+
+  return null;
+}
+
+// ═══════════════════════════════════════════════════════════
+// SKIN CANCER CASE BADGE (dashboard card display)
+// ═══════════════════════════════════════════════════════════
+
+const CATEGORY_SHORT_LABELS: Record<string, string> = {
+  bcc: "BCC",
+  scc: "SCC",
+  melanoma: "Melanoma",
+  merkel_cell: "MCC",
+  rare_malignant: "Rare malig.",
+  benign: "Benign",
+  uncertain: "Uncertain",
+};
+
+/**
+ * Returns a two-part badge for skin cancer cases on the dashboard:
+ * diagnosis label (BCC/SCC/Melanoma/etc) + histology status.
+ */
+export function getSkinCancerCaseBadge(
+  assessment: SkinCancerLesionAssessment | undefined,
+): {
+  label: string;
+  colorKey: "warning" | "success" | "error" | "info";
+} | null {
+  if (!assessment?.pathwayStage) return null;
+
+  // Determine diagnosis label
+  const category =
+    assessment.currentHistology?.pathologyCategory ??
+    assessment.priorHistology?.pathologyCategory ??
+    assessment.clinicalSuspicion;
+  const diagLabel = category
+    ? (CATEGORY_SHORT_LABELS[category] ?? "Skin lesion")
+    : "Skin lesion";
+
+  // Determine histology status
+  const current = assessment.currentHistology;
+
+  if (current?.pathologyCategory) {
+    // Has definitive histology
+    if (
+      current.marginStatus === "incomplete" ||
+      current.marginStatus === "close"
+    ) {
+      return {
+        label: `${diagLabel} · Incomplete margins`,
+        colorKey: "error",
+      };
+    }
+    if (current.marginStatus === "complete") {
+      return {
+        label: `${diagLabel} · Margins clear`,
+        colorKey: "success",
+      };
+    }
+    return { label: `${diagLabel} · Histology ✓`, colorKey: "success" };
+  }
+
+  // No current histology
+  if (assessment.pathwayStage === "excision_biopsy") {
+    return {
+      label: `${diagLabel} · Awaiting histology`,
+      colorKey: "warning",
+    };
+  }
+
+  // histology_known pathway but no currentHistology yet
+  return { label: diagLabel, colorKey: "info" };
+}
+
+// ═══════════════════════════════════════════════════════════
+// CASE HISTOLOGY DETECTION
+// ═══════════════════════════════════════════════════════════
+
+/**
+ * Returns true if a case CAN have histology added/updated.
+ * True for any skin cancer case (any pathway) or clinical-only diagnosis.
+ * Used for showing "Add Histology" / "Update Histology" buttons.
+ */
+export function caseCanAddHistology(caseData: Case): boolean {
+  for (const g of caseData.diagnosisGroups ?? []) {
+    if (g.skinCancerAssessment) return true;
+    for (const l of g.lesionInstances ?? []) {
+      if (l.skinCancerAssessment) return true;
+    }
+    if (g.diagnosisCertainty === "clinical") return true;
+  }
+  return false;
+}
+
+/**
+ * Returns true if a case needs histology results to be entered.
+ * Skin cancer: any lesion on excision_biopsy pathway without currentHistology.
+ * Other: diagnosisCertainty === "clinical" and no histologyResult.
+ */
+export function caseNeedsHistology(caseData: Case): boolean {
+  for (const g of caseData.diagnosisGroups ?? []) {
+    // Skin cancer single-lesion
+    if (g.skinCancerAssessment) {
+      if (
+        g.skinCancerAssessment.pathwayStage === "excision_biopsy" &&
+        !g.skinCancerAssessment.currentHistology?.pathologyCategory
+      ) {
+        return true;
+      }
+    }
+
+    // Skin cancer multi-lesion
+    for (const l of g.lesionInstances ?? []) {
+      if (l.skinCancerAssessment) {
+        if (
+          l.skinCancerAssessment.pathwayStage === "excision_biopsy" &&
+          !l.skinCancerAssessment.currentHistology?.pathologyCategory
+        ) {
+          return true;
+        }
+      }
+    }
+
+    // General case with clinical-only diagnosis and no histology result
+    if (g.diagnosisCertainty === "clinical" && !g.histologyResult) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Returns the index of the first diagnosis group needing histology,
+ * along with optional lesion index for multi-lesion skin cancer.
+ */
+export function getFirstHistologyTarget(
+  caseData: Case,
+): { groupIndex: number; lesionIndex?: number } | null {
+  const groups = caseData.diagnosisGroups ?? [];
+
+  // Pass 1: prioritise groups that actively need histology (pending)
+  for (let gi = 0; gi < groups.length; gi++) {
+    const g = groups[gi];
+    if (!g) continue;
+
+    if (g.skinCancerAssessment) {
+      if (
+        g.skinCancerAssessment.pathwayStage === "excision_biopsy" &&
+        !g.skinCancerAssessment.currentHistology?.pathologyCategory
+      ) {
+        return { groupIndex: gi };
+      }
+    }
+
+    const lesions = g.lesionInstances ?? [];
+    for (let li = 0; li < lesions.length; li++) {
+      const l = lesions[li];
+      if (
+        l?.skinCancerAssessment?.pathwayStage === "excision_biopsy" &&
+        !l.skinCancerAssessment.currentHistology?.pathologyCategory
+      ) {
+        return { groupIndex: gi, lesionIndex: li };
+      }
+    }
+
+    if (g.diagnosisCertainty === "clinical" && !g.histologyResult) {
+      return { groupIndex: gi };
+    }
+  }
+
+  // Pass 2: fallback — any group where histology can be added/updated
+  for (let gi = 0; gi < groups.length; gi++) {
+    const g = groups[gi];
+    if (!g) continue;
+
+    if (g.skinCancerAssessment) {
+      return { groupIndex: gi };
+    }
+
+    const lesions = g.lesionInstances ?? [];
+    for (let li = 0; li < lesions.length; li++) {
+      if (lesions[li]?.skinCancerAssessment) {
+        return { groupIndex: gi, lesionIndex: li };
+      }
+    }
   }
 
   return null;

@@ -19,6 +19,7 @@ Key capabilities: multi-specialty case logging, SNOMED CT coded diagnoses and pr
 - **Phase 1 COMPLETE** — Form state refactor (useReducer, split context, section components, clear/reset)
 - **Phase 2 COMPLETE** — Charcoal+Amber theme, card-based diagnosis groups, section nav, summary view, reordering, specialty modules
 - **Phase 2.5 COMPLETE** — Skin cancer inline assessment module hardened after audit (14 components, 116 tests, hidden auto-routed pathways, episode linkage/reuse, biopsy return-to-histology flow, duplicate follow-up prefill, interactive procedure suggestions, margin CDS, SLNB, stable numeric inputs, collapsible sections)
+- **Dashboard v2 COMPLETE** — Surgical triage surface with 5 phases + refinements (filter bar, needs attention carousel with infections, practice pulse metrics, case cards with thumbnails, FAB, quick actions for histology/events/discharge/next episode, standalone histology screen, needs attention full list, case search)
 - **Phase 3 NEXT** — Favourites/recents (partially done), inline validation, keyboard optimisation, haptic audit, duplicate case
 - **Phase 4** — Data migration, export formatting, analytics dashboard
 - **Phase 5** — TestFlight release
@@ -74,16 +75,17 @@ npm run test:watch     # Vitest (watch mode)
 ```
 client/
   App.tsx                        # Root: 7 nested providers → RootStackNavigator
-  screens/                       # 18 screens + 9 onboarding sub-screens
-    DashboardScreen.tsx           # Case list, filtering, statistics, inpatients (2636 lines)
-    CaseDetailScreen.tsx          # Full case view, timeline, flap outcomes (2660 lines)
-    CaseFormScreen.tsx            # Case entry, delegates to section components (778 lines)
-    SettingsScreen.tsx            # Profile, export, legal, app lock config (1558 lines)
+  screens/                       # 21 screens + 9 onboarding sub-screens
+    DashboardScreen.tsx           # Surgical triage surface, 4-zone layout
+    CaseDetailScreen.tsx          # Full case view, timeline, flap outcomes
+    CaseFormScreen.tsx            # Case entry, delegates to section components
+    SettingsScreen.tsx            # Profile, export, legal, app lock config
     EditProfileScreen.tsx         # Profile editing, picture upload, facilities
     OnboardingScreen.tsx          # Multi-step onboarding coordinator
     AuthScreen.tsx                # Login/signup/password reset
     AddCaseScreen.tsx             # Case entry initiation
     AddTimelineEventScreen.tsx    # Post-op events, complications
+    AddHistologyScreen.tsx        # Standalone histology entry for skin cancer cases
     AddOperativeMediaScreen.tsx   # Intraoperative image capture
     MediaManagementScreen.tsx     # Batch media upload
     ManageFacilitiesScreen.tsx    # Facility CRUD
@@ -93,29 +95,34 @@ client/
     SurgicalPreferencesScreen.tsx # Role, supervision, RACS MALT settings
     EpisodeListScreen.tsx         # Treatment episode list
     EpisodeDetailScreen.tsx       # Episode view with linked cases
+    CaseSearchScreen.tsx          # Global case search with filters
+    NeedsAttentionListScreen.tsx  # Full-screen needs attention list with sections
     onboarding/                   # 9 files: Welcome, FeaturePager, Auth, EmailSignup,
                                   #   Categories, Training, Hospital, Privacy, FeatureSlide
-  components/                    # 106 files across 7 subdirectories
+  components/                    # 116+ files across 8 subdirectories
     case-form/                   # 10 section components (see "Case form" below)
+    dashboard/                   # 10 files — dashboard v2 components (see "Dashboard redesign")
     hand-trauma/                 # 15 files — unified hand trauma assessment
     skin-cancer/                 # 14 files — inline skin cancer assessment module
     detail-sheets/               # 7 bottom-sheet detail views
     brand/                       # OpusMark, OpusLogo, index
     onboarding/                  # StepHeader, StepIndicator
-    [50 top-level components]    # Forms, editors, badges, media, layout
+    [50+ top-level components]   # Forms, editors, badges, media, layout
   contexts/
     AuthContext.tsx               # Auth state, profile, facilities, device keys
     CaseFormContext.tsx           # Split: CaseFormStateContext + CaseFormDispatchContext
     AppLockContext.tsx            # PIN/biometric lock state, auto-lock timeout
     MediaCallbackContext.tsx      # Cross-screen media selection callbacks
   hooks/
-    useCaseForm.ts               # useReducer form state, 15+ actions (1802 lines)
+    useCaseForm.ts               # useReducer form state, 15+ actions
     useCaseDraft.ts              # Auto-save drafts (debounced + AppState flush)
     useFavouritesRecents.ts      # Recent/favourite diagnosis-procedure pairs
     useTheme.ts                  # ThemeProvider, system/light/dark, AsyncStorage
     useActiveEpisodes.ts         # Query hook for active episodes
     useScreenOptions.ts          # Shared navigation header options
     useColorScheme.ts            # System colour scheme detection
+    useAttentionItems.ts         # Merges inpatients + infections + episodes for dashboard
+    usePracticePulse.ts          # Computes totalCases/thisWeek/completion metrics
   lib/
     storage.ts                   # AsyncStorage CRUD, encryption, drafts, case index
     procedurePicklist.ts         # 413 procedures across 12 specialties (5443 lines)
@@ -153,8 +160,8 @@ client/
     moduleVisibility.ts          # Conditional module visibility
     flapOutcomeDefaults.ts       # Default flap outcome values
     skinCancerDiagnoses.ts       # Skin cancer picklist
-    skinCancerConfig.ts          # Activation, pathway logic, margins, SLNB, diagnosis resolution, procedure suggestions (1058 lines)
-    skinCancerEpisodeHelpers.ts  # Episode link/update plans + follow-up transforms (248 lines)
+    skinCancerConfig.ts          # Activation, pathway logic, margins, SLNB, diagnosis resolution, procedure suggestions, caseCanAddHistology
+    skinCancerEpisodeHelpers.ts  # Episode link/update plans + follow-up transforms
     diagnosisPicklists/          # 12 specialty picklists + lazy-loaded index
       index.ts                   # getDiagnosesForProcedure, reverse mapping
       {specialty}Diagnoses.ts    # Per-specialty (aesthetics, bodyContouring, breast,
@@ -488,6 +495,16 @@ There is **no continuing-care pathway** in the product model. Re-excision / foll
 
 Tests: `client/lib/__tests__/skinCancerConfig.test.ts` (87 tests), `skinCancerPhase4.test.ts` (11 tests), `skinCancerPhase5.test.ts` (18 tests). Total focused skin-cancer suite: **116 tests**.
 
+### Standalone histology entry
+
+`AddHistologyScreen` provides a focused return-to-histology flow for adding or updating pathology results on existing cases. Accessed via dashboard quick action buttons or CaseDetailScreen.
+
+- **Skin cancer cases:** Shows `HistologySection` in pending/full mode with `hideSource` (always own procedure) and `hideHeader`. Saves `currentHistology` back to the appropriate diagnosis group or lesion instance.
+- **General cases:** Shows a simple `histologyResult` text input for non-skin-cancer cases with `diagnosisCertainty === "clinical"`.
+- **`caseCanAddHistology()`** — broad check in `skinCancerConfig.ts`: returns true for any case with a `skinCancerAssessment` on any group or lesion, or `diagnosisCertainty === "clinical"`.
+- **`getFirstHistologyTarget()`** — two-pass targeting: first prioritises excision-biopsy groups awaiting histology, then falls back to any group with skin cancer assessment.
+- **`caseNeedsHistology()`** — narrow check used by dashboard attention filter: only returns true when histology is actually pending (no `currentHistology` set yet).
+
 ### Free flap / orthoplastic documentation
 
 - `PICKLIST_TO_FLAP_TYPE` map in `procedurePicklist.ts` auto-populates `flapType`
@@ -510,25 +527,9 @@ Serial wound assessment as timeline event type (`wound_assessment`). `WoundAsses
 
 Serial case tracking via `treatment_episodes` table. Episode status machine: planned → active ⇄ on_hold → completed. 7 episode types, 4 encounter classes, 9 pending actions. Types in `client/types/episode.ts`. UI: `EpisodeListScreen`, `EpisodeDetailScreen`, `InlineEpisodeCreator`, `EpisodeLinkBanner`.
 
-### Current inpatients dashboard
+### Dashboard v2 (COMPLETE)
 
-Cases with `stayType === "inpatient"` and no `dischargeDate` shown in collapsible "Current Inpatients" section with day count and quick-discharge button.
-
-### Dashboard redesign (v2)
-
-The dashboard is being rebuilt as a **surgical triage surface** — density-first, optimised for 5–10 second scan sessions. Implementation follows 5 sequential phases, each documented in a standalone markdown file in the project knowledge base.
-
-#### Phase documents (authoritative — implement exactly as specified)
-
-| Phase | File | Scope |
-|-------|------|-------|
-| 1 | `dashboard-phase1-skeleton-filter-fab.md` | SpecialtyFilterBar, AddCaseFAB, header refactor, layout skeleton |
-| 2 | `dashboard-phase2-case-cards.md` | CaseCard with photo thumbnails, RecentCasesList, DashboardEmptyState |
-| 3 | `dashboard-phase3-practice-pulse.md` | PracticePulseRow, PulseMetricCard, usePracticePulse hook |
-| 4 | `dashboard-phase4-needs-attention.md` | NeedsAttentionCarousel, AttentionCard, useAttentionItems hook |
-| 5 | `dashboard-phase5-polish-audit.md` | Dark/light mode audit, animations, haptics, performance, cleanup |
-
-**Read the relevant phase document before starting work.** Each contains exact component specs, TypeScript interfaces, pixel measurements, and testing checklists.
+The dashboard is a **surgical triage surface** — density-first, optimised for 5–10 second scan sessions. All 5 phases + post-launch refinements complete.
 
 #### Locked architectural decisions
 
@@ -548,18 +549,19 @@ The dashboard is being rebuilt as a **surgical triage surface** — density-firs
 ```
 client/components/dashboard/
   SpecialtyFilterBar.tsx       # Zone 0 — sticky horizontal chip bar
-  NeedsAttentionCarousel.tsx   # Zone 1 — horizontal FlatList of AttentionCards
-  AttentionCard.tsx             # Zone 1 — inpatient or episode card
+  NeedsAttentionCarousel.tsx   # Zone 1 — horizontal FlatList of AttentionCards + "View All"
+  AttentionCard.tsx             # Zone 1 — inpatient, infection, or episode card with quick actions
   PracticePulseRow.tsx          # Zone 2 — 3-metric row container
-  PulseMetricCard.tsx           # Zone 2 — individual metric card
-  RecentCasesList.tsx           # Zone 3 — mapped CaseCard list
-  CaseCard.tsx                  # Zone 3 — individual case row with thumbnail
+  PulseMetricCard.tsx           # Zone 2 — individual metric card (totalCases/thisWeek/completion)
+  InfoButton.tsx                # Zone 2 — info popover for metric explanations
+  RecentCasesList.tsx           # Zone 3 — mapped CaseCard list with quick actions
+  CaseCard.tsx                  # Zone 3 — individual case row with thumbnail + action buttons
   AddCaseFAB.tsx                # Floating action button overlay
   DashboardEmptyState.tsx       # Zero-case state
 
 client/hooks/
-  usePracticePulse.ts           # Computes thisMonth/thisWeek/completion metrics
-  useAttentionItems.ts          # Merges inpatients + episodes, sorted by urgency
+  usePracticePulse.ts           # Computes totalCases/thisWeek/completion metrics
+  useAttentionItems.ts          # Merges inpatients + infections + episodes, sorted by urgency
 ```
 
 #### DashboardScreen layout structure
@@ -602,26 +604,39 @@ client/hooks/
 - Never add notification badges or red dot indicators anywhere on the dashboard.
 - Never duplicate inpatient display — the old Current Inpatients section is REPLACED by Zone 1, not supplemented.
 
+#### Quick actions on cards
+
+Both AttentionCard and CaseCard expose quick action buttons:
+- **Histology** — amber chip with file-text icon, shown for skin cancer cases (`caseCanAddHistology`). Navigates to `AddHistologyScreen`.
+- **+ Event** — secondary chip, navigates to `AddTimelineEventScreen` for the case.
+- **Discharge** — amber chip on inpatient cards, opens discharge modal with date picker.
+- **Next Episode** — amber filled button on episode/linked cases, navigates to `AddCase` with episode pre-linked.
+
+#### Needs Attention sources
+
+Three item types merged by `useAttentionItems`:
+1. **Inpatients** — cases with `stayType === "inpatient"` and no `dischargeDate`, sorted by post-op day descending
+2. **Active infections** — cases with `infectionOverlay?.status === "active"` (deduplicated against inpatients)
+3. **Active episodes** — episodes with `status === "active"` or `"on_hold"`, with linked case data
+
+"View All" button (shown when 3+ items) navigates to `NeedsAttentionListScreen` — full-screen SectionList grouped by type with search.
+
+#### Practice Pulse metrics
+
+Three metrics via `usePracticePulse`:
+1. **Total Cases** — lifetime case count
+2. **This Week** — 7-dot sparkline (Mon–Sun) showing cases per day
+3. **Completion** — percentage of last 90 days cases with documented outcome
+
 #### Specialty filter effects
 
 When a specialty is selected (non-null), ALL zones filter simultaneously:
-- Zone 1: only inpatients/episodes matching that specialty
+- Zone 1: only inpatients/episodes/infections matching that specialty
 - Zone 2: all three metrics recalculate for that specialty
 - Zone 3: only cases matching that specialty; section header becomes "{Specialty} Cases"
 - FAB: pre-selects that specialty in the new case form
 
 When "All" is selected (null), all zones show unfiltered aggregate data.
-
-#### Incremental implementation
-
-Phases are designed so the dashboard improves incrementally. After each phase, the app must build, run, and be fully functional:
-- After Phase 1: new layout skeleton with old content + filter + FAB
-- After Phase 2: new case cards replace old ones
-- After Phase 3: metrics row appears
-- After Phase 4: attention carousel replaces old inpatient section
-- After Phase 5: polish pass, old components removed
-
-**Do not jump ahead.** Complete each phase, test against its checklist, then proceed. Each phase doc has a "Testing Checklist" section — use it.
 
 ### App lock
 
