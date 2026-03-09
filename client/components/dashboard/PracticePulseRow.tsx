@@ -30,15 +30,16 @@ function PracticePulseRowInner({
           </ThemedText>
           <InfoButton
             title="Practice Pulse"
-            content="Total Cases shows your lifetime case count. This Week shows cases logged in the current week (Monday–Sunday). Completion tracks how many recent cases have all required fields filled."
+            content="This month compares month-to-date case volume with the same day span last month. This week shows logging activity from Monday to Sunday. Completion tracks cases with outcomes recorded in the last 90 days."
           />
         </View>
       </View>
       <View style={styles.metricsRow}>
         <PulseMetricCard
-          type="totalCases"
-          label="Total cases"
-          value={pulseData.totalCases.count}
+          type="thisMonth"
+          label="This month"
+          value={pulseData.thisMonth.count}
+          delta={pulseData.thisMonth.delta}
         />
         <PulseMetricCard
           type="thisWeek"

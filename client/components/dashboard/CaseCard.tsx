@@ -8,6 +8,8 @@ import { useTheme } from "@/hooks/useTheme";
 import { Spacing } from "@/constants/theme";
 import {
   Case,
+  getAllProcedures,
+  getPrimaryDiagnosisName,
   getPrimarySiteLabel,
   isExcisionBiopsyDiagnosis,
 } from "@/types/case";
@@ -17,7 +19,6 @@ import {
   caseCanAddHistology,
 } from "@/lib/skinCancerConfig";
 import { RoleBadge } from "@/components/RoleBadge";
-import { SpecialtyBadge } from "@/components/SpecialtyBadge";
 import { SpecialtyIcon } from "@/components/SpecialtyIcon";
 
 const BADGE_PRIORITY: Record<string, number> = {
@@ -42,7 +43,16 @@ function getThemeColor(
 }
 
 function formatRelativeDate(dateStr: string): string {
-  const date = new Date(dateStr);
+  const [yearRaw, monthRaw, dayRaw] = dateStr.split("-");
+  const year = Number(yearRaw);
+  const month = Number(monthRaw);
+  const day = Number(dayRaw);
+  const date =
+    Number.isFinite(year) &&
+    Number.isFinite(month) &&
+    Number.isFinite(day)
+      ? new Date(year, month - 1, day, 12, 0, 0, 0)
+      : new Date(dateStr);
   const now = new Date();
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const dateStart = new Date(
@@ -145,6 +155,9 @@ function DashboardCaseCardInner({
   const showRoleBadge = userRole !== "PS";
 
   const caseTitle = getCasePrimaryTitle(caseData) || caseData.procedureType;
+  const primaryDiagnosis = getPrimaryDiagnosisName(caseData) || caseTitle;
+  const primaryProcedure =
+    getAllProcedures(caseData)[0]?.procedureName || caseData.procedureType;
 
   const skinCancerBadge = useMemo(() => {
     let best: { label: string; colorKey: string } | null = null;
@@ -181,6 +194,7 @@ function DashboardCaseCardInner({
 
   const showHistologyAction = onAddHistology && caseCanAddHistology(caseData);
   const hasActions = showHistologyAction || onAddEvent;
+  const hasMeta = showRoleBadge || !!skinCancerBadge || !!hasHistologyPending;
 
   return (
     <Pressable
@@ -192,131 +206,129 @@ function DashboardCaseCardInner({
         pressed && { backgroundColor: theme.backgroundElevated },
       ]}
     >
-      <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <SpecialtyBadge specialty={caseData.specialty} size="small" />
-          {showRoleBadge ? <RoleBadge role={userRole} size="small" /> : null}
-          {skinCancerBadge ? (
-            <View
-              style={[
-                chipStyles.chip,
-                {
-                  backgroundColor:
-                    getThemeColor(theme, skinCancerBadge.colorKey) + "20",
-                },
-              ]}
-            >
-              <ThemedText
-                style={[
-                  chipStyles.chipText,
-                  {
-                    color: getThemeColor(theme, skinCancerBadge.colorKey),
-                  },
-                ]}
-              >
-                {skinCancerBadge.label}
-              </ThemedText>
-            </View>
-          ) : hasHistologyPending ? (
-            <View style={[chipStyles.chip, { backgroundColor: "#E5A00D20" }]}>
-              <ThemedText style={[chipStyles.chipText, { color: "#E5A00D" }]}>
-                Histology pending
-              </ThemedText>
-            </View>
-          ) : null}
-        </View>
-      </View>
-
       <View style={styles.contentRow}>
         <CaseThumbnail caseData={caseData} />
         <View style={styles.contentText}>
-          <ThemedText style={styles.patientId} numberOfLines={1}>
-            {caseData.patientIdentifier}
-          </ThemedText>
-          <View style={styles.diagnosisRow}>
-            <ThemedText
-              style={[styles.procedureType, { color: theme.textSecondary }]}
-              numberOfLines={1}
-            >
-              {caseTitle}
-            </ThemedText>
-            <SiteChip caseData={caseData} />
-          </View>
-        </View>
-      </View>
-
-      <View style={styles.footer}>
-        <View style={styles.footerMeta}>
-          <View style={styles.footerItem}>
-            <Feather name="calendar" size={14} color={theme.textTertiary} />
-            <ThemedText
-              style={[styles.footerText, { color: theme.textSecondary }]}
-            >
-              {formattedDate}
-            </ThemedText>
-          </View>
-          <View style={styles.footerItem}>
-            <Feather name="map-pin" size={14} color={theme.textTertiary} />
-            <ThemedText
-              style={[styles.footerText, { color: theme.textSecondary }]}
-            >
-              {caseData.facility}
-            </ThemedText>
-          </View>
-        </View>
-        {hasActions ? (
-          <View style={styles.footerActions}>
-            {showHistologyAction ? (
-              <Pressable
-                onPress={(e) => {
-                  e.stopPropagation();
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  onAddHistology!();
-                }}
-                style={[
-                  styles.actionChip,
-                  {
-                    backgroundColor: theme.warning + "15",
-                    borderColor: theme.warning + "30",
-                  },
-                ]}
-              >
-                <Feather name="file-text" size={12} color={theme.warning} />
-                <ThemedText
-                  style={[styles.actionChipText, { color: theme.warning }]}
-                >
-                  Histology
-                </ThemedText>
-              </Pressable>
-            ) : null}
-            {onAddEvent ? (
-              <Pressable
-                onPress={(e) => {
-                  e.stopPropagation();
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  onAddEvent();
-                }}
-                style={[
-                  styles.actionChip,
-                  {
-                    backgroundColor: theme.backgroundElevated,
-                    borderColor: theme.border,
-                  },
-                ]}
-              >
-                <Feather name="plus" size={12} color={theme.textSecondary} />
-                <ThemedText
+          {hasMeta ? (
+            <View style={styles.metaRow}>
+              {showRoleBadge ? <RoleBadge role={userRole} size="small" /> : null}
+              {skinCancerBadge ? (
+                <View
                   style={[
-                    styles.actionChipText,
-                    { color: theme.textSecondary },
+                    chipStyles.chip,
+                    {
+                      backgroundColor:
+                        getThemeColor(theme, skinCancerBadge.colorKey) + "20",
+                    },
                   ]}
                 >
-                  Event
-                </ThemedText>
-              </Pressable>
-            ) : null}
+                  <ThemedText
+                    style={[
+                      chipStyles.chipText,
+                      {
+                        color: getThemeColor(theme, skinCancerBadge.colorKey),
+                      },
+                    ]}
+                  >
+                    {skinCancerBadge.label}
+                  </ThemedText>
+                </View>
+              ) : hasHistologyPending ? (
+                <View
+                  style={[
+                    chipStyles.chip,
+                    { backgroundColor: theme.accent + "20" },
+                  ]}
+                >
+                  <ThemedText
+                    style={[chipStyles.chipText, { color: theme.accent }]}
+                  >
+                    Histology pending
+                  </ThemedText>
+                </View>
+              ) : null}
+            </View>
+          ) : null}
+          <ThemedText style={styles.title} numberOfLines={1}>
+            {primaryDiagnosis}
+          </ThemedText>
+          <ThemedText
+            style={[styles.procedureType, { color: theme.textSecondary }]}
+            numberOfLines={1}
+          >
+            {primaryProcedure}
+          </ThemedText>
+          <View style={styles.identityRow}>
+            <SiteChip caseData={caseData} />
+            <ThemedText
+              style={[styles.patientId, { color: theme.textTertiary }]}
+              numberOfLines={1}
+            >
+              {caseData.patientIdentifier}
+            </ThemedText>
           </View>
-        ) : null}
+          {hasActions ? (
+            <View style={styles.actionRow}>
+              {showHistologyAction ? (
+                <Pressable
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    onAddHistology!();
+                  }}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Add histology for ${caseData.patientIdentifier}`}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  style={[
+                    styles.actionChip,
+                    {
+                      backgroundColor: theme.accent + "15",
+                      borderColor: theme.accent + "30",
+                    },
+                  ]}
+                >
+                  <Feather name="file-text" size={12} color={theme.accent} />
+                  <ThemedText
+                    style={[styles.actionChipText, { color: theme.accent }]}
+                  >
+                    Histology
+                  </ThemedText>
+                </Pressable>
+              ) : null}
+              {onAddEvent ? (
+                <Pressable
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    onAddEvent();
+                  }}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Add event for ${caseData.patientIdentifier}`}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  style={[
+                    styles.actionChip,
+                    {
+                      backgroundColor: theme.backgroundElevated,
+                      borderColor: theme.border,
+                    },
+                  ]}
+                >
+                  <Feather name="plus" size={12} color={theme.textSecondary} />
+                  <ThemedText
+                    style={[styles.actionChipText, { color: theme.textSecondary }]}
+                  >
+                    Event
+                  </ThemedText>
+                </Pressable>
+              ) : null}
+            </View>
+          ) : null}
+        </View>
+        <View style={styles.dateColumn}>
+          <ThemedText style={[styles.dateText, { color: theme.textTertiary }]}>
+            {formattedDate}
+          </ThemedText>
+        </View>
       </View>
     </Pressable>
   );
@@ -347,7 +359,7 @@ const chipStyles = StyleSheet.create({
     borderRadius: 6,
     paddingHorizontal: 6,
     paddingVertical: 1,
-    marginLeft: Spacing.xs,
+    marginRight: Spacing.xs,
   },
   chipText: {
     fontSize: 11,
@@ -373,47 +385,49 @@ const styles = StyleSheet.create({
   },
   contentRow: {
     flexDirection: "row",
-    alignItems: "center",
-    marginBottom: Spacing.sm,
+    alignItems: "flex-start",
   },
   contentText: {
     flex: 1,
   },
-  diagnosisRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  patientId: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 2,
-  },
-  procedureType: {
-    fontSize: 14,
-    flexShrink: 1,
-  },
-  footer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  footerMeta: {
-    flexDirection: "row",
-    gap: Spacing.lg,
-    flexShrink: 1,
-  },
-  footerItem: {
+  metaRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: Spacing.xs,
+    flexWrap: "wrap",
+    marginBottom: 4,
   },
-  footerText: {
+  identityRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 2,
+  },
+  title: {
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  patientId: {
+    fontSize: 11,
+    fontWeight: "500",
+    fontFamily: "monospace",
+  },
+  procedureType: {
     fontSize: 13,
   },
-  footerActions: {
-    flexDirection: "row",
-    gap: 6,
+  dateColumn: {
     marginLeft: Spacing.sm,
+    minWidth: 56,
+    alignItems: "flex-end",
+  },
+  dateText: {
+    fontSize: 12,
+  },
+  actionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 8,
+    flexWrap: "wrap",
   },
   actionChip: {
     flexDirection: "row",

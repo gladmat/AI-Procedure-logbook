@@ -88,6 +88,8 @@ export default function CaseSearchScreen() {
         <Feather name="search" size={16} color={theme.textTertiary} />
         <TextInput
           style={[styles.input, { color: theme.text }]}
+          accessibilityLabel="Search cases"
+          accessibilityHint="Search by patient identifier, diagnosis, procedure, or hospital"
           placeholder="Search by patient, diagnosis, procedure..."
           placeholderTextColor={theme.textTertiary}
           value={query}
@@ -100,6 +102,8 @@ export default function CaseSearchScreen() {
         {query.length > 0 ? (
           <Pressable
             onPress={() => setQuery("")}
+            accessibilityRole="button"
+            accessibilityLabel="Clear search"
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
             <Feather name="x-circle" size={16} color={theme.textTertiary} />

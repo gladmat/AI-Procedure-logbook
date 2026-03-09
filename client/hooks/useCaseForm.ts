@@ -38,6 +38,7 @@ import {
   ProcedureCode,
   SuggestionAcceptanceEntry,
   ReconstructionTiming,
+  QuickCasePrefillData,
 } from "@/types/case";
 import { InfectionOverlay } from "@/types/infection";
 import type { EncounterClass, EpisodePrefillData } from "@/types/episode";
@@ -770,6 +771,7 @@ interface UseCaseFormParams {
   skinCancerFollowUpPrefill?: boolean;
   episodeId?: string;
   episodePrefill?: EpisodePrefillData;
+  quickPrefill?: QuickCasePrefillData;
   primaryFacility: string;
   profile: UserProfile | null;
 }
@@ -847,6 +849,20 @@ export function buildEpisodePrefillState(
     reconstructionTiming: prefill.reconstructionTiming ?? "",
     priorRadiotherapy: prefill.priorRadiotherapy ?? false,
     priorChemotherapy: prefill.priorChemotherapy ?? false,
+  };
+}
+
+export function buildQuickPrefillState(
+  specialty: Specialty,
+  quickPrefill: QuickCasePrefillData,
+  primaryFacility: string,
+): CaseFormState {
+  const defaults = getDefaultFormState(specialty, primaryFacility);
+
+  return {
+    ...defaults,
+    patientIdentifier: quickPrefill.patientIdentifier,
+    facility: quickPrefill.facility || primaryFacility,
   };
 }
 
@@ -1084,12 +1100,14 @@ export function useCaseForm({
   skinCancerFollowUpPrefill,
   episodeId: routeEpisodeId,
   episodePrefill,
+  quickPrefill,
   primaryFacility,
   profile,
 }: UseCaseFormParams): UseCaseFormReturn {
   const isEditMode = !!caseId;
   const isDuplicate = !!duplicateFrom;
   const isEpisodePrefill = !!episodePrefill;
+  const isQuickPrefill = !!quickPrefill;
   const [existingCase, setExistingCase] = useState<Case | null>(null);
   const specialty = routeSpecialty || existingCase?.specialty || "general";
 
@@ -1115,6 +1133,8 @@ export function useCaseForm({
             primaryFacility,
             !!skinCancerFollowUpPrefill,
           )
+        : quickPrefill
+          ? buildQuickPrefillState(specialty, quickPrefill, primaryFacility)
         : getDefaultFormState(specialty, primaryFacility),
   );
 
@@ -1265,10 +1285,10 @@ export function useCaseForm({
 
   // Mark draft as loaded in edit/duplicate mode (so useCaseDraft doesn't try to load a draft)
   useEffect(() => {
-    if (isEditMode || isDuplicate) {
+    if (isEditMode || isDuplicate || isQuickPrefill) {
       draftLoadedRef.current = true;
     }
-  }, [isEditMode, isDuplicate]);
+  }, [isEditMode, isDuplicate, isQuickPrefill]);
 
   // ── Reset / Revert ────────────────────────────────────────────────────
 

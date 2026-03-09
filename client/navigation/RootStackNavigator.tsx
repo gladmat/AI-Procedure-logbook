@@ -45,6 +45,7 @@ import {
   TimelineEventType,
   MediaAttachment,
   Case,
+  QuickCasePrefillData,
 } from "@/types/case";
 import type { EpisodePrefillData } from "@/types/episode";
 import { useTheme } from "@/hooks/useTheme";
@@ -149,6 +150,7 @@ export type RootStackParamList = {
     skinCancerFollowUpPrefill?: boolean;
     episodeId?: string;
     episodePrefill?: EpisodePrefillData;
+    quickPrefill?: QuickCasePrefillData;
   };
   AddCase: undefined;
   AddTimelineEvent: {
@@ -183,7 +185,7 @@ export type RootStackParamList = {
   SurgicalPreferences: undefined;
   Personalisation: undefined;
   CaseSearch: undefined;
-  NeedsAttentionList: undefined;
+  NeedsAttentionList: { selectedSpecialty?: Specialty | null };
   AddHistology: {
     caseId: string;
     diagnosisGroupIndex: number;

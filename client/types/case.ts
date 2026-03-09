@@ -207,6 +207,11 @@ export type Specialty =
   | "peripheral_nerve"
   | "general";
 
+export interface QuickCasePrefillData {
+  patientIdentifier: string;
+  facility?: string;
+}
+
 // Procedure tags for cross-specialty categorization
 export type ProcedureTag =
   | "free_flap"
@@ -2297,9 +2302,10 @@ export function getAllProcedures(c: Case): CaseProcedure[] {
 }
 
 export function getCaseSpecialties(c: Case): Specialty[] {
-  const specialties = new Set(
-    (c.diagnosisGroups ?? []).map((g) => g.specialty),
-  );
+  const specialties = new Set<Specialty>([c.specialty]);
+  for (const group of c.diagnosisGroups ?? []) {
+    specialties.add(group.specialty);
+  }
   return Array.from(specialties);
 }
 

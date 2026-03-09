@@ -23,24 +23,24 @@ import * as Haptics from "expo-haptics";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, Shadows } from "@/constants/theme";
-import { Case, Specialty, type TimelineEvent, type MediaAttachment } from "@/types/case";
+import {
+  Case,
+  Specialty,
+  type TimelineEvent,
+  type MediaAttachment,
+} from "@/types/case";
 import { INFECTION_SYNDROME_LABELS } from "@/types/infection";
 import {
   getCases,
-  getLatestCaseForEpisode,
   updateCase,
   saveTimelineEvent,
 } from "@/lib/storage";
 import { MediaCapture } from "@/components/MediaCapture";
 import { useActiveEpisodes } from "@/hooks/useActiveEpisodes";
-import type { TreatmentEpisode, EpisodePrefillData } from "@/types/episode";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { useAuth } from "@/contexts/AuthContext";
 import { getVisibleSpecialties } from "@/lib/personalization";
-import {
-  SpecialtyFilterBar,
-  HISTOLOGY_FILTER_ID,
-} from "@/components/dashboard/SpecialtyFilterBar";
+import { SpecialtyFilterBar } from "@/components/dashboard/SpecialtyFilterBar";
 import {
   caseNeedsHistology,
   getFirstHistologyTarget,
@@ -53,17 +53,15 @@ import { NeedsAttentionCarousel } from "@/components/dashboard/NeedsAttentionCar
 import { usePracticePulse } from "@/hooks/usePracticePulse";
 import { useAttentionItems } from "@/hooks/useAttentionItems";
 import type { AttentionItem } from "@/hooks/useAttentionItems";
+import {
+  HISTOLOGY_FILTER_ID,
+  buildAttentionCaseFormParams,
+  buildDashboardSummary,
+  filterCasesByVisibleSpecialties,
+  filterDashboardCases,
+} from "@/lib/dashboardSelectors";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
-
-function getCaseSpecialties(caseData: Case): Specialty[] {
-  return Array.from(
-    new Set([
-      caseData.specialty,
-      ...caseData.diagnosisGroups.map((group) => group.specialty),
-    ]),
-  );
-}
 
 export default function DashboardScreen() {
   const { theme } = useTheme();
@@ -123,27 +121,12 @@ export default function DashboardScreen() {
   // --- Derived data ---
 
   const personalizedCases = useMemo(
-    () =>
-      cases.filter((caseData) =>
-        getCaseSpecialties(caseData).some((specialty) =>
-          visibleSpecialties.includes(specialty),
-        ),
-      ),
+    () => filterCasesByVisibleSpecialties(cases, visibleSpecialties),
     [cases, visibleSpecialties],
   );
 
-  const caseCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
-    for (const c of personalizedCases) {
-      for (const s of getCaseSpecialties(c)) {
-        counts[s] = (counts[s] ?? 0) + 1;
-      }
-    }
-    return counts;
-  }, [personalizedCases]);
-
-  const awaitingHistologyCount = useMemo(
-    () => personalizedCases.filter(caseNeedsHistology).length,
+  const dashboardSummary = useMemo(
+    () => buildDashboardSummary(personalizedCases, caseNeedsHistology),
     [personalizedCases],
   );
 
@@ -156,16 +139,20 @@ export default function DashboardScreen() {
   );
 
   const filteredCases = useMemo(() => {
-    if (!selectedSpecialty) return personalizedCases;
-    if (selectedSpecialty === HISTOLOGY_FILTER_ID) {
-      return personalizedCases.filter(caseNeedsHistology);
-    }
-    return personalizedCases.filter((c) =>
-      getCaseSpecialties(c).includes(selectedSpecialty as Specialty),
+    return filterDashboardCases(
+      personalizedCases,
+      selectedSpecialty,
+      caseNeedsHistology,
     );
   }, [personalizedCases, selectedSpecialty]);
 
-  const recentCases = useMemo(() => filteredCases.slice(0, 5), [filteredCases]);
+  const selectedDashboardSpecialty = useMemo(
+    () =>
+      selectedSpecialty && selectedSpecialty !== HISTOLOGY_FILTER_ID
+        ? (selectedSpecialty as Specialty)
+        : null,
+    [selectedSpecialty],
+  );
   const pulseData = usePracticePulse(filteredCases);
   const attentionItems = useAttentionItems(
     personalizedCases,
@@ -257,35 +244,6 @@ export default function DashboardScreen() {
     [navigation],
   );
 
-  const handleLogCase = useCallback(
-    async (episode: TreatmentEpisode) => {
-      const lastCase = await getLatestCaseForEpisode(episode.id);
-      const linkedCases = visibleEpisodes.find(
-        (e) => e.episode.id === episode.id,
-      )?.cases;
-      const seq = (linkedCases?.length ?? 0) + 1;
-
-      const prefill: EpisodePrefillData = {
-        patientIdentifier: episode.patientIdentifier,
-        facility: lastCase?.facility,
-        specialty: episode.specialty,
-        diagnosisGroups: lastCase?.diagnosisGroups,
-        encounterClass: lastCase?.encounterClass,
-        reconstructionTiming: lastCase?.reconstructionTiming,
-        priorRadiotherapy: lastCase?.priorRadiotherapy,
-        priorChemotherapy: lastCase?.priorChemotherapy,
-        episodeSequence: seq,
-      };
-
-      navigation.navigate("CaseForm", {
-        specialty: episode.specialty,
-        episodeId: episode.id,
-        episodePrefill: prefill,
-      });
-    },
-    [navigation, visibleEpisodes],
-  );
-
   const handleAddCase = useCallback(() => {
     if (selectedSpecialty && selectedSpecialty !== HISTOLOGY_FILTER_ID) {
       navigation.navigate("CaseForm", {
@@ -297,23 +255,17 @@ export default function DashboardScreen() {
   }, [navigation, selectedSpecialty]);
 
   const handleAttentionLogCase = useCallback(
-    async (item: AttentionItem) => {
-      if (item.type === "inpatient") {
-        navigation.navigate("CaseForm", {
-          ...(selectedSpecialty && selectedSpecialty !== HISTOLOGY_FILTER_ID
-            ? { specialty: selectedSpecialty as Specialty }
-            : {}),
-        });
-      } else if (item.episodeId) {
-        const episode = visibleEpisodes.find(
-          (e) => e.episode.id === item.episodeId,
-        );
-        if (episode) {
-          await handleLogCase(episode.episode);
-        }
+    (item: AttentionItem) => {
+      const params = buildAttentionCaseFormParams(
+        item,
+        visibleEpisodes,
+        selectedDashboardSpecialty,
+      );
+      if (params) {
+        navigation.navigate("CaseForm", params);
       }
     },
-    [navigation, selectedSpecialty, visibleEpisodes, handleLogCase],
+    [navigation, selectedDashboardSpecialty, visibleEpisodes],
   );
 
   const handleAttentionDischarge = useCallback(
@@ -341,8 +293,10 @@ export default function DashboardScreen() {
   );
 
   const handleViewAllAttention = useCallback(() => {
-    navigation.navigate("NeedsAttentionList");
-  }, [navigation]);
+    navigation.navigate("NeedsAttentionList", {
+      selectedSpecialty: selectedDashboardSpecialty,
+    });
+  }, [navigation, selectedDashboardSpecialty]);
 
   const handleAddEvent = useCallback(
     (caseId: string) => {
@@ -412,9 +366,10 @@ export default function DashboardScreen() {
         <SpecialtyFilterBar
           selectedSpecialty={selectedSpecialty}
           onSelectSpecialty={setSelectedSpecialty}
-          caseCounts={caseCounts}
+          caseCounts={dashboardSummary.caseCounts}
+          totalCaseCount={dashboardSummary.totalCaseCount}
           isSticky={isFilterSticky}
-          awaitingHistologyCount={awaitingHistologyCount}
+          awaitingHistologyCount={dashboardSummary.awaitingHistologyCount}
         />
 
         {/* Zone 1 — Needs Attention */}
@@ -441,7 +396,7 @@ export default function DashboardScreen() {
           <DashboardEmptyState />
         ) : (
           <RecentCasesList
-            cases={recentCases}
+            cases={filteredCases}
             selectedSpecialty={selectedSpecialty}
             totalCount={filteredCases.length}
             onCasePress={handleCasePress}

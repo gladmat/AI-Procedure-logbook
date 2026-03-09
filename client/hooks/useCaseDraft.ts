@@ -15,6 +15,8 @@ interface UseCaseDraftParams {
   isEditMode: boolean;
   /** Skip draft loading when form is pre-filled from an episode */
   isEpisodePrefill?: boolean;
+  /** Skip draft loading when form is opened as a quick-log prefill */
+  isQuickPrefill?: boolean;
   draftLoadedRef: React.MutableRefObject<boolean>;
   savedRef: React.MutableRefObject<boolean>;
   dispatch: React.Dispatch<CaseFormAction>;
@@ -26,6 +28,7 @@ export function useCaseDraft({
   specialty,
   isEditMode,
   isEpisodePrefill,
+  isQuickPrefill,
   draftLoadedRef,
   savedRef,
   dispatch,
@@ -40,7 +43,8 @@ export function useCaseDraft({
   // ── Load draft on mount (new case only) ───────────────────────────────
 
   useEffect(() => {
-    if (isEditMode || isEpisodePrefill || draftLoadedRef.current) return;
+    if (isEditMode || isEpisodePrefill || isQuickPrefill || draftLoadedRef.current)
+      return;
 
     const loadDraft = async () => {
       const draft = await getCaseDraft(specialty);
@@ -57,6 +61,7 @@ export function useCaseDraft({
     primaryFacility,
     isEditMode,
     isEpisodePrefill,
+    isQuickPrefill,
     draftLoadedRef,
     dispatch,
   ]);

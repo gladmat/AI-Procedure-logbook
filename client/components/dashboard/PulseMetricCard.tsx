@@ -3,12 +3,13 @@ import { View, StyleSheet } from "react-native";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 
-type MetricType = "totalCases" | "thisWeek" | "completion";
+type MetricType = "thisMonth" | "thisWeek" | "completion";
 
 interface PulseMetricCardProps {
   type: MetricType;
   label: string;
   value: number;
+  delta?: number;
   dailyDots?: boolean[];
   todayIndex?: number;
   percentage?: number;
@@ -18,11 +19,22 @@ function PulseMetricCardInner({
   type,
   label,
   value,
+  delta,
   dailyDots,
   todayIndex,
   percentage,
 }: PulseMetricCardProps) {
   const { theme } = useTheme();
+  const deltaText =
+    delta == null ? null : delta > 0 ? `+${delta}` : delta < 0 ? `${delta}` : "0";
+  const deltaColor =
+    delta == null
+      ? theme.textTertiary
+      : delta > 0
+        ? theme.success
+        : delta < 0
+          ? theme.destructiveMuted
+          : theme.textTertiary;
 
   return (
     <View
@@ -41,6 +53,12 @@ function PulseMetricCardInner({
         {type === "completion" ? `${value}%` : value}
       </ThemedText>
 
+      {type === "thisMonth" ? (
+        <ThemedText style={[styles.deltaText, { color: deltaColor }]}>
+          {deltaText}
+        </ThemedText>
+      ) : null}
+
       {type === "thisWeek" && dailyDots ? (
         <View style={styles.dotsRow}>
           {dailyDots.map((filled, i) => (
@@ -49,7 +67,7 @@ function PulseMetricCardInner({
               style={[
                 styles.dot,
                 {
-                  backgroundColor: filled ? "#E5A00D" : theme.border,
+                  backgroundColor: filled ? theme.accent : theme.border,
                 },
                 i === todayIndex && {
                   borderWidth: 1,
@@ -66,6 +84,7 @@ function PulseMetricCardInner({
           <View
             style={[
               styles.progressFill,
+              { backgroundColor: theme.accent },
               { width: `${percentage}%` as unknown as number },
             ]}
           />
@@ -101,6 +120,10 @@ const styles = StyleSheet.create({
     gap: 4,
     alignItems: "center",
   },
+  deltaText: {
+    fontSize: 11,
+    fontWeight: "600",
+  },
   dot: {
     width: 4,
     height: 4,
@@ -114,6 +137,5 @@ const styles = StyleSheet.create({
   progressFill: {
     height: 2,
     borderRadius: 1,
-    backgroundColor: "#E5A00D",
   },
 });

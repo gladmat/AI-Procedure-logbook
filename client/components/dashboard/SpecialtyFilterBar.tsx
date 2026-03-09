@@ -6,14 +6,13 @@ import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { PROCEDURE_CATEGORIES } from "@/constants/categories";
 import { SPECIALTY_LABELS, Specialty } from "@/types/case";
-
-/** Special filter ID for "Awaiting Histology" — not a real specialty */
-export const HISTOLOGY_FILTER_ID = "__histology__";
+import { HISTOLOGY_FILTER_ID } from "@/lib/dashboardSelectors";
 
 interface SpecialtyFilterBarProps {
   selectedSpecialty: string | null;
   onSelectSpecialty: (specialty: string | null) => void;
-  caseCounts: Record<string, number>;
+  caseCounts: Partial<Record<Specialty, number>>;
+  totalCaseCount: number;
   isSticky?: boolean;
   /** Number of cases awaiting histology. Chip hidden when 0. */
   awaitingHistologyCount?: number;
@@ -23,15 +22,11 @@ function SpecialtyFilterBarInner({
   selectedSpecialty,
   onSelectSpecialty,
   caseCounts,
+  totalCaseCount,
   isSticky,
   awaitingHistologyCount = 0,
 }: SpecialtyFilterBarProps) {
   const { theme } = useTheme();
-
-  const totalCount = useMemo(
-    () => Object.values(caseCounts).reduce((sum, c) => sum + c, 0),
-    [caseCounts],
-  );
 
   const visibleChips = useMemo(() => {
     const chips: {
@@ -39,7 +34,7 @@ function SpecialtyFilterBarInner({
       label: string;
       count: number;
       isSpecial?: boolean;
-    }[] = [{ id: null, label: "All", count: totalCount }];
+    }[] = [{ id: null, label: "All", count: totalCaseCount }];
     for (const cat of PROCEDURE_CATEGORIES) {
       const count = caseCounts[cat.id] ?? 0;
       if (count > 0) {
@@ -50,7 +45,6 @@ function SpecialtyFilterBarInner({
         });
       }
     }
-    // Awaiting histology chip at the end
     if (awaitingHistologyCount > 0) {
       chips.push({
         id: HISTOLOGY_FILTER_ID,
@@ -60,7 +54,7 @@ function SpecialtyFilterBarInner({
       });
     }
     return chips;
-  }, [caseCounts, totalCount, awaitingHistologyCount]);
+  }, [awaitingHistologyCount, caseCounts, totalCaseCount]);
 
   const handlePress = (id: string | null) => {
     Haptics.selectionAsync();
@@ -87,16 +81,19 @@ function SpecialtyFilterBarInner({
             <Pressable
               key={chip.id ?? "all"}
               onPress={() => handlePress(chip.id)}
+              accessibilityRole="button"
+              accessibilityState={{ selected: isSelected }}
+              accessibilityLabel={`${chip.label} filter, ${chip.count} cases`}
+              accessibilityHint="Filters dashboard content by specialty"
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               style={[
                 styles.chip,
                 isSelected
-                  ? isHistology
-                    ? { backgroundColor: theme.warning }
-                    : styles.chipSelected
+                  ? { backgroundColor: theme.accent }
                   : {
                       backgroundColor: theme.backgroundElevated,
                       borderColor: isHistology
-                        ? theme.warning + "50"
+                        ? theme.accent + "50"
                         : theme.border,
                       borderWidth: 1,
                     },
@@ -107,13 +104,13 @@ function SpecialtyFilterBarInner({
                   <Feather
                     name="file-text"
                     size={12}
-                    color={isSelected ? "#1A1A2E" : theme.warning}
+                    color={isSelected ? theme.accentContrast : theme.accent}
                   />
                   <ThemedText
                     style={[
                       styles.chipText,
                       {
-                        color: isSelected ? "#1A1A2E" : theme.warning,
+                        color: isSelected ? theme.accentContrast : theme.accent,
                       },
                     ]}
                   >
@@ -125,7 +122,7 @@ function SpecialtyFilterBarInner({
                   style={[
                     styles.chipText,
                     {
-                      color: isSelected ? "#1A1A2E" : theme.textSecondary,
+                      color: isSelected ? theme.accentContrast : theme.textSecondary,
                     },
                   ]}
                 >
@@ -156,9 +153,6 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     justifyContent: "center",
     alignItems: "center",
-  },
-  chipSelected: {
-    backgroundColor: "#E5A00D",
   },
   chipContent: {
     flexDirection: "row",

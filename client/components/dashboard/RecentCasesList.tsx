@@ -7,6 +7,7 @@ import { Case, SPECIALTY_LABELS, Specialty } from "@/types/case";
 import { SkeletonCard } from "@/components/LoadingState";
 import { DashboardCaseCard } from "@/components/dashboard/CaseCard";
 import { InfoButton } from "@/components/dashboard/InfoButton";
+import { HISTOLOGY_FILTER_ID } from "@/lib/dashboardSelectors";
 
 interface RecentCasesListProps {
   cases: Case[];
@@ -32,7 +33,11 @@ function RecentCasesListInner({
   const { theme } = useTheme();
 
   const headerText = selectedSpecialty
-    ? `${SPECIALTY_LABELS[selectedSpecialty as Specialty] ?? selectedSpecialty} Cases`
+    ? `${
+        selectedSpecialty === HISTOLOGY_FILTER_ID
+          ? "Histology"
+          : SPECIALTY_LABELS[selectedSpecialty as Specialty] ?? selectedSpecialty
+      } Cases`
     : "Recent Cases";
 
   if (loading) {

@@ -122,6 +122,7 @@ export default function CaseFormScreen() {
     skinCancerFollowUpPrefill,
     episodeId: routeEpisodeId,
     episodePrefill,
+    quickPrefill,
   } = route.params;
   const [showDuplicateBanner, setShowDuplicateBanner] =
     useState(!!duplicateFrom);
@@ -142,6 +143,7 @@ export default function CaseFormScreen() {
     skinCancerFollowUpPrefill,
     episodeId: routeEpisodeId,
     episodePrefill,
+    quickPrefill,
     primaryFacility,
     profile,
   });
@@ -159,6 +161,7 @@ export default function CaseFormScreen() {
     specialty: form.specialty,
     isEditMode: form.isEditMode,
     isEpisodePrefill: !!episodePrefill,
+    isQuickPrefill: !!quickPrefill,
     draftLoadedRef: form.draftLoadedRef,
     savedRef: form.savedRef,
     dispatch: formDispatch,

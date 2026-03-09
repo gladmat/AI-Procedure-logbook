@@ -17,7 +17,9 @@ interface AttentionCardProps {
 
 function getStatusBadge(
   item: AttentionItem,
-  linkColor: string,
+  accentColor: string,
+  successColor: string,
+  infoColor: string,
   warningColor: string,
   errorColor: string,
 ): { bg: string; text: string; label: string } {
@@ -25,11 +27,11 @@ function getStatusBadge(
     return { bg: errorColor + "20", text: errorColor, label: "Infection" };
   }
   if (item.type === "inpatient") {
-    return { bg: "#E5A00D20", text: "#E5A00D", label: "Inpatient" };
+    return { bg: accentColor + "20", text: accentColor, label: "Inpatient" };
   }
   switch (item.episodeStatus) {
     case "active":
-      return { bg: "#05966920", text: "#059669", label: "Active" };
+      return { bg: successColor + "20", text: successColor, label: "Active" };
     case "on_hold":
       return {
         bg: warningColor + "20",
@@ -37,9 +39,9 @@ function getStatusBadge(
         label: "On Hold",
       };
     case "planned":
-      return { bg: linkColor + "20", text: linkColor, label: "Planned" };
+      return { bg: infoColor + "20", text: infoColor, label: "Planned" };
     default:
-      return { bg: "#05966920", text: "#059669", label: "Active" };
+      return { bg: successColor + "20", text: successColor, label: "Active" };
   }
 }
 
@@ -53,18 +55,29 @@ function AttentionCardInner({
   onAddHistology,
 }: AttentionCardProps) {
   const { theme, isDark } = useTheme();
-  const badge = getStatusBadge(item, theme.link, theme.warning, theme.error);
+  const badge = getStatusBadge(
+    item,
+    theme.accent,
+    theme.success,
+    theme.info,
+    theme.warning,
+    theme.error,
+  );
 
   const actionCaseId = item.caseId || item.lastCaseId;
-
-  // Secondary info line: procedure summary for episodes, syndrome for infections
   const secondaryInfo =
     item.type === "episode" && item.lastProcedureSummary
       ? item.lastProcedureSummary
       : undefined;
+  const canLogCase = item.type === "inpatient" || item.type === "episode" || !!item.episodeId;
+  const logCaseLabel =
+    item.type === "episode" || item.episodeId ? "Next Episode" : "Log Case";
 
   return (
     <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`${badge.label}, ${item.patientIdentifier}, ${item.diagnosisTitle}`}
+      accessibilityHint="Opens the related case or episode"
       style={[
         styles.card,
         {
@@ -84,7 +97,9 @@ function AttentionCardInner({
           </ThemedText>
         </View>
         {item.type === "inpatient" ? (
-          <ThemedText style={styles.podText}>POD {item.postOpDay}</ThemedText>
+          <ThemedText style={[styles.podText, { color: theme.accent }]}>
+            POD {item.postOpDay}
+          </ThemedText>
         ) : item.type === "infection" && item.infectionSyndrome ? (
           <ThemedText
             style={[styles.metaText, { color: theme.textSecondary }]}
@@ -123,7 +138,7 @@ function AttentionCardInner({
           </ThemedText>
         ) : null}
         {item.type === "episode" && item.pendingAction ? (
-          <ThemedText style={styles.pendingAction}>
+          <ThemedText style={[styles.pendingAction, { color: theme.accent }]}>
             {item.pendingAction}
           </ThemedText>
         ) : null}
@@ -135,16 +150,25 @@ function AttentionCardInner({
           <Pressable
             style={[
               styles.actionChip,
-              { backgroundColor: "#E5A00D15", borderColor: "#E5A00D30" },
+              {
+                backgroundColor: theme.accent + "15",
+                borderColor: theme.accent + "30",
+              },
             ]}
             onPress={(e) => {
               e.stopPropagation();
               onAddHistology(actionCaseId);
             }}
-            hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+            accessibilityRole="button"
+            accessibilityLabel={`Add histology for ${item.patientIdentifier}`}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <Feather name="file-text" size={13} color="#E5A00D" />
-            <ThemedText style={styles.histologyChipText}>Histology</ThemedText>
+            <Feather name="file-text" size={13} color={theme.accent} />
+            <ThemedText
+              style={[styles.histologyChipText, { color: theme.accent }]}
+            >
+              Histology
+            </ThemedText>
           </Pressable>
         ) : null}
         {actionCaseId && onAddEvent ? (
@@ -160,7 +184,9 @@ function AttentionCardInner({
               e.stopPropagation();
               onAddEvent(actionCaseId);
             }}
-            hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+            accessibilityRole="button"
+            accessibilityLabel={`Add event for ${item.patientIdentifier}`}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
             <Feather name="plus" size={13} color={theme.textSecondary} />
             <ThemedText
@@ -174,27 +200,43 @@ function AttentionCardInner({
           <Pressable
             style={[
               styles.actionChip,
-              { backgroundColor: "#E5A00D15", borderColor: "#E5A00D30" },
+              {
+                backgroundColor: theme.accent + "15",
+                borderColor: theme.accent + "30",
+              },
             ]}
             onPress={(e) => {
               e.stopPropagation();
               onDischarge(item.caseId!);
             }}
-            hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+            accessibilityRole="button"
+            accessibilityLabel={`Discharge ${item.patientIdentifier}`}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <ThemedText style={styles.dischargeChipText}>Discharge</ThemedText>
+            <ThemedText
+              style={[styles.dischargeChipText, { color: theme.accent }]}
+            >
+              Discharge
+            </ThemedText>
           </Pressable>
         ) : null}
-        {item.type === "episode" || item.hasEpisodeLink ? (
+        {canLogCase ? (
           <Pressable
-            style={styles.logCaseButton}
+            style={[
+              styles.logCaseButton,
+              { backgroundColor: theme.accent },
+            ]}
             onPress={(e) => {
               e.stopPropagation();
               onLogCase(item);
             }}
-            hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+            accessibilityRole="button"
+            accessibilityLabel={`${logCaseLabel} for ${item.patientIdentifier}`}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <ThemedText style={styles.logCaseText}>Next Episode</ThemedText>
+            <ThemedText style={[styles.logCaseText, { color: theme.accentContrast }]}>
+              {logCaseLabel}
+            </ThemedText>
           </Pressable>
         ) : null}
       </View>
@@ -245,7 +287,6 @@ const styles = StyleSheet.create({
   podText: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#E5A00D",
   },
   metaText: {
     fontSize: 13,
@@ -269,7 +310,6 @@ const styles = StyleSheet.create({
   pendingAction: {
     fontSize: 11,
     fontStyle: "italic",
-    color: "#E5A00D",
   },
   row3: {
     flexDirection: "row",
@@ -291,7 +331,6 @@ const styles = StyleSheet.create({
   histologyChipText: {
     fontSize: 12,
     fontWeight: "600",
-    color: "#E5A00D",
   },
   actionChipText: {
     fontSize: 12,
@@ -300,10 +339,8 @@ const styles = StyleSheet.create({
   dischargeChipText: {
     fontSize: 12,
     fontWeight: "600",
-    color: "#E5A00D",
   },
   logCaseButton: {
-    backgroundColor: "#E5A00D",
     height: 32,
     paddingHorizontal: 12,
     borderRadius: 8,
@@ -313,6 +350,5 @@ const styles = StyleSheet.create({
   logCaseText: {
     fontSize: 12,
     fontWeight: "600",
-    color: "#1A1A2E",
   },
 });

@@ -1,4 +1,9 @@
-import React, { useState, useCallback, useMemo } from "react";
+import React, {
+  useState,
+  useCallback,
+  useMemo,
+  useLayoutEffect,
+} from "react";
 import {
   View,
   SectionList,
@@ -9,10 +14,13 @@ import {
   Alert,
   Modal,
 } from "react-native";
-import DateTimePicker, {
-  DateTimePickerEvent,
-} from "@react-native-community/datetimepicker";
-import { useNavigation, useFocusEffect } from "@react-navigation/native";
+import DateTimePicker, { DateTimePickerEvent } from "@react-native-community/datetimepicker";
+import {
+  useNavigation,
+  useFocusEffect,
+  useRoute,
+  type RouteProp,
+} from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@/components/FeatherIcon";
@@ -21,16 +29,23 @@ import { MediaCapture } from "@/components/MediaCapture";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
-import { getCases, getLatestCaseForEpisode, updateCase, saveTimelineEvent } from "@/lib/storage";
+import { getCases, updateCase, saveTimelineEvent } from "@/lib/storage";
 import { useActiveEpisodes } from "@/hooks/useActiveEpisodes";
 import { useAttentionItems } from "@/hooks/useAttentionItems";
 import { getFirstHistologyTarget } from "@/lib/skinCancerConfig";
 import type { AttentionItem } from "@/hooks/useAttentionItems";
 import type { Case, TimelineEvent, MediaAttachment } from "@/types/case";
-import type { EpisodePrefillData } from "@/types/episode";
+import { SPECIALTY_LABELS } from "@/types/case";
 import * as Haptics from "expo-haptics";
+import { useAuth } from "@/contexts/AuthContext";
+import { getVisibleSpecialties } from "@/lib/personalization";
+import {
+  buildAttentionCaseFormParams,
+  filterCasesByVisibleSpecialties,
+} from "@/lib/dashboardSelectors";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+type RouteParams = RouteProp<RootStackParamList, "NeedsAttentionList">;
 
 interface Section {
   title: string;
@@ -38,9 +53,12 @@ interface Section {
 }
 
 export default function NeedsAttentionListScreen() {
-  const { theme, isDark } = useTheme();
+  const { theme } = useTheme();
   const navigation = useNavigation<NavigationProp>();
+  const route = useRoute<RouteParams>();
   const insets = useSafeAreaInsets();
+  const { profile } = useAuth();
+  const selectedSpecialty = route.params?.selectedSpecialty ?? null;
 
   const [cases, setCases] = useState<Case[]>([]);
   const [search, setSearch] = useState("");
@@ -55,6 +73,18 @@ export default function NeedsAttentionListScreen() {
 
   const { episodes: activeEpisodes, refresh: refreshEpisodes } =
     useActiveEpisodes();
+  const visibleSpecialties = useMemo(
+    () => getVisibleSpecialties(profile),
+    [profile],
+  );
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerTitle: selectedSpecialty
+        ? `${SPECIALTY_LABELS[selectedSpecialty]} Attention`
+        : "Needs Attention",
+    });
+  }, [navigation, selectedSpecialty]);
 
   const loadCases = useCallback(async () => {
     try {
@@ -74,8 +104,22 @@ export default function NeedsAttentionListScreen() {
     }, [loadCases, refreshEpisodes]),
   );
 
-  // No specialty filter — show all
-  const attentionItems = useAttentionItems(cases, activeEpisodes, null);
+  const personalizedCases = useMemo(
+    () => filterCasesByVisibleSpecialties(cases, visibleSpecialties),
+    [cases, visibleSpecialties],
+  );
+  const visibleEpisodes = useMemo(
+    () =>
+      activeEpisodes.filter(({ episode }) =>
+        visibleSpecialties.includes(episode.specialty),
+      ),
+    [activeEpisodes, visibleSpecialties],
+  );
+  const attentionItems = useAttentionItems(
+    personalizedCases,
+    visibleEpisodes,
+    selectedSpecialty,
+  );
 
   // Filter by search
   const filtered = useMemo(() => {
@@ -122,42 +166,22 @@ export default function NeedsAttentionListScreen() {
   );
 
   const handleLogCase = useCallback(
-    async (item: AttentionItem) => {
-      if (item.type === "episode" && item.episodeId) {
-        const episodeData = activeEpisodes.find(
-          (e) => e.episode.id === item.episodeId,
-        );
-        if (episodeData) {
-          const { episode, cases: linkedCases } = episodeData;
-          const lastCase = await getLatestCaseForEpisode(episode.id);
-          const seq = (linkedCases?.length ?? 0) + 1;
-
-          const prefill: EpisodePrefillData = {
-            patientIdentifier: episode.patientIdentifier,
-            facility: lastCase?.facility,
-            specialty: episode.specialty,
-            diagnosisGroups: lastCase?.diagnosisGroups,
-            encounterClass: lastCase?.encounterClass,
-            reconstructionTiming: lastCase?.reconstructionTiming,
-            priorRadiotherapy: lastCase?.priorRadiotherapy,
-            priorChemotherapy: lastCase?.priorChemotherapy,
-            episodeSequence: seq,
-          };
-
-          navigation.navigate("CaseForm", {
-            specialty: episode.specialty,
-            episodeId: episode.id,
-            episodePrefill: prefill,
-          });
-        }
+    (item: AttentionItem) => {
+      const params = buildAttentionCaseFormParams(
+        item,
+        visibleEpisodes,
+        selectedSpecialty,
+      );
+      if (params) {
+        navigation.navigate("CaseForm", params);
       }
     },
-    [navigation, activeEpisodes],
+    [navigation, selectedSpecialty, visibleEpisodes],
   );
 
   const handleDischarge = useCallback(
     (caseId: string) => {
-      const caseItem = cases.find((c) => c.id === caseId);
+      const caseItem = personalizedCases.find((c) => c.id === caseId);
       if (caseItem) {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         setDischargeCase(caseItem);
@@ -166,7 +190,7 @@ export default function NeedsAttentionListScreen() {
         setDischargeModalVisible(true);
       }
     },
-    [cases],
+    [personalizedCases],
   );
 
   const handleConfirmDischarge = async () => {
@@ -244,7 +268,7 @@ export default function NeedsAttentionListScreen() {
 
   const handleAddHistology = useCallback(
     (caseId: string) => {
-      const caseData = cases.find((c) => c.id === caseId);
+      const caseData = personalizedCases.find((c) => c.id === caseId);
       if (!caseData) return;
       const target = getFirstHistologyTarget(caseData);
       if (target) {
@@ -256,7 +280,7 @@ export default function NeedsAttentionListScreen() {
         });
       }
     },
-    [navigation, cases],
+    [navigation, personalizedCases],
   );
 
   const getBadge = (item: AttentionItem) => {
@@ -264,11 +288,11 @@ export default function NeedsAttentionListScreen() {
       return { bg: theme.error + "20", text: theme.error, label: "Infection" };
     }
     if (item.type === "inpatient") {
-      return { bg: "#E5A00D20", text: "#E5A00D", label: "Inpatient" };
+      return { bg: theme.accent + "20", text: theme.accent, label: "Inpatient" };
     }
     switch (item.episodeStatus) {
       case "active":
-        return { bg: "#05966920", text: "#059669", label: "Active" };
+        return { bg: theme.success + "20", text: theme.success, label: "Active" };
       case "on_hold":
         return {
           bg: theme.warning + "20",
@@ -276,9 +300,9 @@ export default function NeedsAttentionListScreen() {
           label: "On Hold",
         };
       case "planned":
-        return { bg: theme.link + "20", text: theme.link, label: "Planned" };
+        return { bg: theme.info + "20", text: theme.info, label: "Planned" };
       default:
-        return { bg: "#05966920", text: "#059669", label: "Active" };
+        return { bg: theme.success + "20", text: theme.success, label: "Active" };
     }
   };
 
@@ -286,10 +310,16 @@ export default function NeedsAttentionListScreen() {
     ({ item }: { item: AttentionItem }) => {
       const badge = getBadge(item);
       const actionCaseId = item.caseId || item.lastCaseId;
+      const canLogCase =
+        item.type === "inpatient" || item.type === "episode" || !!item.episodeId;
+      const logCaseLabel =
+        item.type === "episode" || item.episodeId ? "Next Episode" : "Log Case";
 
       return (
         <Pressable
           onPress={() => handleCardPress(item)}
+          accessibilityRole="button"
+          accessibilityLabel={`${badge.label}, ${item.patientIdentifier}, ${item.diagnosisTitle}`}
           style={({ pressed }) => [
             styles.card,
             {
@@ -306,7 +336,7 @@ export default function NeedsAttentionListScreen() {
               </ThemedText>
             </View>
             {item.type === "inpatient" ? (
-              <ThemedText style={styles.podText}>
+              <ThemedText style={[styles.podText, { color: theme.accent }]}>
                 POD {item.postOpDay}
               </ThemedText>
             ) : item.type === "infection" && item.infectionSyndrome ? (
@@ -336,7 +366,9 @@ export default function NeedsAttentionListScreen() {
               {item.diagnosisTitle}
             </ThemedText>
             {item.type === "episode" && item.pendingAction ? (
-              <ThemedText style={styles.pendingAction}>
+              <ThemedText
+                style={[styles.pendingAction, { color: theme.accent }]}
+              >
                 {item.pendingAction}
               </ThemedText>
             ) : null}
@@ -349,10 +381,14 @@ export default function NeedsAttentionListScreen() {
                   e.stopPropagation();
                   handleAddHistology(actionCaseId);
                 }}
+                accessibilityRole="button"
+                accessibilityLabel={`Add histology for ${item.patientIdentifier}`}
               >
                 <View style={styles.histologyButton}>
-                  <Feather name="file-text" size={12} color="#E5A00D" />
-                  <ThemedText style={styles.histologyText}>
+                  <Feather name="file-text" size={12} color={theme.accent} />
+                  <ThemedText
+                    style={[styles.histologyText, { color: theme.accent }]}
+                  >
                     Histology
                   </ThemedText>
                 </View>
@@ -364,6 +400,8 @@ export default function NeedsAttentionListScreen() {
                   e.stopPropagation();
                   handleAddEvent(actionCaseId);
                 }}
+                accessibilityRole="button"
+                accessibilityLabel={`Add event for ${item.patientIdentifier}`}
               >
                 <ThemedText
                   style={[styles.eventText, { color: theme.textSecondary }]}
@@ -378,19 +416,32 @@ export default function NeedsAttentionListScreen() {
                   e.stopPropagation();
                   handleDischarge(item.caseId!);
                 }}
+                accessibilityRole="button"
+                accessibilityLabel={`Discharge ${item.patientIdentifier}`}
               >
-                <ThemedText style={styles.dischargeText}>Discharge</ThemedText>
+                <ThemedText
+                  style={[styles.dischargeText, { color: theme.accent }]}
+                >
+                  Discharge
+                </ThemedText>
               </Pressable>
             ) : null}
-            {item.type === "episode" || item.hasEpisodeLink ? (
+            {canLogCase ? (
               <Pressable
-                style={styles.logCaseButton}
+                style={[
+                  styles.logCaseButton,
+                  { backgroundColor: theme.accent },
+                ]}
                 onPress={(e) => {
                   e.stopPropagation();
                   handleLogCase(item);
                 }}
               >
-                <ThemedText style={styles.logCaseText}>Next Episode</ThemedText>
+                <ThemedText
+                  style={[styles.logCaseText, { color: theme.accentContrast }]}
+                >
+                  {logCaseLabel}
+                </ThemedText>
               </Pressable>
             ) : null}
           </View>
@@ -556,10 +607,17 @@ export default function NeedsAttentionListScreen() {
                 </ThemedText>
               </Pressable>
               <Pressable
-                style={styles.confirmButton}
+                style={[
+                  styles.confirmButton,
+                  { backgroundColor: theme.accent },
+                ]}
                 onPress={handleConfirmDischarge}
               >
-                <ThemedText style={styles.confirmText}>Discharge</ThemedText>
+                <ThemedText
+                  style={[styles.confirmText, { color: theme.accentContrast }]}
+                >
+                  Discharge
+                </ThemedText>
               </Pressable>
             </View>
           </View>
@@ -636,7 +694,6 @@ const styles = StyleSheet.create({
   podText: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#E5A00D",
   },
   metaText: {
     fontSize: 13,
@@ -657,7 +714,6 @@ const styles = StyleSheet.create({
   pendingAction: {
     fontSize: 12,
     fontStyle: "italic",
-    color: "#E5A00D",
     marginTop: 2,
   },
   cardActions: {
@@ -676,7 +732,6 @@ const styles = StyleSheet.create({
   histologyText: {
     fontSize: 12,
     fontWeight: "500",
-    color: "#E5A00D",
   },
   eventText: {
     fontSize: 12,
@@ -685,10 +740,8 @@ const styles = StyleSheet.create({
   dischargeText: {
     fontSize: 12,
     fontWeight: "500",
-    color: "#E5A00D",
   },
   logCaseButton: {
-    backgroundColor: "#E5A00D",
     height: 28,
     paddingHorizontal: 10,
     borderRadius: 6,
@@ -698,7 +751,6 @@ const styles = StyleSheet.create({
   logCaseText: {
     fontSize: 12,
     fontWeight: "600",
-    color: "#1A1A2E",
   },
   emptyContainer: {
     alignItems: "center",
@@ -765,7 +817,6 @@ const styles = StyleSheet.create({
   confirmButton: {
     flex: 1,
     height: 44,
-    backgroundColor: "#E5A00D",
     borderRadius: BorderRadius.sm,
     justifyContent: "center",
     alignItems: "center",
@@ -773,6 +824,5 @@ const styles = StyleSheet.create({
   confirmText: {
     fontSize: 15,
     fontWeight: "600",
-    color: "#1A1A2E",
   },
 });

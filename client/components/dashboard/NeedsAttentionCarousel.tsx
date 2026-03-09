@@ -51,15 +51,15 @@ function NeedsAttentionCarouselInner({
           />
         </View>
         <View style={styles.headerRight}>
-          {items.length > 1 ? (
-            <ThemedText style={[styles.countText, { color: theme.textTertiary }]}>
-              {items.length} items
-            </ThemedText>
-          ) : null}
-          {items.length > 2 ? (
-            <Pressable onPress={onViewAll}>
-              <ThemedText style={[styles.viewAllText, { color: theme.link }]}>
-                View All
+          {items.length > 0 ? (
+            <Pressable
+              onPress={onViewAll}
+              accessibilityRole="button"
+              accessibilityLabel="View all attention items"
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <ThemedText style={[styles.viewAllText, { color: theme.accent }]}>
+                View all
               </ThemedText>
             </Pressable>
           ) : null}
@@ -121,10 +121,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     textTransform: "uppercase",
     letterSpacing: 1,
-  },
-  countText: {
-    fontSize: 13,
-    fontWeight: "500",
   },
   viewAllText: {
     fontSize: 13,

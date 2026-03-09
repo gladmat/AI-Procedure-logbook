@@ -91,9 +91,11 @@ const ICONS: Record<string, string> = {
     '<circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>',
   sliders:
     '<line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/>',
+  square: '<rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>',
   star: '<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>',
   "stop-circle":
     '<circle cx="12" cy="12" r="10"/><rect x="9" y="9" width="6" height="6"/>',
+  tag: '<path d="M20.59 13.41l-7.18 7.18a2 2 0 0 1-2.82 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>',
   target:
     '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>',
   thermometer:
@@ -142,20 +144,20 @@ function parseElements(svg: string): SvgElement[] {
 }
 
 function renderElement(el: SvgElement, key: number, color: string) {
-  const props = { key, ...el.attrs };
+  const props = el.attrs;
   switch (el.tag) {
     case "circle":
-      return <Circle {...props} fill="none" stroke={color} />;
+      return <Circle key={key} {...props} fill="none" stroke={color} />;
     case "line":
-      return <Line {...props} fill="none" stroke={color} />;
+      return <Line key={key} {...props} fill="none" stroke={color} />;
     case "path":
-      return <Path {...props} fill="none" stroke={color} />;
+      return <Path key={key} {...props} fill="none" stroke={color} />;
     case "polygon":
-      return <Polygon {...props} fill="none" stroke={color} />;
+      return <Polygon key={key} {...props} fill="none" stroke={color} />;
     case "polyline":
-      return <Polyline {...props} fill="none" stroke={color} />;
+      return <Polyline key={key} {...props} fill="none" stroke={color} />;
     case "rect":
-      return <Rect {...props} fill="none" stroke={color} />;
+      return <Rect key={key} {...props} fill="none" stroke={color} />;
     default:
       return null;
   }

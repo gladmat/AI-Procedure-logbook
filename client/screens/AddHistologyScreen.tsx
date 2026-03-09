@@ -456,6 +456,17 @@ export default function AddHistologyScreen() {
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
       >
+        <View style={styles.screenIntro}>
+          <ThemedText style={[styles.screenTitle, { color: theme.text }]}>
+            Add Histology
+          </ThemedText>
+          <ThemedText
+            style={[styles.screenSubtitle, { color: theme.textSecondary }]}
+          >
+            Record pathology findings and margin status for this diagnosis.
+          </ThemedText>
+        </View>
+
         {/* Context header */}
         <View
           style={[
@@ -496,8 +507,16 @@ export default function AddHistologyScreen() {
         </View>
 
         {/* Form content */}
-        {isSkinCancerRef.current ? (
-          <View style={styles.histologyWrapper}>
+        <View
+          style={[
+            styles.formCard,
+            {
+              backgroundColor: theme.backgroundElevated,
+              borderColor: theme.border,
+            },
+          ]}
+        >
+          {isSkinCancerRef.current ? (
             <HistologySection
               label="Specimen Histology"
               histology={skinCancerHistology}
@@ -508,13 +527,13 @@ export default function AddHistologyScreen() {
               hideHeader
               hideSource
             />
-          </View>
-        ) : (
-          <GeneralHistologyForm
-            result={generalResult}
-            onChange={setGeneralResult}
-          />
-        )}
+          ) : (
+            <GeneralHistologyForm
+              result={generalResult}
+              onChange={setGeneralResult}
+            />
+          )}
+        </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -540,6 +559,18 @@ const styles = StyleSheet.create({
     padding: Spacing.lg,
     paddingBottom: Spacing.xl * 2,
   },
+  screenIntro: {
+    marginBottom: Spacing.md,
+    gap: Spacing.xs,
+  },
+  screenTitle: {
+    fontSize: 24,
+    fontWeight: "700",
+  },
+  screenSubtitle: {
+    fontSize: 14,
+    lineHeight: 20,
+  },
   contextCard: {
     borderRadius: BorderRadius.md,
     borderWidth: 1,
@@ -556,8 +587,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     flex: 1,
   },
-  histologyWrapper: {
-    marginHorizontal: -Spacing.lg,
+  formCard: {
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+    padding: Spacing.lg,
   },
   formContainer: {
     gap: Spacing.lg,
