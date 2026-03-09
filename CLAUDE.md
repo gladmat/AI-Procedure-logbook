@@ -19,7 +19,7 @@ Key capabilities: multi-specialty case logging, SNOMED CT coded diagnoses and pr
 - **Phase 1 COMPLETE** — Form state refactor (useReducer, split context, section components, clear/reset)
 - **Phase 2 COMPLETE** — Charcoal+Amber theme, card-based diagnosis groups, section nav, summary view, reordering, specialty modules
 - **Phase 2.5 COMPLETE** — Skin cancer inline assessment module hardened after audit (14 components, 116 tests, hidden auto-routed pathways, episode linkage/reuse, biopsy return-to-histology flow, duplicate follow-up prefill, interactive procedure suggestions, margin CDS, SLNB, stable numeric inputs, collapsible sections)
-- **Dashboard v2 COMPLETE** — Surgical triage surface with 5 phases + refinements (filter bar, needs attention carousel with infections, practice pulse metrics, case cards with thumbnails, FAB, quick actions for histology/events/discharge/next episode, standalone histology screen, needs attention full list, case search)
+- **Dashboard v2 COMPLETE** — Surgical triage surface with 5 phases + refinements (shared selector layer for counts/filters/attention items, needs attention carousel with infections, month-to-date practice pulse metrics, case cards with thumbnails, FAB, quick actions for histology/events/discharge/next episode, standalone histology screen, needs attention full list with specialty handoff, case search, centered HeaderTitle lockup)
 - **Phase 3 NEXT** — Favourites/recents (partially done), inline validation, keyboard optimisation, haptic audit, duplicate case
 - **Phase 4** — Data migration, export formatting, analytics dashboard
 - **Phase 5** — TestFlight release
@@ -121,10 +121,11 @@ client/
     useActiveEpisodes.ts         # Query hook for active episodes
     useScreenOptions.ts          # Shared navigation header options
     useColorScheme.ts            # System colour scheme detection
-    useAttentionItems.ts         # Merges inpatients + infections + episodes for dashboard
-    usePracticePulse.ts          # Computes totalCases/thisWeek/completion metrics
+    useAttentionItems.ts         # Shared selector wrapper for dashboard attention items
+    usePracticePulse.ts          # Shared selector wrapper for thisMonth/thisWeek/completion metrics
   lib/
     storage.ts                   # AsyncStorage CRUD, encryption, drafts, case index
+    dashboardSelectors.ts        # Shared dashboard selector layer (counts, filters, attention items, pulse, quick-log params)
     procedurePicklist.ts         # 413 procedures across 12 specialties (5443 lines)
     statistics.ts                # Case analytics, filtering, calculations (1053 lines)
     handTraumaDiagnosis.ts       # MachineSummary + deterministic rendering (1570 lines)
@@ -499,8 +500,9 @@ Tests: `client/lib/__tests__/skinCancerConfig.test.ts` (87 tests), `skinCancerPh
 
 `AddHistologyScreen` provides a focused return-to-histology flow for adding or updating pathology results on existing cases. Accessed via dashboard quick action buttons or CaseDetailScreen.
 
+- **Layout:** Padded scroll column with intro copy, context card, and a branded form card. No edge-to-edge bleed.
 - **Skin cancer cases:** Shows `HistologySection` in pending/full mode with `hideSource` (always own procedure) and `hideHeader`. Saves `currentHistology` back to the appropriate diagnosis group or lesion instance.
-- **General cases:** Shows a simple `histologyResult` text input for non-skin-cancer cases with `diagnosisCertainty === "clinical"`.
+- **General cases:** Shows a compact structured histology form for non-skin-cancer cases with `diagnosisCertainty === "clinical"`: pathology category, report text, margin status, and optional SNOMED code/display.
 - **`caseCanAddHistology()`** — broad check in `skinCancerConfig.ts`: returns true for any case with a `skinCancerAssessment` on any group or lesion, or `diagnosisCertainty === "clinical"`.
 - **`getFirstHistologyTarget()`** — two-pass targeting: first prioritises excision-biopsy groups awaiting histology, then falls back to any group with skin cancer assessment.
 - **`caseNeedsHistology()`** — narrow check used by dashboard attention filter: only returns true when histology is actually pending (no `currentHistology` set yet).
@@ -538,7 +540,7 @@ The dashboard is a **surgical triage surface** — density-first, optimised for 
 | Dashboard philosophy | Density-first. NOT clarity-first, NOT feed-first. |
 | Zone order (top→bottom) | Filter Bar → Needs Attention → Practice Pulse → Recent Cases |
 | Primary action | FAB (bottom-right, 56px, amber). NOT a header button. |
-| Header | OpusMark left-aligned. NO text title. NO greeting. |
+| Header | Centered `HeaderTitle` lockup (Opus logo + subtitle). Search button on the right. NO greeting. |
 | Statistics | Numbers + deltas only on dashboard. NO charts. Charts behind tap on future Analytics screen. |
 | Notifications | Zone 1 presence/absence IS the notification. NO red dots, NO badge counts. |
 | Customisation | None. One excellent default. Specialty filter is the only personalisation. |
@@ -549,10 +551,10 @@ The dashboard is a **surgical triage surface** — density-first, optimised for 
 ```
 client/components/dashboard/
   SpecialtyFilterBar.tsx       # Zone 0 — sticky horizontal chip bar
-  NeedsAttentionCarousel.tsx   # Zone 1 — horizontal FlatList of AttentionCards + "View All"
+  NeedsAttentionCarousel.tsx   # Zone 1 — horizontal FlatList of AttentionCards + persistent "View all"
   AttentionCard.tsx             # Zone 1 — inpatient, infection, or episode card with quick actions
   PracticePulseRow.tsx          # Zone 2 — 3-metric row container
-  PulseMetricCard.tsx           # Zone 2 — individual metric card (totalCases/thisWeek/completion)
+  PulseMetricCard.tsx           # Zone 2 — individual metric card (thisMonth/thisWeek/completion)
   InfoButton.tsx                # Zone 2 — info popover for metric explanations
   RecentCasesList.tsx           # Zone 3 — mapped CaseCard list with quick actions
   CaseCard.tsx                  # Zone 3 — individual case row with thumbnail + action buttons
@@ -560,8 +562,11 @@ client/components/dashboard/
   DashboardEmptyState.tsx       # Zero-case state
 
 client/hooks/
-  usePracticePulse.ts           # Computes totalCases/thisWeek/completion metrics
-  useAttentionItems.ts          # Merges inpatients + infections + episodes, sorted by urgency
+  usePracticePulse.ts           # Computes thisMonth/thisWeek/completion via shared selectors
+  useAttentionItems.ts          # Merges inpatients + infections + episodes via shared selectors
+
+client/lib/
+  dashboardSelectors.ts         # Shared dashboard counts, filters, attention-item shaping, pulse, quick-log params
 ```
 
 #### DashboardScreen layout structure
@@ -580,7 +585,7 @@ client/hooks/
 
 #### Design rules specific to dashboard
 
-- **All components use `theme.*` tokens.** The only raw hex values allowed are `#E5A00D` (canonical amber) and the delta colours `#059669` (success green) / `#9B2C2C` (muted destructive red).
+- **All components use `theme.*` tokens.** No raw hex values in dashboard-specific UI.
 - **No nested FlatList inside the ScrollView.** RecentCasesList renders as a mapped array. Only NeedsAttentionCarousel uses a FlatList (horizontal, doesn't conflict).
 - **React.memo on all list-rendered components:** CaseCard, AttentionCard, PulseMetricCard.
 - **useMemo on all computed data:** case counts per specialty, pulse metrics, attention items merge+sort, filtered cases.
@@ -593,7 +598,7 @@ client/hooks/
 
 #### Never do (dashboard-specific)
 
-- Never add a greeting header ("Good morning, ..."). The header is OpusMark only.
+- Never add a greeting header ("Good morning, ..."). The header is the centered Opus lockup only.
 - Never show charts, graphs, or sparkline charts (other than the 7-dot sparkline) on the dashboard surface. The pulse metric sparkline is 7 circles, not a line chart.
 - Never show a "Needs Attention" section header when there are 0 items. The entire zone must be `null`.
 - Never use a vertical FlatList for the recent cases inside the ScrollView (VirtualizedList nesting warning).
@@ -610,21 +615,21 @@ Both AttentionCard and CaseCard expose quick action buttons:
 - **Histology** — amber chip with file-text icon, shown for skin cancer cases (`caseCanAddHistology`). Navigates to `AddHistologyScreen`.
 - **+ Event** — secondary chip, navigates to `AddTimelineEventScreen` for the case.
 - **Discharge** — amber chip on inpatient cards, opens discharge modal with date picker.
-- **Next Episode** — amber filled button on episode/linked cases, navigates to `AddCase` with episode pre-linked.
+- **Next Episode / Log Case** — amber filled button on episode or episode-linked items, using episode-prefill when `episodeId` exists and `quickPrefill` for non-episode inpatients.
 
 #### Needs Attention sources
 
-Three item types merged by `useAttentionItems`:
+Three item types merged by `useAttentionItems` / `dashboardSelectors`:
 1. **Inpatients** — cases with `stayType === "inpatient"` and no `dischargeDate`, sorted by post-op day descending
 2. **Active infections** — cases with `infectionOverlay?.status === "active"` (deduplicated against inpatients)
-3. **Active episodes** — episodes with `status === "active"` or `"on_hold"`, with linked case data
+3. **Active episodes** — episodes with `status === "active"`, `"on_hold"`, or `"planned"`, with linked case data
 
-"View All" button (shown when 3+ items) navigates to `NeedsAttentionListScreen` — full-screen SectionList grouped by type with search.
+"View all" button is shown whenever Zone 1 exists and navigates to `NeedsAttentionListScreen` — full-screen SectionList grouped by type with search and specialty-context handoff from the dashboard.
 
 #### Practice Pulse metrics
 
 Three metrics via `usePracticePulse`:
-1. **Total Cases** — lifetime case count
+1. **This Month** — month-to-date case count with delta vs the same day span last month
 2. **This Week** — 7-dot sparkline (Mon–Sun) showing cases per day
 3. **Completion** — percentage of last 90 days cases with documented outcome
 
@@ -637,6 +642,8 @@ When a specialty is selected (non-null), ALL zones filter simultaneously:
 - FAB: pre-selects that specialty in the new case form
 
 When "All" is selected (null), all zones show unfiltered aggregate data.
+
+Specialty counts come from the canonical `getCaseSpecialties()` helper and the `All` chip uses raw case count rather than summing specialty buckets, so multi-specialty cases no longer inflate totals.
 
 ### App lock
 
@@ -801,7 +808,7 @@ Configured in both `tsconfig.json` and `babel.config.js` (module-resolver plugin
 
 ## Testing
 
-- **Framework:** Vitest 4.0.18, **160 tests** across 8 files
-- **Client tests:** `client/lib/__tests__/` — handTraumaDiagnosis, handTraumaMapping, handTraumaUx, skinCancerConfig (80 tests), skinCancerPhase4 (11 tests), skinCancerPhase5 (13 tests)
+- **Framework:** Vitest 4.0.18, **179 tests** across 9 files
+- **Client tests:** `client/lib/__tests__/` — handTraumaDiagnosis, handTraumaMapping, handTraumaUx, skinCancerConfig (87 tests), skinCancerPhase4 (11 tests), skinCancerPhase5 (18 tests), dashboardSelectors (7 tests)
 - **Server tests:** `server/__tests__/` — auth, validation
 - **Run:** `npm run test` (once) or `npm run test:watch` (watch mode)
