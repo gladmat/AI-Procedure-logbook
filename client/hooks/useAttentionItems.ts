@@ -76,18 +76,36 @@ export function useAttentionItems(
     inpatientItems.sort((a, b) => (b.postOpDay ?? 0) - (a.postOpDay ?? 0));
 
     // --- Active Infections (non-inpatient cases) ---
+    // Includes both full InfectionOverlay cases and non-escalated hand infections
+    // with spreading/systemic severity.
     const infectionItems: AttentionItem[] = [];
+    const infectionCaseIds = new Set<string>();
 
     for (const c of cases) {
-      if (c.infectionOverlay?.status !== "active") continue;
+      if (c.infectionOverlay?.status !== "active") {
+        // Check for non-escalated hand infections with concerning severity
+        const hasSevereHandInfection = c.diagnosisGroups?.some(
+          (g) =>
+            g.handInfectionDetails &&
+            !g.handInfectionDetails.escalatedToFullModule &&
+            (g.handInfectionDetails.severity === "spreading" ||
+              g.handInfectionDetails.severity === "systemic"),
+        );
+        if (!hasSevereHandInfection) continue;
+      }
       if (inpatientCaseIds.has(c.id)) continue; // already shown as inpatient
+      if (infectionCaseIds.has(c.id)) continue;
+      infectionCaseIds.add(c.id);
 
       if (selectedSpecialty) {
         const specialties = getCaseSpecialties(c);
         if (!specialties.includes(selectedSpecialty as never)) continue;
       }
 
-      const syndromePrimary = c.infectionOverlay.syndromePrimary;
+      const syndromePrimary = c.infectionOverlay?.syndromePrimary;
+      const syndromeLabel = syndromePrimary
+        ? (INFECTION_SYNDROME_LABELS[syndromePrimary] ?? syndromePrimary)
+        : "Hand infection";
       infectionItems.push({
         id: `infection-${c.id}`,
         type: "infection",
@@ -96,9 +114,7 @@ export function useAttentionItems(
         specialty: c.diagnosisGroups[0]?.specialty ?? c.specialty,
         caseId: c.id,
         hasEpisodeLink: !!c.episodeId,
-        infectionSyndrome: syndromePrimary
-          ? INFECTION_SYNDROME_LABELS[syndromePrimary] ?? syndromePrimary
-          : undefined,
+        infectionSyndrome: syndromeLabel,
         canAddHistology: caseCanAddHistology(c),
       });
     }
