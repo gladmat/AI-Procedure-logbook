@@ -16,6 +16,29 @@ import { base64ToBytes } from "./binaryUtils";
 
 const THUMB_MAX_DIMENSION = 300;
 const THUMB_COMPRESS = 0.6;
+const EXIF_STRIP_COMPRESS = 0.92;
+
+// ═══════════════════════════════════════════════════════════
+// EXIF stripping
+// ═══════════════════════════════════════════════════════════
+
+/**
+ * Strip all EXIF metadata by re-encoding through ImageManipulator.
+ * Creates a fresh image file with no GPS, device info, or timestamps.
+ * Quality 0.92 is visually lossless for clinical photography.
+ */
+export async function stripExifAndCompress(
+  uri: string,
+): Promise<{ uri: string; width: number; height: number }> {
+  const context = ImageManipulator.manipulate(uri);
+  const image = await context.renderAsync();
+  const result = await image.saveAsync({
+    format: SaveFormat.JPEG,
+    compress: EXIF_STRIP_COMPRESS,
+    base64: false,
+  });
+  return { uri: result.uri, width: result.width, height: result.height };
+}
 
 // ═══════════════════════════════════════════════════════════
 // Format helpers (mirrors mediaStorage.ts getSaveFormat)
@@ -41,6 +64,10 @@ function getSaveFormat(mimeType: string): {
  *
  * Uses ImageManipulator to normalize the image (respecting format/compression)
  * and extract base64, which is immediately decoded to Uint8Array.
+ *
+ * EXIF stripping: Re-encoding through ImageManipulator creates a fresh file
+ * with no EXIF metadata (GPS, device serial, timestamps). This is the primary
+ * privacy defence — no separate strip step is needed in the save pipeline.
  */
 export async function getImageBytesFromUri(
   sourceUri: string,

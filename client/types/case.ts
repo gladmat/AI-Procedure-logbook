@@ -7,6 +7,7 @@ import type {
 } from "@/types/surgicalPreferences";
 import type { SkinCancerLesionAssessment } from "./skinCancer";
 import type { JointImplantDetails } from "./jointImplant";
+import type { MediaTag } from "./media";
 
 // Case status for active patient tracking
 export type CaseStatus = "active" | "discharged" | "incomplete";
@@ -1861,6 +1862,8 @@ export interface MediaAttachment {
   mimeType: string;
   caption?: string;
   createdAt: string;
+  tag?: MediaTag;
+  /** @deprecated Use `tag` instead */
   category?: MediaCategory;
   timestamp?: string; // User-selected date for the media (e.g. pre-op X-ray date)
 }
@@ -1881,6 +1884,8 @@ export interface OperativeMediaItem {
   localUri: string;
   thumbnailUri?: string;
   mimeType: string;
+  tag?: MediaTag;
+  /** @deprecated Use `tag` instead */
   mediaType: OperativeMediaType;
   caption?: string;
   timestamp?: string;

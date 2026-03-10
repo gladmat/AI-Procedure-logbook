@@ -91,7 +91,9 @@ export async function saveEncryptedMediaFromUri(
   sourceUri: string,
   mimeType: string = "image/jpeg",
 ): Promise<{ localUri: string; mimeType: string }> {
-  // v2 pipeline: file-based AES-256-GCM encryption
+  // EXIF metadata (GPS, device info, timestamps) is inherently stripped by
+  // getImageBytesFromUri — ImageManipulator re-encoding creates a fresh file
+  // with no metadata containers. No separate strip step needed.
   const { bytes, normalizedMime, width, height } = await getImageBytesFromUri(
     sourceUri,
     mimeType,
