@@ -22,6 +22,7 @@ Key capabilities: multi-specialty case logging, SNOMED CT coded diagnoses and pr
 - **Phase 3 COMPLETE** — Inline validation, keyboard optimisation (react-native-keyboard-controller), haptic audit (244 occurrences across 57 files), duplicate case, testing (Vitest), favourites/recents (DiagnosisPicker + ProcedureSubcategoryPicker chips, recording on save)
 - **Phase 4 COMPLETE** — Data migration (schemaVersion 4, lazy on load), CSV export (38 columns), FHIR R4 export (with Device resources for implants), PDF export (with implant column), analytics dashboard (base stats + specialty-specific stats + entry time + suggestion acceptance + top dx-proc pairs)
 - **Elective Hand + Joint Implant COMPLETE** — 38 elective hand diagnoses across 7 subcategories with strict elective-only picker scoping and SNOMED fallback, 11 new procedures (3 arthroplasty with `hasImplant` flag), 3 staging configs (Tubiana-Dupuytren, CTS-Severity, Quinnell-Trigger), HandElectivePicker chip-based UI, per-procedure JointImplantSection workflow with digit/laterality anatomy capture and completeness warnings, 26 implant catalogue entries for CMC1/PIP/MCP, multi-implant aggregation in CSV/FHIR/PDF exports, expanded CaseDetailScreen implant display, duplicate case cloning, and 99 tests (52 elective hand + 44 implant + 3 export)
+- **Skin Cancer Terminology Repair COMPLETE** — corrected skin-cancer SNOMED CT parent/subtype diagnoses, rare malignancy runtime metadata, melanoma staging lookups, UK-extension skin oncology procedure codes, and Mohs migration mapping; added 17 rare cutaneous subtype entries and targeted regression coverage for diagnosis resolution, staging lookup, and procedure terminology
 - **Phase 5 IN PROGRESS** — Version 2.0.0, EAS config done (dev/preview/production profiles), pending manual regression + TestFlight submission
 
 ## Tech stack
@@ -61,6 +62,7 @@ npm run check:types    # TypeScript type-check (tsc --noEmit)
 npm run format         # Prettier
 npm run test           # Vitest (run once)
 npm run test:watch     # Vitest (watch mode)
+npm run test:harness   # 500-case API test harness (requires running server + .env)
 ```
 
 ## Local development
@@ -179,8 +181,8 @@ client/
     moduleSummary.ts             # Module-specific summary rendering
     moduleVisibility.ts          # Conditional module visibility
     flapOutcomeDefaults.ts       # Default flap outcome values
-    skinCancerDiagnoses.ts       # Skin cancer picklist
-    skinCancerConfig.ts          # Activation, pathway logic, margins, SLNB, diagnosis resolution, procedure suggestions, caseCanAddHistology
+    skinCancerDiagnoses.ts       # Skin cancer SNOMED taxonomy + rare subtype matching
+    skinCancerConfig.ts          # Activation, pathway logic, margins, rare subtype metadata, SLNB, diagnosis resolution, procedure suggestions
     skinCancerEpisodeHelpers.ts  # Episode link/update plans + follow-up transforms
     handInfectionBridge.ts       # HandInfectionDetails ↔ InfectionOverlay bridge functions
     diagnosisPicklists/          # 12 specialty picklists + lazy-loaded index
@@ -188,7 +190,7 @@ client/
       {specialty}Diagnoses.ts    # Per-specialty (aesthetics, bodyContouring, breast,
                                  #   burns, cleftCranio, general, handSurgery, headNeck,
                                  #   lymphoedema, orthoplastic, peripheralNerve, skinCancer)
-    __tests__/                   # 16 test files incl. hand trauma, skin cancer, dashboard, dateValues, operative media, statistics, hand elective, joint implant, and mediaEncryption
+    __tests__/                   # 19 test files incl. hand trauma, skin cancer, dashboard, dateValues, operative media, statistics, hand elective, joint implant, mediaEncryption, and staging/terminology regressions
   types/
     case.ts                      # Case, DiagnosisGroup, Procedure, Timeline, Media (2322 lines)
     diagnosis.ts                 # Diagnosis picklist entry
@@ -228,7 +230,7 @@ client/
     images/                      # Splash screen
 server/
   index.ts                       # Express entry: security headers, CORS, body parsing (335 lines)
-  routes.ts                      # 40+ API endpoints (2041 lines)
+  routes.ts                      # 45+ API endpoints (2170 lines)
   storage.ts                     # DatabaseStorage class with ownership checks (706 lines)
   db.ts                          # Drizzle + pg Pool connection
   env.ts                         # Zod-validated environment variables
@@ -237,7 +239,7 @@ server/
   diagnosisStagingConfig.ts      # Dynamic staging form definitions
   seedData.ts                    # SNOMED reference data seed (~33KB)
   templates/                     # HTML: landing, privacy, terms, reset-password, licenses
-  __tests__/                     # 2 test files (auth, validation)
+  __tests__/                     # 3 test files (auth, validation, diagnosis staging config)
 shared/
   schema.ts                      # Drizzle ORM table definitions, 14 tables (654 lines)
   professionalRegistrations.ts   # Professional registration types
@@ -360,11 +362,11 @@ All endpoints under `/api/`. Authentication via JWT bearer token (`authenticateT
 ### Procedures (cases)
 | Method | Path | Purpose |
 |--------|------|---------|
-| GET | `/procedures` | List (limit 50, offset) |
-| POST | `/procedures` | Create (with optional flaps array) |
-| GET | `/procedures/:id` | Fetch with flaps + anastomoses |
-| PUT | `/procedures/:id` | Update |
-| DELETE | `/procedures/:id` | Delete |
+| GET | `/procedures` | List (limit 200, offset) |
+| POST | `/procedures` | Create with nested caseProcedures + flaps + anastomoses |
+| GET | `/procedures/:id` | Fetch with caseProcedures, flaps + anastomoses |
+| PUT | `/procedures/:id` | Update procedure fields |
+| DELETE | `/procedures/:id` | Delete (DB cascades handle children) |
 
 ### Flaps
 | Method | Path | Purpose |
@@ -1110,7 +1112,8 @@ Configured in both `tsconfig.json` and `babel.config.js` (module-resolver plugin
 
 ## Testing
 
-- **Framework:** Vitest 4.0.18, **342 tests** across 18 files
-- **Client tests:** `client/lib/__tests__/` — handTraumaDiagnosis, handTraumaMapping, handTraumaUx, skinCancerConfig (87 tests), skinCancerPhase4 (11 tests), skinCancerPhase5 (18 tests), dashboardSelectors (7 tests), handInfection (42 tests), handElective (50 tests), jointImplant (39 tests), mediaEncryption (16 tests), statisticsHelpers (3 tests), statistics (7 tests), dateValues (3 tests), operativeMedia (2 tests), caseDraftPersistence (1 test)
-- **Server tests:** `server/__tests__/` — auth (17 tests), validation (7 tests)
+- **Framework:** Vitest 4.0.18, **373 tests** across 22 files
+- **Client tests:** `client/lib/__tests__/` — handTraumaDiagnosis, handTraumaMapping, handTraumaUx, skinCancerConfig (89 tests), skinCancerPhase4 (11 tests), skinCancerPhase5 (18 tests), skinCancerDiagnoses (7 tests), dashboardSelectors (7 tests), handInfection (42 tests), handElective (52 tests), jointImplant (44 tests), mediaEncryption (16 tests), statisticsHelpers (3 tests), statistics (7 tests), dateValues (8 tests), dateFieldNormalization (4 tests), operativeMedia (2 tests), implantExport (3 tests), caseDraftPersistence (1 test)
+- **Server tests:** `server/__tests__/` — auth (17 tests), validation (7 tests), diagnosisStagingConfig (3 tests)
+- **Integration:** `npm run test:harness` — 500-case API harness across 12 specialties (requires running server). Tests nested procedure creation with caseProcedures, flaps, and anastomoses. Run with `--cleanup` to delete test data after.
 - **Run:** `npm run test` (once) or `npm run test:watch` (watch mode)
