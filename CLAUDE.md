@@ -29,6 +29,7 @@ Key capabilities: multi-specialty case logging, SNOMED CT coded diagnoses and pr
 - **Capture Pipeline Phase B COMPLETE** — Opus Inbox: persistent encrypted staging area for unassigned clinical photos. MMKV-backed metadata index (`inboxStorage.ts`, `createMMKV` v4 API), `InboxScreen` with date-grouped grid, multi-select, camera/gallery capture, full-screen preview, case picker modal, pick mode for OperativeMediaSection callback, "From Inbox" button in OperativeMediaSection (both empty and with-media layouts), dashboard attention card (`inbox_photos` type) when unassigned photos exist, orphan auto-cleanup on app launch (90-day default), 19 tests
 - **Media Encryption Remediation COMPLETE** — legacy/v2 delete parity fixed (deleting a migrated `encrypted-media:{uuid}` item now removes both AsyncStorage blobs and any v2 filesystem copy), persisted media references canonicalize to `opus-media:{uuid}` when v2 backing exists, decrypted temp cache sweeping now runs on startup/background/logout/delete, MediaManagementScreen uses `FlashList` for large libraries, onboarding privacy copy distinguishes native vs web guarantees, and targeted `mediaFileStorage`/`mediaMigration` regression suites were added
 - **Case Category Repair COMPLETE** — editing a case now preserves its original top-level specialty/category instead of falling back to `general`, edit-mode save is gated on successful case load, and a one-time conservative storage repair restores clearly recoverable misclassified `general` cases from diagnosis-group specialty data
+- **Capture Pipeline Phase C COMPLETE** — Smart Import from Camera Roll: `SmartImportScreen` with state machine (`picking → encrypting → prompting → deleting → done`), encrypts selected photos into Opus Inbox via `addMultipleToInbox` with `"smart_import"` sourceType, prompts surgeon to delete Camera Roll originals via `expo-media-library` `deleteAssetsAsync` (native iOS confirmation), "Always delete after import" preference (`smartImportPrefs.ts` AsyncStorage helper), InboxScreen gallery button rewired to navigate to SmartImport (renamed "Camera Roll"), PersonalisationScreen toggle for auto-delete preference, fullScreenModal presentation prevents swipe-dismiss during encryption, 32 tests (10 smartImportPrefs + 22 inboxStorage)
 - **Phase 5 IN PROGRESS** — Version 2.0.0, EAS config done (dev/preview/production profiles), pending manual regression + TestFlight submission
 
 ## Tech stack
@@ -83,7 +84,7 @@ npm run test:harness   # 500-case API test harness (requires running server + .e
 ```
 client/
   App.tsx                        # Root: 7 nested providers → RootStackNavigator
-  screens/                       # 23 screens + 9 onboarding sub-screens
+  screens/                       # 24 screens + 9 onboarding sub-screens
     DashboardScreen.tsx           # Surgical triage surface, 4-zone layout
     CaseDetailScreen.tsx          # Full case view, timeline, flap outcomes
     CaseFormScreen.tsx            # Case entry, delegates to section components
@@ -107,6 +108,7 @@ client/
     StatisticsScreen.tsx          # 3-tier analytics: career overview, specialty deep-dives, operational insights
     NeedsAttentionListScreen.tsx  # Full-screen needs attention list with sections
     InboxScreen.tsx               # Photo inbox: date-grouped grid, multi-select, assign-to-case, pick mode
+    SmartImportScreen.tsx         # Camera Roll import: encrypt → delete originals flow
     onboarding/                   # 9 files: Welcome, FeaturePager, Auth, EmailSignup,
                                   #   Categories, Training, Hospital, Privacy, FeatureSlide
   components/                    # 120+ files across 13 subdirectories
@@ -195,6 +197,7 @@ client/
     skinCancerEpisodeHelpers.ts  # Episode link/update plans + follow-up transforms
     handInfectionBridge.ts       # HandInfectionDetails ↔ InfectionOverlay bridge functions
     inboxStorage.ts              # MMKV-backed inbox CRUD (createMMKV v4), sync reads, encrypt/decrypt pipeline
+    smartImportPrefs.ts          # AsyncStorage "always delete after import" preference
     diagnosisPicklists/          # 12 specialty picklists + lazy-loaded index
       index.ts                   # getDiagnosesForProcedure, reverse mapping
       {specialty}Diagnoses.ts    # Per-specialty (aesthetics, bodyContouring, breast,
@@ -1165,8 +1168,8 @@ Configured in both `tsconfig.json` and `babel.config.js` (module-resolver plugin
 
 ## Testing
 
-- **Framework:** Vitest 4.0.18, **518 tests** across 32 files
-- **Client tests:** `client/lib/__tests__/` and `client/components/media/__tests__/` — handTraumaDiagnosis, handTraumaMapping, handTraumaUx, skinCancerConfig (89 tests), skinCancerPhase4 (11 tests), skinCancerPhase5 (18 tests), skinCancerDiagnoses (7 tests), dashboardSelectors (7 tests), handInfection (42 tests), handElective (52 tests), jointImplant (44 tests), mediaEncryption (7 tests), mediaFileStorage (3 tests), mediaMigration (4 tests), caseSpecialty (5 tests), storageSpecialtyRepair (2 tests), statisticsHelpers (3 tests), statistics (7 tests), dateValues (9 tests), dateFieldNormalization (4 tests), operativeMedia (19 tests), operativeMediaForm (4 tests), mediaAttachmentDefaults (4 tests), mediaContext (3 tests), mediaTagMigration (82 tests), mediaCaptureProtocols (27 tests), implantExport (3 tests), caseDraftPersistence (1 test), inboxStorage (19 tests), plus media UI coverage for `MediaTagPicker` resync and resolved `MediaTagBadge` rendering
+- **Framework:** Vitest 4.0.18, **531 tests** across 33 files
+- **Client tests:** `client/lib/__tests__/` and `client/components/media/__tests__/` — handTraumaDiagnosis, handTraumaMapping, handTraumaUx, skinCancerConfig (89 tests), skinCancerPhase4 (11 tests), skinCancerPhase5 (18 tests), skinCancerDiagnoses (7 tests), dashboardSelectors (7 tests), handInfection (42 tests), handElective (52 tests), jointImplant (44 tests), mediaEncryption (7 tests), mediaFileStorage (3 tests), mediaMigration (4 tests), caseSpecialty (5 tests), storageSpecialtyRepair (2 tests), statisticsHelpers (3 tests), statistics (7 tests), dateValues (9 tests), dateFieldNormalization (4 tests), operativeMedia (19 tests), operativeMediaForm (4 tests), mediaAttachmentDefaults (4 tests), mediaContext (3 tests), mediaTagMigration (82 tests), mediaCaptureProtocols (27 tests), implantExport (3 tests), caseDraftPersistence (1 test), inboxStorage (22 tests), smartImportPrefs (10 tests), plus media UI coverage for `MediaTagPicker` resync and resolved `MediaTagBadge` rendering
 - **Server tests:** `server/__tests__/` — auth (17 tests), validation (7 tests), diagnosisStagingConfig (3 tests)
 - **Integration:** `npm run test:harness` — 500-case API harness across 12 specialties (requires running server). Tests nested procedure creation with caseProcedures, flaps, and anastomoses. Run with `--cleanup` to delete test data after.
 - **Run:** `npm run test` (once) or `npm run test:watch` (watch mode)
