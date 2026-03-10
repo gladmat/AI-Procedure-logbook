@@ -5,6 +5,7 @@ import {
   findProtocols,
   findProtocol,
   mergeProtocols,
+  filterStepsByPhase,
   FREE_FLAP_PROTOCOL,
   SKIN_CANCER_EXCISION_PROTOCOL,
   AESTHETIC_FACE_PROTOCOL,
@@ -13,6 +14,7 @@ import {
   AESTHETIC_BODY_PROTOCOL,
   HAND_SURGERY_PROTOCOL,
 } from "@/data/mediaCaptureProtocols";
+import type { CapturePhase } from "@/data/mediaCaptureProtocols";
 import { MEDIA_TAG_REGISTRY } from "@/types/media";
 
 // ═══════════════════════════════════════════════════════════
@@ -308,5 +310,113 @@ describe("mergeProtocols", () => {
   it("step count is correct for single protocol after merge", () => {
     const result = mergeProtocols([FREE_FLAP_PROTOCOL]);
     expect(result.steps.length).toBe(FREE_FLAP_PROTOCOL.steps.length);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════
+// CapturePhase assignments
+// ═══════════════════════════════════════════════════════════
+
+describe("CapturePhase", () => {
+  const VALID_PHASES: CapturePhase[] = ["preop", "intraop", "postop"];
+
+  it("every step across all protocols has a valid phase", () => {
+    for (const protocol of ALL_PROTOCOLS) {
+      for (const step of protocol.steps) {
+        expect(
+          VALID_PHASES.includes(step.phase),
+          `Protocol "${protocol.id}" step "${step.label}" has invalid phase: ${step.phase}`,
+        ).toBe(true);
+      }
+    }
+  });
+
+  it("free flap protocol has preop, intraop, and postop steps", () => {
+    const phases = new Set(FREE_FLAP_PROTOCOL.steps.map((s) => s.phase));
+    expect(phases.has("preop")).toBe(true);
+    expect(phases.has("intraop")).toBe(true);
+    expect(phases.has("postop")).toBe(true);
+  });
+
+  it("free flap protocol has correct phase distribution", () => {
+    const preop = FREE_FLAP_PROTOCOL.steps.filter((s) => s.phase === "preop");
+    const intraop = FREE_FLAP_PROTOCOL.steps.filter((s) => s.phase === "intraop");
+    const postop = FREE_FLAP_PROTOCOL.steps.filter((s) => s.phase === "postop");
+    expect(preop.length).toBe(3);
+    expect(intraop.length).toBe(7);
+    expect(postop.length).toBe(1);
+  });
+
+  it("skin cancer protocol has preop, intraop, and postop steps", () => {
+    const phases = new Set(SKIN_CANCER_EXCISION_PROTOCOL.steps.map((s) => s.phase));
+    expect(phases.has("preop")).toBe(true);
+    expect(phases.has("intraop")).toBe(true);
+    expect(phases.has("postop")).toBe(true);
+  });
+
+  it("face 5-view protocol is all preop", () => {
+    expect(
+      AESTHETIC_FACE_PROTOCOL.steps.every((s) => s.phase === "preop"),
+    ).toBe(true);
+  });
+
+  it("rhinoplasty 7-view protocol is all preop", () => {
+    expect(
+      AESTHETIC_RHINOPLASTY_PROTOCOL.steps.every((s) => s.phase === "preop"),
+    ).toBe(true);
+  });
+
+  it("breast protocol is all preop", () => {
+    expect(
+      AESTHETIC_BREAST_PROTOCOL.steps.every((s) => s.phase === "preop"),
+    ).toBe(true);
+  });
+
+  it("body contouring protocol is all preop", () => {
+    expect(
+      AESTHETIC_BODY_PROTOCOL.steps.every((s) => s.phase === "preop"),
+    ).toBe(true);
+  });
+
+  it("hand surgery protocol has preop and postop steps", () => {
+    const phases = new Set(HAND_SURGERY_PROTOCOL.steps.map((s) => s.phase));
+    expect(phases.has("preop")).toBe(true);
+    expect(phases.has("postop")).toBe(true);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════
+// filterStepsByPhase
+// ═══════════════════════════════════════════════════════════
+
+describe("filterStepsByPhase", () => {
+  it("full mode returns all steps", () => {
+    const result = filterStepsByPhase(FREE_FLAP_PROTOCOL.steps, "full");
+    expect(result.length).toBe(FREE_FLAP_PROTOCOL.steps.length);
+  });
+
+  it("preop mode filters to preop-only steps", () => {
+    const result = filterStepsByPhase(FREE_FLAP_PROTOCOL.steps, "preop");
+    expect(result.length).toBe(3);
+    expect(result.every((s) => s.phase === "preop")).toBe(true);
+  });
+
+  it("preop mode returns all steps for all-preop protocol", () => {
+    const result = filterStepsByPhase(AESTHETIC_FACE_PROTOCOL.steps, "preop");
+    expect(result.length).toBe(AESTHETIC_FACE_PROTOCOL.steps.length);
+  });
+
+  it("preop mode for skin cancer returns only preop steps", () => {
+    const result = filterStepsByPhase(
+      SKIN_CANCER_EXCISION_PROTOCOL.steps,
+      "preop",
+    );
+    expect(result.length).toBe(2);
+    expect(result.every((s) => s.phase === "preop")).toBe(true);
+  });
+
+  it("handles empty steps array", () => {
+    const result = filterStepsByPhase([], "preop");
+    expect(result).toHaveLength(0);
   });
 });

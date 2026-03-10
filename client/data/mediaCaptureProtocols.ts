@@ -1,6 +1,13 @@
 import type { MediaTag } from "@/types/media";
 
 /**
+ * Operative phase — used to filter protocol steps in Opus Camera.
+ * Pre-op mode (clinic) shows only "preop" steps.
+ * Full mode (OR) shows all steps regardless of phase.
+ */
+export type CapturePhase = "preop" | "intraop" | "postop";
+
+/**
  * A capture protocol defines the recommended photo sequence
  * for a specific clinical context. Protocols are suggested,
  * never enforced.
@@ -21,6 +28,8 @@ export interface CaptureStep {
   required: boolean; // Visual indicator only — never blocks save
   captureHint?: string; // Brief instruction shown in capture UI
   bilateral?: boolean; // If true, expect L and R versions
+  /** Operative phase — filters template display in Opus Camera */
+  phase: CapturePhase;
 }
 
 export interface ProtocolActivationRule {
@@ -52,54 +61,63 @@ export const FREE_FLAP_PROTOCOL: CaptureProtocol = {
       tag: "preop_clinical",
       label: "Defect / indication (pre-op)",
       required: true,
+      phase: "preop",
     },
     {
       tag: "flap_planning",
       label: "Flap planning / markings",
       required: true,
       captureHint: "Perforator markings, Doppler points",
+      phase: "preop",
     },
     {
       tag: "flap_design",
       label: "Skin paddle design",
       required: false,
       captureHint: "Outline on patient with dimensions",
+      phase: "preop",
     },
     {
       tag: "recipient_prep",
       label: "Recipient site preparation",
       required: false,
       captureHint: "Vessels exposed, defect prepared",
+      phase: "intraop",
     },
     {
       tag: "flap_harvest",
       label: "Flap raised on pedicle",
       required: true,
       captureHint: "Pedicle visible, flap dimensions",
+      phase: "intraop",
     },
     {
       tag: "anastomosis",
       label: "Anastomosis",
       required: false,
       captureHint: "Completed anastomosis before clamp release",
+      phase: "intraop",
     },
-    { tag: "flap_inset", label: "Flap inset", required: true },
+    { tag: "flap_inset", label: "Flap inset", required: true, phase: "intraop" },
     {
       tag: "flap_perfusion",
       label: "Perfusion check",
       required: false,
       captureHint: "ICG angiography or clinical assessment",
+      phase: "intraop",
     },
     {
       tag: "donor_site",
       label: "Donor site (before closure)",
       required: false,
+      phase: "intraop",
     },
-    { tag: "donor_closure", label: "Donor site closure", required: false },
+    { tag: "donor_closure", label: "Donor site closure", required: false, phase: "intraop" },
     {
       tag: "immediate_postop",
       label: "End of operation",
       required: false,
+      phase: "postop",
     },
   ],
 };
@@ -118,39 +136,46 @@ export const SKIN_CANCER_EXCISION_PROTOCOL: CaptureProtocol = {
       label: "Lesion in context (~1m)",
       required: true,
       captureHint: "Shows anatomical location, include landmark",
+      phase: "preop",
     },
     {
       tag: "lesion_closeup",
       label: "Lesion close-up (10\u201315cm)",
       required: true,
       captureHint: "Surface detail, ruler for scale",
+      phase: "preop",
     },
     {
       tag: "margin_marking",
       label: "Excision margins marked",
       required: true,
       captureHint: "Drawn margins visible with measurements",
+      phase: "intraop",
     },
     {
       tag: "excision_defect",
       label: "Defect after excision",
       required: false,
+      phase: "intraop",
     },
     {
       tag: "specimen",
       label: "Specimen (oriented)",
       required: false,
       captureHint: "Oriented with suture markers, ruler",
+      phase: "intraop",
     },
     {
       tag: "reconstruction_intraop",
       label: "Reconstruction / closure",
       required: false,
+      phase: "intraop",
     },
     {
       tag: "wound_postop",
       label: "Post-op wound / dressing",
       required: false,
+      phase: "postop",
     },
   ],
 };
@@ -168,27 +193,32 @@ export const AESTHETIC_FACE_PROTOCOL: CaptureProtocol = {
       label: "Frontal (AP)",
       required: true,
       captureHint: "Frankfort plane horizontal, hair back, ears visible",
+      phase: "preop",
     },
     {
       tag: "aesthetic_oblique_r",
       label: "Right oblique 45\u00b0",
       required: true,
       captureHint: "Full body rotation, not just head turn",
+      phase: "preop",
     },
     {
       tag: "aesthetic_oblique_l",
       label: "Left oblique 45\u00b0",
       required: true,
+      phase: "preop",
     },
     {
       tag: "aesthetic_lateral_r",
       label: "Right lateral 90\u00b0",
       required: true,
+      phase: "preop",
     },
     {
       tag: "aesthetic_lateral_l",
       label: "Left lateral 90\u00b0",
       required: true,
+      phase: "preop",
     },
   ],
 };
@@ -212,38 +242,45 @@ export const AESTHETIC_RHINOPLASTY_PROTOCOL: CaptureProtocol = {
       label: "Frontal (AP)",
       required: true,
       captureHint: "Frankfort plane horizontal",
+      phase: "preop",
     },
     {
       tag: "aesthetic_oblique_r",
       label: "Right oblique 45\u00b0",
       required: true,
+      phase: "preop",
     },
     {
       tag: "aesthetic_oblique_l",
       label: "Left oblique 45\u00b0",
       required: true,
+      phase: "preop",
     },
     {
       tag: "aesthetic_lateral_r",
       label: "Right lateral 90\u00b0",
       required: true,
+      phase: "preop",
     },
     {
       tag: "aesthetic_lateral_l",
       label: "Left lateral 90\u00b0",
       required: true,
+      phase: "preop",
     },
     {
       tag: "aesthetic_base",
       label: "Base (worm's eye)",
       required: true,
       captureHint: "Nostrils visible, columella-labial angle",
+      phase: "preop",
     },
     {
       tag: "aesthetic_birds_eye",
       label: "Bird's eye",
       required: false,
       captureHint: "View from above \u2014 nasal dorsum alignment",
+      phase: "preop",
     },
   ],
 };
@@ -261,44 +298,52 @@ export const AESTHETIC_BREAST_PROTOCOL: CaptureProtocol = {
       label: "Frontal (AP)",
       required: true,
       captureHint: "Neck to navel, arms at sides",
+      phase: "preop",
     },
     {
       tag: "aesthetic_oblique_r",
       label: "Right oblique 45\u00b0",
       required: true,
+      phase: "preop",
     },
     {
       tag: "aesthetic_oblique_l",
       label: "Left oblique 45\u00b0",
       required: true,
+      phase: "preop",
     },
     {
       tag: "aesthetic_lateral_r",
       label: "Right lateral 90\u00b0",
       required: true,
+      phase: "preop",
     },
     {
       tag: "aesthetic_lateral_l",
       label: "Left lateral 90\u00b0",
       required: true,
+      phase: "preop",
     },
     {
       tag: "aesthetic_hands_on_hips",
       label: "Frontal \u2014 hands on hips",
       required: false,
       captureHint: "Pectoralis contraction, symmetry assessment",
+      phase: "preop",
     },
     {
       tag: "aesthetic_hands_on_head",
       label: "Frontal \u2014 hands on head",
       required: false,
       captureHint: "Arms elevated, ptosis/IMF assessment",
+      phase: "preop",
     },
     {
       tag: "aesthetic_posterior",
       label: "Posterior",
       required: false,
       captureHint: "For LD flap donor / back assessment",
+      phase: "preop",
     },
   ],
 };
@@ -316,34 +361,40 @@ export const AESTHETIC_BODY_PROTOCOL: CaptureProtocol = {
       label: "Frontal (AP)",
       required: true,
       captureHint: "Include mons pubis in frame",
+      phase: "preop",
     },
     {
       tag: "aesthetic_lateral_r",
       label: "Right lateral 90\u00b0",
       required: true,
       captureHint: "Arms at 90\u00b0 elbow flexion",
+      phase: "preop",
     },
     {
       tag: "aesthetic_lateral_l",
       label: "Left lateral 90\u00b0",
       required: true,
+      phase: "preop",
     },
-    { tag: "aesthetic_posterior", label: "Posterior", required: true },
+    { tag: "aesthetic_posterior", label: "Posterior", required: true, phase: "preop" },
     {
       tag: "aesthetic_divers",
       label: "Diver's view",
       required: false,
       captureHint: "Hands on buttocks, 20\u201330\u00b0 hip flexion",
+      phase: "preop",
     },
     {
       tag: "aesthetic_oblique_r",
       label: "Right oblique 45\u00b0",
       required: false,
+      phase: "preop",
     },
     {
       tag: "aesthetic_oblique_l",
       label: "Left oblique 45\u00b0",
       required: false,
+      phase: "preop",
     },
   ],
 };
@@ -361,35 +412,51 @@ export const HAND_SURGERY_PROTOCOL: CaptureProtocol = {
       label: "Dorsal (extended)",
       required: true,
       captureHint: "Both hands side by side for comparison",
+      phase: "preop",
     },
-    { tag: "hand_palmar", label: "Palmar (extended)", required: true },
-    { tag: "hand_lateral", label: "Lateral", required: false },
+    { tag: "hand_palmar", label: "Palmar (extended)", required: true, phase: "preop" },
+    { tag: "hand_lateral", label: "Lateral", required: false, phase: "preop" },
     {
       tag: "hand_fist",
       label: "Composite fist",
       required: true,
       captureHint: "Fingertips to palm \u2014 assess flexion",
+      phase: "preop",
     },
     {
       tag: "hand_extension",
       label: "Full extension",
       required: false,
       captureHint: "Tabletop test \u2014 extensor lag",
+      phase: "preop",
     },
     {
       tag: "hand_specific_deficit",
       label: "Specific deficit",
       required: false,
       captureHint: "Pathology-specific posture",
+      phase: "preop",
     },
-    { tag: "wrist_flexion", label: "Wrist flexion", required: false },
-    { tag: "wrist_extension", label: "Wrist extension", required: false },
-    { tag: "wrist_supination", label: "Supination", required: false },
-    { tag: "wrist_pronation", label: "Pronation", required: false },
-    { tag: "xray_preop", label: "X-ray (pre-op)", required: false },
-    { tag: "xray_postop", label: "X-ray (post-op)", required: false },
+    { tag: "wrist_flexion", label: "Wrist flexion", required: false, phase: "preop" },
+    { tag: "wrist_extension", label: "Wrist extension", required: false, phase: "preop" },
+    { tag: "wrist_supination", label: "Supination", required: false, phase: "preop" },
+    { tag: "wrist_pronation", label: "Pronation", required: false, phase: "preop" },
+    { tag: "xray_preop", label: "X-ray (pre-op)", required: false, phase: "preop" },
+    { tag: "xray_postop", label: "X-ray (post-op)", required: false, phase: "postop" },
   ],
 };
+
+/**
+ * Filter protocol steps to only those matching the given phase.
+ * "preop" returns only preop steps; "full" returns all steps.
+ */
+export function filterStepsByPhase(
+  steps: CaptureStep[],
+  mode: "preop" | "full",
+): CaptureStep[] {
+  if (mode === "full") return steps;
+  return steps.filter((s) => s.phase === "preop");
+}
 
 // ═══════════════════════════════════════════════════════════════
 // PROTOCOL REGISTRY

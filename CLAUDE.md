@@ -30,6 +30,7 @@ Key capabilities: multi-specialty case logging, SNOMED CT coded diagnoses and pr
 - **Media Encryption Remediation COMPLETE** — legacy/v2 delete parity fixed (deleting a migrated `encrypted-media:{uuid}` item now removes both AsyncStorage blobs and any v2 filesystem copy), persisted media references canonicalize to `opus-media:{uuid}` when v2 backing exists, decrypted temp cache sweeping now runs on startup/background/logout/delete, MediaManagementScreen uses `FlashList` for large libraries, onboarding privacy copy distinguishes native vs web guarantees, and targeted `mediaFileStorage`/`mediaMigration` regression suites were added
 - **Case Category Repair COMPLETE** — editing a case now preserves its original top-level specialty/category instead of falling back to `general`, edit-mode save is gated on successful case load, and a one-time conservative storage repair restores clearly recoverable misclassified `general` cases from diagnosis-group specialty data
 - **Capture Pipeline Phase C COMPLETE** — Smart Import from Camera Roll: `SmartImportScreen` with state machine (`picking → encrypting → prompting → deleting → done`), encrypts selected photos into Opus Inbox via `addMultipleToInbox` with `"smart_import"` sourceType, prompts surgeon to delete Camera Roll originals via `expo-media-library` `deleteAssetsAsync` (native iOS confirmation), "Always delete after import" preference (`smartImportPrefs.ts` AsyncStorage helper), InboxScreen gallery button rewired to navigate to SmartImport (renamed "Camera Roll"), PersonalisationScreen toggle for auto-delete preference, fullScreenModal presentation prevents swipe-dismiss during encryption, 32 tests (10 smartImportPrefs + 22 inboxStorage)
+- **Capture Pipeline Phase D COMPLETE** — Opus Camera: dedicated in-app camera (`OpusCameraScreen`) using `expo-camera` CameraView that captures photos directly to encrypted Opus Inbox, completely bypassing Camera Roll. Two modes: Quick Snap (instant camera, no template, rapid-fire to Inbox) and Guided Capture (template picker → guided viewfinder with step-by-step protocol prompts, auto-advance, phase filtering). `CapturePhase` type (`preop`/`intraop`/`postop`) assigned to all 65 protocol steps with `filterStepsByPhase()`. `InboxItem` extended with optional `templateId`, `templateStepIndex`, `patientIdentifier` fields and `"opus_camera"` sourceType. Fire-and-forget encryption queue for responsive rapid-fire capture. Stock camera replaced with Opus Camera navigation in both InboxScreen and OperativeMediaSection. fullScreenModal presentation, 26 new tests (7 inboxStorage + 19 mediaCaptureProtocols), 574 tests total
 - **Phase 5 IN PROGRESS** — Version 2.0.0, EAS config done (dev/preview/production profiles), pending manual regression + TestFlight submission
 
 ## Tech stack
@@ -43,6 +44,7 @@ Key capabilities: multi-specialty case logging, SNOMED CT coded diagnoses and pr
 | Navigation | React Navigation | 7 (@native 7.1.8, @native-stack 7.3.16, @bottom-tabs 7.4.0) |
 | Server state | TanStack React Query | 5.90.7 |
 | Animation | React Native Reanimated | 4.1.1 |
+| Camera | expo-camera | 16 |
 | Charts | React Native SVG | 15.12.1 |
 | Backend | Express | 4.21.2 |
 | ORM | Drizzle ORM | 0.39.3 |
@@ -84,7 +86,7 @@ npm run test:harness   # 500-case API test harness (requires running server + .e
 ```
 client/
   App.tsx                        # Root: 7 nested providers → RootStackNavigator
-  screens/                       # 24 screens + 9 onboarding sub-screens
+  screens/                       # 25 screens + 9 onboarding sub-screens
     DashboardScreen.tsx           # Surgical triage surface, 4-zone layout
     CaseDetailScreen.tsx          # Full case view, timeline, flap outcomes
     CaseFormScreen.tsx            # Case entry, delegates to section components
@@ -109,6 +111,7 @@ client/
     NeedsAttentionListScreen.tsx  # Full-screen needs attention list with sections
     InboxScreen.tsx               # Photo inbox: date-grouped grid, multi-select, assign-to-case, pick mode
     SmartImportScreen.tsx         # Camera Roll import: encrypt → delete originals flow
+    OpusCameraScreen.tsx          # Dedicated in-app camera: template picker + guided viewfinder + quick snap
     onboarding/                   # 9 files: Welcome, FeaturePager, Auth, EmailSignup,
                                   #   Categories, Training, Hospital, Privacy, FeatureSlide
   components/                    # 120+ files across 13 subdirectories
@@ -207,7 +210,7 @@ client/
   types/
     case.ts                      # Case, DiagnosisGroup, Procedure, Timeline, Media (2322 lines)
     media.ts                     # MediaTag taxonomy (64 tags, 7 groups), MEDIA_TAG_REGISTRY, getTagsForGroup, getRelevantGroups
-    inbox.ts                     # InboxItem, InboxState — unassigned clinical photo metadata
+    inbox.ts                     # InboxItem (+ templateId/templateStepIndex/patientIdentifier metadata), InboxState — unassigned clinical photo metadata
     diagnosis.ts                 # Diagnosis picklist entry
     episode.ts                   # Treatment episode, status machine, encounter classes
     infection.ts                 # Infection episodes, syndromes, microbiology
@@ -232,7 +235,7 @@ client/
     flapFieldConfig.ts           # Flap-specific form configs (~100 typed fields)
     handInfectionClinicalData.ts # Kanavel signs, organism presets, antibiotic defaults
     implantCatalogue.ts          # 26 joint implant entries (CMC1/PIP/MCP systems)
-    mediaCaptureProtocols.ts     # 7 specialty capture protocols, findProtocols(), mergeProtocols()
+    mediaCaptureProtocols.ts     # 7 specialty capture protocols, CapturePhase, findProtocols(), mergeProtocols(), filterStepsByPhase()
   navigation/
     RootStackNavigator.tsx       # Auth → Onboarding → Main, modal stack
     MainTabNavigator.tsx         # Bottom tabs: Dashboard + Statistics + Settings
@@ -627,6 +630,8 @@ Tests: `client/lib/__tests__/skinCancerConfig.test.ts` (87 tests), `skinCancerPh
 
 **Capture protocols** (`client/data/mediaCaptureProtocols.ts`):
 - 7 data-driven checklists: Free Flap (11 steps), Skin Cancer Excision (8), Rhinoplasty (7), Face (5), Breast (8), Body Contouring (8), Hand Surgery (8)
+- `CapturePhase` type: `"preop" | "intraop" | "postop"` — assigned to every protocol step for phase-filtered templates
+- `filterStepsByPhase(steps, mode)` — returns all steps for `"full"` mode, only matching phase for `"preop"`
 - `findProtocols(specialty, procedureTags, hasSkinCancerAssessment)` — returns matching protocols
 - `findProtocol(id)` — lookup by protocol ID
 - `mergeProtocols(protocols)` — combines multiple protocols with deduplication and section dividers
@@ -1168,8 +1173,8 @@ Configured in both `tsconfig.json` and `babel.config.js` (module-resolver plugin
 
 ## Testing
 
-- **Framework:** Vitest 4.0.18, **531 tests** across 33 files
-- **Client tests:** `client/lib/__tests__/` and `client/components/media/__tests__/` — handTraumaDiagnosis, handTraumaMapping, handTraumaUx, skinCancerConfig (89 tests), skinCancerPhase4 (11 tests), skinCancerPhase5 (18 tests), skinCancerDiagnoses (7 tests), dashboardSelectors (7 tests), handInfection (42 tests), handElective (52 tests), jointImplant (44 tests), mediaEncryption (7 tests), mediaFileStorage (3 tests), mediaMigration (4 tests), caseSpecialty (5 tests), storageSpecialtyRepair (2 tests), statisticsHelpers (3 tests), statistics (7 tests), dateValues (9 tests), dateFieldNormalization (4 tests), operativeMedia (19 tests), operativeMediaForm (4 tests), mediaAttachmentDefaults (4 tests), mediaContext (3 tests), mediaTagMigration (82 tests), mediaCaptureProtocols (27 tests), implantExport (3 tests), caseDraftPersistence (1 test), inboxStorage (22 tests), smartImportPrefs (10 tests), plus media UI coverage for `MediaTagPicker` resync and resolved `MediaTagBadge` rendering
+- **Framework:** Vitest 4.0.18, **574 tests** across 33 files
+- **Client tests:** `client/lib/__tests__/` and `client/components/media/__tests__/` — handTraumaDiagnosis, handTraumaMapping, handTraumaUx, skinCancerConfig (89 tests), skinCancerPhase4 (11 tests), skinCancerPhase5 (18 tests), skinCancerDiagnoses (7 tests), dashboardSelectors (7 tests), handInfection (42 tests), handElective (52 tests), jointImplant (44 tests), mediaEncryption (7 tests), mediaFileStorage (3 tests), mediaMigration (4 tests), caseSpecialty (5 tests), storageSpecialtyRepair (2 tests), statisticsHelpers (3 tests), statistics (7 tests), dateValues (9 tests), dateFieldNormalization (4 tests), operativeMedia (19 tests), operativeMediaForm (4 tests), mediaAttachmentDefaults (4 tests), mediaContext (3 tests), mediaTagMigration (82 tests), mediaCaptureProtocols (46 tests), implantExport (3 tests), caseDraftPersistence (1 test), inboxStorage (29 tests), smartImportPrefs (10 tests), plus media UI coverage for `MediaTagPicker` resync and resolved `MediaTagBadge` rendering
 - **Server tests:** `server/__tests__/` — auth (17 tests), validation (7 tests), diagnosisStagingConfig (3 tests)
 - **Integration:** `npm run test:harness` — 500-case API harness across 12 specialties (requires running server). Tests nested procedure creation with caseProcedures, flaps, and anastomoses. Run with `--cleanup` to delete test data after.
 - **Run:** `npm run test` (once) or `npm run test:watch` (watch mode)

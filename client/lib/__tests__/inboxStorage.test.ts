@@ -249,6 +249,103 @@ describe("inboxStorage", () => {
     });
   });
 
+  describe("opus_camera sourceType and template metadata", () => {
+    it("addToInbox stores opus_camera sourceType", async () => {
+      const item = await addToInbox(
+        "file:///opus.jpg",
+        "image/jpeg",
+        "opus_camera",
+      );
+      expect(item.sourceType).toBe("opus_camera");
+      expect(getInboxItems()[0]!.sourceType).toBe("opus_camera");
+    });
+
+    it("addToInbox stores templateId when provided", async () => {
+      const item = await addToInbox(
+        "file:///opus.jpg",
+        "image/jpeg",
+        "opus_camera",
+        { templateId: "free_flap" },
+      );
+      expect(item.templateId).toBe("free_flap");
+      expect(getInboxItems()[0]!.templateId).toBe("free_flap");
+    });
+
+    it("addToInbox stores templateStepIndex when provided", async () => {
+      const item = await addToInbox(
+        "file:///opus.jpg",
+        "image/jpeg",
+        "opus_camera",
+        { templateId: "breast", templateStepIndex: 3 },
+      );
+      expect(item.templateStepIndex).toBe(3);
+      expect(getInboxItems()[0]!.templateStepIndex).toBe(3);
+    });
+
+    it("addToInbox stores patientIdentifier when provided", async () => {
+      const item = await addToInbox(
+        "file:///opus.jpg",
+        "image/jpeg",
+        "opus_camera",
+        { patientIdentifier: "NHI123" },
+      );
+      expect(item.patientIdentifier).toBe("NHI123");
+      expect(getInboxItems()[0]!.patientIdentifier).toBe("NHI123");
+    });
+
+    it("addToInbox stores all metadata fields together", async () => {
+      const item = await addToInbox(
+        "file:///opus.jpg",
+        "image/jpeg",
+        "opus_camera",
+        {
+          templateId: "skin_cancer_excision",
+          templateStepIndex: 2,
+          patientIdentifier: "ABC456",
+        },
+      );
+      expect(item.templateId).toBe("skin_cancer_excision");
+      expect(item.templateStepIndex).toBe(2);
+      expect(item.patientIdentifier).toBe("ABC456");
+
+      // Verify round-trip through MMKV
+      const persisted = getInboxItems()[0]!;
+      expect(persisted.templateId).toBe("skin_cancer_excision");
+      expect(persisted.templateStepIndex).toBe(2);
+      expect(persisted.patientIdentifier).toBe("ABC456");
+    });
+
+    it("addToInbox omits undefined metadata fields", async () => {
+      const item = await addToInbox(
+        "file:///opus.jpg",
+        "image/jpeg",
+        "opus_camera",
+      );
+      expect(item.templateId).toBeUndefined();
+      expect(item.templateStepIndex).toBeUndefined();
+      expect(item.patientIdentifier).toBeUndefined();
+
+      // Verify they're not present in serialized state
+      const raw = JSON.parse(mmkvStore["opus_inbox_state"]!);
+      const stored = raw.items[0];
+      expect("templateId" in stored).toBe(false);
+      expect("templateStepIndex" in stored).toBe(false);
+      expect("patientIdentifier" in stored).toBe(false);
+    });
+
+    it("addToInbox with empty metadata object omits all fields", async () => {
+      const item = await addToInbox(
+        "file:///opus.jpg",
+        "image/jpeg",
+        "opus_camera",
+        {},
+      );
+      expect(item.templateId).toBeUndefined();
+      expect(item.templateStepIndex).toBeUndefined();
+      expect(item.patientIdentifier).toBeUndefined();
+    });
+  });
+
   describe("cleanupOrphanedInboxItems", () => {
     it("deletes items older than threshold", async () => {
       // Add an item, then manually backdate it
