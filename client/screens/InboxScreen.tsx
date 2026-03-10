@@ -38,7 +38,9 @@ import {
   inferMediaTagForInboxItem,
   inboxItemToOperativeMediaSmart,
   extractPatientIdHint,
+  findMatchingCasesByPatientId,
 } from "@/lib/inboxAssignment";
+import { isPlannedCase } from "@/types/case";
 import { buildMediaContextFromCase } from "@/lib/mediaContext";
 
 // White-on-photo overlay — intentionally theme-independent
@@ -233,6 +235,44 @@ export default function InboxScreen() {
     return extractPatientIdHint(selected);
   }, [selectedIds, items]);
 
+  // NHI auto-match: find cases that share patient ID with selected items
+  const [nhiMatch, setNhiMatch] = useState<{
+    patientId: string;
+    topMatch: { caseData: Case; matchCount: number };
+    matchCount: number;
+  } | null>(null);
+
+  useEffect(() => {
+    if (pickMode || !selectMode || selectedIds.size === 0) {
+      setNhiMatch(null);
+      return;
+    }
+    const selected = items.filter((item) => selectedIds.has(item.id));
+    const hint = extractPatientIdHint(selected);
+    if (!hint) {
+      setNhiMatch(null);
+      return;
+    }
+
+    let cancelled = false;
+    getCases().then((allCases) => {
+      if (cancelled) return;
+      const nonPlanned = allCases.filter((c) => !isPlannedCase(c));
+      const matches = findMatchingCasesByPatientId(selected, nonPlanned);
+      if (matches.length === 0) {
+        setNhiMatch(null);
+      } else {
+        setNhiMatch({
+          patientId: hint,
+          topMatch: matches[0]!,
+          matchCount: matches[0]!.matchCount,
+        });
+      }
+    }).catch(() => setNhiMatch(null));
+
+    return () => { cancelled = true; };
+  }, [pickMode, selectMode, selectedIds, items]);
+
   const handleAssignToCase = useCallback(() => {
     if (selectedIds.size === 0) return;
     setShowCasePicker(true);
@@ -359,6 +399,37 @@ export default function InboxScreen() {
             Importing...
           </ThemedText>
         </View>
+      ) : null}
+
+      {/* NHI auto-match banner */}
+      {nhiMatch ? (
+        <Pressable
+          onPress={() => handleCaseSelected(nhiMatch.topMatch.caseData)}
+          style={[
+            styles.nhiBanner,
+            { backgroundColor: theme.link + "15", borderColor: theme.link },
+          ]}
+        >
+          <View style={styles.nhiBannerContent}>
+            <Feather name="user" size={16} color={theme.link} />
+            <View style={{ flex: 1 }}>
+              <ThemedText style={[styles.nhiBannerText, { color: theme.text }]}>
+                {nhiMatch.matchCount} photo{nhiMatch.matchCount > 1 ? "s" : ""} match patient {nhiMatch.patientId}
+              </ThemedText>
+              <ThemedText
+                style={[styles.nhiBannerSub, { color: theme.textSecondary }]}
+                numberOfLines={1}
+              >
+                Assign to {getPrimaryDiagnosisName(nhiMatch.topMatch.caseData) || "case"} ({nhiMatch.topMatch.caseData.procedureDate ?? "no date"})
+              </ThemedText>
+            </View>
+            <View style={[styles.nhiAssignButton, { backgroundColor: theme.link }]}>
+              <ThemedText style={[styles.nhiAssignText, { color: theme.buttonText }]}>
+                Assign
+              </ThemedText>
+            </View>
+          </View>
+        </Pressable>
       ) : null}
 
       {isEmpty ? (
@@ -839,6 +910,37 @@ const styles = StyleSheet.create({
   },
   selectButton: {
     fontSize: 15,
+    fontWeight: "600",
+  },
+
+  // NHI banner
+  nhiBanner: {
+    marginHorizontal: Spacing.md,
+    marginTop: Spacing.sm,
+    borderRadius: BorderRadius.sm,
+    borderWidth: 1,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+  },
+  nhiBannerContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+  },
+  nhiBannerText: {
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  nhiBannerSub: {
+    fontSize: 12,
+  },
+  nhiAssignButton: {
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 4,
+    borderRadius: BorderRadius.xs,
+  },
+  nhiAssignText: {
+    fontSize: 12,
     fontWeight: "600",
   },
 

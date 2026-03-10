@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo } from "react";
 import { InteractionManager } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
-import { Case, Specialty, getCaseSpecialties } from "@/types/case";
+import { Case, Specialty, getCaseSpecialties, isPlannedCase } from "@/types/case";
 import { getCases } from "@/lib/storage";
 import {
   calculateBaseStatistics,
@@ -56,7 +56,7 @@ export function useStatistics(): UseStatisticsReturn {
       const task = InteractionManager.runAfterInteractions(async () => {
         try {
           const data = await getCases();
-          setCases(data);
+          setCases(data.filter((c) => !isPlannedCase(c)));
         } catch (error) {
           console.error("Error loading cases for statistics:", error);
         } finally {

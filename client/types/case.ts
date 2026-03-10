@@ -10,12 +10,13 @@ import type { JointImplantDetails } from "./jointImplant";
 import type { MediaTag } from "./media";
 
 // Case status for active patient tracking
-export type CaseStatus = "active" | "discharged" | "incomplete";
+export type CaseStatus = "active" | "discharged" | "incomplete" | "planned";
 
 export const CASE_STATUS_LABELS: Record<CaseStatus, string> = {
   active: "Active",
   discharged: "Discharged",
   incomplete: "Incomplete",
+  planned: "Planned",
 };
 
 // RACS MALT Supervision Levels (role in theatre)
@@ -1742,6 +1743,11 @@ export interface Case {
   // Case Status (active until discharge note recorded)
   caseStatus?: CaseStatus;
 
+  // Planned case fields (caseStatus === "planned")
+  plannedDate?: string; // YYYY-MM-DD — scheduled surgery date
+  plannedNote?: string; // Free-text planning note
+  plannedTemplateId?: string; // Capture protocol ID chosen at plan time
+
   clinicalDetails: ClinicalDetails;
   teamMembers: TeamMember[];
   ownerId: string;
@@ -1895,6 +1901,8 @@ export interface OperativeMediaItem {
   caption?: string;
   timestamp?: string;
   createdAt: string;
+  templateId?: string; // Opus Camera protocol ID
+  templateStepIndex?: number; // Protocol step index at capture time
 }
 
 export const OPERATIVE_MEDIA_TYPE_LABELS: Record<OperativeMediaType, string> = {
@@ -2327,6 +2335,19 @@ export function getCaseSpecialties(c: Case): Specialty[] {
 
 export function getPrimaryDiagnosisName(c: Case): string | undefined {
   return (c.diagnosisGroups ?? [])[0]?.diagnosis?.displayName;
+}
+
+/**
+ * Resolve the effective case status with backward-compatible fallback.
+ * Older cases may not have caseStatus set — derive from discharge state.
+ */
+export function resolvedCaseStatus(c: Case): CaseStatus {
+  if (c.caseStatus) return c.caseStatus;
+  return c.dischargeDate ? "discharged" : "active";
+}
+
+export function isPlannedCase(c: Case): boolean {
+  return c.caseStatus === "planned";
 }
 
 export function getAllLesionInstances(c: Case): LesionInstance[] {
