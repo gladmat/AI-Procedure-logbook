@@ -31,6 +31,9 @@ import NeedsAttentionListScreen from "@/screens/NeedsAttentionListScreen";
 import InboxScreen from "@/screens/InboxScreen";
 import SmartImportScreen from "@/screens/SmartImportScreen";
 import OpusCameraScreen from "@/screens/OpusCameraScreen";
+import PlanCaseScreen from "@/screens/PlanCaseScreen";
+import PlannedCaseListScreen from "@/screens/PlannedCaseListScreen";
+import CaseMediaOrganiserScreen from "@/screens/CaseMediaOrganiserScreen";
 import SurgicalPreferencesScreen from "@/screens/SurgicalPreferencesScreen";
 import { WelcomeScreen } from "@/screens/onboarding/WelcomeScreen";
 import { FeaturePager } from "@/screens/onboarding/FeaturePager";
@@ -212,6 +215,14 @@ export type RootStackParamList = {
         patientIdentifier?: string;
       }
     | undefined;
+  PlanCase: undefined;
+  PlannedCaseList: undefined;
+  CaseMediaOrganiser: {
+    callbackId: string;
+    media: import("@/types/case").OperativeMediaItem[];
+    protocolSteps: import("@/data/mediaCaptureProtocols").CaptureStep[];
+    procedureDate?: string;
+  };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -776,6 +787,29 @@ export default function RootStackNavigator() {
               options={{
                 headerShown: false,
                 presentation: "fullScreenModal",
+              }}
+            />
+            <Stack.Screen
+              name="PlanCase"
+              component={PlanCaseScreen}
+              options={{
+                headerTitle: "Plan a Case",
+                presentation: "fullScreenModal",
+              }}
+            />
+            <Stack.Screen
+              name="PlannedCaseList"
+              component={PlannedCaseListScreen}
+              options={{
+                headerTitle: "Planned Cases",
+              }}
+            />
+            <Stack.Screen
+              name="CaseMediaOrganiser"
+              component={CaseMediaOrganiserScreen}
+              options={{
+                headerShown: false,
+                presentation: "modal",
               }}
             />
             <Stack.Screen

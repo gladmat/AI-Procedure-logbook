@@ -1,14 +1,16 @@
 /**
- * Inbox-to-Case Smart Assignment (Capture Pipeline Phase E).
+ * Inbox-to-Case Smart Assignment (Capture Pipeline Phase E + H).
  *
  * Pure functions for inferring MediaTag when assigning inbox photos to cases.
  * Uses template metadata from Opus Camera and temporal context from procedure date.
+ * Phase H adds autoAssign() for within-case protocol slot assignment and
+ * findMatchingCasesByPatientId() for NHI auto-match.
  */
 
 import type { InboxItem } from "@/types/inbox";
 import type { MediaTag } from "@/types/media";
-import type { OperativeMediaItem, OperativeMediaType } from "@/types/case";
-import { ALL_PROTOCOLS } from "@/data/mediaCaptureProtocols";
+import type { OperativeMediaItem, OperativeMediaType, Case } from "@/types/case";
+import { ALL_PROTOCOLS, type CaptureStep } from "@/data/mediaCaptureProtocols";
 import { suggestTemporalTag } from "@/lib/mediaTagMigration";
 import { TAG_TO_MEDIA_TYPE } from "@/lib/operativeMedia";
 
@@ -66,6 +68,8 @@ export function inboxItemToOperativeMediaSmart(
     tag,
     mediaType: (TAG_TO_MEDIA_TYPE[tag] ?? "other") as OperativeMediaType,
     createdAt: item.capturedAt,
+    templateId: item.templateId,
+    templateStepIndex: item.templateStepIndex,
   };
 }
 
@@ -96,4 +100,108 @@ export function extractPatientIdHint(
     }
   }
   return best;
+}
+
+/**
+ * Auto-assign media items to protocol slots within a case.
+ *
+ * Priority chain:
+ * 1. Template metadata — photo has templateId + templateStepIndex → look up step → assign its tag.
+ * 2. Temporal/sequential — group remaining untagged by capture time, fill empty slots in protocol order.
+ * 3. Unmatched — leave tag unchanged (keeps existing tag or stays untagged).
+ *
+ * Returns a new array (never mutates input).
+ */
+export function autoAssign(
+  media: OperativeMediaItem[],
+  protocolSteps: CaptureStep[],
+  procedureDate?: string,
+): OperativeMediaItem[] {
+  const result = media.map((m) => ({ ...m }));
+
+  // Track which protocol step indices are already filled
+  const filledStepIndices = new Set<number>();
+
+  // Pass 1: template metadata — photo has templateId + templateStepIndex
+  for (const item of result) {
+    if (item.templateId != null && item.templateStepIndex != null) {
+      const protocol = getProtocolById(item.templateId);
+      const step = protocol?.steps[item.templateStepIndex];
+      if (step) {
+        // Find this step's index in the target protocol
+        const targetIdx = protocolSteps.findIndex((s) => s.tag === step.tag);
+        if (targetIdx >= 0 && !filledStepIndices.has(targetIdx)) {
+          item.tag = step.tag;
+          item.mediaType = (TAG_TO_MEDIA_TYPE[step.tag] ?? "other") as OperativeMediaType;
+          filledStepIndices.add(targetIdx);
+        }
+      }
+    }
+  }
+
+  // Pass 2: temporal/sequential — fill remaining empty slots with untagged photos
+  const untagged = result.filter(
+    (m) => !m.tag || m.tag === "other",
+  );
+  // Sort untagged by capture time ascending
+  untagged.sort((a, b) =>
+    (a.createdAt ?? "").localeCompare(b.createdAt ?? ""),
+  );
+
+  for (const item of untagged) {
+    // Find the first unfilled protocol slot
+    const nextSlotIdx = protocolSteps.findIndex(
+      (_, idx) => !filledStepIndices.has(idx),
+    );
+    if (nextSlotIdx < 0) break; // All slots filled
+
+    const step = protocolSteps[nextSlotIdx]!;
+    item.tag = step.tag;
+    item.mediaType = (TAG_TO_MEDIA_TYPE[step.tag] ?? "other") as OperativeMediaType;
+    filledStepIndices.add(nextSlotIdx);
+  }
+
+  return result;
+}
+
+/**
+ * Find cases that match the patient identifier(s) from inbox items.
+ * Case-insensitive comparison. Sorted by match count descending.
+ */
+export function findMatchingCasesByPatientId(
+  inboxItems: InboxItem[],
+  cases: Case[],
+): Array<{ caseData: Case; matchCount: number }> {
+  // Collect unique patient IDs from inbox items (lowercased for matching)
+  const pidSet = new Set<string>();
+  for (const item of inboxItems) {
+    const pid = item.patientIdentifier?.trim().toLowerCase();
+    if (pid) pidSet.add(pid);
+  }
+
+  if (pidSet.size === 0) return [];
+
+  const matches: Array<{ caseData: Case; matchCount: number }> = [];
+
+  for (const c of cases) {
+    const casePid = c.patientIdentifier?.trim().toLowerCase();
+    if (!casePid) continue;
+    if (!pidSet.has(casePid)) continue;
+
+    // Count how many inbox items match this case's patient ID
+    let matchCount = 0;
+    for (const item of inboxItems) {
+      if (item.patientIdentifier?.trim().toLowerCase() === casePid) {
+        matchCount++;
+      }
+    }
+
+    if (matchCount > 0) {
+      matches.push({ caseData: c, matchCount });
+    }
+  }
+
+  // Sort by match count descending
+  matches.sort((a, b) => b.matchCount - a.matchCount);
+  return matches;
 }

@@ -165,7 +165,12 @@ function buildEncounter(c: Case, conditionRefs: string[]): FhirResource {
   return {
     resourceType: "Encounter",
     id: `encounter-${c.id}`,
-    status: c.caseStatus === "discharged" ? "finished" : "in-progress",
+    status:
+      c.caseStatus === "planned"
+        ? "planned"
+        : c.caseStatus === "discharged"
+          ? "finished"
+          : "in-progress",
     class: {
       system: "http://terminology.hl7.org/CodeSystem/v3-ActCode",
       code: classCode,

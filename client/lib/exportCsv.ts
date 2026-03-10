@@ -72,6 +72,7 @@ const CSV_HEADERS = [
   "implant_approach",
   "implant_bearing",
   "implant_joint_type",
+  "planned_date",
 ] as const;
 
 function escapeCsvField(
@@ -218,6 +219,7 @@ function caseToRow(c: Case, options: CsvExportOptions): string {
     implantFields.approach,
     implantFields.bearing,
     implantFields.jointType,
+    c.plannedDate ?? "",
   ];
 
   return values.map(escapeCsvField).join(",");

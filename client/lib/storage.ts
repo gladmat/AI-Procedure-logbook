@@ -49,6 +49,8 @@ interface CaseIndexEntry {
   updatedAt: string;
   episodeId?: string;
   encounterClass?: string;
+  caseStatus?: string;
+  plannedDate?: string;
 }
 
 async function hashPatientIdentifier(
@@ -339,6 +341,8 @@ export async function saveCase(caseData: Case): Promise<void> {
       updatedAt: now,
       episodeId: caseData.episodeId,
       encounterClass: caseData.encounterClass,
+      caseStatus: caseData.caseStatus,
+      plannedDate: caseData.plannedDate,
     };
 
     if (existingIdx >= 0) {
