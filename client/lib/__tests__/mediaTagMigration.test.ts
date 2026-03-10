@@ -316,9 +316,9 @@ describe("getRelevantGroups", () => {
     expect(groups).toContain("flap_surgery");
   });
 
-  it("includes skin_cancer for skin_cancer specialty", () => {
+  it("does not include skin_cancer for skin_cancer specialty alone (diagnosis-driven only)", () => {
     const groups = getRelevantGroups("skin_cancer");
-    expect(groups).toContain("skin_cancer");
+    expect(groups).not.toContain("skin_cancer");
   });
 
   it("includes skin_cancer for hasSkinCancerAssessment regardless of specialty", () => {
@@ -328,6 +328,11 @@ describe("getRelevantGroups", () => {
 
   it("includes skin_cancer for hasSkinCancerAssessment with no specialty", () => {
     const groups = getRelevantGroups(undefined, undefined, true);
+    expect(groups).toContain("skin_cancer");
+  });
+
+  it("includes skin_cancer for hasSkinCancerAssessment with skin_cancer specialty", () => {
+    const groups = getRelevantGroups("skin_cancer", undefined, true);
     expect(groups).toContain("skin_cancer");
   });
 
@@ -352,5 +357,10 @@ describe("getRelevantGroups", () => {
     expect(groups).not.toContain("skin_cancer");
     expect(groups).not.toContain("aesthetic");
     expect(groups).not.toContain("hand_function");
+  });
+
+  it("does not include skin_cancer for head_neck or general without assessment", () => {
+    expect(getRelevantGroups("head_neck")).not.toContain("skin_cancer");
+    expect(getRelevantGroups("general")).not.toContain("skin_cancer");
   });
 });

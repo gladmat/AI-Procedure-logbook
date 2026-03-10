@@ -229,6 +229,30 @@ export default function CaseFormScreen() {
 
   // ── Completion map ──────────────────────────────────────────────────────
 
+  // ── Media context for protocol detection ───────────────────────────────
+
+  const mediaProcedureTags = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          form.state.diagnosisGroups.flatMap((g) =>
+            g.procedures.flatMap((p) => p.tags ?? []),
+          ),
+        ),
+      ),
+    [form.state.diagnosisGroups],
+  );
+
+  const mediaHasSkinCancerAssessment = useMemo(
+    () =>
+      form.state.diagnosisGroups.some(
+        (g) =>
+          !!g.skinCancerAssessment ||
+          (g.lesionInstances ?? []).some((l) => !!l.skinCancerAssessment),
+      ),
+    [form.state.diagnosisGroups],
+  );
+
   const completionMap: CompletionMap = useMemo(() => {
     const s = form.state;
     return {
@@ -666,6 +690,9 @@ export default function CaseFormScreen() {
                   form.dispatch(setField("operativeMedia", media))
                 }
                 maxItems={15}
+                specialty={form.specialty}
+                procedureTags={mediaProcedureTags}
+                hasSkinCancerAssessment={mediaHasSkinCancerAssessment}
               />
             </SectionWrapper>
 

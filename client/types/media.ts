@@ -558,12 +558,7 @@ export function getRelevantGroups(
   );
   if (hasFreeFlap) groups.push("flap_surgery");
 
-  if (
-    hasSkinCancerAssessment ||
-    specialty === "skin_cancer" ||
-    specialty === "head_neck" ||
-    specialty === "general"
-  ) {
+  if (hasSkinCancerAssessment) {
     groups.push("skin_cancer");
   }
 

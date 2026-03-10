@@ -47,6 +47,7 @@ import {
   Case,
   QuickCasePrefillData,
 } from "@/types/case";
+import type { MediaTag } from "@/types/media";
 import type { EpisodePrefillData } from "@/types/episode";
 import { useTheme } from "@/hooks/useTheme";
 
@@ -166,6 +167,9 @@ export type RootStackParamList = {
     maxAttachments?: number;
     context?: "case" | "timeline";
     eventType?: TimelineEventType;
+    specialty?: string;
+    procedureTags?: string[];
+    hasSkinCancerAssessment?: boolean;
   };
   AddOperativeMedia: {
     imageUri: string;
@@ -174,8 +178,12 @@ export type RootStackParamList = {
     editMode?: boolean;
     existingMediaId?: string;
     existingMediaType?: string;
+    existingTag?: MediaTag;
     existingCaption?: string;
     existingTimestamp?: string;
+    specialty?: string;
+    procedureTags?: string[];
+    hasSkinCancerAssessment?: boolean;
   };
   EpisodeDetail: { episodeId: string };
   EpisodeList: undefined;

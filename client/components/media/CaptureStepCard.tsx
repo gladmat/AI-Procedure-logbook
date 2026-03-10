@@ -118,7 +118,7 @@ function CaptureStepCardInner({
                 { backgroundColor: theme.success },
               ]}
             >
-              <Feather name="check" size={10} color="#FFFFFF" />
+              <Feather name="check" size={10} color={theme.buttonText} />
             </View>
 
             {/* Tag badge overlay */}
@@ -136,7 +136,7 @@ function CaptureStepCardInner({
                 ]}
                 hitSlop={8}
               >
-                <Feather name="x" size={10} color="#FFFFFF" />
+                <Feather name="x" size={10} color={theme.buttonText} />
               </Pressable>
             ) : null}
           </View>

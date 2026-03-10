@@ -27,10 +27,14 @@ import { ThemedView } from "@/components/ThemedView";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
-import { OperativeMediaType } from "@/types/case";
 import { DatePickerField } from "@/components/FormField";
 import { useMediaCallback } from "@/contexts/MediaCallbackContext";
 import { normalizeDateOnlyValue, toIsoDateValue } from "@/lib/dateValues";
+import { MediaTagPicker } from "@/components/media";
+import { resolveMediaTag } from "@/lib/mediaTagMigration";
+import { TAG_TO_MEDIA_TYPE } from "@/lib/operativeMedia";
+import type { MediaTag } from "@/types/media";
+import type { OperativeMediaType } from "@/types/case";
 
 type AddOperativeMediaRouteProp = RouteProp<
   RootStackParamList,
@@ -40,21 +44,6 @@ type AddOperativeMediaNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
   "AddOperativeMedia"
 >;
-
-const MEDIA_TYPE_OPTIONS: {
-  value: OperativeMediaType;
-  label: string;
-  icon: keyof typeof Feather.glyphMap;
-}[] = [
-  { value: "preoperative_photo", label: "Preop Photo", icon: "image" },
-  { value: "intraoperative_photo", label: "Intraop Photo", icon: "camera" },
-  { value: "xray", label: "X-ray", icon: "file" },
-  { value: "ct_scan", label: "CT Scan", icon: "layers" },
-  { value: "mri", label: "MRI", icon: "activity" },
-  { value: "diagram", label: "Diagram", icon: "edit-3" },
-  { value: "document", label: "Document", icon: "file-text" },
-  { value: "other", label: "Other", icon: "paperclip" },
-];
 
 export default function AddOperativeMediaScreen() {
   const navigation = useNavigation<AddOperativeMediaNavigationProp>();
@@ -70,13 +59,24 @@ export default function AddOperativeMediaScreen() {
     editMode = false,
     existingMediaId,
     existingMediaType,
+    existingTag,
     existingCaption,
     existingTimestamp,
+    specialty,
+    procedureTags,
+    hasSkinCancerAssessment,
   } = route.params;
 
-  const [selectedType, setSelectedType] = useState<OperativeMediaType>(
-    (existingMediaType as OperativeMediaType) || "intraoperative_photo",
-  );
+  // Resolve initial tag from existingTag or legacy existingMediaType
+  const initialTag: MediaTag = existingTag
+    ? existingTag
+    : existingMediaType
+      ? resolveMediaTag({
+          mediaType: existingMediaType as OperativeMediaType,
+        })
+      : "intraop";
+
+  const [selectedTag, setSelectedTag] = useState<MediaTag>(initialTag);
   const [captionInput, setCaptionInput] = useState(existingCaption || "");
   const [mediaDate, setMediaDate] = useState(
     () =>
@@ -183,7 +183,8 @@ export default function AddOperativeMediaScreen() {
         id: editMode && existingMediaId ? existingMediaId : uuidv4(),
         localUri: finalUri,
         mimeType: finalMimeType,
-        mediaType: selectedType,
+        tag: selectedTag,
+        mediaType: TAG_TO_MEDIA_TYPE[selectedTag],
         caption: captionInput.trim() || undefined,
         timestamp,
         createdAt: editMode
@@ -247,7 +248,12 @@ export default function AddOperativeMediaScreen() {
           ]}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={styles.previewContainer}>
+          <View
+            style={[
+              styles.previewContainer,
+              { backgroundColor: theme.backgroundRoot },
+            ]}
+          >
             {isEncryptedMediaUri(currentUri) ? (
               <EncryptedImage
                 uri={currentUri}
@@ -286,54 +292,13 @@ export default function AddOperativeMediaScreen() {
             </Pressable>
           </View>
 
-          <ThemedText
-            style={[styles.sectionLabel, { color: theme.textSecondary }]}
-          >
-            Media Type
-          </ThemedText>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.typeChipsContainer}
-          >
-            {MEDIA_TYPE_OPTIONS.map((option) => (
-              <Pressable
-                key={option.value}
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  setSelectedType(option.value);
-                }}
-                style={[
-                  styles.typeChip,
-                  {
-                    backgroundColor:
-                      selectedType === option.value
-                        ? theme.link
-                        : theme.backgroundRoot,
-                    borderColor:
-                      selectedType === option.value ? theme.link : theme.border,
-                  },
-                ]}
-              >
-                <Feather
-                  name={option.icon}
-                  size={14}
-                  color={selectedType === option.value ? "#fff" : theme.text}
-                />
-                <ThemedText
-                  style={[
-                    styles.typeChipText,
-                    {
-                      color:
-                        selectedType === option.value ? "#fff" : theme.text,
-                    },
-                  ]}
-                >
-                  {option.label}
-                </ThemedText>
-              </Pressable>
-            ))}
-          </ScrollView>
+          <MediaTagPicker
+            selectedTag={selectedTag}
+            onSelectTag={setSelectedTag}
+            specialty={specialty}
+            procedureTags={procedureTags}
+            hasSkinCancerAssessment={hasSkinCancerAssessment}
+          />
 
           <DatePickerField
             label="Date"
@@ -374,8 +339,10 @@ export default function AddOperativeMediaScreen() {
               { backgroundColor: saving ? theme.textTertiary : theme.link },
             ]}
           >
-            <Feather name="check" size={20} color="#fff" />
-            <ThemedText style={styles.confirmButtonText}>
+            <Feather name="check" size={20} color={theme.buttonText} />
+            <ThemedText
+              style={[styles.confirmButtonText, { color: theme.buttonText }]}
+            >
               {saving ? "Saving..." : editMode ? "Save Changes" : "Add Media"}
             </ThemedText>
           </Pressable>
@@ -421,7 +388,6 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.md,
     overflow: "hidden",
     marginBottom: Spacing.md,
-    backgroundColor: "#000",
   },
   previewImage: {
     width: "100%",
@@ -451,23 +417,6 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     marginBottom: Spacing.sm,
   },
-  typeChipsContainer: {
-    gap: Spacing.sm,
-    paddingBottom: Spacing.lg,
-  },
-  typeChip: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
-  },
-  typeChipText: {
-    fontSize: 13,
-    fontWeight: "500",
-  },
   captionInput: {
     borderWidth: 1,
     borderRadius: BorderRadius.md,
@@ -487,7 +436,6 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.md,
   },
   confirmButtonText: {
-    color: "#fff",
     fontSize: 16,
     fontWeight: "600",
   },

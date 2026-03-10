@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import {
   View,
   StyleSheet,
@@ -20,27 +20,35 @@ import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import {
   OperativeMediaItem,
-  OperativeMediaType,
-  OPERATIVE_MEDIA_TYPE_LABELS,
   MediaAttachment,
 } from "@/types/case";
+import { MEDIA_TAG_REGISTRY } from "@/types/media";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { useMediaCallback } from "@/contexts/MediaCallbackContext";
 import {
   operativeMediaToAttachments,
   attachmentsToOperativeMedia,
 } from "@/lib/operativeMedia";
+import { resolveMediaTag } from "@/lib/mediaTagMigration";
+import { ProtocolBadge, GuidedCaptureFlow } from "@/components/media";
+import { findProtocols } from "@/data/mediaCaptureProtocols";
 
 interface OperativeMediaSectionProps {
   media: OperativeMediaItem[];
   onMediaChange: (media: OperativeMediaItem[]) => void;
   maxItems?: number;
+  specialty?: string;
+  procedureTags?: string[];
+  hasSkinCancerAssessment?: boolean;
 }
 
 export function OperativeMediaSection({
   media,
   onMediaChange,
   maxItems = 15,
+  specialty,
+  procedureTags,
+  hasSkinCancerAssessment,
 }: OperativeMediaSectionProps) {
   const { theme } = useTheme();
   const navigation =
@@ -49,6 +57,16 @@ export function OperativeMediaSection({
   const [cameraPermission, requestCameraPermission] =
     ImagePicker.useCameraPermissions();
   const canAddMore = media.length < maxItems;
+
+  const protocols = useMemo(
+    () =>
+      findProtocols({
+        specialties: specialty ? [specialty] : undefined,
+        procedureTags,
+        hasSkinCancerAssessment,
+      }),
+    [specialty, procedureTags, hasSkinCancerAssessment],
+  );
 
   const handleManageMedia = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -62,6 +80,9 @@ export function OperativeMediaSection({
       callbackId,
       maxAttachments: maxItems,
       context: "case",
+      specialty,
+      procedureTags,
+      hasSkinCancerAssessment,
     });
   };
 
@@ -75,6 +96,9 @@ export function OperativeMediaSection({
       imageUri: uri,
       mimeType,
       callbackId,
+      specialty,
+      procedureTags,
+      hasSkinCancerAssessment,
     });
   };
 
@@ -157,6 +181,7 @@ export function OperativeMediaSection({
               id: uuidv4(),
               localUri: savedAsset.localUri,
               mimeType: savedAsset.mimeType,
+              tag: "intraop",
               mediaType: "intraoperative_photo",
               createdAt: new Date().toISOString(),
             });
@@ -190,8 +215,12 @@ export function OperativeMediaSection({
       editMode: true,
       existingMediaId: item.id,
       existingMediaType: item.mediaType,
+      existingTag: item.tag,
       existingCaption: item.caption,
       existingTimestamp: item.timestamp,
+      specialty,
+      procedureTags,
+      hasSkinCancerAssessment,
     });
   };
 
@@ -220,6 +249,13 @@ export function OperativeMediaSection({
         <View style={styles.headerLeft}>
           <Feather name="image" size={18} color={theme.link} />
           <ThemedText style={styles.headerTitle}>Operative Media</ThemedText>
+          {protocols.length > 0 ? (
+            <ProtocolBadge
+              label={protocols[0]!.label}
+              capturedCount={media.length}
+              totalSteps={protocols.reduce((sum, p) => sum + p.steps.length, 0)}
+            />
+          ) : null}
         </View>
         <View style={styles.headerRight}>
           {media.length > 0 ? (
@@ -246,71 +282,101 @@ export function OperativeMediaSection({
         </View>
       </View>
 
+      {protocols.length > 0 ? (
+        <GuidedCaptureFlow
+          protocols={protocols}
+          existingMedia={media}
+          onMediaChange={onMediaChange}
+          maxItems={maxItems}
+          specialty={specialty}
+          procedureTags={procedureTags}
+          hasSkinCancerAssessment={hasSkinCancerAssessment}
+        />
+      ) : null}
+
       {media.length > 0 ? (
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.previewContainer}
         >
-          {media.map((item) => (
-            <Pressable
-              key={item.id}
-              onPress={() => handleEditMedia(item)}
-              style={[
-                styles.previewItem,
-                { backgroundColor: theme.backgroundDefault },
-              ]}
-            >
-              <EncryptedImage
-                uri={item.localUri}
-                style={styles.previewImage}
-                resizeMode="cover"
-                thumbnail
-                onError={() =>
-                  console.warn("Media file missing:", item.localUri)
-                }
-              />
-              <View style={[styles.typeBadge, { backgroundColor: theme.link }]}>
-                <ThemedText style={styles.typeBadgeText}>
-                  {OPERATIVE_MEDIA_TYPE_LABELS[item.mediaType]}
-                </ThemedText>
-              </View>
+          {media.map((item) => {
+            const tag = resolveMediaTag(item);
+            const tagLabel = MEDIA_TAG_REGISTRY[tag]?.label ?? tag;
+
+            return (
               <Pressable
-                onPress={() => handleRemove(item.id)}
-                style={[styles.removeButton, { backgroundColor: theme.error }]}
-                hitSlop={8}
-              >
-                <Feather name="x" size={12} color="#fff" />
-              </Pressable>
-              <View
+                key={item.id}
+                onPress={() => handleEditMedia(item)}
                 style={[
-                  styles.editBadge,
-                  { backgroundColor: "rgba(0,0,0,0.5)" },
+                  styles.previewItem,
+                  { backgroundColor: theme.backgroundDefault },
                 ]}
               >
-                <Feather name="edit-2" size={10} color="#fff" />
-              </View>
-              {item.caption ? (
+                <EncryptedImage
+                  uri={item.localUri}
+                  style={styles.previewImage}
+                  resizeMode="cover"
+                  thumbnail
+                  onError={() =>
+                    console.warn("Media file missing:", item.localUri)
+                  }
+                />
                 <View
-                  style={[
-                    styles.captionOverlay,
-                    { backgroundColor: "rgba(0,0,0,0.6)" },
-                  ]}
+                  style={[styles.typeBadge, { backgroundColor: theme.link }]}
                 >
-                  <ThemedText style={styles.captionText} numberOfLines={2}>
-                    {item.caption}
+                  <ThemedText
+                    style={[
+                      styles.typeBadgeText,
+                      { color: theme.buttonText },
+                    ]}
+                  >
+                    {tagLabel}
                   </ThemedText>
                 </View>
-              ) : null}
-            </Pressable>
-          ))}
+                <Pressable
+                  onPress={() => handleRemove(item.id)}
+                  style={[
+                    styles.removeButton,
+                    { backgroundColor: theme.error },
+                  ]}
+                  hitSlop={8}
+                >
+                  <Feather name="x" size={12} color={theme.buttonText} />
+                </Pressable>
+                <View
+                  style={[
+                    styles.editBadge,
+                    { backgroundColor: theme.backgroundRoot + "80" },
+                  ]}
+                >
+                  <Feather name="edit-2" size={10} color={theme.text} />
+                </View>
+                {item.caption ? (
+                  <View
+                    style={[
+                      styles.captionOverlay,
+                      { backgroundColor: theme.backgroundRoot + "99" },
+                    ]}
+                  >
+                    <ThemedText
+                      style={[styles.captionText, { color: theme.text }]}
+                      numberOfLines={2}
+                    >
+                      {item.caption}
+                    </ThemedText>
+                  </View>
+                ) : null}
+              </Pressable>
+            );
+          })}
           {canAddMore ? (
             <View style={styles.addButtonsColumn}>
               <Pressable
                 onPress={handleCameraCapture}
                 style={[styles.smallAddButton, { backgroundColor: theme.link }]}
               >
-                <Feather name="camera" size={18} color="#fff" />
+                <Feather name="camera" size={18} color={theme.buttonText} />
               </Pressable>
               <Pressable
                 onPress={handleGalleryPick}
@@ -331,8 +397,10 @@ export function OperativeMediaSection({
               onPress={handleCameraCapture}
               style={[styles.addButton, { backgroundColor: theme.link }]}
             >
-              <Feather name="camera" size={20} color="#fff" />
-              <ThemedText style={[styles.addButtonText, { color: "#fff" }]}>
+              <Feather name="camera" size={20} color={theme.buttonText} />
+              <ThemedText
+                style={[styles.addButtonText, { color: theme.buttonText }]}
+              >
                 Take Photo
               </ThemedText>
             </Pressable>
@@ -372,6 +440,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: Spacing.sm,
+    flex: 1,
   },
   headerTitle: {
     fontWeight: "600",
@@ -423,7 +492,6 @@ const styles = StyleSheet.create({
   typeBadgeText: {
     fontSize: 9,
     fontWeight: "600",
-    color: "#fff",
   },
   removeButton: {
     position: "absolute",
@@ -455,7 +523,6 @@ const styles = StyleSheet.create({
   },
   captionText: {
     fontSize: 10,
-    color: "#fff",
   },
   addButtonsColumn: {
     gap: Spacing.xs,

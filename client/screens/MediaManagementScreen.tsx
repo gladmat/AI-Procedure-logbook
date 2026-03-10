@@ -30,12 +30,12 @@ import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { useMediaCallback } from "@/contexts/MediaCallbackContext";
-import {
-  MediaAttachment,
-  MediaCategory,
-  MEDIA_CATEGORY_OPTIONS,
-  MEDIA_CATEGORY_LABELS,
-} from "@/types/case";
+import { MediaAttachment } from "@/types/case";
+import { MediaTagPicker, MediaTagBadge } from "@/components/media";
+import { MEDIA_TAG_REGISTRY } from "@/types/media";
+import { resolveMediaTag } from "@/lib/mediaTagMigration";
+import { TAG_TO_CATEGORY } from "@/lib/operativeMedia";
+import type { MediaTag } from "@/types/media";
 
 type MediaManagementRouteProp = RouteProp<
   RootStackParamList,
@@ -57,7 +57,9 @@ export default function MediaManagementScreen() {
     existingAttachments,
     callbackId,
     maxAttachments = 15,
-    eventType,
+    specialty,
+    procedureTags,
+    hasSkinCancerAssessment,
   } = route.params || {};
   const initialAttachments = useMemo(
     () => existingAttachments || [],
@@ -68,8 +70,7 @@ export default function MediaManagementScreen() {
     initialAttachments,
   );
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [lastSelectedCategory, setLastSelectedCategory] =
-    useState<MediaCategory | null>(null);
+  const [lastSelectedTag, setLastSelectedTag] = useState<MediaTag | null>(null);
   const [saving, setSaving] = useState(false);
   const [cameraPermission, requestCameraPermission] =
     ImagePicker.useCameraPermissions();
@@ -210,26 +211,32 @@ export default function MediaManagementScreen() {
     }
   };
 
-  const handleSetCategory = (id: string, category: MediaCategory) => {
+  const handleSetTag = (id: string, tag: MediaTag) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setLastSelectedCategory(category);
+    setLastSelectedTag(tag);
+    const category = TAG_TO_CATEGORY[tag];
     setAttachments((prev) =>
-      prev.map((a) => (a.id === id ? { ...a, category } : a)),
+      prev.map((a) =>
+        a.id === id ? { ...a, tag, ...(category ? { category } : {}) } : a,
+      ),
     );
   };
 
   const handleTagAll = () => {
-    if (!lastSelectedCategory) {
+    if (!lastSelectedTag) {
       Alert.alert(
-        "Select a category first",
-        "Tap a category on any photo, then use 'Tag all' to apply it to the rest.",
+        "Select a tag first",
+        "Tap a tag on any photo, then use 'Tag all' to apply it to the rest.",
       );
       return;
     }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    const category = TAG_TO_CATEGORY[lastSelectedTag];
     setAttachments((prev) =>
       prev.map((a) =>
-        !a.category ? { ...a, category: lastSelectedCategory } : a,
+        !a.tag
+          ? { ...a, tag: lastSelectedTag, ...(category ? { category } : {}) }
+          : a,
       ),
     );
   };
@@ -323,64 +330,46 @@ export default function MediaManagementScreen() {
 
   const selectedAttachment = attachments.find((a) => a.id === selectedId);
 
-  const sortedGroupedCategories = useMemo(() => {
-    const grouped = MEDIA_CATEGORY_OPTIONS.reduce(
-      (acc, option) => {
-        if (!acc[option.group]) acc[option.group] = [];
-        acc[option.group]!.push(option);
-        return acc;
-      },
-      {} as Record<string, typeof MEDIA_CATEGORY_OPTIONS>,
-    );
+  const renderThumbnail = ({ item }: { item: MediaAttachment }) => {
+    const resolvedTag = item.tag ?? resolveMediaTag(item);
+    const tagLabel = resolvedTag !== "other" ? MEDIA_TAG_REGISTRY[resolvedTag]?.label : undefined;
 
-    if (eventType === "discharge_photo") {
-      const order = [
-        "Discharge",
-        "Follow-up",
-        "Imaging",
-        "Operation Day",
-        "Other",
-      ];
-      return order
-        .filter((g) => grouped[g])
-        .map((g) => [g, grouped[g]] as [string, typeof MEDIA_CATEGORY_OPTIONS]);
-    }
-
-    return Object.entries(grouped);
-  }, [eventType]);
-
-  const renderThumbnail = ({ item }: { item: MediaAttachment }) => (
-    <Pressable
-      onPress={() => setSelectedId(item.id)}
-      style={[
-        styles.thumbnail,
-        {
-          borderColor: selectedId === item.id ? theme.link : theme.border,
-          borderWidth: selectedId === item.id ? 2 : 1,
-        },
-      ]}
-    >
-      <EncryptedImage
-        uri={item.localUri}
-        style={styles.thumbnailImage}
-        thumbnail
-      />
-      {item.category ? (
-        <View style={[styles.categoryBadge, { backgroundColor: theme.link }]}>
-          <ThemedText style={styles.categoryBadgeText}>
-            {MEDIA_CATEGORY_LABELS[item.category].slice(0, 6)}
-          </ThemedText>
-        </View>
-      ) : null}
+    return (
       <Pressable
-        onPress={() => handleRemove(item.id)}
-        style={[styles.removeButton, { backgroundColor: theme.error }]}
-        hitSlop={8}
+        onPress={() => setSelectedId(item.id)}
+        style={[
+          styles.thumbnail,
+          {
+            borderColor: selectedId === item.id ? theme.link : theme.border,
+            borderWidth: selectedId === item.id ? 2 : 1,
+          },
+        ]}
       >
-        <Feather name="x" size={10} color="#fff" />
+        <EncryptedImage
+          uri={item.localUri}
+          style={styles.thumbnailImage}
+          thumbnail
+        />
+        {tagLabel ? (
+          <View style={[styles.tagBadge, { backgroundColor: theme.link }]}>
+            <ThemedText
+              style={[styles.tagBadgeText, { color: theme.buttonText }]}
+              numberOfLines={1}
+            >
+              {tagLabel.slice(0, 6)}
+            </ThemedText>
+          </View>
+        ) : null}
+        <Pressable
+          onPress={() => handleRemove(item.id)}
+          style={[styles.removeButton, { backgroundColor: theme.error }]}
+          hitSlop={8}
+        >
+          <Feather name="x" size={10} color={theme.buttonText} />
+        </Pressable>
       </Pressable>
-    </Pressable>
-  );
+    );
+  };
 
   return (
     <ThemedView style={styles.container}>
@@ -435,29 +424,29 @@ export default function MediaManagementScreen() {
                 paddingHorizontal: Spacing.md,
                 paddingVertical: Spacing.sm,
                 borderRadius: BorderRadius.sm,
-                backgroundColor: lastSelectedCategory
+                backgroundColor: lastSelectedTag
                   ? theme.link + "15"
                   : theme.backgroundElevated,
                 borderWidth: 1,
-                borderColor: lastSelectedCategory ? theme.link : theme.border,
+                borderColor: lastSelectedTag ? theme.link : theme.border,
               }}
             >
               <Feather
                 name="tag"
                 size={14}
-                color={lastSelectedCategory ? theme.link : theme.textTertiary}
+                color={lastSelectedTag ? theme.link : theme.textTertiary}
               />
               <ThemedText
                 style={{
                   fontSize: 13,
-                  color: lastSelectedCategory
+                  color: lastSelectedTag
                     ? theme.link
                     : theme.textSecondary,
                   fontWeight: "500",
                 }}
               >
-                {lastSelectedCategory
-                  ? `Tag all untagged as: ${MEDIA_CATEGORY_LABELS[lastSelectedCategory]}`
+                {lastSelectedTag
+                  ? `Tag all untagged as: ${MEDIA_TAG_REGISTRY[lastSelectedTag]?.label ?? lastSelectedTag}`
                   : "Tag all untagged"}
               </ThemedText>
             </Pressable>
@@ -479,7 +468,11 @@ export default function MediaManagementScreen() {
                     onPress={handleCameraCapture}
                     style={[styles.addButton, { backgroundColor: theme.link }]}
                   >
-                    <Feather name="camera" size={20} color="#fff" />
+                    <Feather
+                      name="camera"
+                      size={20}
+                      color={theme.buttonText}
+                    />
                   </Pressable>
                   <Pressable
                     onPress={handleGalleryPick}
@@ -541,60 +534,13 @@ export default function MediaManagementScreen() {
               placeholder="Select date..."
             />
 
-            <ThemedText style={[styles.sectionTitle, { color: theme.text }]}>
-              Select Category
-            </ThemedText>
-
-            {sortedGroupedCategories.map(([groupName, options]) => (
-              <View key={groupName} style={styles.categoryGroup}>
-                <ThemedText
-                  style={[styles.groupTitle, { color: theme.textSecondary }]}
-                >
-                  {groupName}
-                </ThemedText>
-                <View style={styles.categoryGrid}>
-                  {options.map((option) => (
-                    <Pressable
-                      key={option.value}
-                      onPress={() =>
-                        handleSetCategory(selectedAttachment.id, option.value)
-                      }
-                      style={[
-                        styles.categoryOption,
-                        {
-                          backgroundColor:
-                            selectedAttachment.category === option.value
-                              ? theme.link + "20"
-                              : theme.backgroundElevated,
-                          borderColor:
-                            selectedAttachment.category === option.value
-                              ? theme.link
-                              : theme.border,
-                        },
-                      ]}
-                    >
-                      <ThemedText
-                        style={[
-                          styles.categoryOptionText,
-                          {
-                            color:
-                              selectedAttachment.category === option.value
-                                ? theme.link
-                                : theme.text,
-                            fontWeight:
-                              selectedAttachment.category === option.value
-                                ? "600"
-                                : "400",
-                          },
-                        ]}
-                      >
-                        {option.label}
-                      </ThemedText>
-                    </Pressable>
-                  ))}
-                </View>
-              </View>
-            ))}
+            <MediaTagPicker
+              selectedTag={selectedAttachment.tag ?? resolveMediaTag(selectedAttachment)}
+              onSelectTag={(tag) => handleSetTag(selectedAttachment.id, tag)}
+              specialty={specialty}
+              procedureTags={procedureTags}
+              hasSkinCancerAssessment={hasSkinCancerAssessment}
+            />
           </ScrollView>
         ) : (
           <View style={styles.emptyState}>
@@ -619,9 +565,16 @@ export default function MediaManagementScreen() {
                       { backgroundColor: theme.link },
                     ]}
                   >
-                    <Feather name="camera" size={20} color="#fff" />
+                    <Feather
+                      name="camera"
+                      size={20}
+                      color={theme.buttonText}
+                    />
                     <ThemedText
-                      style={[styles.emptyActionText, { color: "#fff" }]}
+                      style={[
+                        styles.emptyActionText,
+                        { color: theme.buttonText },
+                      ]}
                     >
                       Take Photo
                     </ThemedText>
@@ -654,7 +607,7 @@ export default function MediaManagementScreen() {
                 <ThemedText
                   style={[styles.emptyText, { color: theme.textSecondary }]}
                 >
-                  Select a photo to categorize
+                  Select a photo to tag
                 </ThemedText>
               </>
             )}
@@ -669,10 +622,10 @@ export default function MediaManagementScreen() {
           >
             {attachments.length} photo{attachments.length !== 1 ? "s" : ""}{" "}
             added
-            {attachments.filter((a) => !a.category).length > 0 && (
+            {attachments.filter((a) => !a.tag).length > 0 && (
               <ThemedText style={{ color: theme.warning }}>
                 {" "}
-                ({attachments.filter((a) => !a.category).length} uncategorized)
+                ({attachments.filter((a) => !a.tag).length} untagged)
               </ThemedText>
             )}
           </ThemedText>
@@ -690,7 +643,9 @@ export default function MediaManagementScreen() {
               },
             ]}
           >
-            <ThemedText style={styles.saveButtonText}>
+            <ThemedText
+              style={[styles.saveButtonText, { color: theme.buttonText }]}
+            >
               {saving ? "Saving..." : "Save Photos"}
             </ThemedText>
           </Pressable>
@@ -745,7 +700,7 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
   },
-  categoryBadge: {
+  tagBadge: {
     position: "absolute",
     bottom: 0,
     left: 0,
@@ -753,9 +708,8 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     paddingHorizontal: 4,
   },
-  categoryBadgeText: {
+  tagBadgeText: {
     fontSize: 8,
-    color: "#fff",
     fontWeight: "600",
     textAlign: "center",
   },
@@ -806,35 +760,6 @@ const styles = StyleSheet.create({
     minHeight: 72,
     marginBottom: Spacing.lg,
   },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: Spacing.md,
-  },
-  categoryGroup: {
-    marginBottom: Spacing.lg,
-  },
-  groupTitle: {
-    fontSize: 13,
-    fontWeight: "500",
-    marginBottom: Spacing.sm,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  categoryGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: Spacing.sm,
-  },
-  categoryOption: {
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.sm,
-    borderWidth: 1,
-  },
-  categoryOptionText: {
-    fontSize: 14,
-  },
   emptyState: {
     flex: 1,
     justifyContent: "center",
@@ -856,9 +781,6 @@ const styles = StyleSheet.create({
     gap: Spacing.md,
     marginTop: Spacing.xl,
   },
-  emptyButton: {
-    minWidth: 130,
-  },
   footer: {
     padding: Spacing.md,
     borderTopWidth: 1,
@@ -867,9 +789,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     textAlign: "center",
     marginBottom: Spacing.sm,
-  },
-  saveButton: {
-    width: "100%",
   },
   emptyActionButton: {
     flexDirection: "row",
@@ -893,7 +812,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   saveButtonText: {
-    color: "#fff",
     fontSize: 16,
     fontWeight: "600",
   },

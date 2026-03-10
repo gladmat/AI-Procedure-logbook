@@ -28,6 +28,7 @@ describe("operativeMedia mapping", () => {
         mimeType: "image/jpeg",
         createdAt: "2026-03-09T00:00:00Z",
         caption: "Pre-fixation",
+        tag: "xray_preop",
         category: "xray",
         thumbnailUri: undefined,
         timestamp: undefined,
