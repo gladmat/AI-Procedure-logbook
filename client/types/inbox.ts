@@ -8,14 +8,23 @@
 
 /**
  * An unassigned photo sitting in the Opus Inbox.
- * Deliberately lean — no tags, no captions, no patient IDs.
+ *
+ * Core fields are always present. Template metadata is optional —
+ * set when captured via Opus Camera with a guided protocol template.
  */
 export interface InboxItem {
   id: string;
   localUri: string; // opus-media:{uuid} encrypted URI
   mimeType: string;
   capturedAt: string; // ISO timestamp — when photo was taken/imported
-  sourceType: "camera" | "gallery" | "smart_import";
+  sourceType: "camera" | "gallery" | "smart_import" | "opus_camera";
+
+  /** Protocol ID used during guided capture (e.g. "free_flap", "aesthetic_breast"). */
+  templateId?: string;
+  /** Index of the protocol step this photo was captured for. */
+  templateStepIndex?: number;
+  /** Patient identifier (NHI/ID) entered during Opus Camera capture. */
+  patientIdentifier?: string;
 }
 
 /**

@@ -64,6 +64,14 @@
           "savePhotosPermission": "Opus needs permission to remove clinical photos from your Camera Roll after importing.",
           "isAccessMediaLocationEnabled": false
         }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Opus uses the camera to capture clinical photos directly to encrypted storage.",
+          "microphonePermission": false,
+          "recordAudioAndroid": false
+        }
       ]
     ],
     "experiments": {

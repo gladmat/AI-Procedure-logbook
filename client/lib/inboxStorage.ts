@@ -54,6 +54,13 @@ export function getInboxCount(): number {
   return readState().items.length;
 }
 
+/** Optional metadata for template-aware capture (Opus Camera). */
+export interface InboxItemMetadata {
+  templateId?: string;
+  templateStepIndex?: number;
+  patientIdentifier?: string;
+}
+
 /**
  * Add a single photo to the Inbox.
  * Encrypts the image via the existing saveEncryptedMediaFromUri pipeline.
@@ -62,6 +69,7 @@ export async function addToInbox(
   sourceUri: string,
   mimeType: string,
   sourceType: InboxItem["sourceType"],
+  metadata?: InboxItemMetadata,
 ): Promise<InboxItem> {
   const saved = await saveEncryptedMediaFromUri(sourceUri, mimeType);
   const item: InboxItem = {
@@ -70,6 +78,15 @@ export async function addToInbox(
     mimeType: saved.mimeType,
     capturedAt: new Date().toISOString(),
     sourceType,
+    ...(metadata?.templateId !== undefined && {
+      templateId: metadata.templateId,
+    }),
+    ...(metadata?.templateStepIndex !== undefined && {
+      templateStepIndex: metadata.templateStepIndex,
+    }),
+    ...(metadata?.patientIdentifier !== undefined && {
+      patientIdentifier: metadata.patientIdentifier,
+    }),
   };
   const state = readState();
   state.items.unshift(item);

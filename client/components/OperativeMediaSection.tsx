@@ -4,7 +4,6 @@ import {
   StyleSheet,
   Pressable,
   Alert,
-  Platform,
   ScrollView,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
@@ -53,8 +52,6 @@ export function OperativeMediaSection({
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { registerCallback, registerGenericCallback } = useMediaCallback();
-  const [cameraPermission, requestCameraPermission] =
-    ImagePicker.useCameraPermissions();
   const canAddMore = media.length < maxItems;
 
   const protocols = useMemo(
@@ -107,57 +104,9 @@ export function OperativeMediaSection({
     });
   };
 
-  const handleCameraCapture = async () => {
-    if (!cameraPermission?.granted) {
-      if (cameraPermission?.canAskAgain !== false) {
-        const result = await requestCameraPermission();
-        if (!result.granted) return;
-      } else {
-        Alert.alert(
-          "Camera Permission Required",
-          "Please enable camera access in your device settings.",
-          [
-            { text: "Cancel", style: "cancel" },
-            ...(Platform.OS !== "web"
-              ? [
-                  {
-                    text: "Open Settings",
-                    onPress: async () => {
-                      try {
-                        const { Linking } = await import("react-native");
-                        await Linking.openSettings();
-                      } catch {}
-                    },
-                  },
-                ]
-              : []),
-          ],
-        );
-        return;
-      }
-    }
-
-    try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ["images"],
-        quality: 0.7,
-        allowsEditing: false,
-      });
-
-      if (!result.canceled && result.assets.length > 0) {
-        const asset = result.assets[0];
-        if (!asset) return;
-        const mime = asset.mimeType || "image/jpeg";
-        navigateToAddMedia(asset.uri, mime);
-      }
-    } catch (error: any) {
-      console.error("Error capturing image:", error);
-      Alert.alert(
-        "Error",
-        `Failed to capture image: ${error?.message || "Unknown error"}`,
-      );
-    }
+  const handleCameraCapture = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    navigation.navigate("OpusCamera", { quickSnap: true });
   };
 
   const handleGalleryPick = async () => {
@@ -427,7 +376,7 @@ export function OperativeMediaSection({
               <ThemedText
                 style={[styles.addButtonText, { color: theme.buttonText }]}
               >
-                Take Photo
+                Opus Camera
               </ThemedText>
             </Pressable>
             <Pressable

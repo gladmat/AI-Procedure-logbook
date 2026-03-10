@@ -30,6 +30,7 @@ import AddHistologyScreen from "@/screens/AddHistologyScreen";
 import NeedsAttentionListScreen from "@/screens/NeedsAttentionListScreen";
 import InboxScreen from "@/screens/InboxScreen";
 import SmartImportScreen from "@/screens/SmartImportScreen";
+import OpusCameraScreen from "@/screens/OpusCameraScreen";
 import SurgicalPreferencesScreen from "@/screens/SurgicalPreferencesScreen";
 import { WelcomeScreen } from "@/screens/onboarding/WelcomeScreen";
 import { FeaturePager } from "@/screens/onboarding/FeaturePager";
@@ -204,6 +205,13 @@ export type RootStackParamList = {
   };
   Inbox: { pickMode?: boolean; callbackId?: string } | undefined;
   SmartImport: undefined;
+  OpusCamera:
+    | {
+        templateId?: string;
+        quickSnap?: boolean;
+        patientIdentifier?: string;
+      }
+    | undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -759,6 +767,14 @@ export default function RootStackNavigator() {
               component={SmartImportScreen}
               options={{
                 headerTitle: "Import Photos",
+                presentation: "fullScreenModal",
+              }}
+            />
+            <Stack.Screen
+              name="OpusCamera"
+              component={OpusCameraScreen}
+              options={{
+                headerShown: false,
                 presentation: "fullScreenModal",
               }}
             />

@@ -5,8 +5,6 @@ import {
   Pressable,
   StyleSheet,
   Alert,
-  ActionSheetIOS,
-  Platform,
   Modal,
   FlatList,
   TextInput,
@@ -17,9 +15,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import * as ImagePicker from "expo-image-picker";
 import * as Haptics from "expo-haptics";
-import { v4 as uuidv4 } from "uuid";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { EncryptedImage } from "@/components/EncryptedImage";
@@ -33,7 +29,6 @@ import type { OperativeMediaItem, Case } from "@/types/case";
 import {
   getInboxItems,
   getInboxCount,
-  addToInbox,
   removeFromInbox,
   discardFromInbox,
 } from "@/lib/inboxStorage";
@@ -143,8 +138,6 @@ export default function InboxScreen() {
   const [showPreview, setShowPreview] = useState<InboxItem | null>(null);
   const [showCasePicker, setShowCasePicker] = useState(false);
   const [importing, setImporting] = useState(false);
-  const [cameraPermission, requestCameraPermission] =
-    ImagePicker.useCameraPermissions();
 
   // Refresh inbox on focus
   useFocusEffect(
@@ -183,68 +176,10 @@ export default function InboxScreen() {
 
   // ── Camera / Gallery ─────────────────────────────────
 
-  const ensureCameraPermission = useCallback(async (): Promise<boolean> => {
-    if (cameraPermission?.granted) return true;
-    if (cameraPermission?.canAskAgain !== false) {
-      const result = await requestCameraPermission();
-      return result.granted;
-    }
-    Alert.alert(
-      "Camera Permission Required",
-      "Please enable camera access in your device settings.",
-      [
-        { text: "Cancel", style: "cancel" },
-        ...(Platform.OS !== "web"
-          ? [
-              {
-                text: "Open Settings",
-                onPress: async () => {
-                  try {
-                    const { Linking } = await import("react-native");
-                    await Linking.openSettings();
-                  } catch {}
-                },
-              },
-            ]
-          : []),
-      ],
-    );
-    return false;
-  }, [
-    cameraPermission?.canAskAgain,
-    cameraPermission?.granted,
-    requestCameraPermission,
-  ]);
-
-  const handleTakePhoto = useCallback(async () => {
-    const hasPermission = await ensureCameraPermission();
-    if (!hasPermission) return;
-    try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ["images"],
-        quality: 0.7,
-        allowsEditing: false,
-      });
-      if (!result.canceled && result.assets.length > 0) {
-        const asset = result.assets[0];
-        if (!asset) return;
-        setImporting(true);
-        await addToInbox(
-          asset.uri,
-          asset.mimeType || "image/jpeg",
-          "camera",
-        );
-        setItems(getInboxItems());
-        setImporting(false);
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      }
-    } catch (error) {
-      setImporting(false);
-      console.warn("[InboxScreen] Camera capture failed:", error);
-      Alert.alert("Error", "Failed to capture image.");
-    }
-  }, [ensureCameraPermission]);
+  const handleTakePhoto = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    navigation.navigate("OpusCamera", { quickSnap: true });
+  }, [navigation]);
 
   const handlePickGallery = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -427,7 +362,7 @@ export default function InboxScreen() {
               <ThemedText
                 style={[styles.captureButtonText, { color: theme.buttonText }]}
               >
-                Take Photo
+                Opus Camera
               </ThemedText>
             </Pressable>
             <Pressable
@@ -616,7 +551,7 @@ export default function InboxScreen() {
             <ThemedText
               style={[styles.captureBarText, { color: theme.buttonText }]}
             >
-              Take Photo
+              Opus Camera
             </ThemedText>
           </Pressable>
           <Pressable
