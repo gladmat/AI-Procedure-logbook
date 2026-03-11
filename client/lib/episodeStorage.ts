@@ -2,8 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { TreatmentEpisode } from "@/types/episode";
 import type { Case } from "@/types/case";
 import { encryptData, decryptData } from "./encryption";
-import { getCasesByEpisodeId } from "./storage";
-import * as Crypto from "expo-crypto";
+import { getCasesByEpisodeId, hashPatientIdentifier } from "./storage";
 import { normalizeEpisodeDateOnlyFields } from "./dateFieldNormalization";
 
 const EPISODE_INDEX_KEY = "@opus_episode_index";
@@ -14,18 +13,6 @@ export interface EpisodeIndexEntry {
   patientIdentifierHash?: string;
   status: string;
   updatedAt: string;
-}
-
-async function hashPatientIdentifier(
-  patientIdentifier?: string,
-): Promise<string | undefined> {
-  if (!patientIdentifier) return undefined;
-  const normalized = patientIdentifier.toUpperCase().replace(/\s/g, "");
-  return Crypto.digestStringAsync(
-    Crypto.CryptoDigestAlgorithm.SHA256,
-    normalized,
-    { encoding: Crypto.CryptoEncoding.HEX },
-  );
 }
 
 // ── Index Operations ────────────────────────────────────────────────────────

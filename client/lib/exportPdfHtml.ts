@@ -69,7 +69,15 @@ export function buildPdfHtml(cases: Case[], options: PdfExportOptions): string {
     const cells = [
       String(idx + 1),
       ...(options.includePatientId
-        ? [escapeHtml(c.patientIdentifier || "")]
+        ? [
+            escapeHtml(
+              [c.patientFirstName, c.patientLastName].filter(Boolean).join(" ") ||
+                c.patientIdentifier ||
+                "",
+            ) +
+              (c.patientNhi ? ` (${escapeHtml(c.patientNhi)})` : "") +
+              (c.patientDateOfBirth ? `<br/><small>DOB: ${escapeHtml(c.patientDateOfBirth)}</small>` : ""),
+          ]
         : []),
       formatDate(c.procedureDate),
       escapeHtml(c.facility || ""),

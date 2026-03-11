@@ -41,6 +41,9 @@ export default function CaseSearchScreen() {
 
     return cases.filter((c) => {
       if (c.patientIdentifier?.toLowerCase().includes(q)) return true;
+      if (c.patientFirstName?.toLowerCase().includes(q)) return true;
+      if (c.patientLastName?.toLowerCase().includes(q)) return true;
+      if (c.patientNhi?.toLowerCase().includes(q)) return true;
 
       const title = getCasePrimaryTitle(c);
       if (title?.toLowerCase().includes(q)) return true;

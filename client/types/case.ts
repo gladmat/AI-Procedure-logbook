@@ -8,6 +8,7 @@ import type {
 import type { SkinCancerLesionAssessment } from "./skinCancer";
 import type { JointImplantDetails } from "./jointImplant";
 import type { MediaTag } from "./media";
+import { parseDateOnlyValue } from "@/lib/dateValues";
 
 // Case status for active patient tracking
 export type CaseStatus = "active" | "discharged" | "incomplete" | "planned";
@@ -1683,8 +1684,15 @@ export interface Case {
   episodeSequence?: number;
   encounterClass?: EncounterClass;
 
+  // Patient Identity (on-device only, never synced to server)
+  patientFirstName?: string;
+  patientLastName?: string;
+  patientDateOfBirth?: string; // YYYY-MM-DD
+  patientNhi?: string; // NZ National Health Index (format: ABC1234)
+
   // Patient Demographics
   gender?: Gender;
+  /** @deprecated Use patientDateOfBirth + calculateAgeFromDob() instead. Kept for backward compat with old cases. */
   age?: number;
   ethnicity?: string;
 
@@ -2383,6 +2391,42 @@ export function getPrimarySiteLabel(c: Case): string | null {
   if (lesionSite) return lesionSite;
   if (side) return side;
   return null;
+}
+
+/**
+ * Calculate age in whole years from a YYYY-MM-DD date of birth.
+ * Uses parseDateOnlyValue for timezone-safe parsing.
+ * Returns undefined if dob is missing or invalid.
+ */
+export function calculateAgeFromDob(
+  dob: string | undefined,
+  referenceDate?: Date,
+): number | undefined {
+  if (!dob) return undefined;
+  const birthDate = parseDateOnlyValue(dob);
+  if (!birthDate) return undefined;
+  const ref = referenceDate ?? new Date();
+  let age = ref.getFullYear() - birthDate.getFullYear();
+  const monthDiff = ref.getMonth() - birthDate.getMonth();
+  if (
+    monthDiff < 0 ||
+    (monthDiff === 0 && ref.getDate() < birthDate.getDate())
+  ) {
+    age--;
+  }
+  return age >= 0 ? age : undefined;
+}
+
+/**
+ * Get display name for a patient from their identity fields.
+ * Returns "First Last", "First", "Last", or undefined.
+ */
+export function getPatientDisplayName(c: {
+  patientFirstName?: string;
+  patientLastName?: string;
+}): string | undefined {
+  const parts = [c.patientFirstName, c.patientLastName].filter(Boolean);
+  return parts.length > 0 ? parts.join(" ") : undefined;
 }
 
 export const COMMON_COMORBIDITIES: SnomedCodedItem[] = [

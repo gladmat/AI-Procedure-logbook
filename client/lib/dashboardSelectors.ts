@@ -4,7 +4,7 @@ import type { EpisodePrefillData, TreatmentEpisode } from "@/types/episode";
 import { PENDING_ACTION_LABELS } from "@/types/episode";
 import { INFECTION_SYNDROME_LABELS } from "@/types/infection";
 import type { Case, QuickCasePrefillData, Specialty } from "@/types/case";
-import { getCaseSpecialties, isPlannedCase } from "@/types/case";
+import { getCaseSpecialties, isPlannedCase, getPatientDisplayName } from "@/types/case";
 
 const DAY_MS = 1000 * 60 * 60 * 24;
 
@@ -209,7 +209,8 @@ export function buildAttentionItems(
     inpatientItems.push({
       id: `inpatient-${caseData.id}`,
       type: "inpatient",
-      patientIdentifier: caseData.patientIdentifier,
+      patientIdentifier:
+        getPatientDisplayName(caseData) || caseData.patientIdentifier,
       diagnosisTitle:
         getCasePrimaryTitle(caseData) || caseData.procedureType || "Unknown",
       specialty: caseData.specialty,
@@ -251,7 +252,8 @@ export function buildAttentionItems(
     infectionItems.push({
       id: `infection-${caseData.id}`,
       type: "infection",
-      patientIdentifier: caseData.patientIdentifier,
+      patientIdentifier:
+        getPatientDisplayName(caseData) || caseData.patientIdentifier,
       diagnosisTitle:
         getCasePrimaryTitle(caseData) || caseData.procedureType || "Unknown",
       specialty: caseData.specialty,
