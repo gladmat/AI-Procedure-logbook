@@ -30,6 +30,7 @@ import { clearAllData } from "@/lib/storage";
 import { getOrCreateDeviceIdentity } from "@/lib/e2ee";
 import { clearAllAppLockData } from "@/lib/appLockStorage";
 import { normalizeUserFacility } from "@/lib/facilities";
+import { decryptData, encryptData } from "@/lib/encryption";
 import { clearDecryptedCache } from "@/components/EncryptedImage";
 
 interface AuthContextType {
@@ -69,11 +70,30 @@ function mergeDefinedFields<T>(base: T, patch: Partial<T>): T {
   return next;
 }
 
+function parseCachedProfile(raw: string): UserProfile | null {
+  const parsed = JSON.parse(raw);
+  if (
+    parsed &&
+    typeof parsed === "object" &&
+    typeof parsed.id === "string" &&
+    typeof parsed.userId === "string"
+  ) {
+    return parsed as UserProfile;
+  }
+
+  return null;
+}
+
 async function cacheProfile(profile: UserProfile | null): Promise<void> {
-  if (profile) {
-    await AsyncStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(profile));
-  } else {
-    await AsyncStorage.removeItem(PROFILE_CACHE_KEY);
+  try {
+    if (profile) {
+      const encrypted = await encryptData(JSON.stringify(profile));
+      await AsyncStorage.setItem(PROFILE_CACHE_KEY, encrypted);
+    } else {
+      await AsyncStorage.removeItem(PROFILE_CACHE_KEY);
+    }
+  } catch (error) {
+    console.warn("Failed to cache profile locally:", error);
   }
 }
 
@@ -84,14 +104,20 @@ async function loadCachedProfile(): Promise<UserProfile | null> {
       return null;
     }
 
-    const parsed = JSON.parse(raw);
-    if (
-      parsed &&
-      typeof parsed === "object" &&
-      typeof parsed.id === "string" &&
-      typeof parsed.userId === "string"
-    ) {
-      return parsed as UserProfile;
+    try {
+      const decrypted = await decryptData(raw);
+      const encryptedProfile = parseCachedProfile(decrypted);
+      if (encryptedProfile) {
+        return encryptedProfile;
+      }
+    } catch {
+      // Fall back to legacy plain JSON cache below.
+    }
+
+    const legacyProfile = parseCachedProfile(raw);
+    if (legacyProfile) {
+      void cacheProfile(legacyProfile);
+      return legacyProfile;
     }
   } catch {
     // Ignore cache parse errors and continue with server state.

@@ -73,7 +73,11 @@ export function buildPdfHtml(cases: Case[], options: PdfExportOptions): string {
       .join("; ");
 
     const role = resolveOperativeRole(undefined, c.defaultOperativeRole);
-    const supervision = resolveSupervisionLevel(undefined, c.defaultSupervisionLevel, role);
+    const supervision = resolveSupervisionLevel(
+      undefined,
+      c.defaultSupervisionLevel,
+      role,
+    );
     const roleLabel = formatRoleDisplay(role, supervision);
 
     const cells = [
@@ -81,18 +85,25 @@ export function buildPdfHtml(cases: Case[], options: PdfExportOptions): string {
       ...(options.includePatientId
         ? [
             escapeHtml(
-              [c.patientFirstName, c.patientLastName].filter(Boolean).join(" ") ||
+              [c.patientFirstName, c.patientLastName]
+                .filter(Boolean)
+                .join(" ") ||
                 c.patientIdentifier ||
                 "",
             ) +
               (c.patientNhi ? ` (${escapeHtml(c.patientNhi)})` : "") +
-              (c.patientDateOfBirth ? `<br/><small>DOB: ${escapeHtml(c.patientDateOfBirth)}</small>` : ""),
+              (c.patientDateOfBirth
+                ? `<br/><small>DOB: ${escapeHtml(c.patientDateOfBirth)}</small>`
+                : ""),
           ]
         : []),
       formatDate(c.procedureDate),
       escapeHtml(c.facility || ""),
       escapeHtml(SPECIALTY_LABELS[c.specialty] || c.specialty),
-      escapeHtml(roleLabel) + (c.responsibleConsultantName ? `<br/><small>${escapeHtml(c.responsibleConsultantName)}</small>` : ""),
+      escapeHtml(roleLabel) +
+        (c.responsibleConsultantName
+          ? `<br/><small>${escapeHtml(c.responsibleConsultantName)}</small>`
+          : ""),
       escapeHtml(primary?.diagnosis?.displayName || ""),
       escapeHtml(primaryProc?.procedureName || ""),
       escapeHtml(implantSummary),

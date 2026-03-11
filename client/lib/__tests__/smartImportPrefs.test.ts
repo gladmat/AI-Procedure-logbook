@@ -1,4 +1,8 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
+import {
+  getAlwaysDeleteAfterImport,
+  setAlwaysDeleteAfterImport,
+} from "../smartImportPrefs";
 
 // ── Mock AsyncStorage ───────────────────────────────────────
 
@@ -15,11 +19,6 @@ vi.mock("@react-native-async-storage/async-storage", () => ({
     }),
   },
 }));
-
-import {
-  getAlwaysDeleteAfterImport,
-  setAlwaysDeleteAfterImport,
-} from "../smartImportPrefs";
 
 // ── Setup ───────────────────────────────────────────────────
 

@@ -74,8 +74,6 @@ import { SpecialtyBadge } from "@/components/SpecialtyBadge";
 import { RoleBadge } from "@/components/RoleBadge";
 import {
   resolveOperativeRole,
-  resolveSupervisionLevel,
-  formatRoleDisplay,
   migrateLegacyRole,
   isLegacyRole,
   type OperativeRole,

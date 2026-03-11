@@ -503,7 +503,10 @@ function buildDevice(proc: CaseProcedure): FhirResource | undefined {
 
 function buildPatient(c: Case): FhirResource | null {
   const hasIdentity =
-    c.patientFirstName || c.patientLastName || c.patientDateOfBirth || c.patientNhi;
+    c.patientFirstName ||
+    c.patientLastName ||
+    c.patientDateOfBirth ||
+    c.patientNhi;
   if (!hasIdentity) return null;
 
   const patient: FhirResource = {

@@ -313,7 +313,7 @@ export function getInboxCount(): number {
 }
 
 export function getReservedInboxIdsFromMedia(
-  mediaItems: Array<{ sourceInboxId?: string }>,
+  mediaItems: { sourceInboxId?: string }[],
 ): string[] {
   return Array.from(
     new Set(

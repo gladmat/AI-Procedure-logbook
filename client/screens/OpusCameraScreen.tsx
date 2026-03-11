@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   Alert,
   ActivityIndicator,
@@ -72,7 +78,8 @@ export default function OpusCameraScreen({ navigation, route }: Props) {
   const [patientId, setPatientId] = useState(params?.patientIdentifier ?? "");
 
   // Viewfinder state
-  const [selectedProtocol, setSelectedProtocol] = useState<CaptureProtocol | null>(null);
+  const [selectedProtocol, setSelectedProtocol] =
+    useState<CaptureProtocol | null>(null);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [capturedSteps, setCapturedSteps] = useState<CapturedStep[]>([]);
   const [captureCount, setCaptureCount] = useState(0);
@@ -86,7 +93,7 @@ export default function OpusCameraScreen({ navigation, route }: Props) {
 
   // Processing queue
   const queueRef = useRef<
-    Array<{ uri: string; capturedAt: string; stepIndex?: number }>
+    { uri: string; capturedAt: string; stepIndex?: number }[]
   >([]);
   const processingPromiseRef = useRef<Promise<void> | null>(null);
   const capturedInboxIdsRef = useRef<string[]>([]);
@@ -144,7 +151,8 @@ export default function OpusCameraScreen({ navigation, route }: Props) {
             if (job.stepIndex !== undefined) {
               const filteredStep = filteredSteps[job.stepIndex];
               if (filteredStep) {
-                const originalIndex = selectedProtocol.steps.indexOf(filteredStep);
+                const originalIndex =
+                  selectedProtocol.steps.indexOf(filteredStep);
                 metadata.templateStepIndex =
                   originalIndex >= 0 ? originalIndex : job.stepIndex;
               }
@@ -152,7 +160,10 @@ export default function OpusCameraScreen({ navigation, route }: Props) {
           }
 
           if (targetMode === "case") {
-            const saved = await saveEncryptedMediaFromUri(job.uri, "image/jpeg");
+            const saved = await saveEncryptedMediaFromUri(
+              job.uri,
+              "image/jpeg",
+            );
             const mediaItem = buildCapturedOperativeMediaItem({
               id: uuidv4(),
               localUri: saved.localUri,
@@ -191,11 +202,10 @@ export default function OpusCameraScreen({ navigation, route }: Props) {
           console.warn("OpusCamera: failed to persist photo:", error);
         }
       }
-    })()
-      .finally(() => {
-        processingPromiseRef.current = null;
-        setIsProcessing(false);
-      });
+    })().finally(() => {
+      processingPromiseRef.current = null;
+      setIsProcessing(false);
+    });
 
     return processingPromiseRef.current;
   }, [
@@ -234,7 +244,9 @@ export default function OpusCameraScreen({ navigation, route }: Props) {
 
         // Auto-advance to next uncaptured step in guided mode
         if (selectedProtocol && filteredSteps.length > 0) {
-          const capturedIndices = new Set(capturedSteps.map((cs) => cs.stepIndex));
+          const capturedIndices = new Set(
+            capturedSteps.map((cs) => cs.stepIndex),
+          );
           capturedIndices.add(currentStepIndex);
 
           // Find next uncaptured step after current
@@ -292,7 +304,10 @@ export default function OpusCameraScreen({ navigation, route }: Props) {
               await deleteMultipleEncryptedMedia(
                 capturedCaseMediaRef.current.map((item) => item.localUri),
               );
-              Alert.alert("Save failed", "The target case could not be loaded.");
+              Alert.alert(
+                "Save failed",
+                "The target case could not be loaded.",
+              );
               return;
             }
 
@@ -373,7 +388,9 @@ export default function OpusCameraScreen({ navigation, route }: Props) {
 
   if (!permission) {
     return (
-      <View style={[styles.centered, { backgroundColor: theme.backgroundRoot }]}>
+      <View
+        style={[styles.centered, { backgroundColor: theme.backgroundRoot }]}
+      >
         <ActivityIndicator color={theme.link} />
       </View>
     );
@@ -381,20 +398,25 @@ export default function OpusCameraScreen({ navigation, route }: Props) {
 
   if (!permission.granted) {
     return (
-      <View style={[styles.centered, { backgroundColor: theme.backgroundRoot }]}>
+      <View
+        style={[styles.centered, { backgroundColor: theme.backgroundRoot }]}
+      >
         <Feather name="camera-off" size={48} color={theme.textSecondary} />
         <Text style={[styles.permissionTitle, { color: theme.text }]}>
           Camera Access Required
         </Text>
         <Text style={[styles.permissionBody, { color: theme.textSecondary }]}>
-          Opus Camera captures photos directly to encrypted storage, bypassing your Camera Roll.
+          Opus Camera captures photos directly to encrypted storage, bypassing
+          your Camera Roll.
         </Text>
         {permission.canAskAgain ? (
           <Pressable
             onPress={requestPermission}
             style={[styles.permissionButton, { backgroundColor: theme.link }]}
           >
-            <Text style={[styles.permissionButtonText, { color: theme.buttonText }]}>
+            <Text
+              style={[styles.permissionButtonText, { color: theme.buttonText }]}
+            >
               Grant Camera Access
             </Text>
           </Pressable>
@@ -413,15 +435,24 @@ export default function OpusCameraScreen({ navigation, route }: Props) {
 
   if (!showViewfinder) {
     return (
-      <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
+      <View
+        style={[styles.container, { backgroundColor: theme.backgroundRoot }]}
+      >
         <ScrollView
           style={styles.pickerScroll}
           contentContainerStyle={{ paddingBottom: insets.bottom + Spacing.xl }}
         >
           {/* Phase toggle */}
           <View style={styles.phaseToggleRow}>
-            <Text style={[styles.sectionLabel, { color: theme.textSecondary }]}>Mode</Text>
-            <View style={[styles.segmentedControl, { backgroundColor: theme.backgroundDefault }]}>
+            <Text style={[styles.sectionLabel, { color: theme.textSecondary }]}>
+              Mode
+            </Text>
+            <View
+              style={[
+                styles.segmentedControl,
+                { backgroundColor: theme.backgroundDefault },
+              ]}
+            >
               {(["preop", "full"] as const).map((mode) => (
                 <Pressable
                   key={mode}
@@ -435,7 +466,10 @@ export default function OpusCameraScreen({ navigation, route }: Props) {
                     style={[
                       styles.segmentText,
                       {
-                        color: phaseMode === mode ? theme.buttonText : theme.textSecondary,
+                        color:
+                          phaseMode === mode
+                            ? theme.buttonText
+                            : theme.textSecondary,
                         fontWeight: phaseMode === mode ? "600" : "400",
                       },
                     ]}
@@ -471,7 +505,12 @@ export default function OpusCameraScreen({ navigation, route }: Props) {
           </View>
 
           {/* Protocol list */}
-          <Text style={[styles.sectionLabel, { color: theme.textSecondary, marginTop: Spacing.xl }]}>
+          <Text
+            style={[
+              styles.sectionLabel,
+              { color: theme.textSecondary, marginTop: Spacing.xl },
+            ]}
+          >
             Select a template
           </Text>
 
@@ -501,14 +540,24 @@ export default function OpusCameraScreen({ navigation, route }: Props) {
                     <Text style={[styles.protocolLabel, { color: theme.text }]}>
                       {protocol.label}
                     </Text>
-                    <Text style={[styles.protocolDescription, { color: theme.textSecondary }]}>
+                    <Text
+                      style={[
+                        styles.protocolDescription,
+                        { color: theme.textSecondary },
+                      ]}
+                    >
                       {steps.length} {steps.length === 1 ? "view" : "views"}
-                      {phaseMode === "preop" && steps.length < protocol.steps.length
+                      {phaseMode === "preop" &&
+                      steps.length < protocol.steps.length
                         ? ` (${protocol.steps.length} in full mode)`
                         : ""}
                     </Text>
                   </View>
-                  <Feather name="chevron-right" size={18} color={theme.textTertiary} />
+                  <Feather
+                    name="chevron-right"
+                    size={18}
+                    color={theme.textTertiary}
+                  />
                 </View>
               </Pressable>
             );
@@ -522,9 +571,6 @@ export default function OpusCameraScreen({ navigation, route }: Props) {
   // Guided Viewfinder (or Quick Snap)
   // ═══════════════════════════════════════════════════════════
 
-  const capturedCount = selectedProtocol
-    ? capturedSteps.length
-    : captureCount;
   const totalSteps = selectedProtocol ? filteredSteps.length : undefined;
 
   return (
@@ -537,13 +583,13 @@ export default function OpusCameraScreen({ navigation, route }: Props) {
       />
 
       {/* Top overlay */}
-      <View style={[styles.topOverlay, { paddingTop: insets.top + Spacing.sm }]}>
+      <View
+        style={[styles.topOverlay, { paddingTop: insets.top + Spacing.sm }]}
+      >
         {/* Protocol info */}
         {selectedProtocol && currentStep ? (
           <View style={styles.stepInfoRow}>
-            <Text style={styles.stepLabel}>
-              {currentStep.label}
-            </Text>
+            <Text style={styles.stepLabel}>{currentStep.label}</Text>
             <Text style={styles.stepCounter}>
               Step {currentStepIndex + 1}/{totalSteps}
             </Text>
@@ -559,9 +605,7 @@ export default function OpusCameraScreen({ navigation, route }: Props) {
 
         {/* Capture hint */}
         {currentStep?.captureHint && (
-          <Text style={styles.captureHint}>
-            {currentStep.captureHint}
-          </Text>
+          <Text style={styles.captureHint}>{currentStep.captureHint}</Text>
         )}
       </View>
 
@@ -589,9 +633,7 @@ export default function OpusCameraScreen({ navigation, route }: Props) {
                         : styles.dotEmpty,
                   ]}
                 >
-                  {captured && (
-                    <Feather name="check" size={10} color="#fff" />
-                  )}
+                  {captured && <Feather name="check" size={10} color="#fff" />}
                 </Pressable>
               );
             }}
@@ -600,7 +642,12 @@ export default function OpusCameraScreen({ navigation, route }: Props) {
       )}
 
       {/* Bottom controls */}
-      <View style={[styles.bottomOverlay, { paddingBottom: insets.bottom + Spacing.lg }]}>
+      <View
+        style={[
+          styles.bottomOverlay,
+          { paddingBottom: insets.bottom + Spacing.lg },
+        ]}
+      >
         {/* Processing indicator */}
         {isProcessing && (
           <View style={styles.processingRow}>
@@ -647,7 +694,9 @@ export default function OpusCameraScreen({ navigation, route }: Props) {
               />
             </Pressable>
             <Pressable
-              onPress={() => setFacing((f) => (f === "back" ? "front" : "back"))}
+              onPress={() =>
+                setFacing((f) => (f === "back" ? "front" : "back"))
+              }
               disabled={isFinishing}
               style={styles.iconButton}
             >

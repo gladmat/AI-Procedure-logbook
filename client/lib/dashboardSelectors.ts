@@ -4,7 +4,9 @@ import type { EpisodePrefillData, TreatmentEpisode } from "@/types/episode";
 import { PENDING_ACTION_LABELS } from "@/types/episode";
 import { INFECTION_SYNDROME_LABELS } from "@/types/infection";
 import type { Case, QuickCasePrefillData, Specialty } from "@/types/case";
-import { getCaseSpecialties, isPlannedCase, getPatientDisplayName } from "@/types/case";
+import { getCaseSpecialties, getPatientDisplayName } from "@/types/case";
+import type { CaseSummary } from "@/types/caseSummary";
+import { isPlannedCaseSummary } from "@/types/caseSummary";
 
 const DAY_MS = 1000 * 60 * 60 * 24;
 
@@ -96,7 +98,45 @@ function isSelectedSpecialty(
   return selectedSpecialty === specialty;
 }
 
-export function sortCasesByProcedureDateDesc(cases: Case[]): Case[] {
+function isCaseSummaryLike(
+  caseData: Case | CaseSummary,
+): caseData is CaseSummary {
+  return "searchableText" in caseData;
+}
+
+function getCaseLikeSpecialties(caseData: Case | CaseSummary): Specialty[] {
+  return isCaseSummaryLike(caseData)
+    ? caseData.specialties
+    : getCaseSpecialties(caseData);
+}
+
+function getCaseLikePatientIdentifier(caseData: Case | CaseSummary): string {
+  return isCaseSummaryLike(caseData)
+    ? caseData.patientDisplayName || caseData.patientIdentifier
+    : getPatientDisplayName(caseData) || caseData.patientIdentifier;
+}
+
+function getCaseLikeDiagnosisTitle(caseData: Case | CaseSummary): string {
+  return isCaseSummaryLike(caseData)
+    ? caseData.diagnosisTitle || caseData.procedureType || "Unknown"
+    : getCasePrimaryTitle(caseData) || caseData.procedureType || "Unknown";
+}
+
+function getCaseLikeCanAddHistology(caseData: Case | CaseSummary): boolean {
+  return isCaseSummaryLike(caseData)
+    ? caseData.canAddHistology
+    : caseCanAddHistology(caseData);
+}
+
+function hasCaseLikeRecordedOutcome(caseData: Case | CaseSummary): boolean {
+  return isCaseSummaryLike(caseData)
+    ? caseData.outcomeRecorded
+    : caseData.outcome != null;
+}
+
+export function sortCasesByProcedureDateDesc<
+  T extends { procedureDate: string },
+>(cases: T[]): T[] {
   return [...cases].sort(
     (left, right) =>
       parseCaseDate(right.procedureDate).getTime() -
@@ -104,47 +144,51 @@ export function sortCasesByProcedureDateDesc(cases: Case[]): Case[] {
   );
 }
 
-export function filterOutPlannedCases(cases: Case[]): Case[] {
-  return cases.filter((c) => !isPlannedCase(c));
+export function filterOutPlannedCases<T extends { caseStatus?: string }>(
+  cases: T[],
+): T[] {
+  return cases.filter((caseData) => !isPlannedCaseSummary(caseData));
 }
 
-export function getPlannedCases(cases: Case[]): Case[] {
-  return cases
-    .filter(isPlannedCase)
-    .sort((a, b) => {
-      // Sort by plannedDate ascending (unscheduled last), then createdAt
-      if (a.plannedDate && b.plannedDate) {
-        return a.plannedDate.localeCompare(b.plannedDate);
-      }
-      if (a.plannedDate && !b.plannedDate) return -1;
-      if (!a.plannedDate && b.plannedDate) return 1;
-      return a.createdAt.localeCompare(b.createdAt);
-    });
+export function getPlannedCases<
+  T extends { caseStatus?: string; plannedDate?: string; createdAt: string },
+>(cases: T[]): T[] {
+  return cases.filter(isPlannedCaseSummary).sort((a, b) => {
+    // Sort by plannedDate ascending (unscheduled last), then createdAt
+    if (a.plannedDate && b.plannedDate) {
+      return a.plannedDate.localeCompare(b.plannedDate);
+    }
+    if (a.plannedDate && !b.plannedDate) return -1;
+    if (!a.plannedDate && b.plannedDate) return 1;
+    return a.createdAt.localeCompare(b.createdAt);
+  });
 }
 
-export function getPlannedCaseCount(cases: Case[]): number {
-  return cases.filter(isPlannedCase).length;
+export function getPlannedCaseCount<T extends { caseStatus?: string }>(
+  cases: T[],
+): number {
+  return cases.filter(isPlannedCaseSummary).length;
 }
 
-export function filterCasesByVisibleSpecialties(
-  cases: Case[],
+export function filterCasesByVisibleSpecialties<T extends Case | CaseSummary>(
+  cases: T[],
   visibleSpecialties: Specialty[],
-): Case[] {
+): T[] {
   return cases.filter((caseData) =>
-    getCaseSpecialties(caseData).some((specialty) =>
+    getCaseLikeSpecialties(caseData).some((specialty) =>
       visibleSpecialties.includes(specialty),
     ),
   );
 }
 
-export function buildDashboardSummary(
-  cases: Case[],
-  needsHistology: (caseData: Case) => boolean,
+export function buildDashboardSummary<T extends Case | CaseSummary>(
+  cases: T[],
+  needsHistology: (caseData: T) => boolean,
 ): DashboardSummary {
   const caseCounts: Partial<Record<Specialty, number>> = {};
 
   for (const caseData of cases) {
-    for (const specialty of getCaseSpecialties(caseData)) {
+    for (const specialty of getCaseLikeSpecialties(caseData)) {
       caseCounts[specialty] = (caseCounts[specialty] ?? 0) + 1;
     }
   }
@@ -156,11 +200,11 @@ export function buildDashboardSummary(
   };
 }
 
-export function filterDashboardCases(
-  cases: Case[],
+export function filterDashboardCases<T extends Case | CaseSummary>(
+  cases: T[],
   selectedFilter: string | null,
-  needsHistology: (caseData: Case) => boolean,
-): Case[] {
+  needsHistology: (caseData: T) => boolean,
+): T[] {
   const sortedCases = sortCasesByProcedureDateDesc(cases);
 
   if (!selectedFilter) {
@@ -172,14 +216,14 @@ export function filterDashboardCases(
   }
 
   return sortedCases.filter((caseData) =>
-    getCaseSpecialties(caseData).some((specialty) =>
+    getCaseLikeSpecialties(caseData).some((specialty) =>
       isSelectedSpecialty(selectedFilter, specialty),
     ),
   );
 }
 
-export function buildAttentionItems(
-  cases: Case[],
+export function buildAttentionItems<T extends Case | CaseSummary>(
+  cases: T[],
   episodesWithCases: DashboardEpisodeWithCases[],
   selectedSpecialty: string | null,
 ): AttentionItem[] {
@@ -195,7 +239,7 @@ export function buildAttentionItems(
 
     if (
       selectedSpecialty &&
-      !getCaseSpecialties(caseData).some((specialty) =>
+      !getCaseLikeSpecialties(caseData).some((specialty) =>
         isSelectedSpecialty(selectedSpecialty, specialty),
       )
     ) {
@@ -209,17 +253,15 @@ export function buildAttentionItems(
     inpatientItems.push({
       id: `inpatient-${caseData.id}`,
       type: "inpatient",
-      patientIdentifier:
-        getPatientDisplayName(caseData) || caseData.patientIdentifier,
-      diagnosisTitle:
-        getCasePrimaryTitle(caseData) || caseData.procedureType || "Unknown",
+      patientIdentifier: getCaseLikePatientIdentifier(caseData),
+      diagnosisTitle: getCaseLikeDiagnosisTitle(caseData),
       specialty: caseData.specialty,
       facility: caseData.facility,
       caseId: caseData.id,
       postOpDay,
       hasEpisodeLink: !!caseData.episodeId,
       episodeId: caseData.episodeId,
-      canAddHistology: caseCanAddHistology(caseData),
+      canAddHistology: getCaseLikeCanAddHistology(caseData),
     });
   }
 
@@ -230,7 +272,10 @@ export function buildAttentionItems(
   const infectionItems: AttentionItem[] = [];
 
   for (const caseData of cases) {
-    if (caseData.infectionOverlay?.status !== "active") {
+    const isActiveInfection = isCaseSummaryLike(caseData)
+      ? caseData.infectionStatus === "active"
+      : caseData.infectionOverlay?.status === "active";
+    if (!isActiveInfection) {
       continue;
     }
 
@@ -240,31 +285,34 @@ export function buildAttentionItems(
 
     if (
       selectedSpecialty &&
-      !getCaseSpecialties(caseData).some((specialty) =>
+      !getCaseLikeSpecialties(caseData).some((specialty) =>
         isSelectedSpecialty(selectedSpecialty, specialty),
       )
     ) {
       continue;
     }
 
-    const syndromePrimary = caseData.infectionOverlay.syndromePrimary;
+    const syndromePrimary = isCaseSummaryLike(caseData)
+      ? undefined
+      : caseData.infectionOverlay?.syndromePrimary;
+    const syndromeLabel = isCaseSummaryLike(caseData)
+      ? caseData.infectionSyndrome
+      : syndromePrimary
+        ? (INFECTION_SYNDROME_LABELS[syndromePrimary] ?? syndromePrimary)
+        : undefined;
 
     infectionItems.push({
       id: `infection-${caseData.id}`,
       type: "infection",
-      patientIdentifier:
-        getPatientDisplayName(caseData) || caseData.patientIdentifier,
-      diagnosisTitle:
-        getCasePrimaryTitle(caseData) || caseData.procedureType || "Unknown",
+      patientIdentifier: getCaseLikePatientIdentifier(caseData),
+      diagnosisTitle: getCaseLikeDiagnosisTitle(caseData),
       specialty: caseData.specialty,
       facility: caseData.facility,
       caseId: caseData.id,
       hasEpisodeLink: !!caseData.episodeId,
       episodeId: caseData.episodeId,
-      infectionSyndrome: syndromePrimary
-        ? (INFECTION_SYNDROME_LABELS[syndromePrimary] ?? syndromePrimary)
-        : undefined,
-      canAddHistology: caseCanAddHistology(caseData),
+      infectionSyndrome: syndromeLabel,
+      canAddHistology: getCaseLikeCanAddHistology(caseData),
     });
   }
 
@@ -336,7 +384,7 @@ export function buildAttentionItems(
 }
 
 export function calculatePracticePulse(
-  cases: Case[],
+  cases: (Case | CaseSummary)[],
   now: Date = new Date(),
 ): PracticePulseData {
   const today = atStartOfDay(now);
@@ -390,7 +438,7 @@ export function calculatePracticePulse(
 
     if (caseDate >= ninetyDaysAgo) {
       totalLast90++;
-      if (caseData.outcome != null) {
+      if (hasCaseLikeRecordedOutcome(caseData)) {
         completedLast90++;
       }
     }

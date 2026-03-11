@@ -5,7 +5,24 @@ import {
   TimelineEvent,
   CountryCode,
   ComplicationEntry,
+  getAllProcedures,
+  getCaseSpecialties,
+  getPatientDisplayName,
+  getPrimarySiteLabel,
 } from "@/types/case";
+import type { CaseSummary } from "@/types/caseSummary";
+import {
+  isLegacyRole,
+  migrateLegacyRole,
+  type OperativeRole,
+} from "@/types/operativeRole";
+import { getCasePrimaryTitle } from "@/lib/caseDiagnosisSummary";
+import {
+  caseCanAddHistology,
+  caseNeedsHistology,
+  getSkinCancerCaseBadge,
+} from "@/lib/skinCancerConfig";
+import { INFECTION_SYNDROME_LABELS } from "@/types/infection";
 import { encryptData, decryptData } from "./encryption";
 import {
   canonicalizePersistedMediaUris,
@@ -30,6 +47,8 @@ const CASE_DRAFT_KEY_PREFIX = "@surgical_logbook_case_draft_";
 const LEGACY_ENCRYPTED_CASES_KEY = "@surgical_logbook_cases_encrypted";
 const LEGACY_CASES_KEY = "@surgical_logbook_cases";
 const CASE_SPECIALTY_REPAIR_KEY = "@surgical_logbook_case_specialty_repair_v1";
+const CASE_SUMMARIES_KEY = "@surgical_logbook_case_summaries_v1";
+const CASE_SUMMARY_STORE_VERSION = 1;
 
 export interface LocalUser {
   id: string;
@@ -55,6 +74,174 @@ interface CaseIndexEntry {
   encounterClass?: string;
   caseStatus?: string;
   plannedDate?: string;
+}
+
+interface CaseSummaryStore {
+  version: number;
+  summaries: CaseSummary[];
+}
+
+function parseCaseSummaryStore(raw: string): CaseSummary[] | null {
+  const parsed = JSON.parse(raw) as CaseSummaryStore | CaseSummary[];
+
+  if (Array.isArray(parsed)) {
+    return parsed;
+  }
+
+  if (
+    parsed &&
+    typeof parsed === "object" &&
+    parsed.version === CASE_SUMMARY_STORE_VERSION &&
+    Array.isArray(parsed.summaries)
+  ) {
+    return parsed.summaries;
+  }
+
+  return null;
+}
+
+function serializeCaseSummaryStore(summaries: CaseSummary[]): string {
+  return JSON.stringify({
+    version: CASE_SUMMARY_STORE_VERSION,
+    summaries,
+  } satisfies CaseSummaryStore);
+}
+
+function resolveCaseOperativeRole(caseData: Case): OperativeRole | undefined {
+  if (caseData.defaultOperativeRole) {
+    return caseData.defaultOperativeRole;
+  }
+
+  const firstProcedure = getAllProcedures(caseData)[0];
+  if (firstProcedure?.surgeonRole && isLegacyRole(firstProcedure.surgeonRole)) {
+    return migrateLegacyRole(firstProcedure.surgeonRole).role;
+  }
+
+  const legacyRole = caseData.teamMembers?.find(
+    (member) => member.id === caseData.ownerId,
+  )?.role;
+  if (legacyRole && isLegacyRole(legacyRole)) {
+    return migrateLegacyRole(legacyRole).role;
+  }
+
+  return undefined;
+}
+
+function resolveSkinCancerBadge(caseData: Case): {
+  label: string;
+  colorKey: "error" | "warning" | "info" | "success";
+} | null {
+  let best: {
+    label: string;
+    colorKey: "error" | "warning" | "info" | "success";
+  } | null = null;
+  let bestPriority = Infinity;
+  const badgePriority: Record<string, number> = {
+    error: 0,
+    warning: 1,
+    info: 2,
+    success: 3,
+  };
+
+  for (const group of caseData.diagnosisGroups ?? []) {
+    if (group.skinCancerAssessment) {
+      const badge = getSkinCancerCaseBadge(group.skinCancerAssessment);
+      if (badge && (badgePriority[badge.colorKey] ?? 99) < bestPriority) {
+        best = badge;
+        bestPriority = badgePriority[badge.colorKey] ?? 99;
+      }
+    }
+
+    for (const lesion of group.lesionInstances ?? []) {
+      if (!lesion.skinCancerAssessment) {
+        continue;
+      }
+
+      const badge = getSkinCancerCaseBadge(lesion.skinCancerAssessment);
+      if (badge && (badgePriority[badge.colorKey] ?? 99) < bestPriority) {
+        best = badge;
+        bestPriority = badgePriority[badge.colorKey] ?? 99;
+      }
+    }
+  }
+
+  return best;
+}
+
+function buildCaseSummary(caseData: Case): CaseSummary {
+  const primaryProcedureName =
+    getAllProcedures(caseData)[0]?.procedureName || caseData.procedureType;
+  const procedureNames = getAllProcedures(caseData)
+    .map((procedure) => procedure.procedureName)
+    .filter((name): name is string => Boolean(name));
+  const diagnosisTitle =
+    getCasePrimaryTitle(caseData) || caseData.procedureType;
+  const patientDisplayName = getPatientDisplayName(caseData);
+  const skinCancerBadge = resolveSkinCancerBadge(caseData);
+  const infectionSyndrome = caseData.infectionOverlay?.syndromePrimary
+    ? (INFECTION_SYNDROME_LABELS[caseData.infectionOverlay.syndromePrimary] ??
+      caseData.infectionOverlay.syndromePrimary)
+    : undefined;
+  const hasSevereHandInfection =
+    caseData.diagnosisGroups?.some(
+      (group) =>
+        group.handInfectionDetails &&
+        !group.handInfectionDetails.escalatedToFullModule &&
+        (group.handInfectionDetails.severity === "spreading" ||
+          group.handInfectionDetails.severity === "systemic"),
+    ) ?? false;
+
+  return {
+    id: caseData.id,
+    procedureDate: caseData.procedureDate,
+    createdAt: caseData.createdAt,
+    updatedAt: caseData.updatedAt,
+    patientIdentifier: caseData.patientIdentifier,
+    patientFirstName: caseData.patientFirstName,
+    patientLastName: caseData.patientLastName,
+    patientDisplayName,
+    patientNhi: caseData.patientNhi,
+    facility: caseData.facility,
+    specialty: caseData.specialty,
+    specialties: getCaseSpecialties(caseData),
+    caseStatus: caseData.caseStatus,
+    plannedDate: caseData.plannedDate,
+    plannedTemplateId: caseData.plannedTemplateId,
+    plannedNote: caseData.plannedNote,
+    episodeId: caseData.episodeId,
+    encounterClass: caseData.encounterClass,
+    stayType: caseData.stayType,
+    dischargeDate: caseData.dischargeDate,
+    outcomeRecorded: caseData.outcome != null,
+    procedureType: caseData.procedureType,
+    diagnosisTitle,
+    primaryProcedureName,
+    procedureNames,
+    operativeMediaCount: caseData.operativeMedia?.length ?? 0,
+    canAddHistology: caseCanAddHistology(caseData),
+    needsHistology: caseNeedsHistology(caseData),
+    infectionStatus: caseData.infectionOverlay?.status,
+    infectionSyndrome,
+    hasSevereHandInfection,
+    operativeRole: resolveCaseOperativeRole(caseData),
+    skinCancerBadgeLabel: skinCancerBadge?.label,
+    skinCancerBadgeColorKey: skinCancerBadge?.colorKey,
+    siteLabel: getPrimarySiteLabel(caseData) ?? undefined,
+    searchableText: [
+      caseData.patientIdentifier,
+      caseData.patientFirstName,
+      caseData.patientLastName,
+      caseData.patientNhi,
+      patientDisplayName,
+      diagnosisTitle,
+      primaryProcedureName,
+      ...procedureNames,
+      caseData.facility,
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase(),
+  };
 }
 
 /**
@@ -84,6 +271,35 @@ async function legacyHashPatientIdentifier(
 }
 
 let indexMigrated = false;
+let caseIndexCache: CaseIndexEntry[] | null = null;
+const caseCache = new Map<string, Case>();
+let allCasesCache: Case[] | null = null;
+let caseSummaryCache: CaseSummary[] | null = null;
+
+function clearCaseReadCaches(): void {
+  caseIndexCache = null;
+  allCasesCache = null;
+  caseSummaryCache = null;
+  caseCache.clear();
+}
+
+function cacheCase(caseData: Case): Case {
+  caseCache.set(caseData.id, caseData);
+  return caseData;
+}
+
+function getCachedCasesInIndexOrder(index: CaseIndexEntry[]): Case[] | null {
+  const ordered = index
+    .map((entry) => caseCache.get(entry.id))
+    .filter((caseData): caseData is Case => caseData !== undefined);
+
+  if (ordered.length !== index.length) {
+    return null;
+  }
+
+  allCasesCache = ordered;
+  return ordered;
+}
 
 async function migrateCaseIndexIfNeeded(
   entries: CaseIndexEntry[],
@@ -124,6 +340,10 @@ async function migrateCaseIndexIfNeeded(
 }
 
 async function getCaseIndex(): Promise<CaseIndexEntry[]> {
+  if (caseIndexCache) {
+    return caseIndexCache;
+  }
+
   try {
     const data = await AsyncStorage.getItem(CASE_INDEX_KEY);
     if (data) {
@@ -131,10 +351,13 @@ async function getCaseIndex(): Promise<CaseIndexEntry[]> {
       if (!indexMigrated) {
         const migrated = await migrateCaseIndexIfNeeded(parsed);
         indexMigrated = true;
+        caseIndexCache = migrated;
         return migrated;
       }
+      caseIndexCache = parsed;
       return parsed;
     }
+    caseIndexCache = [];
     return [];
   } catch (error) {
     console.error("Error reading case index:", error);
@@ -143,6 +366,8 @@ async function getCaseIndex(): Promise<CaseIndexEntry[]> {
 }
 
 async function saveCaseIndex(index: CaseIndexEntry[]): Promise<void> {
+  caseIndexCache = index;
+  allCasesCache = null;
   await AsyncStorage.setItem(CASE_INDEX_KEY, JSON.stringify(index));
 }
 
@@ -180,6 +405,7 @@ async function migrateLegacyData(): Promise<boolean> {
       );
       await saveCaseIndex(index);
       await AsyncStorage.removeItem(LEGACY_ENCRYPTED_CASES_KEY);
+      clearCaseReadCaches();
       console.log(`Migrated ${cases.length} cases to per-case storage`);
       return true;
     }
@@ -213,6 +439,7 @@ async function migrateLegacyData(): Promise<boolean> {
       );
       await saveCaseIndex(index);
       await AsyncStorage.removeItem(LEGACY_CASES_KEY);
+      clearCaseReadCaches();
       console.log(`Migrated ${cases.length} legacy cases to per-case storage`);
       return true;
     }
@@ -247,6 +474,7 @@ async function repairStoredCaseSpecialtiesIfNeeded(): Promise<void> {
 
   try {
     const index = await getCaseIndex();
+    let changed = false;
 
     for (const entry of index) {
       const storageKey = `${CASE_PREFIX}${entry.id}`;
@@ -263,16 +491,89 @@ async function repairStoredCaseSpecialtiesIfNeeded(): Promise<void> {
         continue;
       }
 
+      changed = true;
       await writeStoredCasePreservingMetadata({
         ...rawCase,
         specialty: repairedCase.specialty,
       });
     }
 
+    if (changed) {
+      caseSummaryCache = null;
+      await AsyncStorage.removeItem(CASE_SUMMARIES_KEY);
+    }
+
     await AsyncStorage.setItem(CASE_SPECIALTY_REPAIR_KEY, "1");
     specialtyRepairChecked = true;
   } catch (error) {
     console.error("Error repairing stored case specialties:", error);
+  }
+}
+
+async function saveCaseSummaries(summaries: CaseSummary[]): Promise<void> {
+  caseSummaryCache = summaries;
+  const encrypted = await encryptData(serializeCaseSummaryStore(summaries));
+  await AsyncStorage.setItem(CASE_SUMMARIES_KEY, encrypted);
+}
+
+async function rebuildCaseSummariesFromIndex(
+  index: CaseIndexEntry[],
+): Promise<CaseSummary[]> {
+  const summaries: CaseSummary[] = [];
+  for (const entry of index) {
+    const caseData = await getCase(entry.id);
+    if (caseData) {
+      summaries.push(buildCaseSummary(caseData));
+    }
+  }
+  await saveCaseSummaries(summaries);
+  return summaries;
+}
+
+export async function getCaseSummaries(): Promise<CaseSummary[]> {
+  try {
+    if (!migrationChecked) {
+      await migrateLegacyData();
+      migrationChecked = true;
+    }
+    await repairStoredCaseSpecialtiesIfNeeded();
+
+    const index = await getCaseIndex();
+    if (index.length === 0) {
+      caseSummaryCache = [];
+      return [];
+    }
+
+    if (caseSummaryCache && caseSummaryCache.length === index.length) {
+      return caseSummaryCache;
+    }
+
+    const stored = await AsyncStorage.getItem(CASE_SUMMARIES_KEY);
+    if (stored) {
+      try {
+        const decrypted = await decryptData(stored);
+        const summaries = parseCaseSummaryStore(decrypted);
+        if (summaries && summaries.length === index.length) {
+          const orderedSummaries = index
+            .map((entry) =>
+              summaries.find((summary) => summary.id === entry.id),
+            )
+            .filter((summary): summary is CaseSummary => summary != null);
+
+          if (orderedSummaries.length === index.length) {
+            caseSummaryCache = orderedSummaries;
+            return orderedSummaries;
+          }
+        }
+      } catch {
+        // Rebuild from source cases below.
+      }
+    }
+
+    return rebuildCaseSummariesFromIndex(index);
+  } catch (error) {
+    console.error("Error reading case summaries:", error);
+    return [];
   }
 }
 
@@ -293,6 +594,14 @@ export async function getCases(): Promise<Case[]> {
 
     const index = await getCaseIndex();
     if (index.length === 0) return [];
+    if (allCasesCache && allCasesCache.length === index.length) {
+      return allCasesCache;
+    }
+
+    const cachedCases = getCachedCasesInIndexOrder(index);
+    if (cachedCases) {
+      return cachedCases;
+    }
 
     // Decrypt cases in small batches, yielding to UI between batches
     const BATCH_SIZE = 3;
@@ -308,7 +617,9 @@ export async function getCases(): Promise<Case[]> {
         await yieldToUI();
       }
     }
-    return results.filter((c): c is Case => c !== null);
+    const hydratedCases = results.filter((c): c is Case => c !== null);
+    allCasesCache = hydratedCases;
+    return hydratedCases;
   } catch (error) {
     console.error("Error reading cases:", error);
     return [];
@@ -323,6 +634,11 @@ export async function getCase(id: string): Promise<Case | null> {
     }
     await repairStoredCaseSpecialtiesIfNeeded();
 
+    const cached = caseCache.get(id);
+    if (cached) {
+      return cached;
+    }
+
     const encrypted = await AsyncStorage.getItem(`${CASE_PREFIX}${id}`);
     if (!encrypted) return null;
 
@@ -336,11 +652,20 @@ export async function getCase(id: string): Promise<Case | null> {
       );
     }
 
-    return caseData;
+    return cacheCase(caseData);
   } catch (error) {
     console.error("Error reading case:", error);
     return null;
   }
+}
+
+export async function getCasesByIds(ids: string[]): Promise<Case[]> {
+  if (ids.length === 0) {
+    return [];
+  }
+
+  const cases = await Promise.all(ids.map((id) => getCase(id)));
+  return cases.filter((caseData): caseData is Case => caseData !== null);
 }
 
 /**
@@ -404,9 +729,43 @@ export async function saveCase(caseData: Case): Promise<void> {
         new Date(a.procedureDate).getTime(),
     );
     await saveCaseIndex(index);
+    const cachedCase = cacheCase(updatedCase);
+
+    const summaries = await getCaseSummaries();
+    const summary = buildCaseSummary(cachedCase);
+    const existingSummaryIndex = summaries.findIndex(
+      (item) => item.id === summary.id,
+    );
+    const nextSummaries = [...summaries];
+    if (existingSummaryIndex >= 0) {
+      nextSummaries[existingSummaryIndex] = summary;
+    } else {
+      nextSummaries.push(summary);
+    }
+    nextSummaries.sort(
+      (left, right) =>
+        new Date(right.procedureDate).getTime() -
+        new Date(left.procedureDate).getTime(),
+    );
+    await saveCaseSummaries(nextSummaries);
   } catch (error) {
     console.error("Error saving case:", error);
     throw error;
+  }
+}
+
+export async function getCaseCount(): Promise<number> {
+  try {
+    if (!migrationChecked) {
+      await migrateLegacyData();
+      migrationChecked = true;
+    }
+    await repairStoredCaseSpecialtiesIfNeeded();
+    const index = await getCaseIndex();
+    return index.length;
+  } catch (error) {
+    console.error("Error reading case count:", error);
+    return 0;
   }
 }
 
@@ -509,15 +868,10 @@ export async function findCasesByPatientId(patientId: string): Promise<Case[]> {
     );
   });
 
-  const cases: Case[] = [];
-  for (const entry of matchingEntries) {
-    const caseData = await getCase(entry.id);
-    if (caseData) {
-      cases.push(caseData);
-    }
-  }
-
-  return cases;
+  const cases = await Promise.all(
+    matchingEntries.map((entry) => getCase(entry.id)),
+  );
+  return cases.filter((caseData): caseData is Case => caseData !== null);
 }
 
 export async function findCaseByPatientIdAndDate(
@@ -573,6 +927,11 @@ export async function deleteCase(id: string): Promise<void> {
     const index = await getCaseIndex();
     const filtered = index.filter((e) => e.id !== id);
     await saveCaseIndex(filtered);
+    caseCache.delete(id);
+    allCasesCache = null;
+
+    const summaries = await getCaseSummaries();
+    await saveCaseSummaries(summaries.filter((summary) => summary.id !== id));
 
     const events = await getTimelineEvents(id);
     for (const event of events) {
@@ -782,6 +1141,7 @@ export async function clearAllData(): Promise<void> {
     await AsyncStorage.removeItem(LEGACY_ENCRYPTED_CASES_KEY);
     await AsyncStorage.removeItem(LEGACY_CASES_KEY);
     await AsyncStorage.removeItem(CASE_SPECIALTY_REPAIR_KEY);
+    await AsyncStorage.removeItem(CASE_SUMMARIES_KEY);
     const draftKeys = (await AsyncStorage.getAllKeys()).filter((key) =>
       key.startsWith(CASE_DRAFT_KEY_PREFIX),
     );
@@ -792,6 +1152,7 @@ export async function clearAllData(): Promise<void> {
     indexMigrated = false;
     migrationChecked = false;
     specialtyRepairChecked = false;
+    clearCaseReadCaches();
   } catch (error) {
     console.error("Error clearing all data:", error);
     throw error;

@@ -17,8 +17,7 @@
     "check:format": "prettier --check \"**/*.{js,ts,tsx,css,json}\"",
     "format": "prettier --write \"**/*.{js,ts,tsx,css,json}\"",
     "test": "vitest run",
-    "test:watch": "vitest",
-    "test:harness": "node --env-file=.env --import tsx scripts/test-harness/run.ts"
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@bacons/apple-targets": "^4.0.6",

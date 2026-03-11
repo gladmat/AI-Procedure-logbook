@@ -515,42 +515,42 @@ export function ProcedureEntryCard({
       {showRoleOverride && (
         <View style={styles.roleOverridePanel}>
           <View style={styles.roleChipRow}>
-            {(
-              Object.keys(OPERATIVE_ROLE_LABELS) as OperativeRole[]
-            ).map((r) => {
-              const selected = procedure.operativeRoleOverride === r;
-              return (
-                <Pressable
-                  key={r}
-                  onPress={() => {
-                    Haptics.selectionAsync();
-                    handleRoleOverrideChange(r);
-                  }}
-                  style={[
-                    styles.roleChip,
-                    {
-                      backgroundColor: selected
-                        ? theme.link
-                        : theme.backgroundDefault,
-                      borderColor: selected ? theme.link : theme.border,
-                    },
-                  ]}
-                >
-                  <ThemedText
+            {(Object.keys(OPERATIVE_ROLE_LABELS) as OperativeRole[]).map(
+              (r) => {
+                const selected = procedure.operativeRoleOverride === r;
+                return (
+                  <Pressable
+                    key={r}
+                    onPress={() => {
+                      Haptics.selectionAsync();
+                      handleRoleOverrideChange(r);
+                    }}
                     style={[
-                      styles.roleChipText,
+                      styles.roleChip,
                       {
-                        color: selected
-                          ? theme.buttonText
-                          : theme.textSecondary,
+                        backgroundColor: selected
+                          ? theme.link
+                          : theme.backgroundDefault,
+                        borderColor: selected ? theme.link : theme.border,
                       },
                     ]}
                   >
-                    {OPERATIVE_ROLE_LABELS[r]}
-                  </ThemedText>
-                </Pressable>
-              );
-            })}
+                    <ThemedText
+                      style={[
+                        styles.roleChipText,
+                        {
+                          color: selected
+                            ? theme.buttonText
+                            : theme.textSecondary,
+                        },
+                      ]}
+                    >
+                      {OPERATIVE_ROLE_LABELS[r]}
+                    </ThemedText>
+                  </Pressable>
+                );
+              },
+            )}
           </View>
 
           {supervisionApplicable(

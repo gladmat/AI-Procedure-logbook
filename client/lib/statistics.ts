@@ -14,8 +14,6 @@ import {
 } from "@/types/case";
 import {
   type OperativeRole,
-  OPERATIVE_ROLE_LABELS,
-  resolveOperativeRole,
   migrateLegacyRole,
   isLegacyRole,
 } from "@/types/operativeRole";
@@ -198,8 +196,11 @@ function getPrimaryRole(caseData: Case): OperativeRole {
   }
   // Fallback: teamMembers
   if (caseData.teamMembers && caseData.teamMembers.length > 0) {
-    const legacyRole = caseData.teamMembers.find((m) => m.id === caseData.ownerId)?.role;
-    if (legacyRole && isLegacyRole(legacyRole)) return migrateLegacyRole(legacyRole).role;
+    const legacyRole = caseData.teamMembers.find(
+      (m) => m.id === caseData.ownerId,
+    )?.role;
+    if (legacyRole && isLegacyRole(legacyRole))
+      return migrateLegacyRole(legacyRole).role;
   }
   return "SURGEON";
 }

@@ -29,8 +29,14 @@ import {
   type TimelineEvent,
   type MediaAttachment,
 } from "@/types/case";
+import type { CaseSummary } from "@/types/caseSummary";
 import { INFECTION_SYNDROME_LABELS } from "@/types/infection";
-import { getCases, updateCase, saveTimelineEvent } from "@/lib/storage";
+import {
+  getCase,
+  getCaseSummaries,
+  updateCase,
+  saveTimelineEvent,
+} from "@/lib/storage";
 import { toIsoDateValue } from "@/lib/dateValues";
 import { MediaCapture } from "@/components/MediaCapture";
 import { useActiveEpisodes } from "@/hooks/useActiveEpisodes";
@@ -38,10 +44,7 @@ import { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { useAuth } from "@/contexts/AuthContext";
 import { getVisibleSpecialties } from "@/lib/personalization";
 import { SpecialtyFilterBar } from "@/components/dashboard/SpecialtyFilterBar";
-import {
-  caseNeedsHistology,
-  getFirstHistologyTarget,
-} from "@/lib/skinCancerConfig";
+import { getFirstHistologyTarget } from "@/lib/skinCancerConfig";
 import { AddCaseFAB } from "@/components/dashboard/AddCaseFAB";
 import { RecentCasesList } from "@/components/dashboard/RecentCasesList";
 import { DashboardEmptyState } from "@/components/dashboard/DashboardEmptyState";
@@ -69,7 +72,7 @@ export default function DashboardScreen() {
   const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
 
-  const [cases, setCases] = useState<Case[]>([]);
+  const [cases, setCases] = useState<CaseSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedSpecialty, setSelectedSpecialty] = useState<string | null>(
@@ -91,16 +94,16 @@ export default function DashboardScreen() {
   const [dischargePhotos, setDischargePhotos] = useState<MediaAttachment[]>([]);
   const [showDischargeDatePicker, setShowDischargeDatePicker] = useState(false);
 
-  const loadCases = async () => {
+  const loadCases = useCallback(async () => {
     try {
-      const data = await getCases();
+      const data = await getCaseSummaries();
       setCases(data);
     } catch (error) {
       console.error("Error loading cases:", error);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
@@ -108,7 +111,7 @@ export default function DashboardScreen() {
         loadCases();
       });
       return () => task.cancel();
-    }, []),
+    }, [loadCases]),
   );
 
   const handleRefresh = async () => {
@@ -128,7 +131,11 @@ export default function DashboardScreen() {
   );
 
   const dashboardSummary = useMemo(
-    () => buildDashboardSummary(personalizedCases, caseNeedsHistology),
+    () =>
+      buildDashboardSummary(
+        personalizedCases,
+        (caseData) => caseData.needsHistology,
+      ),
     [personalizedCases],
   );
 
@@ -144,7 +151,7 @@ export default function DashboardScreen() {
     return filterDashboardCases(
       personalizedCases,
       selectedSpecialty,
-      caseNeedsHistology,
+      (caseData) => caseData.needsHistology,
     );
   }, [personalizedCases, selectedSpecialty]);
 
@@ -167,13 +174,13 @@ export default function DashboardScreen() {
 
   // --- Handlers ---
 
-  const handleOpenDischargeModal = (caseItem: Case) => {
+  const handleOpenDischargeModal = useCallback((caseItem: Case) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setDischargeCase(caseItem);
     setDischargeDate(new Date());
     setDischargePhotos([]);
     setDischargeModalVisible(true);
-  };
+  }, []);
 
   const handleConfirmDischarge = async () => {
     if (!dischargeCase) return;
@@ -206,23 +213,7 @@ export default function DashboardScreen() {
       }
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-
-      setCases((prev) =>
-        prev.map((c) =>
-          c.id === dischargeCase.id
-            ? {
-                ...c,
-                dischargeDate: dateStr,
-                infectionOverlay: c.infectionOverlay
-                  ? {
-                      ...c.infectionOverlay,
-                      resolvedDate: dateStr,
-                    }
-                  : undefined,
-              }
-            : c,
-        ),
-      );
+      await Promise.all([loadCases(), refreshEpisodes()]);
 
       setDischargeModalVisible(false);
       setDischargeCase(null);
@@ -243,7 +234,7 @@ export default function DashboardScreen() {
   };
 
   const handleCasePress = useCallback(
-    (caseData: Case) => {
+    (caseData: CaseSummary) => {
       navigation.navigate("CaseDetail", { caseId: caseData.id });
     },
     [navigation],
@@ -285,13 +276,13 @@ export default function DashboardScreen() {
   );
 
   const handleAttentionDischarge = useCallback(
-    (caseId: string) => {
-      const caseItem = personalizedCases.find((c) => c.id === caseId);
+    async (caseId: string) => {
+      const caseItem = await getCase(caseId);
       if (caseItem) {
         handleOpenDischargeModal(caseItem);
       }
     },
-    [personalizedCases],
+    [handleOpenDischargeModal],
   );
 
   const handleAttentionCardPress = useCallback(
@@ -315,20 +306,10 @@ export default function DashboardScreen() {
   }, [navigation, selectedDashboardSpecialty]);
 
   const handleAddEvent = useCallback(
-    (caseId: string) => {
-      const caseData = personalizedCases.find((item) => item.id === caseId);
+    async (caseId: string) => {
+      const caseData = await getCase(caseId);
       if (!caseData) return;
 
-      navigation.navigate("AddTimelineEvent", {
-        caseId: caseData.id,
-        mediaContext: buildMediaContextFromCase(caseData),
-      });
-    },
-    [navigation, personalizedCases],
-  );
-
-  const handleAddEventFromCase = useCallback(
-    (caseData: Case) => {
       navigation.navigate("AddTimelineEvent", {
         caseId: caseData.id,
         mediaContext: buildMediaContextFromCase(caseData),
@@ -337,9 +318,16 @@ export default function DashboardScreen() {
     [navigation],
   );
 
+  const handleAddEventFromCase = useCallback(
+    (caseData: CaseSummary) => {
+      void handleAddEvent(caseData.id);
+    },
+    [handleAddEvent],
+  );
+
   const handleAddHistology = useCallback(
-    (caseId: string) => {
-      const caseData = personalizedCases.find((c) => c.id === caseId);
+    async (caseId: string) => {
+      const caseData = await getCase(caseId);
       if (!caseData) return;
       const target = getFirstHistologyTarget(caseData);
       if (target) {
@@ -351,12 +339,12 @@ export default function DashboardScreen() {
         });
       }
     },
-    [navigation, personalizedCases],
+    [navigation],
   );
 
   const handleAddHistologyFromCase = useCallback(
-    (caseData: Case) => {
-      handleAddHistology(caseData.id);
+    (caseData: CaseSummary) => {
+      void handleAddHistology(caseData.id);
     },
     [handleAddHistology],
   );

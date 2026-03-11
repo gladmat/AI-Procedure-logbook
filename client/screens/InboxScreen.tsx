@@ -38,15 +38,13 @@ import {
   consumePendingInboxSelection,
   releaseReservedInboxItems,
 } from "@/lib/inboxStorage";
-import { getCases, saveCase } from "@/lib/storage";
+import { findCasesByPatientId, getCases, saveCase } from "@/lib/storage";
 import { getPrimaryDiagnosisName, getCaseSpecialties } from "@/types/case";
 import {
   inferMediaTagForInboxItem,
   inboxItemToOperativeMediaSmart,
   extractPatientIdHint,
-  findMatchingCasesByPatientId,
 } from "@/lib/inboxAssignment";
-import { isPlannedCase } from "@/types/case";
 
 // White-on-photo overlay — intentionally theme-independent
 // (always white text with shadow on photo thumbnails / dark modal backdrops)
@@ -187,13 +185,10 @@ export default function InboxScreen() {
     }
   }, [pickMode]);
 
-  const enterSelectMode = useCallback(
-    (firstId?: string) => {
-      setSelectMode(true);
-      if (firstId) setSelectedIds(new Set([firstId]));
-    },
-    [],
-  );
+  const enterSelectMode = useCallback((firstId?: string) => {
+    setSelectMode(true);
+    if (firstId) setSelectedIds(new Set([firstId]));
+  }, []);
 
   // ── Camera / Gallery ─────────────────────────────────
 
@@ -230,9 +225,7 @@ export default function InboxScreen() {
           text: "Delete",
           style: "destructive",
           onPress: async () => {
-            Haptics.notificationAsync(
-              Haptics.NotificationFeedbackType.Warning,
-            );
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
             await discardFromInbox([...selectedIds]);
             setItems(getInboxItems());
             setSelectedIds(new Set());
@@ -271,22 +264,34 @@ export default function InboxScreen() {
     }
 
     let cancelled = false;
-    getCases().then((allCases) => {
-      if (cancelled) return;
-      const nonPlanned = allCases.filter((c) => !isPlannedCase(c));
-      const matches = findMatchingCasesByPatientId(selected, nonPlanned);
-      if (matches.length === 0) {
-        setNhiMatch(null);
-      } else {
+    const matchCount = selected.filter(
+      (item) => item.patientIdentifier?.trim() === hint,
+    ).length;
+
+    findCasesByPatientId(hint)
+      .then((matches) => {
+        if (cancelled || matches.length === 0) {
+          setNhiMatch(null);
+          return;
+        }
+
+        const sortedMatches = matches.sort(
+          (a, b) =>
+            new Date(b.procedureDate).getTime() -
+            new Date(a.procedureDate).getTime(),
+        );
+
         setNhiMatch({
           patientId: hint,
-          topMatch: matches[0]!,
-          matchCount: matches[0]!.matchCount,
+          topMatch: { caseData: sortedMatches[0]!, matchCount },
+          matchCount,
         });
-      }
-    }).catch(() => setNhiMatch(null));
+      })
+      .catch(() => setNhiMatch(null));
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [pickMode, selectMode, selectedIds, items]);
 
   const handleAssignToCase = useCallback(() => {
@@ -298,9 +303,7 @@ export default function InboxScreen() {
     async (caseData: Case) => {
       setShowCasePicker(false);
       try {
-        const selectedItems = items.filter((item) =>
-          selectedIds.has(item.id),
-        );
+        const selectedItems = items.filter((item) => selectedIds.has(item.id));
         const caseProcDate = caseData.procedureDate;
         const newMedia: OperativeMediaItem[] = selectedItems.map((item) => {
           const tag = inferMediaTagForInboxItem(item, caseProcDate);
@@ -400,9 +403,7 @@ export default function InboxScreen() {
   return (
     <ThemedView style={styles.container}>
       {/* Header bar */}
-      <View
-        style={[styles.headerBar, { borderBottomColor: theme.border }]}
-      >
+      <View style={[styles.headerBar, { borderBottomColor: theme.border }]}>
         <ThemedText style={[styles.countText, { color: theme.textSecondary }]}>
           {items.length} photo{items.length !== 1 ? "s" : ""}
         </ThemedText>
@@ -434,17 +435,24 @@ export default function InboxScreen() {
             <Feather name="user" size={16} color={theme.link} />
             <View style={{ flex: 1 }}>
               <ThemedText style={[styles.nhiBannerText, { color: theme.text }]}>
-                {nhiMatch.matchCount} photo{nhiMatch.matchCount > 1 ? "s" : ""} match patient {nhiMatch.patientId}
+                {nhiMatch.matchCount} photo{nhiMatch.matchCount > 1 ? "s" : ""}{" "}
+                match patient {nhiMatch.patientId}
               </ThemedText>
               <ThemedText
                 style={[styles.nhiBannerSub, { color: theme.textSecondary }]}
                 numberOfLines={1}
               >
-                Assign to {getPrimaryDiagnosisName(nhiMatch.topMatch.caseData) || "case"} ({nhiMatch.topMatch.caseData.procedureDate ?? "no date"})
+                Assign to{" "}
+                {getPrimaryDiagnosisName(nhiMatch.topMatch.caseData) || "case"}{" "}
+                ({nhiMatch.topMatch.caseData.procedureDate ?? "no date"})
               </ThemedText>
             </View>
-            <View style={[styles.nhiAssignButton, { backgroundColor: theme.link }]}>
-              <ThemedText style={[styles.nhiAssignText, { color: theme.buttonText }]}>
+            <View
+              style={[styles.nhiAssignButton, { backgroundColor: theme.link }]}
+            >
+              <ThemedText
+                style={[styles.nhiAssignText, { color: theme.buttonText }]}
+              >
                 Assign
               </ThemedText>
             </View>
@@ -487,7 +495,9 @@ export default function InboxScreen() {
               ]}
             >
               <Feather name="image" size={18} color={theme.text} />
-              <ThemedText style={[styles.captureButtonText, { color: theme.text }]}>
+              <ThemedText
+                style={[styles.captureButtonText, { color: theme.text }]}
+              >
                 Camera Roll
               </ThemedText>
             </Pressable>
@@ -640,7 +650,9 @@ export default function InboxScreen() {
                 <Feather
                   name="trash-2"
                   size={18}
-                  color={selectedIds.size > 0 ? theme.error : theme.textTertiary}
+                  color={
+                    selectedIds.size > 0 ? theme.error : theme.textTertiary
+                  }
                 />
               </Pressable>
             </>
@@ -676,9 +688,7 @@ export default function InboxScreen() {
             ]}
           >
             <Feather name="image" size={18} color={theme.text} />
-            <ThemedText
-              style={[styles.captureBarText, { color: theme.text }]}
-            >
+            <ThemedText style={[styles.captureBarText, { color: theme.text }]}>
               Camera Roll
             </ThemedText>
           </Pressable>
@@ -707,10 +717,7 @@ export default function InboxScreen() {
           </View>
           <Pressable
             onPress={() => setShowPreview(null)}
-            style={[
-              styles.previewClose,
-              { top: insets.top + Spacing.md },
-            ]}
+            style={[styles.previewClose, { top: insets.top + Spacing.md }]}
           >
             <Feather name="x" size={24} color={OVERLAY_TEXT} />
           </Pressable>
@@ -758,12 +765,11 @@ function CasePickerModal({
     getCases()
       .then((all) => {
         setTotalCases(all.length);
-        const sorted = all
-          .sort(
-            (a, b) =>
-              new Date(b.procedureDate ?? b.createdAt).getTime() -
-              new Date(a.procedureDate ?? a.createdAt).getTime(),
-          )
+        const sorted = all.sort(
+          (a, b) =>
+            new Date(b.procedureDate ?? b.createdAt).getTime() -
+            new Date(a.procedureDate ?? a.createdAt).getTime(),
+        );
         setAllCases(sorted);
         setRecentCases(sorted.slice(0, 50));
         setLoading(false);
@@ -791,23 +797,15 @@ function CasePickerModal({
       const dx = getPrimaryDiagnosisName(c) ?? "No diagnosis";
       const specialties = getCaseSpecialties(c);
       const specLabel =
-        specialties.length > 0
-          ? specialties[0]!.replace(/_/g, " ")
-          : undefined;
+        specialties.length > 0 ? specialties[0]!.replace(/_/g, " ") : undefined;
 
       return (
         <Pressable
           onPress={() => onSelectCase(c)}
-          style={[
-            styles.caseRow,
-            { borderBottomColor: theme.border },
-          ]}
+          style={[styles.caseRow, { borderBottomColor: theme.border }]}
         >
           <View style={styles.caseRowContent}>
-            <ThemedText
-              style={styles.caseDx}
-              numberOfLines={1}
-            >
+            <ThemedText style={styles.caseDx} numberOfLines={1}>
               {dx}
             </ThemedText>
             <ThemedText
@@ -886,14 +884,13 @@ function CasePickerModal({
             data={filtered}
             keyExtractor={(c) => c.id}
             renderItem={renderCase}
-            contentContainerStyle={{ paddingBottom: insets.bottom + Spacing.lg }}
+            contentContainerStyle={{
+              paddingBottom: insets.bottom + Spacing.lg,
+            }}
             ListFooterComponent={
               totalCases > 50 && !search ? (
                 <ThemedText
-                  style={[
-                    styles.casePickerHint,
-                    { color: theme.textTertiary },
-                  ]}
+                  style={[styles.casePickerHint, { color: theme.textTertiary }]}
                 >
                   Showing 50 most recent. Use search to find older cases.
                 </ThemedText>

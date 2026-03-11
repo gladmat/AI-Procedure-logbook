@@ -98,7 +98,12 @@ export const FREE_FLAP_PROTOCOL: CaptureProtocol = {
       captureHint: "Completed anastomosis before clamp release",
       phase: "intraop",
     },
-    { tag: "flap_inset", label: "Flap inset", required: true, phase: "intraop" },
+    {
+      tag: "flap_inset",
+      label: "Flap inset",
+      required: true,
+      phase: "intraop",
+    },
     {
       tag: "flap_perfusion",
       label: "Perfusion check",
@@ -112,7 +117,12 @@ export const FREE_FLAP_PROTOCOL: CaptureProtocol = {
       required: false,
       phase: "intraop",
     },
-    { tag: "donor_closure", label: "Donor site closure", required: false, phase: "intraop" },
+    {
+      tag: "donor_closure",
+      label: "Donor site closure",
+      required: false,
+      phase: "intraop",
+    },
     {
       tag: "immediate_postop",
       label: "End of operation",
@@ -376,7 +386,12 @@ export const AESTHETIC_BODY_PROTOCOL: CaptureProtocol = {
       required: true,
       phase: "preop",
     },
-    { tag: "aesthetic_posterior", label: "Posterior", required: true, phase: "preop" },
+    {
+      tag: "aesthetic_posterior",
+      label: "Posterior",
+      required: true,
+      phase: "preop",
+    },
     {
       tag: "aesthetic_divers",
       label: "Diver's view",
@@ -414,7 +429,12 @@ export const HAND_SURGERY_PROTOCOL: CaptureProtocol = {
       captureHint: "Both hands side by side for comparison",
       phase: "preop",
     },
-    { tag: "hand_palmar", label: "Palmar (extended)", required: true, phase: "preop" },
+    {
+      tag: "hand_palmar",
+      label: "Palmar (extended)",
+      required: true,
+      phase: "preop",
+    },
     { tag: "hand_lateral", label: "Lateral", required: false, phase: "preop" },
     {
       tag: "hand_fist",
@@ -437,12 +457,42 @@ export const HAND_SURGERY_PROTOCOL: CaptureProtocol = {
       captureHint: "Pathology-specific posture",
       phase: "preop",
     },
-    { tag: "wrist_flexion", label: "Wrist flexion", required: false, phase: "preop" },
-    { tag: "wrist_extension", label: "Wrist extension", required: false, phase: "preop" },
-    { tag: "wrist_supination", label: "Supination", required: false, phase: "preop" },
-    { tag: "wrist_pronation", label: "Pronation", required: false, phase: "preop" },
-    { tag: "xray_preop", label: "X-ray (pre-op)", required: false, phase: "preop" },
-    { tag: "xray_postop", label: "X-ray (post-op)", required: false, phase: "postop" },
+    {
+      tag: "wrist_flexion",
+      label: "Wrist flexion",
+      required: false,
+      phase: "preop",
+    },
+    {
+      tag: "wrist_extension",
+      label: "Wrist extension",
+      required: false,
+      phase: "preop",
+    },
+    {
+      tag: "wrist_supination",
+      label: "Supination",
+      required: false,
+      phase: "preop",
+    },
+    {
+      tag: "wrist_pronation",
+      label: "Pronation",
+      required: false,
+      phase: "preop",
+    },
+    {
+      tag: "xray_preop",
+      label: "X-ray (pre-op)",
+      required: false,
+      phase: "preop",
+    },
+    {
+      tag: "xray_postop",
+      label: "X-ray (post-op)",
+      required: false,
+      phase: "postop",
+    },
   ],
 };
 

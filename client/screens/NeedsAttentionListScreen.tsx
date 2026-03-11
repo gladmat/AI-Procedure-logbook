@@ -26,13 +26,19 @@ import { MediaCapture } from "@/components/MediaCapture";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
-import { getCases, updateCase, saveTimelineEvent } from "@/lib/storage";
+import {
+  getCase,
+  getCaseSummaries,
+  updateCase,
+  saveTimelineEvent,
+} from "@/lib/storage";
 import { toIsoDateValue } from "@/lib/dateValues";
 import { useActiveEpisodes } from "@/hooks/useActiveEpisodes";
 import { useAttentionItems } from "@/hooks/useAttentionItems";
 import { getFirstHistologyTarget } from "@/lib/skinCancerConfig";
 import type { AttentionItem } from "@/hooks/useAttentionItems";
 import type { Case, TimelineEvent, MediaAttachment } from "@/types/case";
+import type { CaseSummary } from "@/types/caseSummary";
 import { SPECIALTY_LABELS } from "@/types/case";
 import * as Haptics from "expo-haptics";
 import { useAuth } from "@/contexts/AuthContext";
@@ -59,7 +65,7 @@ export default function NeedsAttentionListScreen() {
   const { profile } = useAuth();
   const selectedSpecialty = route.params?.selectedSpecialty ?? null;
 
-  const [cases, setCases] = useState<Case[]>([]);
+  const [cases, setCases] = useState<CaseSummary[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
 
@@ -87,7 +93,7 @@ export default function NeedsAttentionListScreen() {
 
   const loadCases = useCallback(async () => {
     try {
-      const data = await getCases();
+      const data = await getCaseSummaries();
       setCases(data);
     } catch (error) {
       console.error("Error loading cases:", error);
@@ -178,19 +184,16 @@ export default function NeedsAttentionListScreen() {
     [navigation, selectedSpecialty, visibleEpisodes],
   );
 
-  const handleDischarge = useCallback(
-    (caseId: string) => {
-      const caseItem = personalizedCases.find((c) => c.id === caseId);
-      if (caseItem) {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        setDischargeCase(caseItem);
-        setDischargeDate(new Date());
-        setDischargePhotos([]);
-        setDischargeModalVisible(true);
-      }
-    },
-    [personalizedCases],
-  );
+  const handleDischarge = useCallback(async (caseId: string) => {
+    const caseItem = await getCase(caseId);
+    if (caseItem) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      setDischargeCase(caseItem);
+      setDischargeDate(new Date());
+      setDischargePhotos([]);
+      setDischargeModalVisible(true);
+    }
+  }, []);
 
   const handleConfirmDischarge = async () => {
     if (!dischargeCase) return;
@@ -222,23 +225,7 @@ export default function NeedsAttentionListScreen() {
       }
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-
-      setCases((prev) =>
-        prev.map((c) =>
-          c.id === dischargeCase.id
-            ? {
-                ...c,
-                dischargeDate: dateStr,
-                infectionOverlay: c.infectionOverlay
-                  ? {
-                      ...c.infectionOverlay,
-                      resolvedDate: dateStr,
-                    }
-                  : undefined,
-              }
-            : c,
-        ),
-      );
+      await Promise.all([loadCases(), refreshEpisodes()]);
 
       setDischargeModalVisible(false);
       setDischargeCase(null);
@@ -259,8 +246,8 @@ export default function NeedsAttentionListScreen() {
   };
 
   const handleAddEvent = useCallback(
-    (caseId: string) => {
-      const caseData = personalizedCases.find((item) => item.id === caseId);
+    async (caseId: string) => {
+      const caseData = await getCase(caseId);
       if (!caseData) return;
 
       navigation.navigate("AddTimelineEvent", {
@@ -268,12 +255,12 @@ export default function NeedsAttentionListScreen() {
         mediaContext: buildMediaContextFromCase(caseData),
       });
     },
-    [navigation, personalizedCases],
+    [navigation],
   );
 
   const handleAddHistology = useCallback(
-    (caseId: string) => {
-      const caseData = personalizedCases.find((c) => c.id === caseId);
+    async (caseId: string) => {
+      const caseData = await getCase(caseId);
       if (!caseData) return;
       const target = getFirstHistologyTarget(caseData);
       if (target) {
@@ -285,7 +272,7 @@ export default function NeedsAttentionListScreen() {
         });
       }
     },
-    [navigation, personalizedCases],
+    [navigation],
   );
 
   const getBadge = useCallback(

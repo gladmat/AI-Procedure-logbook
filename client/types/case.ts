@@ -1372,7 +1372,7 @@ export interface FreeFlapDetails {
   positionChangeRequired?: boolean;
   donorSiteClosureMethod?: DonorSiteClosureMethod;
 
-  // Flap outcome (dual-storage: local clinicalDetails + server procedure_outcomes)
+  // Flap outcome stored in local clinicalDetails
   flapOutcome?: FreeFlapOutcomeDetails;
 }
 

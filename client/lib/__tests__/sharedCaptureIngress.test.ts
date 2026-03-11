@@ -4,12 +4,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const deletedUris: string[] = [];
 const selectedInboxIds: string[][] = [];
-let pendingCaptures: Array<{
+let pendingCaptures: {
   id: string;
   sourceUri: string;
   mimeType?: string;
   capturedAt?: string;
-}> = [];
+}[] = [];
 let replacedCaptures: typeof pendingCaptures = [];
 let clearedCount = 0;
 let addToInboxImpl = vi.fn(
@@ -40,7 +40,8 @@ vi.mock("expo-file-system", () => ({
 }));
 
 vi.mock("../inboxStorage", () => ({
-  addToInbox: (...args: Parameters<typeof addToInboxImpl>) => addToInboxImpl(...args),
+  addToInbox: (...args: Parameters<typeof addToInboxImpl>) =>
+    addToInboxImpl(...args),
   setPendingInboxSelection: vi.fn((itemIds: string[]) => {
     selectedInboxIds.push(itemIds);
   }),
@@ -48,9 +49,11 @@ vi.mock("../inboxStorage", () => ({
 
 vi.mock("../nativeExtensionBridge", () => ({
   readPendingLockedCameraCaptures: vi.fn(() => pendingCaptures),
-  replacePendingLockedCameraCaptures: vi.fn((captures: typeof pendingCaptures) => {
-    replacedCaptures = captures;
-  }),
+  replacePendingLockedCameraCaptures: vi.fn(
+    (captures: typeof pendingCaptures) => {
+      replacedCaptures = captures;
+    },
+  ),
   clearPendingLockedCameraCaptures: vi.fn(() => {
     clearedCount += 1;
   }),

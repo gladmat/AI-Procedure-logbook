@@ -1,8 +1,14 @@
 import { useState, useCallback, useMemo } from "react";
 import { InteractionManager } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
-import { Case, Specialty, getCaseSpecialties, isPlannedCase } from "@/types/case";
-import { getCases } from "@/lib/storage";
+import {
+  Case,
+  Specialty,
+  getCaseSpecialties,
+  isPlannedCase,
+} from "@/types/case";
+import { getCasesByIds, getCaseSummaries } from "@/lib/storage";
+import { isPlannedCaseSummary } from "@/types/caseSummary";
 import {
   calculateBaseStatistics,
   calculateFreeFlapStatistics,
@@ -55,7 +61,17 @@ export function useStatistics(): UseStatisticsReturn {
     useCallback(() => {
       const task = InteractionManager.runAfterInteractions(async () => {
         try {
-          const data = await getCases();
+          const summaries = await getCaseSummaries();
+          const nonPlannedIds = summaries
+            .filter((summary) => !isPlannedCaseSummary(summary))
+            .map((summary) => summary.id);
+
+          if (nonPlannedIds.length === 0) {
+            setCases([]);
+            return;
+          }
+
+          const data = await getCasesByIds(nonPlannedIds);
           setCases(data.filter((c) => !isPlannedCase(c)));
         } catch (error) {
           console.error("Error loading cases for statistics:", error);

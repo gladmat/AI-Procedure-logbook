@@ -157,7 +157,7 @@ describe("inboxStorage", () => {
   });
 
   it("adds multiple assets and preserves smart import provenance", async () => {
-    const progress: Array<[number, number]> = [];
+    const progress: [number, number][] = [];
     const items = await addMultipleToInbox(
       [
         {
@@ -272,10 +272,15 @@ describe("inboxStorage", () => {
   });
 
   it("auto-deletes expired unassigned items using importedAt", async () => {
-    const oldItem = await addToInbox("file:///old.jpg", "image/jpeg", "camera", {
-      capturedAt: "2025-01-01T10:00:00.000Z",
-      importedAt: "2025-01-01T10:00:00.000Z",
-    });
+    const oldItem = await addToInbox(
+      "file:///old.jpg",
+      "image/jpeg",
+      "camera",
+      {
+        capturedAt: "2025-01-01T10:00:00.000Z",
+        importedAt: "2025-01-01T10:00:00.000Z",
+      },
+    );
     await addToInbox("file:///recent.jpg", "image/jpeg", "camera");
 
     const deletedCount = await cleanupOrphanedInboxItems(90);

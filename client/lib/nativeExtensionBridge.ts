@@ -23,7 +23,7 @@ type ExtensionStorageValue =
   | string
   | number
   | Record<string, string | number>
-  | Array<Record<string, string | number>>
+  | Record<string, string | number>[]
   | undefined;
 
 interface ExtensionStorageInstance {
@@ -51,6 +51,7 @@ function getExtensionStorageCtor(): ExtensionStorageConstructor | null {
   }
 
   try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { ExtensionStorage } = require("@bacons/apple-targets") as {
       ExtensionStorage: ExtensionStorageConstructor;
     };

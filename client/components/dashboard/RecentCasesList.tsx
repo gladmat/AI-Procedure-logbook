@@ -3,21 +3,22 @@ import { View, Pressable, StyleSheet } from "react-native";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing } from "@/constants/theme";
-import { Case, SPECIALTY_LABELS, Specialty } from "@/types/case";
+import { SPECIALTY_LABELS, Specialty } from "@/types/case";
+import type { CaseSummary } from "@/types/caseSummary";
 import { SkeletonCard } from "@/components/LoadingState";
 import { DashboardCaseCard } from "@/components/dashboard/CaseCard";
 import { InfoButton } from "@/components/dashboard/InfoButton";
 import { HISTOLOGY_FILTER_ID } from "@/lib/dashboardSelectors";
 
 interface RecentCasesListProps {
-  cases: Case[];
+  cases: CaseSummary[];
   selectedSpecialty: string | null;
   totalCount: number;
-  onCasePress: (c: Case) => void;
+  onCasePress: (c: CaseSummary) => void;
   loading: boolean;
   onSeeAll?: () => void;
-  onAddEvent?: (c: Case) => void;
-  onAddHistology?: (c: Case) => void;
+  onAddEvent?: (c: CaseSummary) => void;
+  onAddHistology?: (c: CaseSummary) => void;
 }
 
 function RecentCasesListInner({

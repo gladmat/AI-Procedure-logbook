@@ -14,10 +14,8 @@ import { ThemedText } from "@/components/ThemedText";
 import { DashboardCaseCard } from "@/components/dashboard/CaseCard";
 import { Feather } from "@/components/FeatherIcon";
 import { useTheme } from "@/hooks/useTheme";
-import { getCases } from "@/lib/storage";
-import { getCasePrimaryTitle } from "@/lib/caseDiagnosisSummary";
-import { getAllProcedures } from "@/types/case";
-import type { Case } from "@/types/case";
+import { getCaseSummaries } from "@/lib/storage";
+import type { CaseSummary } from "@/types/caseSummary";
 import { Spacing, BorderRadius } from "@/constants/theme";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -26,11 +24,11 @@ export default function CaseSearchScreen() {
   const navigation = useNavigation<Nav>();
   const { theme } = useTheme();
   const [query, setQuery] = useState("");
-  const [cases, setCases] = useState<Case[]>([]);
+  const [cases, setCases] = useState<CaseSummary[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getCases()
+    getCaseSummaries()
       .then(setCases)
       .finally(() => setLoading(false));
   }, []);
@@ -39,34 +37,18 @@ export default function CaseSearchScreen() {
     const q = query.trim().toLowerCase();
     if (!q) return cases;
 
-    return cases.filter((c) => {
-      if (c.patientIdentifier?.toLowerCase().includes(q)) return true;
-      if (c.patientFirstName?.toLowerCase().includes(q)) return true;
-      if (c.patientLastName?.toLowerCase().includes(q)) return true;
-      if (c.patientNhi?.toLowerCase().includes(q)) return true;
-
-      const title = getCasePrimaryTitle(c);
-      if (title?.toLowerCase().includes(q)) return true;
-
-      const procs = getAllProcedures(c);
-      if (procs.some((p) => p.procedureName?.toLowerCase().includes(q)))
-        return true;
-
-      if (c.facility?.toLowerCase().includes(q)) return true;
-
-      return false;
-    });
+    return cases.filter((c) => c.searchableText.includes(q));
   }, [cases, query]);
 
   const handleCasePress = useCallback(
-    (c: Case) => {
+    (c: CaseSummary) => {
       navigation.navigate("CaseDetail", { caseId: c.id });
     },
     [navigation],
   );
 
   const renderItem = useCallback(
-    ({ item }: { item: Case }) => (
+    ({ item }: { item: CaseSummary }) => (
       <DashboardCaseCard
         caseData={item}
         onPress={() => handleCasePress(item)}
@@ -75,7 +57,7 @@ export default function CaseSearchScreen() {
     [handleCasePress],
   );
 
-  const keyExtractor = useCallback((item: Case) => item.id, []);
+  const keyExtractor = useCallback((item: CaseSummary) => item.id, []);
 
   return (
     <View style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>

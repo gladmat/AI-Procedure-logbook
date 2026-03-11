@@ -147,7 +147,7 @@ export async function sendWelcomeEmail(
                 Welcome to ${APP_NAME}! Your account has been created successfully.
               </p>
               <p style="color: #333; font-size: 16px; line-height: 1.6; margin: 0 0 16px 0;">
-                ${APP_NAME} is your privacy-first surgical logbook designed for microsurgery and reconstruction procedures. All your patient data stays on your device.
+                ${APP_NAME} is a local-first surgical logbook designed for microsurgery and reconstruction procedures. Core patient records and media stay encrypted on your device, while your account and profile details are stored securely on our servers.
               </p>
               <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;">
               <p style="color: #666; font-size: 14px; line-height: 1.6; margin: 0;">
@@ -168,7 +168,7 @@ export async function sendWelcomeEmail(
 
 Welcome to ${APP_NAME}! Your account has been created successfully.
 
-${APP_NAME} is your privacy-first surgical logbook designed for microsurgery and reconstruction procedures. All your patient data stays on your device.
+${APP_NAME} is a local-first surgical logbook designed for microsurgery and reconstruction procedures. Core patient records and media stay encrypted on your device, while your account and profile details are stored securely on our servers.
 
 If you have any questions, feel free to reach out to us.
 

@@ -56,28 +56,3 @@ export async function hashPatientIdentifierHmac(
 export function isLegacyHash(hash: string): boolean {
   return !hash.startsWith(HMAC_HASH_PREFIX);
 }
-
-/**
- * Patient identity fields that must be stripped before server sync.
- * These fields are stored on-device only, never transmitted.
- */
-const PATIENT_IDENTITY_FIELDS = [
-  "patientFirstName",
-  "patientLastName",
-  "patientDateOfBirth",
-  "patientNhi",
-] as const;
-
-/**
- * Strip patient identity fields from a case before server sync.
- * This is the single most important security boundary in the app.
- */
-export function stripPatientIdentityForSync<
-  T extends Record<string, unknown>,
->(caseData: T): Omit<T, (typeof PATIENT_IDENTITY_FIELDS)[number]> {
-  const result = { ...caseData };
-  for (const field of PATIENT_IDENTITY_FIELDS) {
-    delete result[field];
-  }
-  return result;
-}

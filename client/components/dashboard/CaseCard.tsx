@@ -11,12 +11,13 @@ import {
   getAllProcedures,
   getPrimaryDiagnosisName,
   getPrimarySiteLabel,
-  isExcisionBiopsyDiagnosis,
 } from "@/types/case";
+import type { CaseSummary } from "@/types/caseSummary";
 import { getCasePrimaryTitle } from "@/lib/caseDiagnosisSummary";
 import {
   getSkinCancerCaseBadge,
   caseCanAddHistology,
+  caseNeedsHistology,
 } from "@/lib/skinCancerConfig";
 import { RoleBadge } from "@/components/RoleBadge";
 import { SpecialtyIcon } from "@/components/SpecialtyIcon";
@@ -73,8 +74,14 @@ function formatRelativeDate(dateStr: string): string {
   return date.toLocaleDateString("en-NZ", { day: "numeric", month: "short" });
 }
 
+type CaseCardData = Case | CaseSummary;
+
+function isCaseSummary(caseData: CaseCardData): caseData is CaseSummary {
+  return "searchableText" in caseData;
+}
+
 interface DashboardCaseCardProps {
-  caseData: Case;
+  caseData: CaseCardData;
   onPress: () => void;
   onAddEvent?: () => void;
   onAddHistology?: () => void;
@@ -83,10 +90,12 @@ interface DashboardCaseCardProps {
 const CaseThumbnail = React.memo(function CaseThumbnail({
   caseData,
 }: {
-  caseData: Case;
+  caseData: CaseCardData;
 }) {
   const { theme } = useTheme();
-  const firstPhoto = caseData.operativeMedia?.[0];
+  const firstPhoto = !isCaseSummary(caseData)
+    ? caseData.operativeMedia?.[0]
+    : null;
 
   if (firstPhoto?.localUri) {
     return (
@@ -122,9 +131,11 @@ const CaseThumbnail = React.memo(function CaseThumbnail({
   );
 });
 
-function SiteChip({ caseData }: { caseData: Case }) {
+function SiteChip({ caseData }: { caseData: CaseCardData }) {
   const { theme } = useTheme();
-  const label = getPrimarySiteLabel(caseData);
+  const label = isCaseSummary(caseData)
+    ? caseData.siteLabel
+    : getPrimarySiteLabel(caseData);
   if (!label) return null;
 
   return (
@@ -155,9 +166,13 @@ function DashboardCaseCardInner({
 
   // Resolve operative role from new model, falling back to legacy migration
   const resolvedRole: OperativeRole | undefined = (() => {
+    if (isCaseSummary(caseData)) {
+      return caseData.operativeRole;
+    }
     if (caseData.defaultOperativeRole) return caseData.defaultOperativeRole;
-    const legacyRole =
-      caseData.teamMembers.find((m) => m.id === caseData.ownerId)?.role;
+    const legacyRole = caseData.teamMembers.find(
+      (m) => m.id === caseData.ownerId,
+    )?.role;
     if (legacyRole && isLegacyRole(legacyRole)) {
       return migrateLegacyRole(legacyRole).role;
     }
@@ -165,12 +180,28 @@ function DashboardCaseCardInner({
   })();
   const showRoleBadge = resolvedRole != null && resolvedRole !== "SURGEON";
 
-  const caseTitle = getCasePrimaryTitle(caseData) || caseData.procedureType;
-  const primaryDiagnosis = getPrimaryDiagnosisName(caseData) || caseTitle;
-  const primaryProcedure =
-    getAllProcedures(caseData)[0]?.procedureName || caseData.procedureType;
+  const caseTitle = isCaseSummary(caseData)
+    ? caseData.diagnosisTitle || caseData.procedureType
+    : getCasePrimaryTitle(caseData) || caseData.procedureType;
+  const primaryDiagnosis = isCaseSummary(caseData)
+    ? caseData.diagnosisTitle || caseTitle
+    : getPrimaryDiagnosisName(caseData) || caseTitle;
+  const primaryProcedure = isCaseSummary(caseData)
+    ? caseData.primaryProcedureName || caseData.procedureType
+    : getAllProcedures(caseData)[0]?.procedureName || caseData.procedureType;
 
   const skinCancerBadge = useMemo(() => {
+    if (isCaseSummary(caseData)) {
+      if (!caseData.skinCancerBadgeLabel || !caseData.skinCancerBadgeColorKey) {
+        return null;
+      }
+
+      return {
+        label: caseData.skinCancerBadgeLabel,
+        colorKey: caseData.skinCancerBadgeColorKey,
+      };
+    }
+
     let best: { label: string; colorKey: string } | null = null;
     let bestPriority = Infinity;
 
@@ -193,19 +224,26 @@ function DashboardCaseCardInner({
       }
     }
     return best;
-  }, [caseData.diagnosisGroups]);
+  }, [caseData]);
 
   const hasHistologyPending =
     !skinCancerBadge &&
-    caseData.diagnosisGroups?.some(
-      (g) =>
-        g.diagnosisCertainty === "clinical" ||
-        isExcisionBiopsyDiagnosis(g.diagnosisPicklistId),
-    );
+    (isCaseSummary(caseData)
+      ? caseData.needsHistology
+      : caseNeedsHistology(caseData));
 
-  const showHistologyAction = onAddHistology && caseCanAddHistology(caseData);
+  const showHistologyAction =
+    onAddHistology &&
+    (isCaseSummary(caseData)
+      ? caseData.canAddHistology
+      : caseCanAddHistology(caseData));
   const hasActions = showHistologyAction || onAddEvent;
   const hasMeta = showRoleBadge || !!skinCancerBadge || !!hasHistologyPending;
+  const patientLabel = isCaseSummary(caseData)
+    ? caseData.patientDisplayName || caseData.patientIdentifier
+    : [caseData.patientFirstName, caseData.patientLastName]
+        .filter(Boolean)
+        .join(" ") || caseData.patientIdentifier;
 
   return (
     <Pressable
@@ -277,9 +315,7 @@ function DashboardCaseCardInner({
               style={[styles.patientId, { color: theme.textTertiary }]}
               numberOfLines={1}
             >
-              {[caseData.patientFirstName, caseData.patientLastName]
-                .filter(Boolean)
-                .join(" ") || caseData.patientIdentifier}
+              {patientLabel}
             </ThemedText>
           </View>
           {hasActions ? (

@@ -340,7 +340,9 @@ describe("CapturePhase", () => {
 
   it("free flap protocol has correct phase distribution", () => {
     const preop = FREE_FLAP_PROTOCOL.steps.filter((s) => s.phase === "preop");
-    const intraop = FREE_FLAP_PROTOCOL.steps.filter((s) => s.phase === "intraop");
+    const intraop = FREE_FLAP_PROTOCOL.steps.filter(
+      (s) => s.phase === "intraop",
+    );
     const postop = FREE_FLAP_PROTOCOL.steps.filter((s) => s.phase === "postop");
     expect(preop.length).toBe(3);
     expect(intraop.length).toBe(7);
@@ -348,7 +350,9 @@ describe("CapturePhase", () => {
   });
 
   it("skin cancer protocol has preop, intraop, and postop steps", () => {
-    const phases = new Set(SKIN_CANCER_EXCISION_PROTOCOL.steps.map((s) => s.phase));
+    const phases = new Set(
+      SKIN_CANCER_EXCISION_PROTOCOL.steps.map((s) => s.phase),
+    );
     expect(phases.has("preop")).toBe(true);
     expect(phases.has("intraop")).toBe(true);
     expect(phases.has("postop")).toBe(true);

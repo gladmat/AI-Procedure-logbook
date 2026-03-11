@@ -195,17 +195,13 @@ export const OperativeSection = React.memo(function OperativeSection() {
         }}
       />
 
-      {supervisionApplicable(
-        state.defaultOperativeRole as OperativeRole,
-      ) ? (
+      {supervisionApplicable(state.defaultOperativeRole as OperativeRole) ? (
         <SelectField
           label="Supervision Level"
           value={state.defaultSupervisionLevel}
           options={SUPERVISION_OPTIONS}
           onSelect={(v: string) =>
-            dispatch(
-              setField("defaultSupervisionLevel", v as SupervisionLevel),
-            )
+            dispatch(setField("defaultSupervisionLevel", v as SupervisionLevel))
           }
         />
       ) : null}
@@ -382,10 +378,7 @@ export const OperativeSection = React.memo(function OperativeSection() {
 
       {durationDisplay ? (
         <View
-          style={[
-            styles.durationCard,
-            { backgroundColor: theme.link + "10" },
-          ]}
+          style={[styles.durationCard, { backgroundColor: theme.link + "10" }]}
         >
           <Feather name="clock" size={16} color={theme.link} />
           <ThemedText style={[styles.durationText, { color: theme.link }]}>
@@ -479,9 +472,7 @@ export const OperativeSection = React.memo(function OperativeSection() {
       <SectionHeader title="Patient Factors" />
 
       <View style={styles.labelRow}>
-        <ThemedText
-          style={[styles.fieldLabel, { color: theme.textSecondary }]}
-        >
+        <ThemedText style={[styles.fieldLabel, { color: theme.textSecondary }]}>
           ASA Score
         </ThemedText>
         <Pressable
@@ -648,8 +639,7 @@ export const OperativeSection = React.memo(function OperativeSection() {
                         setField(
                           "selectedComorbidities",
                           state.selectedComorbidities.filter(
-                            (c) =>
-                              c.snomedCtCode !== comorbidity.snomedCtCode,
+                            (c) => c.snomedCtCode !== comorbidity.snomedCtCode,
                           ),
                         ),
                       );
@@ -700,10 +690,7 @@ export const OperativeSection = React.memo(function OperativeSection() {
             onPress={(e) => e.stopPropagation()}
           >
             <View
-              style={[
-                styles.modalHeader,
-                { borderBottomColor: theme.border },
-              ]}
+              style={[styles.modalHeader, { borderBottomColor: theme.border }]}
             >
               <ThemedText style={[styles.modalTitle, { color: theme.text }]}>
                 ASA Physical Status Classification
@@ -720,10 +707,7 @@ export const OperativeSection = React.memo(function OperativeSection() {
                 ([value, roman]) => (
                   <View
                     key={value}
-                    style={[
-                      styles.asaRow,
-                      { borderBottomColor: theme.border },
-                    ]}
+                    style={[styles.asaRow, { borderBottomColor: theme.border }]}
                   >
                     <View
                       style={[

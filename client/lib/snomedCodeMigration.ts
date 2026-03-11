@@ -150,8 +150,7 @@ export const OLD_TO_NEW_SNOMED: Record<string, SnomedMigrationEntry> = {
   },
   "202363001": {
     newCode: "37895003",
-    newDisplay:
-      "Osteoarthritis of first carpometacarpal joint (disorder)",
+    newDisplay: "Osteoarthritis of first carpometacarpal joint (disorder)",
   },
   "30886002": {
     newCode: "787484007",
@@ -183,8 +182,7 @@ export const OLD_TO_NEW_SNOMED: Record<string, SnomedMigrationEntry> = {
   },
   "134372003": {
     newCode: "703704008",
-    newDisplay:
-      "Giant cell tumour of tendon sheath (disorder)",
+    newDisplay: "Giant cell tumour of tendon sheath (disorder)",
   },
   "239185009": {
     newCode: "202231009",
@@ -207,8 +205,7 @@ export const OLD_TO_NEW_SNOMED: Record<string, SnomedMigrationEntry> = {
   },
   "263136000": {
     newCode: "781341000168104",
-    newDisplay:
-      "Closed reduction internal fixation of fracture (procedure)",
+    newDisplay: "Closed reduction internal fixation of fracture (procedure)",
   },
   "178730002": {
     newCode: "199044008",
@@ -366,8 +363,7 @@ export const OLD_TO_NEW_SNOMED: Record<string, SnomedMigrationEntry> = {
   },
   "174796008": {
     newCode: "430704003",
-    newDisplay:
-      "Incision and drainage of abscess of finger (procedure)",
+    newDisplay: "Incision and drainage of abscess of finger (procedure)",
   },
   "116244007": {
     newCode: "239460000",

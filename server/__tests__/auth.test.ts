@@ -111,18 +111,15 @@ describe("Protected endpoints require auth", () => {
     expect(res.status).toBe(401);
   });
 
-  it("POST /api/flaps returns 401 without token", async () => {
-    const res = await request(app)
-      .post("/api/flaps")
-      .send({ procedureId: "fake-id", flapDisplayName: "Test" });
+  it("GET /api/keys/me returns 401 without token", async () => {
+    const res = await request(app).get("/api/keys/me");
     expect(res.status).toBe(401);
   });
 
-  it("POST /api/anastomoses returns 401 without token", async () => {
-    const res = await request(app).post("/api/anastomoses").send({
-      flapId: "fake-id",
-      vesselType: "artery",
-      recipientVesselName: "test",
+  it("POST /api/keys/device returns 401 without token", async () => {
+    const res = await request(app).post("/api/keys/device").send({
+      deviceId: "device-1",
+      publicKey: "public-key",
     });
     expect(res.status).toBe(401);
   });
@@ -140,5 +137,9 @@ describe("Health check", () => {
     const res = await request(app).get("/api/health");
     expect(res.status).toBe(200);
     expect(res.body.status).toBe("ok");
+    expect(res.headers["content-security-policy"]).toContain(
+      "default-src 'self'",
+    );
+    expect(res.headers["x-frame-options"]).toBe("DENY");
   });
 });

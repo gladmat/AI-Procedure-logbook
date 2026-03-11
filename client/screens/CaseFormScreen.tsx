@@ -450,7 +450,10 @@ export default function CaseFormScreen() {
     setReviewMode(false);
   }, []);
 
-  const isCompletingPlanned = form.isEditMode && form.existingCase != null && isPlannedCase(form.existingCase);
+  const isCompletingPlanned =
+    form.isEditMode &&
+    form.existingCase != null &&
+    isPlannedCase(form.existingCase);
 
   const headerTitle = reviewMode
     ? "Review Case"
@@ -696,10 +699,7 @@ export default function CaseFormScreen() {
               ) : null}
             </SectionWrapper>
 
-            <SectionWrapper
-              sectionId="case"
-              onLayout={handleSectionLayout}
-            >
+            <SectionWrapper sectionId="case" onLayout={handleSectionLayout}>
               <CaseSection
                 scrollViewRef={scrollViewRef}
                 scrollPositionRef={scrollPositionRef}
@@ -731,7 +731,9 @@ export default function CaseFormScreen() {
             <SectionWrapper sectionId="outcomes" onLayout={handleSectionLayout}>
               <OutcomesSection
                 infectionOverlay={form.state.infectionOverlay ?? undefined}
-                onInfectionChange={(v) => form.dispatch(setField("infectionOverlay", v))}
+                onInfectionChange={(v) =>
+                  form.dispatch(setField("infectionOverlay", v))
+                }
                 infectionCollapsed={form.state.infectionCollapsed}
                 onInfectionToggle={() =>
                   form.dispatch(

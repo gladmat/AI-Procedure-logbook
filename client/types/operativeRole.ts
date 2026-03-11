@@ -26,15 +26,11 @@ export const OPERATIVE_ROLE_SHORT_LABELS: Record<OperativeRole, string> = {
 };
 
 export const OPERATIVE_ROLE_DESCRIPTIONS: Record<OperativeRole, string> = {
-  SURGEON:
-    "You performed the procedure (≥50% including critical portions)",
-  FIRST_ASST:
-    "You were scrubbed and actively assisting the primary surgeon",
-  SECOND_ASST:
-    "You provided additional scrubbed assistance (retraction, etc.)",
+  SURGEON: "You performed the procedure (≥50% including critical portions)",
+  FIRST_ASST: "You were scrubbed and actively assisting the primary surgeon",
+  SECOND_ASST: "You provided additional scrubbed assistance (retraction, etc.)",
   OBSERVER: "You were present but not scrubbed or performing",
-  SUPERVISOR:
-    "You supervised a more junior surgeon performing the case",
+  SUPERVISOR: "You supervised a more junior surgeon performing the case",
 };
 
 // ════════════════════════════════════════════════════════════════
@@ -69,14 +65,11 @@ export const SUPERVISION_SHORT_LABELS: Record<SupervisionLevel, string> = {
 
 export const SUPERVISION_DESCRIPTIONS: Record<SupervisionLevel, string> = {
   INDEPENDENT: "No supervisor present or needed for this procedure",
-  SUP_AVAILABLE:
-    "Supervisor in the hospital but not present in theatre",
+  SUP_AVAILABLE: "Supervisor in the hospital but not present in theatre",
   SUP_PRESENT:
     "Supervisor present in theatre for ≥70% of the procedure, not scrubbed",
-  SUP_SCRUBBED:
-    "Supervisor scrubbed at the table, available to take over",
-  DIRECTED:
-    "Supervisor actively guiding and directing you throughout",
+  SUP_SCRUBBED: "Supervisor scrubbed at the table, available to take over",
+  DIRECTED: "Supervisor actively guiding and directing you throughout",
   NOT_APPLICABLE: "Not applicable for this role",
 };
 
@@ -118,14 +111,7 @@ export function validSupervisionLevels(
 // ════════════════════════════════════════════════════════════════
 
 /** Old combined role codes from the current ProcedureEntryCard */
-export type LegacySurgeonRole =
-  | "PS"
-  | "PP"
-  | "AS"
-  | "ONS"
-  | "SS"
-  | "SNS"
-  | "A";
+export type LegacySurgeonRole = "PS" | "PP" | "AS" | "ONS" | "SS" | "SNS" | "A";
 
 export const LEGACY_ROLE_LABELS: Record<LegacySurgeonRole, string> = {
   PS: "Primary Surgeon",
@@ -170,9 +156,10 @@ export function isOperativeRole(role: string): role is OperativeRole {
  * Lossless for all codes except PP which maps to SURGEON + INDEPENDENT
  * (two consultants of equal standing, no supervision hierarchy).
  */
-export function migrateLegacyRole(
-  legacy: LegacySurgeonRole,
-): { role: OperativeRole; supervision: SupervisionLevel } {
+export function migrateLegacyRole(legacy: LegacySurgeonRole): {
+  role: OperativeRole;
+  supervision: SupervisionLevel;
+} {
   switch (legacy) {
     case "PS":
       return { role: "SURGEON", supervision: "INDEPENDENT" };

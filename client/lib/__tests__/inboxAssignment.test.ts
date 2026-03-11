@@ -26,13 +26,19 @@ function makeInboxItem(overrides: Partial<InboxItem> = {}): InboxItem {
 describe("inferMediaTagForInboxItem", () => {
   it("returns protocol step tag when template metadata is present", () => {
     // free_flap protocol, step 0 → tag "preop_clinical"
-    const item = makeInboxItem({ templateId: "free_flap", templateStepIndex: 0 });
+    const item = makeInboxItem({
+      templateId: "free_flap",
+      templateStepIndex: 0,
+    });
     expect(inferMediaTagForInboxItem(item)).toBe("preop_clinical");
   });
 
   it("returns correct tag for non-zero step index", () => {
     // free_flap protocol, step 4 → tag "flap_harvest"
-    const item = makeInboxItem({ templateId: "free_flap", templateStepIndex: 4 });
+    const item = makeInboxItem({
+      templateId: "free_flap",
+      templateStepIndex: 4,
+    });
     expect(inferMediaTagForInboxItem(item)).toBe("flap_harvest");
   });
 
@@ -73,7 +79,9 @@ describe("inferMediaTagForInboxItem", () => {
     const item = makeInboxItem({
       capturedAt: "2025-06-10T10:00:00.000Z",
     });
-    expect(inferMediaTagForInboxItem(item, "2025-06-15")).toBe("preop_clinical");
+    expect(inferMediaTagForInboxItem(item, "2025-06-15")).toBe(
+      "preop_clinical",
+    );
   });
 
   it("returns 'other' when no template and no procedureDate", () => {

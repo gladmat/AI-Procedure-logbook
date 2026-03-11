@@ -12,7 +12,6 @@ import {
   Pressable,
   ScrollView,
   FlatList,
-  Alert,
 } from "react-native";
 import * as Haptics from "expo-haptics";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
@@ -20,7 +19,6 @@ import { Feather } from "@/components/FeatherIcon";
 import { EncryptedImage } from "@/components/EncryptedImage";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
-import { useScreenOptions } from "@/hooks/useScreenOptions";
 import { Spacing, BorderRadius, Shadows } from "@/constants/theme";
 import { OperativeMediaItem, OperativeMediaType } from "@/types/case";
 import { MEDIA_TAG_REGISTRY } from "@/types/media";
@@ -35,10 +33,8 @@ type PhaseFilter = "all" | CapturePhase;
 
 export default function CaseMediaOrganiserScreen() {
   const { theme } = useTheme();
-  const screenOptions = useScreenOptions();
   const navigation = useNavigation();
-  const route =
-    useRoute<RouteProp<RootStackParamList, "CaseMediaOrganiser">>();
+  const route = useRoute<RouteProp<RootStackParamList, "CaseMediaOrganiser">>();
 
   const { callbackId, protocolSteps, procedureDate } = route.params;
   const { executeGenericCallback } = useMediaCallback();
@@ -92,7 +88,11 @@ export default function CaseMediaOrganiserScreen() {
         setMediaItems((prev) =>
           prev.map((m) =>
             m.id === filled.id
-              ? { ...m, tag: "other" as MediaTag, mediaType: "other" as OperativeMediaType }
+              ? {
+                  ...m,
+                  tag: "other" as MediaTag,
+                  mediaType: "other" as OperativeMediaType,
+                }
               : m,
           ),
         );
@@ -105,6 +105,29 @@ export default function CaseMediaOrganiserScreen() {
       }
     },
     [slotMapping, selectedSlotIndex],
+  );
+
+  const assignToSlot = useCallback(
+    (item: OperativeMediaItem, slotIndex: number) => {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      const step = protocolSteps[slotIndex];
+      if (!step) return;
+
+      setMediaItems((prev) =>
+        prev.map((m) =>
+          m.id === item.id
+            ? {
+                ...m,
+                tag: step.tag,
+                mediaType: (TAG_TO_MEDIA_TYPE[step.tag] ??
+                  "other") as OperativeMediaType,
+              }
+            : m,
+        ),
+      );
+      setSelectedSlotIndex(null);
+    },
+    [protocolSteps],
   );
 
   // Tap untagged photo → fill selected slot
@@ -125,29 +148,13 @@ export default function CaseMediaOrganiserScreen() {
 
       assignToSlot(item, selectedSlotIndex);
     },
-    [selectedSlotIndex, filteredSteps, protocolSteps, slotMapping],
-  );
-
-  const assignToSlot = useCallback(
-    (item: OperativeMediaItem, slotIndex: number) => {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      const step = protocolSteps[slotIndex];
-      if (!step) return;
-
-      setMediaItems((prev) =>
-        prev.map((m) =>
-          m.id === item.id
-            ? {
-                ...m,
-                tag: step.tag,
-                mediaType: (TAG_TO_MEDIA_TYPE[step.tag] ?? "other") as OperativeMediaType,
-              }
-            : m,
-        ),
-      );
-      setSelectedSlotIndex(null);
-    },
-    [protocolSteps],
+    [
+      assignToSlot,
+      selectedSlotIndex,
+      filteredSteps,
+      protocolSteps,
+      slotMapping,
+    ],
   );
 
   // Auto-organise
@@ -227,10 +234,7 @@ export default function CaseMediaOrganiserScreen() {
             </ThemedText>
             {step.required && (
               <View
-                style={[
-                  styles.requiredDot,
-                  { backgroundColor: theme.warning },
-                ]}
+                style={[styles.requiredDot, { backgroundColor: theme.warning }]}
               />
             )}
           </View>
@@ -311,8 +315,7 @@ export default function CaseMediaOrganiserScreen() {
                   phaseFilter === p.key
                     ? theme.link + "20"
                     : theme.backgroundDefault,
-                borderColor:
-                  phaseFilter === p.key ? theme.link : theme.border,
+                borderColor: phaseFilter === p.key ? theme.link : theme.border,
               },
             ]}
           >
@@ -347,10 +350,7 @@ export default function CaseMediaOrganiserScreen() {
       {/* Untagged strip */}
       {untaggedMedia.length > 0 && (
         <View
-          style={[
-            styles.untaggedSection,
-            { borderTopColor: theme.border },
-          ]}
+          style={[styles.untaggedSection, { borderTopColor: theme.border }]}
         >
           <View style={styles.untaggedHeader}>
             <ThemedText

@@ -521,7 +521,8 @@ const HAND_DX_TENDON_INJURIES: DiagnosisPicklistEntry[] = [
     displayName: "Bony mallet finger (fracture)",
     shortName: "Bony mallet",
     snomedCtCode: "208459000",
-    snomedCtDisplay: "Closed fracture of distal phalanx of finger, mallet (disorder)",
+    snomedCtDisplay:
+      "Closed fracture of distal phalanx of finger, mallet (disorder)",
     specialty: "hand_wrist",
     subcategory: "Tendon Injuries",
     clinicalGroup: "trauma",
@@ -1295,7 +1296,8 @@ const HAND_DX_JOINT: DiagnosisPicklistEntry[] = [
     displayName: "CMC1 osteoarthritis (thumb base OA)",
     shortName: "Thumb OA",
     snomedCtCode: "37895003",
-    snomedCtDisplay: "Osteoarthrosis of the carpometacarpal joint of the thumb (disorder)",
+    snomedCtDisplay:
+      "Osteoarthrosis of the carpometacarpal joint of the thumb (disorder)",
     specialty: "hand_wrist",
     subcategory: "Joint & Degenerative",
     clinicalGroup: "elective",
@@ -2153,8 +2155,7 @@ const HAND_DX_ELECTIVE_TENDON: DiagnosisPicklistEntry[] = [
     displayName: "EPL rupture (attritional / post-fracture)",
     shortName: "EPL rupture",
     snomedCtCode: "441885003",
-    snomedCtDisplay:
-      "Injury of extensor tendon of hand (disorder)",
+    snomedCtDisplay: "Injury of extensor tendon of hand (disorder)",
     specialty: "hand_wrist",
     subcategory: "Elective Tendon",
     clinicalGroup: "elective",
@@ -2342,8 +2343,7 @@ const HAND_DX_RHEUMATOID: DiagnosisPicklistEntry[] = [
     displayName: "Extensor tendon rupture — rheumatoid (Vaughan-Jackson)",
     shortName: "Vaughan-Jackson",
     snomedCtCode: "202961008",
-    snomedCtDisplay:
-      "Hand and wrist extensor tendon rupture (disorder)",
+    snomedCtDisplay: "Hand and wrist extensor tendon rupture (disorder)",
     specialty: "hand_wrist",
     subcategory: "Rheumatoid Hand",
     clinicalGroup: "elective",
@@ -2483,7 +2483,8 @@ const HAND_DX_OTHER: DiagnosisPicklistEntry[] = [
     displayName: "Giant cell tumour of tendon sheath",
     shortName: "GCTTS",
     snomedCtCode: "703704008",
-    snomedCtDisplay: "Giant cell tumour of synovium and/or tendon sheath (disorder)",
+    snomedCtDisplay:
+      "Giant cell tumour of synovium and/or tendon sheath (disorder)",
     specialty: "hand_wrist",
     subcategory: "Tumours & Other",
     clinicalGroup: "elective",

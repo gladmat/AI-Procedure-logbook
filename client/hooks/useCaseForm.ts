@@ -67,7 +67,6 @@ import {
 } from "@/lib/snomedCt";
 import { findDiagnosisById } from "@/lib/diagnosisPicklists";
 import { UserProfile } from "@/lib/auth";
-import { syncFlapOutcomeToServer } from "@/lib/outcomeSync";
 import { withDefaultFlapOutcome } from "@/lib/flapOutcomeDefaults";
 import { toIsoDateValue } from "@/lib/dateValues";
 import { resolveCaseFormSpecialty } from "@/lib/caseSpecialty";
@@ -610,10 +609,8 @@ export function draftToFormState(
     (draft as any).responsibleConsultantName ?? "";
   result.responsibleConsultantUserId =
     (draft as any).responsibleConsultantUserId ?? "";
-  result.defaultOperativeRole =
-    (draft as any).defaultOperativeRole ?? "";
-  result.defaultSupervisionLevel =
-    (draft as any).defaultSupervisionLevel ?? "";
+  result.defaultOperativeRole = (draft as any).defaultOperativeRole ?? "";
+  result.defaultSupervisionLevel = (draft as any).defaultSupervisionLevel ?? "";
   result.surgeryStartTime = draft.surgeryTiming?.startTime ?? "";
   result.surgeryEndTime = draft.surgeryTiming?.endTime ?? "";
   result.clinicalDetails =
@@ -1268,19 +1265,26 @@ export function useCaseForm({
     roleDefaultsAppliedRef.current = true;
 
     const defaults = suggestRoleDefaults(profile);
-    dispatch(
-      setField("defaultOperativeRole", defaults.role),
-    );
-    dispatch(
-      setField("defaultSupervisionLevel", defaults.supervision),
-    );
-    if (isConsultantLevel(profile.careerStage) && !state.responsibleConsultantName) {
-      const name = profile.fullName || [profile.firstName, profile.lastName].filter(Boolean).join(" ");
+    dispatch(setField("defaultOperativeRole", defaults.role));
+    dispatch(setField("defaultSupervisionLevel", defaults.supervision));
+    if (
+      isConsultantLevel(profile.careerStage) &&
+      !state.responsibleConsultantName
+    ) {
+      const name =
+        profile.fullName ||
+        [profile.firstName, profile.lastName].filter(Boolean).join(" ");
       if (name) {
         dispatch(setField("responsibleConsultantName", name));
       }
     }
-  }, [profile, isEditMode, isDuplicate, state.defaultOperativeRole, state.responsibleConsultantName]);
+  }, [
+    profile,
+    isEditMode,
+    isDuplicate,
+    state.defaultOperativeRole,
+    state.responsibleConsultantName,
+  ]);
 
   // Smart default for treatment context timing (Part 4C)
   useEffect(() => {
@@ -1842,7 +1846,8 @@ export function useCaseForm({
                     name: "You",
                     // Backward compat: derive legacy role from new model
                     role:
-                      state.defaultOperativeRole && state.defaultSupervisionLevel
+                      state.defaultOperativeRole &&
+                      state.defaultSupervisionLevel
                         ? toNearestLegacyRole(
                             state.defaultOperativeRole as OperativeRole,
                             state.defaultSupervisionLevel as SupervisionLevel,
@@ -1879,16 +1884,6 @@ export function useCaseForm({
         finalizeInboxAssignment(reservedInboxIds, savedCase.id);
         savedCase = await ensureSkinCancerEpisodeLink(savedCase);
         await syncSkinCancerEpisode(savedCase);
-
-        // Fire-and-forget: sync flap outcomes to server procedure_outcomes table (Part 8C)
-        for (const group of casePayload.diagnosisGroups) {
-          for (const proc of group.procedures) {
-            const cd = proc.clinicalDetails as FreeFlapDetails | undefined;
-            if (cd?.flapOutcome && proc.id) {
-              syncFlapOutcomeToServer(proc.id, cd.flapOutcome).catch(() => {});
-            }
-          }
-        }
 
         // Auto-activate planned episode when first case is saved
         if (savedCase.episodeId) {

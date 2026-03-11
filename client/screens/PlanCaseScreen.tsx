@@ -7,7 +7,7 @@ import {
   Alert,
   Pressable,
 } from "react-native";
-import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
+import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
@@ -16,7 +16,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { DatePickerField } from "@/components/FormField";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/contexts/AuthContext";
-import { Spacing, BorderRadius, Shadows } from "@/constants/theme";
+import { Spacing, BorderRadius } from "@/constants/theme";
 import { Specialty, SPECIALTY_LABELS, Case } from "@/types/case";
 import { getVisibleSpecialties } from "@/lib/personalization";
 import { saveCase } from "@/lib/storage";

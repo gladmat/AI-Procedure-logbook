@@ -9,6 +9,64 @@
 
 const ONTOSERVER_BASE_URL = "https://r4.ontoserver.csiro.au/fhir";
 const FETCH_TIMEOUT_MS = 8000;
+const SEARCH_CACHE_TTL_MS = 5 * 60 * 1000;
+const CONCEPT_CACHE_TTL_MS = 60 * 60 * 1000;
+
+interface CacheEntry<T> {
+  expiresAt: number;
+  value: T;
+}
+
+const procedureSearchCache = new Map<
+  string,
+  CacheEntry<SnomedSearchResult[]>
+>();
+const diagnosisSearchCache = new Map<
+  string,
+  CacheEntry<SnomedSearchResult[]>
+>();
+const conceptDetailCache = new Map<
+  string,
+  CacheEntry<SnomedConceptDetail | null>
+>();
+
+function getCachedValue<T>(
+  cache: Map<string, CacheEntry<T>>,
+  key: string,
+): T | undefined {
+  const entry = cache.get(key);
+  if (!entry) {
+    return undefined;
+  }
+
+  if (entry.expiresAt <= Date.now()) {
+    cache.delete(key);
+    return undefined;
+  }
+
+  return entry.value;
+}
+
+function setCachedValue<T>(
+  cache: Map<string, CacheEntry<T>>,
+  key: string,
+  value: T,
+  ttlMs: number,
+): T {
+  cache.set(key, {
+    value,
+    expiresAt: Date.now() + ttlMs,
+  });
+  return value;
+}
+
+function makeSearchCacheKey(
+  query: string,
+  specialty: string | undefined,
+  limit: number,
+): string {
+  return `${query.trim().toLowerCase()}::${specialty ?? ""}::${limit}`;
+}
 
 async function fetchWithTimeout(
   url: string,
@@ -125,6 +183,12 @@ export async function searchProcedures(
     return [];
   }
 
+  const cacheKey = makeSearchCacheKey(query, specialty, limit);
+  const cached = getCachedValue(procedureSearchCache, cacheKey);
+  if (cached) {
+    return cached;
+  }
+
   try {
     // ECL expression for procedures: <<71388002 (all descendants of Procedure)
     const ecl = `<<${SNOMED_HIERARCHIES.PROCEDURE}`;
@@ -135,8 +199,6 @@ export async function searchProcedures(
       `url=http://snomed.info/sct?fhir_vs=ecl/${eclEncoded}` +
       `&filter=${encodeURIComponent(query)}` +
       `&count=${limit}`;
-
-    console.log("SNOMED procedure search:", query);
 
     const response = await fetchWithTimeout(url, {
       headers: {
@@ -151,9 +213,12 @@ export async function searchProcedures(
 
     const data = (await response.json()) as FhirExpansionResponse;
     const results = parseFhirExpansion(data);
-
-    console.log(`SNOMED procedures found: ${results.length}`);
-    return results;
+    return setCachedValue(
+      procedureSearchCache,
+      cacheKey,
+      results,
+      SEARCH_CACHE_TTL_MS,
+    );
   } catch (error) {
     if (error instanceof Error && error.name === "AbortError") {
       console.error("SNOMED procedure search timed out");
@@ -179,6 +244,12 @@ export async function searchDiagnoses(
     return [];
   }
 
+  const cacheKey = makeSearchCacheKey(query, specialty, limit);
+  const cached = getCachedValue(diagnosisSearchCache, cacheKey);
+  if (cached) {
+    return cached;
+  }
+
   try {
     // ECL expression for clinical findings: <<404684003 (all descendants of Clinical finding)
     const ecl = `<<${SNOMED_HIERARCHIES.CLINICAL_FINDING}`;
@@ -189,8 +260,6 @@ export async function searchDiagnoses(
       `url=http://snomed.info/sct?fhir_vs=ecl/${eclEncoded}` +
       `&filter=${encodeURIComponent(query)}` +
       `&count=${limit}`;
-
-    console.log("SNOMED diagnosis search:", query);
 
     const response = await fetchWithTimeout(url, {
       headers: {
@@ -205,9 +274,12 @@ export async function searchDiagnoses(
 
     const data = (await response.json()) as FhirExpansionResponse;
     const results = parseFhirExpansion(data);
-
-    console.log(`SNOMED diagnoses found: ${results.length}`);
-    return results;
+    return setCachedValue(
+      diagnosisSearchCache,
+      cacheKey,
+      results,
+      SEARCH_CACHE_TTL_MS,
+    );
   } catch (error) {
     if (error instanceof Error && error.name === "AbortError") {
       console.error("SNOMED diagnosis search timed out");
@@ -227,6 +299,11 @@ export async function searchDiagnoses(
 export async function getConceptDetails(
   conceptId: string,
 ): Promise<SnomedConceptDetail | null> {
+  const cached = getCachedValue(conceptDetailCache, conceptId);
+  if (cached !== undefined) {
+    return cached;
+  }
+
   try {
     const url =
       `${ONTOSERVER_BASE_URL}/CodeSystem/$lookup?` +
@@ -284,20 +361,30 @@ export async function getConceptDetails(
       }
     }
 
-    return {
+    return setCachedValue(
+      conceptDetailCache,
       conceptId,
-      fsn: fsn || display,
-      preferredTerm: display,
-      synonyms: [...new Set(synonyms)],
-      parents,
-      children,
-    };
+      {
+        conceptId,
+        fsn: fsn || display,
+        preferredTerm: display,
+        synonyms: [...new Set(synonyms)],
+        parents,
+        children,
+      },
+      CONCEPT_CACHE_TTL_MS,
+    );
   } catch (error) {
     console.error(
       "Error fetching SNOMED concept details:",
       error instanceof Error ? error.message : "Unknown error",
     );
-    return null;
+    return setCachedValue(
+      conceptDetailCache,
+      conceptId,
+      null,
+      SEARCH_CACHE_TTL_MS,
+    );
   }
 }
 

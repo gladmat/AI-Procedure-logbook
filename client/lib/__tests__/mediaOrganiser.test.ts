@@ -10,7 +10,9 @@ import {
 
 // ── Helpers ──────────────────────────────────────────────────
 
-function makeMedia(overrides: Partial<OperativeMediaItem> = {}): OperativeMediaItem {
+function makeMedia(
+  overrides: Partial<OperativeMediaItem> = {},
+): OperativeMediaItem {
   return {
     id: `media-${Math.random().toString(36).slice(2, 8)}`,
     localUri: "opus-media:test-uuid",
@@ -83,8 +85,16 @@ describe("autoAssign", () => {
 
   it("fills empty slots sequentially with untagged photos", () => {
     const media = [
-      makeMedia({ id: "m1", tag: "other", createdAt: "2025-06-15T09:00:00.000Z" }),
-      makeMedia({ id: "m2", tag: "other", createdAt: "2025-06-15T10:00:00.000Z" }),
+      makeMedia({
+        id: "m1",
+        tag: "other",
+        createdAt: "2025-06-15T09:00:00.000Z",
+      }),
+      makeMedia({
+        id: "m2",
+        tag: "other",
+        createdAt: "2025-06-15T10:00:00.000Z",
+      }),
     ];
     const steps = [
       makeStep({ tag: "preop_clinical" }),
@@ -238,7 +248,10 @@ describe("findMatchingCasesByPatientId", () => {
     expect(findMatchingCasesByPatientId([], [])).toEqual([]);
     expect(findMatchingCasesByPatientId([], [makeCase()])).toEqual([]);
     expect(
-      findMatchingCasesByPatientId([makeInboxItem({ patientIdentifier: "X" })], []),
+      findMatchingCasesByPatientId(
+        [makeInboxItem({ patientIdentifier: "X" })],
+        [],
+      ),
     ).toEqual([]);
   });
 });

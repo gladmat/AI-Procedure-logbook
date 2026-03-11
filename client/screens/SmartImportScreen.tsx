@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+} from "react";
 import {
   View,
   Pressable,
@@ -66,7 +72,10 @@ export default function SmartImportScreen() {
   const navigation = useNavigation<NavProp>();
   const route = useRoute<Route>();
   const { executeGenericCallback } = useMediaCallback();
-  const params = route.params ?? { targetMode: "inbox" as const };
+  const params = useMemo(
+    () => route.params ?? { targetMode: "inbox" as const },
+    [route.params],
+  );
 
   const [phase, setPhase] = useState<ImportPhase>("picking");
   const [progress, setProgress] = useState({ completed: 0, total: 0 });

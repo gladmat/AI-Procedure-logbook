@@ -7,9 +7,8 @@ module.exports = (config) => ({
   deploymentTarget: "18.0",
   frameworks: ["LockedCameraCapture", "SwiftUI", "AppIntents", "AVFoundation"],
   entitlements: {
-    "com.apple.security.application-groups":
-      config.ios.entitlements?.["com.apple.security.application-groups"] ?? [
-        "group.com.drgladysz.opus",
-      ],
+    "com.apple.security.application-groups": config.ios.entitlements?.[
+      "com.apple.security.application-groups"
+    ] ?? ["group.com.drgladysz.opus"],
   },
 });

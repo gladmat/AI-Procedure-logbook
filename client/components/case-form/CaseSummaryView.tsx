@@ -239,9 +239,7 @@ export function CaseSummaryView({
 
   const hasWarnings = errors.length > 0;
   const patientWarning = errors.find((e) => e.sectionId === "patient")?.message;
-  const diagnosisWarning = errors.find(
-    (e) => e.sectionId === "case",
-  )?.message;
+  const diagnosisWarning = errors.find((e) => e.sectionId === "case")?.message;
 
   return (
     <View style={styles.container}>

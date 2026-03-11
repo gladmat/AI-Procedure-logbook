@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import type { Case, Specialty } from "@/types/case";
-import { getCaseSpecialties } from "@/types/case";
+import { getCaseSpecialties, getPatientDisplayName } from "@/types/case";
+import type { CaseSummary } from "@/types/caseSummary";
 import type { EpisodeWithCases } from "@/hooks/useActiveEpisodes";
 import { PENDING_ACTION_LABELS } from "@/types/episode";
 import { getCasePrimaryTitle } from "@/lib/caseDiagnosisSummary";
@@ -32,8 +33,42 @@ export interface AttentionItem {
 
 const DAY_MS = 1000 * 60 * 60 * 24;
 
+function isCaseSummary(caseData: Case | CaseSummary): caseData is CaseSummary {
+  return "searchableText" in caseData;
+}
+
+function getAttentionSpecialties(caseData: Case | CaseSummary): Specialty[] {
+  return isCaseSummary(caseData)
+    ? caseData.specialties
+    : getCaseSpecialties(caseData);
+}
+
+function getAttentionPatientIdentifier(caseData: Case | CaseSummary): string {
+  return isCaseSummary(caseData)
+    ? caseData.patientDisplayName || caseData.patientIdentifier
+    : getPatientDisplayName(caseData) || caseData.patientIdentifier;
+}
+
+function getAttentionDiagnosisTitle(caseData: Case | CaseSummary): string {
+  return isCaseSummary(caseData)
+    ? caseData.diagnosisTitle || caseData.procedureType || "Unknown"
+    : getCasePrimaryTitle(caseData) || caseData.procedureType || "Unknown";
+}
+
+function getAttentionSpecialty(caseData: Case | CaseSummary): Specialty {
+  return isCaseSummary(caseData)
+    ? caseData.specialty
+    : (caseData.diagnosisGroups[0]?.specialty ?? caseData.specialty);
+}
+
+function getAttentionCanAddHistology(caseData: Case | CaseSummary): boolean {
+  return isCaseSummary(caseData)
+    ? caseData.canAddHistology
+    : caseCanAddHistology(caseData);
+}
+
 export function useAttentionItems(
-  cases: Case[],
+  cases: (Case | CaseSummary)[],
   episodesWithCases: EpisodeWithCases[],
   selectedSpecialty: string | null,
 ): AttentionItem[] {
@@ -49,7 +84,7 @@ export function useAttentionItems(
       if (c.dischargeDate) continue;
 
       if (selectedSpecialty) {
-        const specialties = getCaseSpecialties(c);
+        const specialties = getAttentionSpecialties(c);
         if (!specialties.includes(selectedSpecialty as never)) continue;
       }
 
@@ -64,14 +99,14 @@ export function useAttentionItems(
       inpatientItems.push({
         id: `inpatient-${c.id}`,
         type: "inpatient",
-        patientIdentifier: c.patientIdentifier,
-        diagnosisTitle: getCasePrimaryTitle(c) || c.procedureType || "Unknown",
-        specialty: c.diagnosisGroups[0]?.specialty ?? c.specialty,
+        patientIdentifier: getAttentionPatientIdentifier(c),
+        diagnosisTitle: getAttentionDiagnosisTitle(c),
+        specialty: getAttentionSpecialty(c),
         facility: c.facility,
         caseId: c.id,
         postOpDay,
         hasEpisodeLink: !!c.episodeId,
-        canAddHistology: caseCanAddHistology(c),
+        canAddHistology: getAttentionCanAddHistology(c),
       });
     }
 
@@ -85,8 +120,11 @@ export function useAttentionItems(
     const infectionCaseIds = new Set<string>();
 
     for (const c of cases) {
-      if (c.infectionOverlay?.status !== "active") {
-        // Check for non-escalated hand infections with concerning severity
+      if (isCaseSummary(c)) {
+        if (c.infectionStatus !== "active" && !c.hasSevereHandInfection) {
+          continue;
+        }
+      } else if (c.infectionOverlay?.status !== "active") {
         const hasSevereHandInfection = c.diagnosisGroups?.some(
           (g) =>
             g.handInfectionDetails &&
@@ -101,25 +139,27 @@ export function useAttentionItems(
       infectionCaseIds.add(c.id);
 
       if (selectedSpecialty) {
-        const specialties = getCaseSpecialties(c);
+        const specialties = getAttentionSpecialties(c);
         if (!specialties.includes(selectedSpecialty as never)) continue;
       }
 
-      const syndromePrimary = c.infectionOverlay?.syndromePrimary;
-      const syndromeLabel = syndromePrimary
-        ? (INFECTION_SYNDROME_LABELS[syndromePrimary] ?? syndromePrimary)
-        : "Hand infection";
+      const syndromeLabel = isCaseSummary(c)
+        ? c.infectionSyndrome || "Hand infection"
+        : c.infectionOverlay?.syndromePrimary
+          ? (INFECTION_SYNDROME_LABELS[c.infectionOverlay.syndromePrimary] ??
+            c.infectionOverlay.syndromePrimary)
+          : "Hand infection";
       infectionItems.push({
         id: `infection-${c.id}`,
         type: "infection",
-        patientIdentifier: c.patientIdentifier,
-        diagnosisTitle: getCasePrimaryTitle(c) || c.procedureType || "Unknown",
-        specialty: c.diagnosisGroups[0]?.specialty ?? c.specialty,
+        patientIdentifier: getAttentionPatientIdentifier(c),
+        diagnosisTitle: getAttentionDiagnosisTitle(c),
+        specialty: getAttentionSpecialty(c),
         facility: c.facility,
         caseId: c.id,
         hasEpisodeLink: !!c.episodeId,
         infectionSyndrome: syndromeLabel,
-        canAddHistology: caseCanAddHistology(c),
+        canAddHistology: getAttentionCanAddHistology(c),
       });
     }
 

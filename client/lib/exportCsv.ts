@@ -4,8 +4,6 @@ import {
   resolveSupervisionLevel,
   OPERATIVE_ROLE_LABELS,
   SUPERVISION_LABELS,
-  migrateLegacyRole,
-  isLegacyRole,
   toNearestLegacyRole,
 } from "@/types/operativeRole";
 import { TreatmentEpisode, ENCOUNTER_CLASS_LABELS } from "@/types/episode";

@@ -4,7 +4,7 @@
 
 **Opus** is a full-stack Expo/React Native surgical case logbook app for documenting surgical procedures, tracking post-operative outcomes, and generating analytics. Privacy-first design with on-device encrypted storage and E2EE scaffolding. Integrates RACS MALT fields for Australian surgical audit compliance.
 
-Key capabilities: multi-specialty case logging, SNOMED CT coded diagnoses and procedures, free flap and anastomosis documentation, wound episode tracking, infection monitoring, treatment episodes, hand trauma workflow, multi-lesion sessions, procedure outcomes, app lock (PIN/biometric), favourites/recents, and data export (CSV/FHIR).
+Key capabilities: multi-specialty case logging, SNOMED CT coded diagnoses and procedures, free flap and anastomosis documentation, wound episode tracking, infection monitoring, treatment episodes, hand trauma workflow, multi-lesion sessions, app lock (PIN/biometric), favourites/recents, and data export (CSV/FHIR).
 
 ### Brand identity
 
@@ -35,35 +35,35 @@ Key capabilities: multi-specialty case logging, SNOMED CT coded diagnoses and pr
 - **Capture Pipeline Phase F COMPLETE** — Planned Case types and storage: CaseStatus extended with `"planned"`, Case interface extended with `plannedDate?`, `plannedNote?`, `plannedTemplateId?`, `OperativeMediaItem` extended with `templateId?`/`templateStepIndex?` for Opus Camera metadata carry-through, `resolvedCaseStatus()`/`isPlannedCase()` helpers, `filterOutPlannedCases()`/`getPlannedCases()`/`getPlannedCaseCount()` dashboard selectors, planned cases excluded from statistics, `plannedDate` CSV column, FHIR `"planned"` encounter status, `CaseIndexEntry` extended with `caseStatus`/`plannedDate`, 18 new tests
 - **Capture Pipeline Phase G COMPLETE** — Planned Case creation UI and access: `PlanCaseScreen` (ultra-minimal modal form: patient ID, planned date, specialty, note, template picker, "Open Opus Camera" button, Cancel header button, wrapping chip layout), `PlannedCaseListScreen` (sorted by plannedDate, per-row quick actions: Complete Case → CaseFormScreen edit mode, Camera → OpusCameraScreen), `AddCaseFAB` speed dial (animated vertical mini-FAB fan-out: Log a Case / Quick Capture / Plan a Case, staggered spring animation, backdrop dismiss, '+' rotates to '×'), completion flow overwrites `caseStatus: "planned"` → active/incomplete/discharged on save, `CaseFormScreen` shows "Complete Case" header when editing planned case
 - **Capture Pipeline Phase H COMPLETE** — Two-Layer Photo Assignment: `autoAssign()` pure function (template metadata priority → sequential fill → leave untagged), `findMatchingCasesByPatientId()` for NHI auto-match (case-insensitive, sorted by match count), `CaseMediaOrganiserScreen` (protocol slot grid + untagged strip, tap-to-assign, phase filter tabs, auto-organise button, Done returns updated media via MediaCallbackContext), "Organise with protocol" button in OperativeMediaSection (shown when protocol exists + untagged photos present), NHI auto-match banner in InboxScreen (async case loading, one-tap assign), 15 new tests (autoAssign + findMatchingCasesByPatientId + template metadata), 624 tests total
-- **Patient Identity COMPLETE** — On-device structured patient identity: `patientFirstName`, `patientLastName`, `patientDateOfBirth` (replaces `age`), `patientNhi` (NZ NHI with mod-11 check digit validation). Country-aware UI (`countryOfPractice === 'NZ'` → NHI field, non-NZ → generic identifier). Per-user HMAC-SHA256 replacing bare SHA-256 for patient identifier hashing (key in iOS Keychain via `expo-secure-store`), `hmac:` prefix distinguishes new hashes, lazy migration on case load, dual-hash lookup for backward compat. `stripPatientIdentityForSync()` security boundary removes identity fields before server sync. `nhiValidation.ts` (format + check digit), `patientIdentifierHmac.ts` (HMAC key management + hashing). PatientInfoSection refactored with NHI/name/DOB fields + privacy indicator. All display surfaces updated (CaseDetailScreen, CaseCard, CaseSummaryView, dashboard attention cards). CSV export +5 columns (43 total), FHIR Patient resource, PDF patient header, search by name/NHI, 25 new tests (12 NHI + 13 identity), 649 tests total
+- **Patient Identity COMPLETE** — On-device structured patient identity: `patientFirstName`, `patientLastName`, `patientDateOfBirth` (replaces `age`), `patientNhi` (NZ NHI with mod-11 check digit validation). Country-aware UI (`countryOfPractice === 'NZ'` → NHI field, non-NZ → generic identifier). Per-user HMAC-SHA256 replacing bare SHA-256 for patient identifier hashing (key in iOS Keychain via `expo-secure-store`), `hmac:` prefix distinguishes new hashes, lazy migration on case load, dual-hash lookup for backward compat. `nhiValidation.ts` (format + check digit), `patientIdentifierHmac.ts` (HMAC key management + hashing). PatientInfoSection refactored with NHI/name/DOB fields + privacy indicator. All display surfaces updated (CaseDetailScreen, CaseCard, CaseSummaryView, dashboard attention cards). CSV export +5 columns (43 total), FHIR Patient resource, PDF patient header, search by name/NHI, 25 new tests (12 NHI + 13 identity), 649 tests total
 - **Capture Pipeline Audit Remediation COMPLETE** — Inbox hardened into encrypted MMKV state with SecureStore-backed key, schema v2 metadata (`capturedAt`, `importedAt`, `status`, `sourceAssetId`, dimensions, patient hash) and deterministic captured-time sorting; inbox selection is now transactional (`unassigned` → `reserved` → `assigned`) with finalize-on-save, cancel/discard release, and stale reservation cleanup; Smart Import preserves original asset creation time and can stage to Inbox or attach directly to a case; Opus Camera now supports `targetMode` (`inbox` vs direct case attach), blocks dismissal while queued encryption finishes, and surfaces save failures; planned-case camera flow now auto-saves the minimal planned case before opening capture; Dashboard Inbox relocated from large shortcut row + attention card to compact header icon with badge count, case picker search now expands beyond the previous recent-only slice; iOS native scaffold added via `@bacons/apple-targets` with App Group entitlement, Inbox widget + Control Center capture control, shared extension storage bridge, pending locked-camera capture ingestion, locked-camera extension scaffold, and `opus://camera` / `opus://inbox` deep-link handling; targeted capture workflow suites now cover inbox storage, assignment, protocol tagging, media UI, and shared native ingress (75 passing tests)
 - **Operative Role & Supervision COMPLETE** — Three-dimensional role model (OperativeRole × SupervisionLevel × Responsible Consultant) replacing legacy 7-value `Role` type. Case-level defaults with per-procedure override, smart profile-based defaults (`suggestRoleDefaults`), 6 export format mappings (RACS MALT, JDocs, UK eLogbook, ACGME, German, Swiss), `migrateLegacyRole()` for backward compat, operating team UI removed, `RoleBadge` supports both Role and OperativeRole types, CSV/FHIR/PDF exports updated with role+supervision+consultant columns, statistics role breakdown uses OperativeRole, 68 new tests (703 total)
 - **Phase 5 IN PROGRESS** — Version 2.0.0, EAS config done (dev/preview/production profiles), pending manual regression + TestFlight submission
 
 ## Tech stack
 
-| Layer | Technology | Version |
-|-------|-----------|---------|
-| Framework | Expo | 54 |
-| UI | React Native | 0.81.5 |
-| React | React | 19.1.0 |
-| Language | TypeScript | 5.9.2 |
-| Navigation | React Navigation | 7 (@native 7.1.8, @native-stack 7.3.16, @bottom-tabs 7.4.0) |
-| Server state | TanStack React Query | 5.90.7 |
-| Animation | React Native Reanimated | 4.1.1 |
-| Camera | expo-camera | 17.0.10 |
-| Native Targets | @bacons/apple-targets | 4.0.6 |
-| Charts | React Native SVG | 15.12.1 |
-| Backend | Express | 4.21.2 |
-| ORM | Drizzle ORM | 0.39.3 |
-| Database | PostgreSQL (pg) | 8.16.3 |
-| Auth | JWT (jsonwebtoken 9.0.3) + bcryptjs 3.0.3 |
-| Encryption | @noble/ciphers 2.1.1, @noble/curves 2.0.1, @noble/hashes 2.0.1 |
-| Email | Resend | 4.0.0 |
-| Validation | Zod | 3.25.76 (+ drizzle-zod 0.7.1) |
-| Testing | Vitest | 4.0.18 |
-| Build (server) | esbuild (via tsx 4.20.6 for dev) |
-| Build (client) | Expo / EAS |
+| Layer          | Technology                                                     | Version                                                     |
+| -------------- | -------------------------------------------------------------- | ----------------------------------------------------------- |
+| Framework      | Expo                                                           | 54                                                          |
+| UI             | React Native                                                   | 0.81.5                                                      |
+| React          | React                                                          | 19.1.0                                                      |
+| Language       | TypeScript                                                     | 5.9.2                                                       |
+| Navigation     | React Navigation                                               | 7 (@native 7.1.8, @native-stack 7.3.16, @bottom-tabs 7.4.0) |
+| Server state   | TanStack React Query                                           | 5.90.7                                                      |
+| Animation      | React Native Reanimated                                        | 4.1.1                                                       |
+| Camera         | expo-camera                                                    | 17.0.10                                                     |
+| Native Targets | @bacons/apple-targets                                          | 4.0.6                                                       |
+| Charts         | React Native SVG                                               | 15.12.1                                                     |
+| Backend        | Express                                                        | 4.21.2                                                      |
+| ORM            | Drizzle ORM                                                    | 0.39.3                                                      |
+| Database       | PostgreSQL (pg)                                                | 8.16.3                                                      |
+| Auth           | JWT (jsonwebtoken 9.0.3) + bcryptjs 3.0.3                      |
+| Encryption     | @noble/ciphers 2.1.1, @noble/curves 2.0.1, @noble/hashes 2.0.1 |
+| Email          | Resend                                                         | 4.0.0                                                       |
+| Validation     | Zod                                                            | 3.25.76 (+ drizzle-zod 0.7.1)                               |
+| Testing        | Vitest                                                         | 4.0.18                                                      |
+| Build (server) | esbuild (via tsx 4.20.6 for dev)                               |
+| Build (client) | Expo / EAS                                                     |
 
 ## Commands
 
@@ -79,7 +79,6 @@ npm run check:types    # TypeScript type-check (tsc --noEmit)
 npm run format         # Prettier
 npm run test           # Vitest (run once)
 npm run test:watch     # Vitest (watch mode)
-npm run test:harness   # 500-case API test harness (requires running server + .env)
 ```
 
 ## Local development
@@ -194,9 +193,7 @@ client/
     exportFhir.ts                # FHIR formatter
     exportPdf.ts                 # PDF formatter (expo-print + expo-sharing)
     episodeStorage.ts            # Episode CRUD
-    episodeSync.ts               # Episode server sync
     episodeHelpers.ts            # Episode state machine validation
-    outcomeSync.ts               # Flap outcome syncing
     appLockStorage.ts            # PIN hashing, biometric prefs
     biometrics.ts                # Biometric capability detection
     facilities.ts                # Facility lookup, normalization
@@ -340,26 +337,20 @@ Header uses a truncating centered title. Header right is compact: overflow icon 
 - All field setters use `?? ""` / `?? defaultValue` (unconditional) so cleared fields persist
 - `handleSaveRef.current` always points to latest `handleSave` closure
 
-## Database schema (PostgreSQL, 14 tables)
+## Database schema (PostgreSQL, 8 tables)
 
 Defined in `shared/schema.ts`. All PKs are UUIDs via `gen_random_uuid()`. Cascade deletes on user deletion.
 
-| Table | Key columns | Notes |
-|-------|-------------|-------|
-| `users` | id, email (unique), password (bcrypt), tokenVersion | JWT revocation via tokenVersion |
-| `profiles` | userId (1:1), fullName, firstName, lastName, dateOfBirth, sex, countryOfPractice, careerStage, professionalRegistrations (JSONB), surgicalPreferences (JSONB), onboardingComplete | Verification status: unverified/pending/verified |
-| `user_facilities` | userId, facilityName, facilityId, isPrimary | Index on userId |
-| `user_device_keys` | userId, deviceId, publicKey (X25519), label, lastSeenAt, revokedAt | Unique (userId, deviceId) |
-| `password_reset_tokens` | userId, token (unique), expiresAt, used | Single-use, 1-hour expiry |
-| `teams` | name, description, ownerId | Index on ownerId |
-| `team_members` | teamId, userId, role (owner/admin/member/viewer) | Indexes on teamId, userId |
-| `snomed_ref` | snomedCtCode (unique), displayName, commonName, category, subcategory, anatomicalRegion, specialty, isActive, sortOrder | Indexes on category, code |
-| `procedures` | userId, patientIdentifierHash, procedureDate, facility, specialty, SNOMED codes, ASA/BMI/smoker/diabetes, start/end time, registry fields | Indexes on userId, (userId, createdAt) |
-| `flaps` | procedureId, SNOMED codes, side, composition, harvestTechnique, recipientSite/Region, dimensions, perforators, elevationPlane, ischemia times, registry fields | Index on procedureId |
-| `anastomoses` | flapId, vesselType, recipient/donor vessel SNOMED codes, couplingMethod, couplerSize, configuration, suture details, patency | Index on flapId |
-| `case_procedures` | caseId (→procedures), sequenceOrder, procedureName, specialty, SNOMED codes, surgeonRole, clinicalDetails, notes | Index on caseId |
-| `treatment_episodes` | userId, encryptedData, patientIdentifierHash, status | Indexes on userId, (userId, status) |
-| `procedure_outcomes` | caseProcedureId, outcomeType, assessedAt, assessedDaysPostOp, details (JSONB) | Indexes on caseProcedureId, outcomeType |
+| Table                   | Key columns                                                                                                                                                                       | Notes                                            |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
+| `users`                 | id, email (unique), password (bcrypt), tokenVersion                                                                                                                               | JWT revocation via tokenVersion                  |
+| `profiles`              | userId (1:1), fullName, firstName, lastName, dateOfBirth, sex, countryOfPractice, careerStage, professionalRegistrations (JSONB), surgicalPreferences (JSONB), onboardingComplete | Verification status: unverified/pending/verified |
+| `user_facilities`       | userId, facilityName, facilityId, isPrimary                                                                                                                                       | Index on userId                                  |
+| `user_device_keys`      | userId, deviceId, publicKey (X25519), label, lastSeenAt, revokedAt                                                                                                                | Unique (userId, deviceId)                        |
+| `password_reset_tokens` | userId, token (unique), expiresAt, used                                                                                                                                           | Single-use, 1-hour expiry                        |
+| `teams`                 | name, description, ownerId                                                                                                                                                        | Index on ownerId                                 |
+| `team_members`          | teamId, userId, role (owner/admin/member/viewer)                                                                                                                                  | Indexes on teamId, userId                        |
+| `snomed_ref`            | snomedCtCode (unique), displayName, commonName, category, subcategory, anatomicalRegion, specialty, isActive, sortOrder                                                           | Indexes on category, code                        |
 
 **Performance indexes** (`migrations/add_performance_indexes.sql`): 8 additional indexes on high-frequency query paths. All `IF NOT EXISTS`.
 
@@ -368,111 +359,105 @@ Defined in `shared/schema.ts`. All PKs are UUIDs via `gen_random_uuid()`. Cascad
 All endpoints under `/api/`. Authentication via JWT bearer token (`authenticateToken` middleware) unless noted.
 
 ### Auth (rate-limited)
-| Method | Path | Purpose |
-|--------|------|---------|
-| POST | `/auth/signup` | Create account (email, password) |
-| POST | `/auth/login` | Returns token + profile + facilities |
-| GET | `/auth/me` | Current user profile |
-| POST | `/auth/refresh` | Refresh token (7-day expiry) |
-| POST | `/auth/change-password` | Revokes all tokens via tokenVersion |
-| POST | `/auth/request-password-reset` | Always returns success (no email leak) |
-| POST | `/auth/reset-password` | Validates hashed token, single-use |
-| DELETE | `/auth/account` | Cascading delete of all user data |
+
+| Method | Path                           | Purpose                                |
+| ------ | ------------------------------ | -------------------------------------- |
+| POST   | `/auth/signup`                 | Create account (email, password)       |
+| POST   | `/auth/login`                  | Returns token + profile + facilities   |
+| GET    | `/auth/me`                     | Current user profile                   |
+| POST   | `/auth/refresh`                | Refresh token (7-day expiry)           |
+| POST   | `/auth/change-password`        | Revokes all tokens via tokenVersion    |
+| POST   | `/auth/request-password-reset` | Always returns success (no email leak) |
+| POST   | `/auth/reset-password`         | Validates hashed token, single-use     |
+| DELETE | `/auth/account`                | Cascading delete of all user data      |
 
 ### Profile
-| Method | Path | Purpose |
-|--------|------|---------|
-| GET | `/profile` | Fetch profile (JSONB serialized) |
-| PUT | `/profile` | Update profile fields |
-| POST | `/profile/picture` | Avatar upload (Multer, 5MB limit) |
-| DELETE | `/profile/picture` | Remove avatar |
+
+| Method | Path               | Purpose                           |
+| ------ | ------------------ | --------------------------------- |
+| GET    | `/profile`         | Fetch profile (JSONB serialized)  |
+| PUT    | `/profile`         | Update profile fields             |
+| POST   | `/profile/picture` | Avatar upload (Multer, 5MB limit) |
+| DELETE | `/profile/picture` | Remove avatar                     |
 
 ### Facilities
-| Method | Path | Purpose |
-|--------|------|---------|
-| GET | `/facilities` | List user facilities |
-| POST | `/facilities` | Create facility |
-| PUT | `/facilities/:id` | Update isPrimary (auto-clears others) |
-| DELETE | `/facilities/:id` | Delete (ownership check) |
+
+| Method | Path              | Purpose                               |
+| ------ | ----------------- | ------------------------------------- |
+| GET    | `/facilities`     | List user facilities                  |
+| POST   | `/facilities`     | Create facility                       |
+| PUT    | `/facilities/:id` | Update isPrimary (auto-clears others) |
+| DELETE | `/facilities/:id` | Delete (ownership check)              |
 
 ### Device keys (E2EE)
-| Method | Path | Purpose |
-|--------|------|---------|
-| GET | `/keys/me` | List non-revoked device keys |
-| POST | `/keys/device` | Upsert device key |
-| POST | `/keys/revoke` | Revoke device |
 
-### Procedures (cases)
-| Method | Path | Purpose |
-|--------|------|---------|
-| GET | `/procedures` | List (limit 200, offset) |
-| POST | `/procedures` | Create with nested caseProcedures + flaps + anastomoses |
-| GET | `/procedures/:id` | Fetch with caseProcedures, flaps + anastomoses |
-| PUT | `/procedures/:id` | Update procedure fields |
-| DELETE | `/procedures/:id` | Delete (DB cascades handle children) |
-
-### Flaps
-| Method | Path | Purpose |
-|--------|------|---------|
-| POST | `/procedures/:procedureId/flaps` | Create flap |
-| GET | `/flaps/:id` | Fetch with anastomoses |
-| PUT | `/flaps/:id` | Update |
-| DELETE | `/flaps/:id` | Delete |
+| Method | Path           | Purpose                      |
+| ------ | -------------- | ---------------------------- |
+| GET    | `/keys/me`     | List non-revoked device keys |
+| POST   | `/keys/device` | Upsert device key            |
+| POST   | `/keys/revoke` | Revoke device                |
 
 ### Anastomoses
-| Method | Path | Purpose |
-|--------|------|---------|
-| POST | `/flaps/:flapId/anastomoses` | Create |
-| GET | `/anastomoses/:id` | Fetch |
-| PUT | `/anastomoses/:id` | Update |
-| DELETE | `/anastomoses/:id` | Delete |
+
+| Method | Path                         | Purpose |
+| ------ | ---------------------------- | ------- |
+| POST   | `/flaps/:flapId/anastomoses` | Create  |
+| GET    | `/anastomoses/:id`           | Fetch   |
+| PUT    | `/anastomoses/:id`           | Update  |
+| DELETE | `/anastomoses/:id`           | Delete  |
 
 ### Treatment episodes
-| Method | Path | Purpose |
-|--------|------|---------|
-| GET | `/episodes` | List all |
-| GET | `/episodes/:id` | Fetch |
-| POST | `/episodes` | Create |
-| PUT | `/episodes/:id` | Update |
-| DELETE | `/episodes/:id` | Delete |
+
+| Method | Path            | Purpose  |
+| ------ | --------------- | -------- |
+| GET    | `/episodes`     | List all |
+| GET    | `/episodes/:id` | Fetch    |
+| POST   | `/episodes`     | Create   |
+| PUT    | `/episodes/:id` | Update   |
+| DELETE | `/episodes/:id` | Delete   |
 
 ### Procedure outcomes
-| Method | Path | Purpose |
-|--------|------|---------|
-| POST | `/procedure-outcomes` | Create |
-| GET | `/procedure-outcomes/:id` | Fetch |
-| PUT | `/procedure-outcomes/:id` | Update |
-| DELETE | `/procedure-outcomes/:id` | Delete |
+
+| Method | Path                      | Purpose |
+| ------ | ------------------------- | ------- |
+| POST   | `/procedure-outcomes`     | Create  |
+| GET    | `/procedure-outcomes/:id` | Fetch   |
+| PUT    | `/procedure-outcomes/:id` | Update  |
+| DELETE | `/procedure-outcomes/:id` | Delete  |
 
 ### SNOMED CT & reference data
-| Method | Path | Purpose |
-|--------|------|---------|
-| GET | `/snomed/procedures` | Live search via Ontoserver FHIR |
-| GET | `/snomed/diagnoses` | Live search diagnoses |
-| GET | `/snomed/concepts/:conceptId` | Concept details (FSN, synonyms, hierarchy) |
-| GET | `/snomed-ref/vessels/:region` | Vessels by anatomical region |
-| GET | `/snomed-ref/regions` | All anatomical regions |
-| GET | `/snomed-ref/flap-types` | 18 free flap types |
-| GET | `/snomed-ref/donor-vessels/:flapType` | Donor vessels by flap |
-| GET | `/snomed-ref/compositions` | Tissue compositions |
-| GET | `/snomed-ref/coupling-methods` | Anastomosis coupling methods |
-| GET | `/snomed-ref/anastomosis-configs` | Anastomosis configurations |
+
+| Method | Path                                  | Purpose                                    |
+| ------ | ------------------------------------- | ------------------------------------------ |
+| GET    | `/snomed/procedures`                  | Live search via Ontoserver FHIR            |
+| GET    | `/snomed/diagnoses`                   | Live search diagnoses                      |
+| GET    | `/snomed/concepts/:conceptId`         | Concept details (FSN, synonyms, hierarchy) |
+| GET    | `/snomed-ref/vessels/:region`         | Vessels by anatomical region               |
+| GET    | `/snomed-ref/regions`                 | All anatomical regions                     |
+| GET    | `/snomed-ref/flap-types`              | 18 free flap types                         |
+| GET    | `/snomed-ref/donor-vessels/:flapType` | Donor vessels by flap                      |
+| GET    | `/snomed-ref/compositions`            | Tissue compositions                        |
+| GET    | `/snomed-ref/coupling-methods`        | Anastomosis coupling methods               |
+| GET    | `/snomed-ref/anastomosis-configs`     | Anastomosis configurations                 |
 
 ### Staging
-| Method | Path | Purpose |
-|--------|------|---------|
-| GET | `/staging/diagnosis` | Staging systems for diagnosis (by SNOMED code) |
-| GET | `/staging/all` | All 14 staging configurations |
+
+| Method | Path                 | Purpose                                        |
+| ------ | -------------------- | ---------------------------------------------- |
+| GET    | `/staging/diagnosis` | Staging systems for diagnosis (by SNOMED code) |
+| GET    | `/staging/all`       | All 14 staging configurations                  |
 
 ### Other
-| Method | Path | Purpose |
-|--------|------|---------|
-| GET | `/health` | Health check (`{ status: "ok" }`) |
-| POST | `/seed-snomed-ref` | Dev-only: seed SNOMED data (env-gated) |
+
+| Method | Path               | Purpose                                |
+| ------ | ------------------ | -------------------------------------- |
+| GET    | `/health`          | Health check (`{ status: "ok" }`)      |
+| POST   | `/seed-snomed-ref` | Dev-only: seed SNOMED data (env-gated) |
 
 ## Supported specialties
 
 12 specialties defined in `client/types/case.ts`:
+
 - Hand surgery (`hand_wrist`), Orthoplastic, Breast, Body contouring, Burns, Head & neck, Aesthetics, General
 - Plus: Cleft/Craniofacial (`cleft_cranio`), Skin cancer, Lymphoedema, Peripheral nerve
 
@@ -497,6 +482,7 @@ When procedures are picked without a diagnosis, a "What's the diagnosis?" card a
 3-way case type selector for `hand_wrist` specialty: **Trauma** / **Acute** / **Elective**. Selection gates all downstream UI.
 
 **Acute flow** (`AcuteHandAssessment`, `client/components/acute-hand/`):
+
 - 13 curated diagnosis chips in 2 groups: Hand Infections (10) and Acute Non-Infection (3)
 - SNOMED search fallback below curated chips for rare diagnoses
 - Infection diagnoses auto-populate `HandInfectionCard` (4-layer progressive disclosure: type/digits/organism/antibiotic/severity/Kanavel)
@@ -512,6 +498,7 @@ When procedures are picked without a diagnosis, a "What's the diagnosis?" card a
 Single inline `HandTraumaAssessment` inside `DiagnosisGroupEditor`.
 
 **Trauma flow:**
+
 1. Mandatory Left/Right selection, injury mechanism, injury date
 2. 7-chip injury category grid: Fracture, Dislocation, Tendon, Nerve, Vessel, Soft Tissue, Amputation
 3. Digit/ray selection → structure-specific pickers per category
@@ -525,6 +512,7 @@ Single inline `HandTraumaAssessment` inside `DiagnosisGroupEditor`.
 Tests: `client/lib/__tests__/handTraumaDiagnosis.test.ts`, `handTraumaMapping.test.ts`, `handTraumaUx.test.ts`.
 
 **Elective flow** (`HandElectivePicker`, `client/components/hand-elective/`):
+
 - 38 structured diagnoses across 7 subcategories: Dupuytren's Disease (7), CTS & Nerve Compression (7), Arthritis & Joint (8), Tendon Conditions (5), Ganglion & Tumour (4), Deformity & Reconstruction (4), Other Elective (3)
 - Chip-based subcategory picker with expandable diagnosis list per category
 - 11 new procedures including 3 arthroplasty procedures with `hasImplant: true` flag (CMC1, PIP, MCP arthroplasty)
@@ -538,22 +526,26 @@ Tests: `client/lib/__tests__/handTraumaDiagnosis.test.ts`, `handTraumaMapping.te
 Registry-grade implant documentation for arthroplasty procedures, activated when any procedure has `hasImplant: true` in the picklist.
 
 **Architecture:**
+
 - `JointImplantSection` (`client/components/joint-implant/`) — 3-layer progressive disclosure
 - `implantCatalogue.ts` (`client/data/`) — 26 entries across 3 joint types (CMC1, PIP, MCP) from 5 manufacturers
 - `jointImplant.ts` (`client/types/`) — `JointImplantDetails` type, `ImplantCatalogueEntry`, `ImplantSizeConfig` union (`"unified"` | `"components"` | `"matched"`)
 
 **Activation chain:**
+
 1. Diagnosis selected with arthroplasty procedure suggestion → procedure has `hasImplant: true`
 2. `procedureHasImplant()` in `moduleVisibility.ts` detects the flag
 3. `DiagnosisGroupEditor` renders `JointImplantSection` below procedure list
 4. `PROCEDURE_TO_JOINT_TYPE` auto-derives joint type; `DIAGNOSIS_TO_INDICATION` auto-derives indication
 
 **3-layer progressive disclosure:**
+
 - Layer 0 (auto-derived): joint type + indication set from procedure/diagnosis context
 - Layer 1 (always visible): implant system picker, size picker (adapts to `ImplantSizeConfig` type), approach selector
 - Layer 2 (expandable): fixation, bearing surface, procedure type (primary/revision), revision fields, grommets toggle (Swanson MCP only), catalogue/lot/UDI tracking
 
 **Data integration:**
+
 - `implantDetails` stored on `CaseProcedure` alongside `clinicalDetails`
 - `buildDuplicateState()` clones `implantDetails` for case duplication
 - CSV export: 6 columns (implant_system, implant_size, implant_fixation, implant_approach, implant_bearing, implant_joint_type)
@@ -568,12 +560,14 @@ Tests: `client/lib/__tests__/jointImplant.test.ts` (39 tests)
 Inline assessment flow (mirrors hand trauma pattern — no modal, no separate screen) with 14 components in `client/components/skin-cancer/`, config logic in `client/lib/skinCancerConfig.ts` (1058 lines), and types in `client/types/skinCancer.ts` (629 lines).
 
 **Current runtime model: 2 pathways only**
+
 - **Excision biopsy** — lesion not yet pathologically confirmed. Surgeon records biopsy method (Excision / Incisional / Shave / Punch) and can later return to enter definitive specimen histology in the same pathway.
 - **Histology known** — prior biopsy or previously confirmed pathology is already available. Prior histology is captured separately from the current procedure histology.
 
 There is **no continuing-care pathway** in the product model. Re-excision / follow-up uses duplicate-and-prefill within the same two-pathway system.
 
 **Progressive disclosure sections (numbered, collapsible SectionWrapper cards):**
+
 1. **Diagnosis** — 7 Tier 1 pathology category chips (BCC, SCC, Melanoma, MCC, Other malig., Benign, Uncertain). Switching categories preserves lesion location/photos but clears incompatible downstream state. Pathway stage is internal only: `Uncertain` auto-routes to `excision_biopsy`; all other categories auto-route to `histology_known`.
 2. **Melanoma quick Breslow** — compact mirrored Breslow thickness row shown before prior histology in the melanoma / histology-known flow so margin and SLNB guidance updates earlier.
 3. **Prior histology** — shown for `histology_known`. Captures prior biopsy pathology, subtype detail, excision method, margin status, and exposes re-excision follow-up CTA when margins are incomplete / close.
@@ -586,27 +580,32 @@ There is **no continuing-care pathway** in the product model. Re-excision / foll
 10. **Summary & Procedures** — interactive suggested procedures with only the primary procedure preselected by default, coding details, accept/edit mapping, and completion summary.
 
 **Histology precedence rules:**
+
 - `currentHistology` is the authoritative post-procedure record when present.
 - Summaries, CDS, badges, and lesion captions use `getSkinCancerPrimaryHistology()` to prefer current definitive histology over prior context.
 - `priorHistology` remains contextual history rather than the primary displayed result once current histology exists.
 
 **Procedure suggestions** (`getSkinCancerProcedureSuggestions`): category + site aware. Head/neck vs body excision variants, coverage suggestions (FTSG, STSG, local flaps) across broader excision flows, site-specific reconstruction for lip/ear/eyelid, and SLNB procedure inclusion when performed.
 
-**Diagnosis resolution** (`resolveSkinCancerDiagnosis`):**
+**Diagnosis resolution** (`resolveSkinCancerDiagnosis`):\*\*
+
 - biopsy-stage cases remain coded as generic "awaiting histology" until `currentHistology.pathologyCategory` is actually confirmed
 - confirmed histology resolves to the correct picklist diagnosis where supported
 - rare malignant subtypes without a dedicated picklist entry return explicit manual-review metadata instead of silently falling back to "awaiting histology"
 - `client/lib/migration.ts` reconciles legacy single-lesion skin-cancer diagnoses on load
 
 **Follow-up / episode behaviour:**
+
 - `useCaseForm.ts` now creates or reuses `cancer_pathway` episodes for pending biopsy lesions, persists the linked `episodeId`, recomputes `episodeSequence`, and syncs pending action (`awaiting_histology`, `awaiting_reexcision`, resolve)
 - re-excision CTA launches a duplicate-and-prefill follow-up case seeded from the current in-form skin-cancer state
 - `skinCancerEpisodeHelpers.ts` contains pure helpers for pending lesion collection, episode link/update plans, and follow-up assessment transforms
 
 **Input handling:**
+
 - skin-cancer numeric fields use a shared draft-preserving `SkinCancerNumericInput` so decimal entry (`0.`, `.5`, deletes, quick edits) does not get rewritten mid-typing by parse-on-change logic
 
 **Key components:**
+
 - `SkinCancerAssessment` — main orchestrator, controlled collapse state, scroll stabilization, internal pathway auto-routing, summary wiring, completion summary
 - `PathologySection` — prior histology editor for `histology_known`
 - `HistologySection` — simplified excision planner or full structured current histology editor
@@ -636,6 +635,7 @@ Tests: `client/lib/__tests__/skinCancerConfig.test.ts` (87 tests), `skinCancerPh
 **Unified MediaTag taxonomy** replaces the legacy dual `OperativeMediaType` (8 values) + `MediaCategory` (20 values) system with a single `MediaTag` type (64 tags across 7 groups: temporal, imaging, flap_surgery, skin_cancer, aesthetic, hand_function, other). Defined in `client/types/media.ts` — single source of truth.
 
 **Key types & exports:**
+
 - `MediaTag` — union of 64 string literals, one per media item
 - `MediaTagGroup` — 7 group identifiers for UI sectioning
 - `MEDIA_TAG_REGISTRY` — complete metadata: label, group, sortOrder, captureHint per tag
@@ -644,6 +644,7 @@ Tests: `client/lib/__tests__/skinCancerConfig.test.ts` (87 tests), `skinCancerPh
 - `getRelevantGroups(specialty?, procedureTags?, hasSkinCancerAssessment?)` — context-aware group filtering. Always includes temporal/imaging/other; conditionally adds flap_surgery, skin_cancer, aesthetic, hand_function based on case context. Skin cancer groups are diagnosis-driven via `hasSkinCancerAssessment` flag (not specialty-gated).
 
 **Legacy migration** (`client/lib/mediaTagMigration.ts`):
+
 - `migrateOperativeMediaType(type)` — maps all 8 old types to MediaTag
 - `migrateMediaCategory(category)` — maps all 20 old categories to MediaTag
 - `resolveMediaTag({ tag?, category?, mediaType? })` — cascading fallback: tag → category → mediaType → "other"
@@ -651,6 +652,7 @@ Tests: `client/lib/__tests__/skinCancerConfig.test.ts` (87 tests), `skinCancerPh
 - Both `MediaAttachment.tag` and `OperativeMediaItem.tag` fields added; legacy fields `@deprecated`
 
 **Capture protocols** (`client/data/mediaCaptureProtocols.ts`):
+
 - 7 data-driven checklists: Free Flap (11 steps), Skin Cancer Excision (8), Rhinoplasty (7), Face (5), Breast (8), Body Contouring (8), Hand Surgery (8)
 - `CapturePhase` type: `"preop" | "intraop" | "postop"` — assigned to every protocol step for phase-filtered templates
 - `filterStepsByPhase(steps, mode)` — returns all steps for `"full"` mode, only matching phase for `"preop"`
@@ -660,6 +662,7 @@ Tests: `client/lib/__tests__/skinCancerConfig.test.ts` (87 tests), `skinCancerPh
 - Protocols are suggested, never enforced — no save gating
 
 **UI components** (`client/components/media/`):
+
 - `MediaTagBadge` — colour-coded chip showing tag label with group-specific colouring
 - `MediaTagPicker` — grouped tag selector with horizontal scroll tabs + chip grid
 - `ProtocolBadge` — protocol progress summary ("Free Flap · 4/11")
@@ -689,7 +692,7 @@ Serial wound assessment as timeline event type (`wound_assessment`). `WoundAsses
 
 ### Treatment episodes
 
-Serial case tracking via `treatment_episodes` table. Episode status machine: planned → active ⇄ on_hold → completed. 7 episode types, 4 encounter classes, 9 pending actions. Types in `client/types/episode.ts`. UI: `EpisodeListScreen`, `EpisodeDetailScreen`, `InlineEpisodeCreator`, `EpisodeLinkBanner`.
+Serial case tracking via local encrypted episode storage. Episode status machine: planned → active ⇄ on_hold → completed. 7 episode types, 4 encounter classes, 9 pending actions. Types in `client/types/episode.ts`. UI: `EpisodeListScreen`, `EpisodeDetailScreen`, `InlineEpisodeCreator`, `EpisodeLinkBanner`.
 
 ### Dashboard v2 (COMPLETE)
 
@@ -697,16 +700,16 @@ The dashboard is a **surgical triage surface** — density-first, optimised for 
 
 #### Locked architectural decisions
 
-| Decision | Locked value |
-|----------|-------------|
-| Dashboard philosophy | Density-first. NOT clarity-first, NOT feed-first. |
-| Zone order (top→bottom) | Filter Bar → Needs Attention → Practice Pulse → Recent Cases |
-| Primary action | FAB speed dial (bottom-right, 56px amber main + 44px mini-FABs). Three actions: Log a Case (amber, closest to thumb), Quick Capture, Plan a Case. NOT a header button. |
-| Header | Centered `HeaderTitle` lockup (Opus logo + subtitle). Inbox icon (with badge) + Search button on the right. NO greeting. |
-| Statistics | Numbers + deltas only on dashboard. NO charts. Charts live on the dedicated Statistics tab. |
-| Notifications | Zone 1 presence/absence IS the notification. NO red dots, NO badge counts. |
-| Customisation | None. One excellent default. Specialty filter is the only personalisation. |
-| Zone 1 empty behaviour | Returns `null`. NOT an empty View, NOT a placeholder. Zone does not exist when 0 items. |
+| Decision                | Locked value                                                                                                                                                           |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Dashboard philosophy    | Density-first. NOT clarity-first, NOT feed-first.                                                                                                                      |
+| Zone order (top→bottom) | Filter Bar → Needs Attention → Practice Pulse → Recent Cases                                                                                                           |
+| Primary action          | FAB speed dial (bottom-right, 56px amber main + 44px mini-FABs). Three actions: Log a Case (amber, closest to thumb), Quick Capture, Plan a Case. NOT a header button. |
+| Header                  | Centered `HeaderTitle` lockup (Opus logo + subtitle). Inbox icon (with badge) + Search button on the right. NO greeting.                                               |
+| Statistics              | Numbers + deltas only on dashboard. NO charts. Charts live on the dedicated Statistics tab.                                                                            |
+| Notifications           | Zone 1 presence/absence IS the notification. NO red dots, NO badge counts.                                                                                             |
+| Customisation           | None. One excellent default. Specialty filter is the only personalisation.                                                                                             |
+| Zone 1 empty behaviour  | Returns `null`. NOT an empty View, NOT a placeholder. Zone does not exist when 0 items.                                                                                |
 
 #### Component registry
 
@@ -736,12 +739,12 @@ client/lib/
 ```tsx
 <View style={{ flex: 1 }}>
   <ScrollView stickyHeaderIndices={[0]}>
-    <SpecialtyFilterBar />          {/* index 0 — sticky */}
-    <NeedsAttentionCarousel />      {/* null when 0 items */}
-    <PracticePulseRow />            {/* null when 0 total cases */}
-    <RecentCasesList />             {/* or DashboardEmptyState */}
+    <SpecialtyFilterBar /> {/* index 0 — sticky */}
+    <NeedsAttentionCarousel /> {/* null when 0 items */}
+    <PracticePulseRow /> {/* null when 0 total cases */}
+    <RecentCasesList /> {/* or DashboardEmptyState */}
   </ScrollView>
-  <AddCaseFAB />                    {/* position: absolute, outside ScrollView */}
+  <AddCaseFAB /> {/* position: absolute, outside ScrollView */}
 </View>
 ```
 
@@ -774,6 +777,7 @@ client/lib/
 #### Quick actions on cards
 
 Both AttentionCard and CaseCard expose quick action buttons:
+
 - **Histology** — amber chip with file-text icon, shown for skin cancer cases (`caseCanAddHistology`). Navigates to `AddHistologyScreen`.
 - **+ Event** — secondary chip, navigates to `AddTimelineEventScreen` for the case.
 - **Discharge** — amber chip on inpatient cards, opens discharge modal with date picker.
@@ -782,6 +786,7 @@ Both AttentionCard and CaseCard expose quick action buttons:
 #### Needs Attention sources
 
 Three item types merged by `useAttentionItems` / `dashboardSelectors`:
+
 1. **Inpatients** — cases with `stayType === "inpatient"` and no `dischargeDate`, sorted by post-op day descending
 2. **Active infections** — cases with `infectionOverlay?.status === "active"` (deduplicated against inpatients)
 3. **Active episodes** — episodes with `status === "active"`, `"on_hold"`, or `"planned"`, with linked case data
@@ -793,6 +798,7 @@ Inbox photos are accessed via the header icon with badge count (not in the atten
 #### Practice Pulse metrics
 
 Three metrics via `usePracticePulse`:
+
 1. **This Month** — month-to-date case count with delta vs the same day span last month
 2. **This Week** — 7-dot sparkline (Mon–Sun) showing cases per day
 3. **Completion** — percentage of last 90 days cases with documented outcome
@@ -800,6 +806,7 @@ Three metrics via `usePracticePulse`:
 #### Specialty filter effects
 
 When a specialty is selected (non-null), ALL zones filter simultaneously:
+
 - Zone 1: only inpatients/episodes/infections matching that specialty
 - Zone 2: all three metrics recalculate for that specialty
 - Zone 3: only cases matching that specialty; section header becomes "{Specialty} Cases"
@@ -825,9 +832,9 @@ PIN and biometric unlock via `AppLockContext`. Setup in `SetupAppLockScreen`, un
 
 CSV (`exportCsv.ts`, 43 columns with primary dx/proc dedicated columns, semicolon-delimited secondary, 6 hand infection columns, 6 implant columns, 5 patient identity columns), FHIR R4 (`exportFhir.ts`, full Bundle with Patient, Condition, Procedure, Encounter, Device resources), and PDF (`exportPdf.ts`, HTML-to-PDF via expo-print with implant column + patient name/DOB header, shared via expo-sharing). Export orchestration in `export.ts`. Configurable via `PersonalisationScreen`.
 
-### Procedure outcomes
+### Flap outcomes
 
-Polymorphic outcome tracking via `procedure_outcomes` table (JSONB `details` field). Outcome types are flexible. Linked to `case_procedures`. Synced via `outcomeSync.ts`.
+Free flap outcomes are stored locally inside procedure `clinicalDetails`, alongside the rest of the canonical case record.
 
 ### Inline validation
 
@@ -869,6 +876,7 @@ Dedicated bottom tab with 3-tier analytics. Middle tab between Dashboard and Set
 **Tier 1 — Career Overview:** Total cases, active months, cases/month rate, specialties used. `StatCard` grid with hero metric (total cases or specialty-specific metric).
 
 **Tier 2 — Specialty Deep-Dives:** Dedicated free-flap card first when `freeFlapStats` exists, then `SpecialtyDeepDiveCard` per specialty used, collapsible with animated `LayoutAnimation`. Each shows specialty-specific content:
+
 - **Hand surgery:** Trauma/acute/elective split, nerve + tendon repair counts, top procedures as `HorizontalBarChart`
 - **Skin cancer:** Pathology category distribution (BCC/SCC/melanoma/etc) as `HorizontalBarChart`, histology completion rate
 - **Burns:** Acute/reconstruction split, grafting rate
@@ -879,14 +887,14 @@ Dedicated bottom tab with 3-tier analytics. Middle tab between Dashboard and Set
 
 #### Chart components (`client/components/statistics/`)
 
-| Component | Purpose |
-|-----------|---------|
-| `BarChart` | Animated SVG vertical bar chart (react-native-reanimated). Plays animation once only (useRef guard). Short labels for >6 bars. |
-| `HorizontalBarChart` | View-based horizontal bars with labels, values, and overflow count. `ellipsizeMode="tail"` on labels. |
-| `StatCard` | Themed metric card with label, value, optional subtitle. |
-| `MilestoneTimeline` | Vertical timeline with dots, lines, ordinal labels, date formatting with crash guard. Default 8 visible with "See all" expand. |
-| `SpecialtyDeepDiveCard` | Collapsible card per specialty with chevron toggle and specialty colour accent. |
-| `EmptyStatistics` | Zero-case empty state with illustration and prompt. |
+| Component               | Purpose                                                                                                                        |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `BarChart`              | Animated SVG vertical bar chart (react-native-reanimated). Plays animation once only (useRef guard). Short labels for >6 bars. |
+| `HorizontalBarChart`    | View-based horizontal bars with labels, values, and overflow count. `ellipsizeMode="tail"` on labels.                          |
+| `StatCard`              | Themed metric card with label, value, optional subtitle.                                                                       |
+| `MilestoneTimeline`     | Vertical timeline with dots, lines, ordinal labels, date formatting with crash guard. Default 8 visible with "See all" expand. |
+| `SpecialtyDeepDiveCard` | Collapsible card per specialty with chevron toggle and specialty colour accent.                                                |
+| `EmptyStatistics`       | Zero-case empty state with illustration and prompt.                                                                            |
 
 #### Data flow
 
@@ -965,15 +973,15 @@ Type-specific fields appear only when the relevant pathology type is selected:
 
 When pathology type and staging are entered, display a read-only reference badge showing guideline-recommended margins:
 
-| Diagnosis | Recommended margin |
-|-----------|-------------------|
-| Melanoma in situ | 5mm (NCCN/ESMO) |
-| Melanoma ≤1.0mm | 1cm |
-| Melanoma 1.01–2.0mm | 1–2cm |
-| Melanoma >2.0mm | 2cm |
-| BCC | 3–4mm (or Mohs) |
-| SCC low-risk | 4–6mm |
-| SCC high-risk | 6–10mm |
+| Diagnosis           | Recommended margin |
+| ------------------- | ------------------ |
+| Melanoma in situ    | 5mm (NCCN/ESMO)    |
+| Melanoma ≤1.0mm     | 1cm                |
+| Melanoma 1.01–2.0mm | 1–2cm              |
+| Melanoma >2.0mm     | 2cm                |
+| BCC                 | 3–4mm (or Mohs)    |
+| SCC low-risk        | 4–6mm              |
+| SCC high-risk       | 6–10mm             |
 
 The badge is informational only. The surgeon enters their actual margin taken in a separate editable field. Never auto-fill the "margin taken" field from guidelines. The recommendation and the actual margin are separate data points for audit.
 
@@ -1019,13 +1027,13 @@ The SLNB section is conditionally visible, never always-on:
 
 Following established patterns:
 
-| Purpose | File |
-|---------|------|
-| Assessment component | `client/components/skin-cancer/SkinCancerAssessment.tsx` (analogous to `hand-trauma/HandTraumaAssessment.tsx`) |
-| Type definitions | `client/types/skinCancer.ts` (extend existing) |
-| Mapping/config | `client/lib/skinCancerConfig.ts` (margin recommendations, SLNB criteria, disclosure rules) |
-| Integration point | `DiagnosisGroupEditor.tsx` activates the module when diagnosis metadata matches |
-| Tests | `client/lib/__tests__/skinCancerAssessment.test.ts` for disclosure logic, margin recommendations, episode auto-creation |
+| Purpose              | File                                                                                                                    |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Assessment component | `client/components/skin-cancer/SkinCancerAssessment.tsx` (analogous to `hand-trauma/HandTraumaAssessment.tsx`)          |
+| Type definitions     | `client/types/skinCancer.ts` (extend existing)                                                                          |
+| Mapping/config       | `client/lib/skinCancerConfig.ts` (margin recommendations, SLNB criteria, disclosure rules)                              |
+| Integration point    | `DiagnosisGroupEditor.tsx` activates the module when diagnosis metadata matches                                         |
+| Tests                | `client/lib/__tests__/skinCancerAssessment.test.ts` for disclosure logic, margin recommendations, episode auto-creation |
 
 ## Design system: Charcoal + Amber
 
@@ -1042,16 +1050,20 @@ All tokens in `client/constants/theme.ts` (single source of truth, 273 lines).
 **buttonText:** #0C0F14 dark (dark on amber), #FFFFFF light (white on amber)
 
 ### Role colours
+
 Dark: primary=#E5A00D, supervising=#D8B4FE, assistant=#86EFAC, trainee=#7DD3FC
 Light: primary=#B47E00, supervising=#8250DF, assistant=#1A7F37, trainee=#0969DA
 
 ### Specialty colours
+
 Per-specialty in `theme.specialty[key]`. Pastel on dark, deeper on light. Rendered via `SpecialtyBadge` (text) and `SpecialtyIcon` (SVG from `client/assets/specialty-icons.ts`).
 
 ### Typography
+
 display: 28/36/700, h1: 22/30/700, h2: 18/26/600, h3: 16/24/600, h4: 15/22/600, body: 16/24/400, small: 14/20/400, footnote: 13/18/400, caption: 12/16/400, mono: 14/20/500 (SF Mono iOS / monospace Android), label: 12/16/500 uppercase 0.5 letter-spacing
 
 ### Layout tokens
+
 Border radius: xs 6, sm 10 (inputs/buttons), md 14 (cards), lg 20, xl 28, full 9999
 Touch targets: minimum 48px (`Spacing.touchTarget`)
 
@@ -1071,6 +1083,7 @@ Touch targets: minimum 48px (`Spacing.touchTarget`)
 ## Security & encryption
 
 ### Authentication
+
 - bcrypt 10 rounds, minimum 8-character passwords
 - JWT with `tokenVersion` — password change revokes all tokens
 - Rate limiting on auth endpoints
@@ -1079,12 +1092,14 @@ Touch targets: minimum 48px (`Spacing.touchTarget`)
 - Profile updates restricted to prevent mass assignment
 
 ### Encryption
+
 - **XChaCha20-Poly1305 AEAD** for all local case data
 - Envelope format: `enc:v1:nonce:ciphertext`
 - Key derivation from user passphrase via scrypt
 - Legacy XOR data auto re-encrypted on load
 
 ### E2EE scaffolding
+
 - Per-device X25519 key pairs stored securely
 - Public keys registered with server, revocable
 - Case key wrapping infrastructure in place
@@ -1094,6 +1109,7 @@ Touch targets: minimum 48px (`Spacing.touchTarget`)
 **Architecture:** Per-image DEK model with file-system storage. Each photo gets a random 256-bit DEK, encrypted via AES-256-GCM (`@noble/ciphers`). The DEK is wrapped with the master key (AES-256-GCM) and stored in plaintext `meta.json`. Cipher provider remains isolated in `mediaEncryption.ts` for a future native file-crypto swap if profiling warrants it. `mediaStorage.ts` canonicalizes legacy `encrypted-media:{uuid}` references to `opus-media:{uuid}` when valid v2 backing exists.
 
 **Storage layout:**
+
 ```
 {Paths.document}/opus-media/{uuid}/
   image.enc    — AES-256-GCM encrypted full image (nonce||ciphertext||tag)
@@ -1106,6 +1122,7 @@ Touch targets: minimum 48px (`Spacing.touchTarget`)
 **Display pipeline:** `EncryptedImage` → v2 branch uses `useDecryptedImage` hook → decrypts to temp file in `Paths.cache` → renders via `expo-image` with `file:///` URI. LRU temp-file cache: 80 thumbnails (~2MB), 10 full images (~50MB). Max 2 concurrent decryptions.
 
 **Security lifecycle:**
+
 - DEK zeroed after use (`dek.fill(0)`)
 - Decrypted temp files cleared on startup, logout, delete, and every app background transition (regardless of app lock config)
 - Thumbnails encrypted (v1 stored unencrypted — v2 fixes this gap)
@@ -1117,11 +1134,13 @@ Touch targets: minimum 48px (`Spacing.touchTarget`)
 **Capture pipeline:** ImagePicker returns file URIs → `getImageBytesFromUri()` in `thumbnailGenerator.ts` re-encodes (inherently stripping EXIF) + extracts bytes → `generateThumbnailBytes()` creates 300px/0.6 thumbnail → `saveMediaV2()` encrypts both with per-image DEK → writes `image.enc` + `thumb.enc` + `meta.json`. Base64 is transient (decoded immediately, never stored). Single ImageManipulator pass — no double-encoding.
 
 **Operational:**
+
 - `MediaManagementScreen` stages edits locally, prompts Save/Discard on dirty exit, deletes removed media on save, and cleans up newly imported media on discard
 - User-facing batch media cap standardised to 15 across case/discharge/media-management surfaces
 - Cleanup on case/photo delete (v2 deletes directory, v1 deletes AsyncStorage keys)
 
 ### Server security
+
 - Security headers: HSTS (1yr), CSP, X-Frame-Options DENY, strict Referrer-Policy
 - Tiered body parsing limits (auth 1KB, avatar 5MB, default 256KB)
 - Request logging: no bodies logged (privacy)
@@ -1132,6 +1151,7 @@ Touch targets: minimum 48px (`Spacing.touchTarget`)
 ## Deployment
 
 ### Railway (production API)
+
 - **URL:** https://api-server-production-4dd7.up.railway.app
 - **Services:** `api-server` (Express) + `Postgres` (PostgreSQL)
 - **Deploy:** `railway up` from project root
@@ -1141,6 +1161,7 @@ Touch targets: minimum 48px (`Spacing.touchTarget`)
 - **Schema push:** Use public DATABASE_URL with `npx drizzle-kit push`
 
 ### iOS / App Store
+
 - **Bundle ID:** `com.drgladysz.opus`
 - **App Store name:** Opus Logbook
 - **Home screen name:** Opus
@@ -1155,18 +1176,20 @@ Touch targets: minimum 48px (`Spacing.touchTarget`)
 - **React Compiler:** enabled (experimental)
 
 ### Environment variables
-| Variable | Required | Notes |
-|----------|----------|-------|
-| `DATABASE_URL` | Yes | PostgreSQL connection string |
-| `JWT_SECRET` | Yes | Min 32 characters |
-| `PORT` | Yes | Use 5001 locally (5000 conflicts with AirPlay) |
-| `NODE_ENV` | No | development/production/test (default: development) |
-| `RESEND_API_KEY` | No | For email functionality |
-| `APP_DOMAIN` | No | Override app domain for emails |
-| `ENABLE_SEED` | No | Gate SNOMED seed endpoint (dev only) |
-| `SEED_TOKEN` | No | Token for seed endpoint |
+
+| Variable         | Required | Notes                                              |
+| ---------------- | -------- | -------------------------------------------------- |
+| `DATABASE_URL`   | Yes      | PostgreSQL connection string                       |
+| `JWT_SECRET`     | Yes      | Min 32 characters                                  |
+| `PORT`           | Yes      | Use 5001 locally (5000 conflicts with AirPlay)     |
+| `NODE_ENV`       | No       | development/production/test (default: development) |
+| `RESEND_API_KEY` | No       | For email functionality                            |
+| `APP_DOMAIN`     | No       | Override app domain for emails                     |
+| `ENABLE_SEED`    | No       | Gate SNOMED seed endpoint (dev only)               |
+| `SEED_TOKEN`     | No       | Token for seed endpoint                            |
 
 ### Email
+
 - **Provider:** Resend
 - **From:** noreply@drgladysz.com
 - **Emails:** Password reset ("Reset Your Password — Opus"), Welcome ("Welcome to Opus")
@@ -1185,7 +1208,7 @@ Configured in both `tsconfig.json` and `babel.config.js` (module-resolver plugin
 - **TanStack React Query** for server state
 - **Zod + drizzle-zod** for validation at API boundaries
 - **React Native primitives** (View, Text, ScrollView) — no third-party UI kit
-- **@noble/*** for cryptographic operations (not Web Crypto)
+- **@noble/\*** for cryptographic operations (not Web Crypto)
 - **No hardcoded colours** — always `theme.*` or `palette.*` from `client/constants/theme.ts`
 - **Ownership verification** at every API level — IDOR-safe
 - **Split context pattern** — state and dispatch contexts separated for memo optimization
@@ -1214,15 +1237,16 @@ Three independent dimensions replacing the legacy single 7-value `Role` type (`P
 
 ### Key files
 
-| File | Purpose |
-|------|---------|
-| `client/types/operativeRole.ts` | Types, labels, helpers, migration, 6 export format mappings (RACS MALT, JDocs, UK eLogbook, ACGME, German, Swiss) |
-| `client/lib/roleDefaults.ts` | Smart defaults, `isConsultantLevel()`, `suggestRoleDefaults()` |
-| `client/lib/__tests__/operativeRole.test.ts` | 68 tests covering migration, resolution, export mappings |
+| File                                         | Purpose                                                                                                           |
+| -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `client/types/operativeRole.ts`              | Types, labels, helpers, migration, 6 export format mappings (RACS MALT, JDocs, UK eLogbook, ACGME, German, Swiss) |
+| `client/lib/roleDefaults.ts`                 | Smart defaults, `isConsultantLevel()`, `suggestRoleDefaults()`                                                    |
+| `client/lib/__tests__/operativeRole.test.ts` | 68 tests covering migration, resolution, export mappings                                                          |
 
 ### Export-time format derivation
 
 RACS MALT codes and other training-programme formats are derived at export time (never stored):
+
 - `toRacsMaltPlastics(role, supervision)` → RACS MALT Plastics format
 - `toRacsMaltJDocs(role, supervision)` → JDocs format
 - `toUkElogbook(role, supervision)` → UK eLogbook code
@@ -1236,8 +1260,8 @@ The `OperatingTeamRole`, `OperatingTeamMember` types and operating team UI (add/
 
 ## Testing
 
-- **Framework:** Vitest 4.0.18, **703 tests** across 41 files
+- **Framework:** Vitest 4.0.18, **705 tests** across 42 files
 - **Client tests:** `client/lib/__tests__/` and `client/components/media/__tests__/` — handTraumaDiagnosis, handTraumaMapping, handTraumaUx, skinCancerConfig (89 tests), skinCancerPhase4 (11 tests), skinCancerPhase5 (18 tests), skinCancerDiagnoses (7 tests), dashboardSelectors (7 tests), handInfection (42 tests), handElective (52 tests), jointImplant (44 tests), mediaEncryption (7 tests), mediaFileStorage (3 tests), mediaMigration (4 tests), caseSpecialty (5 tests), storageSpecialtyRepair (2 tests), statisticsHelpers (3 tests), statistics (7 tests), dateValues (12 tests), dateFieldNormalization (4 tests), operativeMedia (19 tests), operativeMediaForm (4 tests), mediaAttachmentDefaults (4 tests), mediaContext (3 tests), mediaTagMigration (82 tests), mediaCaptureProtocols (41 tests), implantExport (3 tests), caseDraftPersistence (1 test), inboxStorage (29 tests), inboxAssignment (17 tests), smartImportPrefs (10 tests), plannedCase (18 tests), mediaOrganiser (15 tests), nhiValidation (12 tests), patientIdentity (13 tests), operativeRole (68 tests — migration, resolution, export mappings, role defaults), plus media UI coverage for `MediaTagPicker` resync and resolved `MediaTagBadge` rendering
+- **Client tests:** `client/lib/__tests__/` and `client/components/media/__tests__/` — handTraumaDiagnosis, handTraumaMapping, handTraumaUx, skinCancerConfig (89 tests), skinCancerPhase4 (11 tests), skinCancerPhase5 (18 tests), skinCancerDiagnoses (7 tests), dashboardSelectors (7 tests), handInfection (42 tests), handElective (52 tests), jointImplant (44 tests), mediaEncryption (7 tests), mediaFileStorage (3 tests), mediaMigration (4 tests), caseSpecialty (5 tests), storageCache (2 tests), storageSpecialtyRepair (2 tests), statisticsHelpers (3 tests), statistics (7 tests), dateValues (12 tests), dateFieldNormalization (4 tests), operativeMedia (19 tests), operativeMediaForm (4 tests), mediaAttachmentDefaults (4 tests), mediaContext (3 tests), mediaTagMigration (82 tests), mediaCaptureProtocols (41 tests), implantExport (3 tests), caseDraftPersistence (1 test), inboxStorage (29 tests), inboxAssignment (17 tests), smartImportPrefs (10 tests), plannedCase (18 tests), mediaOrganiser (15 tests), nhiValidation (12 tests), patientIdentity (11 tests), operativeRole (68 tests — migration, resolution, export mappings, role defaults), plus media UI coverage for `MediaTagPicker` resync and resolved `MediaTagBadge` rendering
 - **Server tests:** `server/__tests__/` — auth (17 tests), validation (7 tests), diagnosisStagingConfig (3 tests)
-- **Integration:** `npm run test:harness` — 500-case API harness across 12 specialties (requires running server). Tests nested procedure creation with caseProcedures, flaps, and anastomoses. Run with `--cleanup` to delete test data after.
 - **Run:** `npm run test` (once) or `npm run test:watch` (watch mode)

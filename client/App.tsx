@@ -71,7 +71,9 @@ function ThemedNavigationContainer({
       },
       getStateFromPath(path, options) {
         const state = defaultGetStateFromPath(path, options);
-        const cameraRoute = state?.routes.find((route) => route.name === "OpusCamera");
+        const cameraRoute = state?.routes.find(
+          (route) => route.name === "OpusCamera",
+        );
         const cameraParams = cameraRoute?.params as
           | {
               mode?: unknown;

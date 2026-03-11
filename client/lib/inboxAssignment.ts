@@ -9,7 +9,11 @@
 
 import type { InboxItem } from "@/types/inbox";
 import type { MediaTag } from "@/types/media";
-import type { OperativeMediaItem, OperativeMediaType, Case } from "@/types/case";
+import type {
+  OperativeMediaItem,
+  OperativeMediaType,
+  Case,
+} from "@/types/case";
 import { ALL_PROTOCOLS, type CaptureStep } from "@/data/mediaCaptureProtocols";
 import { suggestTemporalTag } from "@/lib/mediaTagMigration";
 import { TAG_TO_MEDIA_TYPE } from "@/lib/operativeMedia";
@@ -37,10 +41,7 @@ export function inferMediaTagForInboxItem(
   procedureDate?: string,
 ): MediaTag {
   // Priority 1: template metadata from guided capture
-  if (
-    item.templateId != null &&
-    item.templateStepIndex != null
-  ) {
+  if (item.templateId != null && item.templateStepIndex != null) {
     const protocol = getProtocolById(item.templateId);
     const step = protocol?.steps[item.templateStepIndex];
     if (step) return step.tag;
@@ -79,9 +80,7 @@ export function inboxItemToOperativeMediaSmart(
  * Extract the most common non-empty patientIdentifier from a batch of inbox items.
  * Returns undefined if no items have a patientIdentifier.
  */
-export function extractPatientIdHint(
-  items: InboxItem[],
-): string | undefined {
+export function extractPatientIdHint(items: InboxItem[]): string | undefined {
   const counts = new Map<string, number>();
 
   for (const item of items) {
@@ -134,7 +133,8 @@ export function autoAssign(
         const targetIdx = protocolSteps.findIndex((s) => s.tag === step.tag);
         if (targetIdx >= 0 && !filledStepIndices.has(targetIdx)) {
           item.tag = step.tag;
-          item.mediaType = (TAG_TO_MEDIA_TYPE[step.tag] ?? "other") as OperativeMediaType;
+          item.mediaType = (TAG_TO_MEDIA_TYPE[step.tag] ??
+            "other") as OperativeMediaType;
           filledStepIndices.add(targetIdx);
         }
       }
@@ -142,13 +142,9 @@ export function autoAssign(
   }
 
   // Pass 2: temporal/sequential — fill remaining empty slots with untagged photos
-  const untagged = result.filter(
-    (m) => !m.tag || m.tag === "other",
-  );
+  const untagged = result.filter((m) => !m.tag || m.tag === "other");
   // Sort untagged by capture time ascending
-  untagged.sort((a, b) =>
-    (a.createdAt ?? "").localeCompare(b.createdAt ?? ""),
-  );
+  untagged.sort((a, b) => (a.createdAt ?? "").localeCompare(b.createdAt ?? ""));
 
   for (const item of untagged) {
     // Find the first unfilled protocol slot
@@ -159,7 +155,8 @@ export function autoAssign(
 
     const step = protocolSteps[nextSlotIdx]!;
     item.tag = step.tag;
-    item.mediaType = (TAG_TO_MEDIA_TYPE[step.tag] ?? "other") as OperativeMediaType;
+    item.mediaType = (TAG_TO_MEDIA_TYPE[step.tag] ??
+      "other") as OperativeMediaType;
     filledStepIndices.add(nextSlotIdx);
   }
 
@@ -173,17 +170,19 @@ export function autoAssign(
 export function findMatchingCasesByPatientId(
   inboxItems: InboxItem[],
   cases: Case[],
-): Array<{ caseData: Case; matchCount: number }> {
+): { caseData: Case; matchCount: number }[] {
   // Collect unique patient hashes from inbox items.
   const pidSet = new Set<string>();
   for (const item of inboxItems) {
-    const pid = item.patientIdentifierHash ?? hashPatientIdentifier(item.patientIdentifier);
+    const pid =
+      item.patientIdentifierHash ??
+      hashPatientIdentifier(item.patientIdentifier);
     if (pid) pidSet.add(pid);
   }
 
   if (pidSet.size === 0) return [];
 
-  const matches: Array<{ caseData: Case; matchCount: number }> = [];
+  const matches: { caseData: Case; matchCount: number }[] = [];
 
   for (const c of cases) {
     const casePid = hashPatientIdentifier(c.patientIdentifier);
@@ -194,7 +193,8 @@ export function findMatchingCasesByPatientId(
     let matchCount = 0;
     for (const item of inboxItems) {
       const itemHash =
-        item.patientIdentifierHash ?? hashPatientIdentifier(item.patientIdentifier);
+        item.patientIdentifierHash ??
+        hashPatientIdentifier(item.patientIdentifier);
       if (itemHash === casePid) {
         matchCount++;
       }

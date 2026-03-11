@@ -24,10 +24,12 @@ export function isConsultantLevel(
  * Suggests default role and supervision based on user profile.
  * Called when form initialises (new case) or when responsible consultant changes.
  */
-export function suggestRoleDefaults(profile: {
-  careerStage?: string | null;
-  userId?: string;
-} | null): { role: OperativeRole; supervision: SupervisionLevel } {
+export function suggestRoleDefaults(
+  profile: {
+    careerStage?: string | null;
+    userId?: string;
+  } | null,
+): { role: OperativeRole; supervision: SupervisionLevel } {
   if (!profile) {
     return { role: "SURGEON", supervision: "INDEPENDENT" };
   }

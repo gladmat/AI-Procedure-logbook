@@ -15,9 +15,9 @@ import { ThemedText } from "@/components/ThemedText";
 import { SpecialtyBadge } from "@/components/SpecialtyBadge";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, Shadows } from "@/constants/theme";
-import { Case, SPECIALTY_LABELS } from "@/types/case";
-import { getCases } from "@/lib/storage";
-import { getPlannedCases } from "@/lib/dashboardSelectors";
+import type { CaseSummary } from "@/types/caseSummary";
+import { getCaseSummaries } from "@/lib/storage";
+import { isPlannedCaseSummary } from "@/types/caseSummary";
 import type { RootStackParamList } from "@/navigation/RootStackNavigator";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -28,12 +28,12 @@ function PlannedCaseRow({
   onCamera,
   theme,
 }: {
-  caseData: Case;
-  onComplete: (c: Case) => void;
-  onCamera: (c: Case) => void;
+  caseData: CaseSummary;
+  onComplete: (c: CaseSummary) => void;
+  onCamera: (c: CaseSummary) => void;
   theme: any;
 }) {
-  const photoCount = caseData.operativeMedia?.length ?? 0;
+  const photoCount = caseData.operativeMediaCount;
   const dateLabel = caseData.plannedDate ?? "Not scheduled";
 
   return (
@@ -77,7 +77,10 @@ function PlannedCaseRow({
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             onCamera(caseData);
           }}
-          style={[styles.iconButton, { backgroundColor: theme.backgroundRaised }]}
+          style={[
+            styles.iconButton,
+            { backgroundColor: theme.backgroundRaised },
+          ]}
           hitSlop={8}
         >
           <Feather name="camera" size={16} color={theme.textSecondary} />
@@ -106,14 +109,14 @@ export default function PlannedCaseListScreen() {
   const { theme } = useTheme();
   const navigation = useNavigation<NavigationProp>();
   const insets = useSafeAreaInsets();
-  const [cases, setCases] = useState<Case[]>([]);
+  const [cases, setCases] = useState<CaseSummary[]>([]);
   const [loading, setLoading] = useState(true);
 
   useFocusEffect(
     useCallback(() => {
       const task = InteractionManager.runAfterInteractions(async () => {
         try {
-          const all = await getCases();
+          const all = await getCaseSummaries();
           setCases(all);
         } catch (error) {
           console.error("[PlannedCaseListScreen] Load failed:", error);
@@ -125,10 +128,21 @@ export default function PlannedCaseListScreen() {
     }, []),
   );
 
-  const planned = useMemo(() => getPlannedCases(cases), [cases]);
+  const planned = useMemo(
+    () =>
+      cases.filter(isPlannedCaseSummary).sort((a, b) => {
+        if (a.plannedDate && b.plannedDate) {
+          return a.plannedDate.localeCompare(b.plannedDate);
+        }
+        if (a.plannedDate && !b.plannedDate) return -1;
+        if (!a.plannedDate && b.plannedDate) return 1;
+        return a.createdAt.localeCompare(b.createdAt);
+      }),
+    [cases],
+  );
 
   const handleComplete = useCallback(
-    (c: Case) => {
+    (c: CaseSummary) => {
       navigation.navigate("CaseForm", {
         caseId: c.id,
         specialty: c.specialty,
@@ -138,7 +152,7 @@ export default function PlannedCaseListScreen() {
   );
 
   const handleCamera = useCallback(
-    (c: Case) => {
+    (c: CaseSummary) => {
       navigation.navigate("OpusCamera", {
         templateId: c.plannedTemplateId,
         patientIdentifier: c.patientIdentifier,
@@ -159,9 +173,7 @@ export default function PlannedCaseListScreen() {
         ]}
       >
         <Feather name="calendar" size={48} color={theme.textTertiary} />
-        <ThemedText
-          style={[styles.emptyTitle, { color: theme.textSecondary }]}
-        >
+        <ThemedText style={[styles.emptyTitle, { color: theme.textSecondary }]}>
           No Planned Cases
         </ThemedText>
         <ThemedText

@@ -24,7 +24,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, Shadows } from "@/constants/theme";
-import { clearAllData, getCases } from "@/lib/storage";
+import { clearAllData, getCaseCount } from "@/lib/storage";
 import { exportCases, ExportFormat, EXPORT_FORMAT_LABELS } from "@/lib/export";
 import { validateMigrationCorpus } from "@/lib/migrationValidator";
 import { requestOnboardingRestart } from "@/lib/onboarding";
@@ -221,7 +221,7 @@ export default function SettingsScreen() {
   );
 
   useEffect(() => {
-    getCases().then((cases) => setCaseCount(cases.length));
+    getCaseCount().then(setCaseCount);
   }, []);
 
   const handleExport = () => {

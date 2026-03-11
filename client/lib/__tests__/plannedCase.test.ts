@@ -1,9 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { Case, CaseStatus } from "@/types/case";
-import {
-  resolvedCaseStatus,
-  isPlannedCase,
-} from "@/types/case";
+import type { Case } from "@/types/case";
+import { resolvedCaseStatus, isPlannedCase } from "@/types/case";
 import {
   filterOutPlannedCases,
   getPlannedCases,
@@ -140,8 +137,16 @@ describe("getPlannedCases", () => {
 
   it("sorts by plannedDate ascending", () => {
     const cases = [
-      makeCase({ id: "late", caseStatus: "planned", plannedDate: "2025-08-01" }),
-      makeCase({ id: "early", caseStatus: "planned", plannedDate: "2025-06-01" }),
+      makeCase({
+        id: "late",
+        caseStatus: "planned",
+        plannedDate: "2025-08-01",
+      }),
+      makeCase({
+        id: "early",
+        caseStatus: "planned",
+        plannedDate: "2025-06-01",
+      }),
       makeCase({ id: "mid", caseStatus: "planned", plannedDate: "2025-07-01" }),
     ];
     const result = getPlannedCases(cases);
@@ -151,7 +156,11 @@ describe("getPlannedCases", () => {
   it("puts cases without plannedDate last", () => {
     const cases = [
       makeCase({ id: "noDate", caseStatus: "planned" }),
-      makeCase({ id: "hasDate", caseStatus: "planned", plannedDate: "2025-06-01" }),
+      makeCase({
+        id: "hasDate",
+        caseStatus: "planned",
+        plannedDate: "2025-06-01",
+      }),
     ];
     const result = getPlannedCases(cases);
     expect(result.map((c) => c.id)).toEqual(["hasDate", "noDate"]);
@@ -183,7 +192,10 @@ describe("getPlannedCaseCount", () => {
 
 describe("template metadata carry-through in assignment", () => {
   it("carries templateId from InboxItem to OperativeMediaItem", () => {
-    const item = makeInboxItem({ templateId: "free_flap", templateStepIndex: 3 });
+    const item = makeInboxItem({
+      templateId: "free_flap",
+      templateStepIndex: 3,
+    });
     const result = inboxItemToOperativeMediaSmart(item, "other");
     expect(result.templateId).toBe("free_flap");
     expect(result.templateStepIndex).toBe(3);

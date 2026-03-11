@@ -16,13 +16,8 @@ import {
   toAcgmeGeneralSurgery,
   toGermanWeiterbildung,
   toSwissSiwf,
-  type OperativeRole,
-  type SupervisionLevel,
 } from "@/types/operativeRole";
-import {
-  isConsultantLevel,
-  suggestRoleDefaults,
-} from "@/lib/roleDefaults";
+import { isConsultantLevel, suggestRoleDefaults } from "@/lib/roleDefaults";
 
 // ─── migrateLegacyRole ─────────────────────────────────────────────────────
 
@@ -163,9 +158,9 @@ describe("resolveSupervisionLevel", () => {
   });
 
   it("falls back to case default for SURGEON", () => {
-    expect(
-      resolveSupervisionLevel(undefined, "SUP_PRESENT", "SURGEON"),
-    ).toBe("SUP_PRESENT");
+    expect(resolveSupervisionLevel(undefined, "SUP_PRESENT", "SURGEON")).toBe(
+      "SUP_PRESENT",
+    );
   });
 
   it("falls back to INDEPENDENT for SURGEON when neither set", () => {
@@ -178,9 +173,9 @@ describe("resolveSupervisionLevel", () => {
     expect(
       resolveSupervisionLevel("SUP_SCRUBBED", "INDEPENDENT", "FIRST_ASST"),
     ).toBe("NOT_APPLICABLE");
-    expect(
-      resolveSupervisionLevel(undefined, undefined, "OBSERVER"),
-    ).toBe("NOT_APPLICABLE");
+    expect(resolveSupervisionLevel(undefined, undefined, "OBSERVER")).toBe(
+      "NOT_APPLICABLE",
+    );
   });
 });
 
@@ -192,15 +187,13 @@ describe("hasRoleOverride", () => {
   });
 
   it("detects role override", () => {
-    expect(hasRoleOverride({ operativeRoleOverride: "FIRST_ASST" })).toBe(
-      true,
-    );
+    expect(hasRoleOverride({ operativeRoleOverride: "FIRST_ASST" })).toBe(true);
   });
 
   it("detects supervision override", () => {
-    expect(
-      hasRoleOverride({ supervisionLevelOverride: "SUP_SCRUBBED" }),
-    ).toBe(true);
+    expect(hasRoleOverride({ supervisionLevelOverride: "SUP_SCRUBBED" })).toBe(
+      true,
+    );
   });
 });
 

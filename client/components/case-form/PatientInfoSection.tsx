@@ -76,9 +76,7 @@ export const PatientInfoSection = React.memo(function PatientInfoSection() {
 
       <View style={styles.privacyRow}>
         <Feather name="lock" size={12} color={theme.textTertiary} />
-        <ThemedText
-          style={[styles.privacyText, { color: theme.textTertiary }]}
-        >
+        <ThemedText style={[styles.privacyText, { color: theme.textTertiary }]}>
           Stored on this device only
         </ThemedText>
       </View>
@@ -119,9 +117,7 @@ export const PatientInfoSection = React.memo(function PatientInfoSection() {
       />
 
       {calculatedAge !== undefined && (
-        <ThemedText
-          style={[styles.ageDisplay, { color: theme.textSecondary }]}
-        >
+        <ThemedText style={[styles.ageDisplay, { color: theme.textSecondary }]}>
           Age: {calculatedAge} years
         </ThemedText>
       )}

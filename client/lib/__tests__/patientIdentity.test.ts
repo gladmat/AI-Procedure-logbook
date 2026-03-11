@@ -1,8 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import {
-  calculateAgeFromDob,
-  getPatientDisplayName,
-} from "@/types/case";
+import { isLegacyHash } from "@/lib/patientIdentifierHmac";
+import { calculateAgeFromDob, getPatientDisplayName } from "@/types/case";
 
 vi.mock("expo-secure-store", () => ({
   getItemAsync: vi.fn(async () => null),
@@ -24,11 +22,6 @@ vi.mock("@noble/hashes/utils.js", () => ({
   randomBytes: vi.fn(() => new Uint8Array(32)),
   utf8ToBytes: vi.fn(() => new Uint8Array(0)),
 }));
-
-import {
-  isLegacyHash,
-  stripPatientIdentityForSync,
-} from "@/lib/patientIdentifierHmac";
 
 describe("calculateAgeFromDob", () => {
   it("returns undefined for empty/undefined DOB", () => {
@@ -69,15 +62,11 @@ describe("getPatientDisplayName", () => {
   });
 
   it("returns first name only", () => {
-    expect(
-      getPatientDisplayName({ patientFirstName: "John" }),
-    ).toBe("John");
+    expect(getPatientDisplayName({ patientFirstName: "John" })).toBe("John");
   });
 
   it("returns last name only", () => {
-    expect(
-      getPatientDisplayName({ patientLastName: "Smith" }),
-    ).toBe("Smith");
+    expect(getPatientDisplayName({ patientLastName: "Smith" })).toBe("Smith");
   });
 
   it("returns undefined when no name fields", () => {
@@ -92,40 +81,5 @@ describe("isLegacyHash", () => {
 
   it("detects HMAC hashes with prefix", () => {
     expect(isLegacyHash("hmac:abc123def456")).toBe(false);
-  });
-});
-
-describe("stripPatientIdentityForSync", () => {
-  it("removes patient identity fields", () => {
-    const input = {
-      id: "case-1",
-      patientFirstName: "John",
-      patientLastName: "Smith",
-      patientDateOfBirth: "1990-01-01",
-      patientNhi: "ABC1234",
-      patientIdentifier: "ABC1234",
-      procedureDate: "2024-01-15",
-    };
-
-    const result = stripPatientIdentityForSync(input);
-    expect(result).toEqual({
-      id: "case-1",
-      patientIdentifier: "ABC1234",
-      procedureDate: "2024-01-15",
-    });
-    expect(result).not.toHaveProperty("patientFirstName");
-    expect(result).not.toHaveProperty("patientLastName");
-    expect(result).not.toHaveProperty("patientDateOfBirth");
-    expect(result).not.toHaveProperty("patientNhi");
-  });
-
-  it("handles case without identity fields", () => {
-    const input = {
-      id: "case-2",
-      procedureDate: "2024-01-15",
-    };
-
-    const result = stripPatientIdentityForSync(input);
-    expect(result).toEqual(input);
   });
 });
