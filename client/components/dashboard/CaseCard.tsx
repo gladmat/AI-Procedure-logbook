@@ -264,7 +264,9 @@ function DashboardCaseCardInner({
               style={[styles.patientId, { color: theme.textTertiary }]}
               numberOfLines={1}
             >
-              {caseData.patientIdentifier}
+              {[caseData.patientFirstName, caseData.patientLastName]
+                .filter(Boolean)
+                .join(" ") || caseData.patientIdentifier}
             </ThemedText>
           </View>
           {hasActions ? (

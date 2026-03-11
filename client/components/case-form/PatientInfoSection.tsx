@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { View, Pressable, StyleSheet } from "react-native";
+import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { ThemedText } from "@/components/ThemedText";
 import {
@@ -17,30 +18,113 @@ import {
 } from "@/contexts/CaseFormContext";
 import { setField } from "@/hooks/useCaseForm";
 import { Spacing } from "@/constants/theme";
-import { Gender, GENDER_LABELS, ETHNICITY_OPTIONS } from "@/types/case";
+import {
+  Gender,
+  GENDER_LABELS,
+  ETHNICITY_OPTIONS,
+  calculateAgeFromDob,
+} from "@/types/case";
+import { formatNhi } from "@/lib/nhiValidation";
 
 export const PatientInfoSection = React.memo(function PatientInfoSection() {
   const { theme } = useTheme();
-  const { facilities } = useAuth();
+  const { facilities, profile } = useAuth();
   const { state } = useCaseFormState();
   const { dispatch, fieldErrors, onFieldBlur } = useCaseFormDispatch();
+
+  const isNZ = profile?.countryOfPractice === "NZ";
+
+  const calculatedAge = useMemo(
+    () => calculateAgeFromDob(state.patientDateOfBirth),
+    [state.patientDateOfBirth],
+  );
 
   return (
     <>
       <SectionHeader title="Patient Information" />
 
-      <FormField
-        label="Patient Identifier"
-        value={state.patientIdentifier}
-        onChangeText={(text: string) =>
-          dispatch(setField("patientIdentifier", text.toUpperCase()))
-        }
-        placeholder="e.g., MRN or initials"
-        required
-        autoCapitalize="characters"
-        onBlur={() => onFieldBlur("patientIdentifier")}
-        error={fieldErrors.patientIdentifier}
+      {isNZ ? (
+        <FormField
+          label="NHI Number"
+          value={state.patientNhi}
+          onChangeText={(text: string) => {
+            const formatted = formatNhi(text);
+            dispatch(setField("patientNhi", formatted));
+            // Auto-sync NHI → patientIdentifier for NZ users
+            dispatch(setField("patientIdentifier", formatted));
+          }}
+          placeholder="e.g., ABC1234"
+          required
+          autoCapitalize="characters"
+          onBlur={() => onFieldBlur("patientIdentifier")}
+          error={fieldErrors.patientIdentifier}
+        />
+      ) : (
+        <FormField
+          label="Patient Identifier"
+          value={state.patientIdentifier}
+          onChangeText={(text: string) =>
+            dispatch(setField("patientIdentifier", text.toUpperCase()))
+          }
+          placeholder="e.g., MRN or initials"
+          required
+          autoCapitalize="characters"
+          onBlur={() => onFieldBlur("patientIdentifier")}
+          error={fieldErrors.patientIdentifier}
+        />
+      )}
+
+      <View style={styles.privacyRow}>
+        <Feather name="lock" size={12} color={theme.textTertiary} />
+        <ThemedText
+          style={[styles.privacyText, { color: theme.textTertiary }]}
+        >
+          Stored on this device only
+        </ThemedText>
+      </View>
+
+      <View style={styles.row}>
+        <View style={styles.halfField}>
+          <FormField
+            label="First Name"
+            value={state.patientFirstName}
+            onChangeText={(v: string) =>
+              dispatch(setField("patientFirstName", v))
+            }
+            placeholder="First name"
+            autoCapitalize="words"
+          />
+        </View>
+        <View style={styles.halfField}>
+          <FormField
+            label="Last Name"
+            value={state.patientLastName}
+            onChangeText={(v: string) =>
+              dispatch(setField("patientLastName", v))
+            }
+            placeholder="Last name"
+            autoCapitalize="words"
+          />
+        </View>
+      </View>
+
+      <DatePickerField
+        label="Date of Birth"
+        value={state.patientDateOfBirth}
+        onChange={(v: string) => {
+          dispatch(setField("patientDateOfBirth", v));
+        }}
+        placeholder="Select date of birth..."
+        maximumDate={new Date()}
       />
+
+      {calculatedAge !== undefined && (
+        <ThemedText
+          style={[styles.ageDisplay, { color: theme.textSecondary }]}
+        >
+          Age: {calculatedAge} years
+        </ThemedText>
+      )}
 
       <DatePickerField
         label="Procedure Date"
@@ -136,18 +220,6 @@ export const PatientInfoSection = React.memo(function PatientInfoSection() {
           </View>
         </View>
         <View style={styles.halfField}>
-          <FormField
-            label="Age (years)"
-            value={state.age}
-            onChangeText={(v: string) => dispatch(setField("age", v))}
-            placeholder="e.g. 51"
-            keyboardType="number-pad"
-          />
-        </View>
-      </View>
-
-      <View style={styles.row}>
-        <View style={styles.halfField}>
           <PickerField
             label="Ethnicity"
             value={state.ethnicity}
@@ -167,6 +239,21 @@ const styles = StyleSheet.create({
   },
   halfField: {
     flex: 1,
+  },
+  privacyRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginTop: -Spacing.xs,
+    marginBottom: Spacing.sm,
+  },
+  privacyText: {
+    fontSize: 12,
+  },
+  ageDisplay: {
+    fontSize: 14,
+    marginTop: -Spacing.xs,
+    marginBottom: Spacing.sm,
   },
   fieldLabel: {
     fontSize: 14,

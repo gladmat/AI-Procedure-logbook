@@ -218,6 +218,25 @@ export function OperativeMediaSection({
     });
   };
 
+  const hasUntaggedPhotos = media.some((m) => !m.tag || m.tag === "other");
+  const showOrganiseButton =
+    protocols.length > 0 && media.length > 0 && hasUntaggedPhotos;
+
+  const handleOrganise = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const callbackId = registerGenericCallback(
+      (updatedMedia: OperativeMediaItem[]) => {
+        onMediaChange(updatedMedia);
+      },
+    );
+    navigation.navigate("CaseMediaOrganiser", {
+      callbackId,
+      media,
+      protocolSteps: mergedProtocol.steps,
+      procedureDate: mediaContext?.procedureDate,
+    });
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -233,6 +252,22 @@ export function OperativeMediaSection({
           ) : null}
         </View>
         <View style={styles.headerRight}>
+          {showOrganiseButton ? (
+            <Pressable
+              onPress={handleOrganise}
+              style={[
+                styles.manageButton,
+                { backgroundColor: theme.link + "15", borderColor: theme.link },
+              ]}
+            >
+              <Feather name="grid" size={14} color={theme.link} />
+              <ThemedText
+                style={[styles.manageButtonText, { color: theme.link }]}
+              >
+                Organise
+              </ThemedText>
+            </Pressable>
+          ) : null}
           {media.length > 0 ? (
             <Pressable
               onPress={handleManageMedia}

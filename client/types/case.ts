@@ -8,14 +8,16 @@ import type {
 import type { SkinCancerLesionAssessment } from "./skinCancer";
 import type { JointImplantDetails } from "./jointImplant";
 import type { MediaTag } from "./media";
+import { parseDateOnlyValue } from "@/lib/dateValues";
 
 // Case status for active patient tracking
-export type CaseStatus = "active" | "discharged" | "incomplete";
+export type CaseStatus = "active" | "discharged" | "incomplete" | "planned";
 
 export const CASE_STATUS_LABELS: Record<CaseStatus, string> = {
   active: "Active",
   discharged: "Discharged",
   incomplete: "Incomplete",
+  planned: "Planned",
 };
 
 // RACS MALT Supervision Levels (role in theatre)
@@ -1682,8 +1684,15 @@ export interface Case {
   episodeSequence?: number;
   encounterClass?: EncounterClass;
 
+  // Patient Identity (on-device only, never synced to server)
+  patientFirstName?: string;
+  patientLastName?: string;
+  patientDateOfBirth?: string; // YYYY-MM-DD
+  patientNhi?: string; // NZ National Health Index (format: ABC1234)
+
   // Patient Demographics
   gender?: Gender;
+  /** @deprecated Use patientDateOfBirth + calculateAgeFromDob() instead. Kept for backward compat with old cases. */
   age?: number;
   ethnicity?: string;
 
@@ -1741,6 +1750,11 @@ export interface Case {
 
   // Case Status (active until discharge note recorded)
   caseStatus?: CaseStatus;
+
+  // Planned case fields (caseStatus === "planned")
+  plannedDate?: string; // YYYY-MM-DD — scheduled surgery date
+  plannedNote?: string; // Free-text planning note
+  plannedTemplateId?: string; // Capture protocol ID chosen at plan time
 
   clinicalDetails: ClinicalDetails;
   teamMembers: TeamMember[];
@@ -1895,6 +1909,8 @@ export interface OperativeMediaItem {
   caption?: string;
   timestamp?: string;
   createdAt: string;
+  templateId?: string; // Opus Camera protocol ID
+  templateStepIndex?: number; // Protocol step index at capture time
 }
 
 export const OPERATIVE_MEDIA_TYPE_LABELS: Record<OperativeMediaType, string> = {
@@ -2329,6 +2345,19 @@ export function getPrimaryDiagnosisName(c: Case): string | undefined {
   return (c.diagnosisGroups ?? [])[0]?.diagnosis?.displayName;
 }
 
+/**
+ * Resolve the effective case status with backward-compatible fallback.
+ * Older cases may not have caseStatus set — derive from discharge state.
+ */
+export function resolvedCaseStatus(c: Case): CaseStatus {
+  if (c.caseStatus) return c.caseStatus;
+  return c.dischargeDate ? "discharged" : "active";
+}
+
+export function isPlannedCase(c: Case): boolean {
+  return c.caseStatus === "planned";
+}
+
 export function getAllLesionInstances(c: Case): LesionInstance[] {
   return (c.diagnosisGroups ?? []).flatMap((g) => g.lesionInstances ?? []);
 }
@@ -2362,6 +2391,42 @@ export function getPrimarySiteLabel(c: Case): string | null {
   if (lesionSite) return lesionSite;
   if (side) return side;
   return null;
+}
+
+/**
+ * Calculate age in whole years from a YYYY-MM-DD date of birth.
+ * Uses parseDateOnlyValue for timezone-safe parsing.
+ * Returns undefined if dob is missing or invalid.
+ */
+export function calculateAgeFromDob(
+  dob: string | undefined,
+  referenceDate?: Date,
+): number | undefined {
+  if (!dob) return undefined;
+  const birthDate = parseDateOnlyValue(dob);
+  if (!birthDate) return undefined;
+  const ref = referenceDate ?? new Date();
+  let age = ref.getFullYear() - birthDate.getFullYear();
+  const monthDiff = ref.getMonth() - birthDate.getMonth();
+  if (
+    monthDiff < 0 ||
+    (monthDiff === 0 && ref.getDate() < birthDate.getDate())
+  ) {
+    age--;
+  }
+  return age >= 0 ? age : undefined;
+}
+
+/**
+ * Get display name for a patient from their identity fields.
+ * Returns "First Last", "First", "Last", or undefined.
+ */
+export function getPatientDisplayName(c: {
+  patientFirstName?: string;
+  patientLastName?: string;
+}): string | undefined {
+  const parts = [c.patientFirstName, c.patientLastName].filter(Boolean);
+  return parts.length > 0 ? parts.join(" ") : undefined;
 }
 
 export const COMMON_COMORBIDITIES: SnomedCodedItem[] = [

@@ -16,7 +16,7 @@ import {
   getEpisode as getLocalEpisode,
 } from "./episodeStorage";
 import { encryptData, decryptData } from "./encryption";
-import * as Crypto from "expo-crypto";
+import { hashPatientIdentifier } from "./storage";
 
 // ── Auth-aware fetch ───────────────────────────────────────────────────────
 
@@ -36,18 +36,6 @@ async function authedFetch(
       ...options.headers,
     },
   });
-}
-
-async function hashPatientIdentifier(
-  patientIdentifier?: string,
-): Promise<string | undefined> {
-  if (!patientIdentifier) return undefined;
-  const normalized = patientIdentifier.toUpperCase().replace(/\s/g, "");
-  return Crypto.digestStringAsync(
-    Crypto.CryptoDigestAlgorithm.SHA256,
-    normalized,
-    { encoding: Crypto.CryptoEncoding.HEX },
-  );
 }
 
 // ── Push ────────────────────────────────────────────────────────────────────

@@ -56,6 +56,7 @@ import {
   buildDashboardSummary,
   filterCasesByVisibleSpecialties,
   filterDashboardCases,
+  filterOutPlannedCases,
 } from "@/lib/dashboardSelectors";
 import { buildMediaContextFromCase } from "@/lib/mediaContext";
 import { getInboxCount } from "@/lib/inboxStorage";
@@ -123,7 +124,7 @@ export default function DashboardScreen() {
   // --- Derived data ---
 
   const personalizedCases = useMemo(
-    () => filterCasesByVisibleSpecialties(cases, visibleSpecialties),
+    () => filterOutPlannedCases(filterCasesByVisibleSpecialties(cases, visibleSpecialties)),
     [cases, visibleSpecialties],
   );
 
@@ -268,6 +269,10 @@ export default function DashboardScreen() {
       navigation.navigate("AddCase");
     }
   }, [navigation, selectedSpecialty]);
+
+  const handlePlanCase = useCallback(() => {
+    navigation.navigate("PlanCase");
+  }, [navigation]);
 
   const handleAttentionLogCase = useCallback(
     (item: AttentionItem) => {
@@ -440,7 +445,7 @@ export default function DashboardScreen() {
         )}
       </ScrollView>
 
-      <AddCaseFAB onPress={handleAddCase} />
+      <AddCaseFAB onAddCase={handleAddCase} onPlanCase={handlePlanCase} />
 
       {/* Discharge Modal */}
       <Modal

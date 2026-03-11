@@ -39,6 +39,7 @@ import {
   SuggestionAcceptanceEntry,
   ReconstructionTiming,
   QuickCasePrefillData,
+  calculateAgeFromDob,
 } from "@/types/case";
 import { InfectionOverlay } from "@/types/infection";
 import type { EncounterClass, EpisodePrefillData } from "@/types/episode";
@@ -178,8 +179,15 @@ export interface CaseFormState {
   facility: string;
   procedureType: string;
   gender: Gender | "";
+  /** @deprecated Use patientDateOfBirth instead. Kept for loading old cases. */
   age: string;
   ethnicity: string;
+
+  // Patient Identity (on-device only)
+  patientFirstName: string;
+  patientLastName: string;
+  patientDateOfBirth: string;
+  patientNhi: string;
 
   // Diagnosis Groups
   diagnosisGroups: DiagnosisGroup[];
@@ -279,6 +287,10 @@ export function getDefaultFormState(
     gender: "",
     age: "",
     ethnicity: "",
+    patientFirstName: "",
+    patientLastName: "",
+    patientDateOfBirth: "",
+    patientNhi: "",
     diagnosisGroups: [
       {
         id: uuidv4(),
@@ -375,6 +387,10 @@ function loadCaseIntoFormState(
     gender: caseData.gender ?? "",
     age: caseData.age ? String(caseData.age) : "",
     ethnicity: caseData.ethnicity ?? "",
+    patientFirstName: caseData.patientFirstName ?? "",
+    patientLastName: caseData.patientLastName ?? "",
+    patientDateOfBirth: caseData.patientDateOfBirth ?? "",
+    patientNhi: caseData.patientNhi ?? "",
     diagnosisGroups: caseData.diagnosisGroups || [],
     admissionDate: caseData.admissionDate ?? "",
     dischargeDate: caseData.dischargeDate ?? "",
@@ -577,6 +593,10 @@ export function draftToFormState(
   result.gender = draft.gender ?? "";
   result.age = draft.age ? String(draft.age) : "";
   result.ethnicity = draft.ethnicity ?? "";
+  result.patientFirstName = draft.patientFirstName ?? "";
+  result.patientLastName = draft.patientLastName ?? "";
+  result.patientDateOfBirth = draft.patientDateOfBirth ?? "";
+  result.patientNhi = draft.patientNhi ?? "";
   result.admissionDate = restoreDraftDateOnlyValue(draft.admissionDate) ?? "";
   result.dischargeDate = restoreDraftDateOnlyValue(draft.dischargeDate) ?? "";
   result.admissionUrgency = draft.admissionUrgency ?? "";
@@ -974,14 +994,20 @@ export function buildDuplicateState(
       (source.clinicalDetails as any)?.recipientSiteRegion ?? undefined,
     anastomoses: clonedAnastomoses,
 
+    // ── Patient identity (carried forward — same patient) ───
+    patientFirstName: source.patientFirstName ?? "",
+    patientLastName: source.patientLastName ?? "",
+    patientDateOfBirth: source.patientDateOfBirth ?? "",
+    patientNhi: source.patientNhi ?? "",
+
     // ── Cleared fields ───────────────────────────────────────
     patientIdentifier: skinCancerFollowUpPrefill
       ? source.patientIdentifier
-      : "",
+      : source.patientIdentifier, // Carry forward — same patient
     procedureDate: toIsoDateValue(new Date()),
-    gender: "",
+    gender: source.gender ?? "",
     age: "",
-    ethnicity: "",
+    ethnicity: source.ethnicity ?? "",
     admissionDate: "",
     dischargeDate: "",
     injuryDate: "",
@@ -1700,8 +1726,16 @@ export function useCaseForm({
           operatingTeam:
             state.operatingTeam.length > 0 ? state.operatingTeam : undefined,
           gender: state.gender || undefined,
-          age: state.age ? parseInt(state.age) : undefined,
+          age: state.patientDateOfBirth
+            ? calculateAgeFromDob(state.patientDateOfBirth)
+            : state.age
+              ? parseInt(state.age)
+              : undefined,
           ethnicity: state.ethnicity.trim() || undefined,
+          patientFirstName: state.patientFirstName.trim() || undefined,
+          patientLastName: state.patientLastName.trim() || undefined,
+          patientDateOfBirth: state.patientDateOfBirth || undefined,
+          patientNhi: state.patientNhi.trim() || undefined,
           admissionDate: state.admissionDate || undefined,
           dischargeDate: state.dischargeDate || undefined,
           admissionUrgency: state.admissionUrgency || undefined,

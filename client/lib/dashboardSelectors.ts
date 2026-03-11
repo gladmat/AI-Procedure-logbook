@@ -4,7 +4,7 @@ import type { EpisodePrefillData, TreatmentEpisode } from "@/types/episode";
 import { PENDING_ACTION_LABELS } from "@/types/episode";
 import { INFECTION_SYNDROME_LABELS } from "@/types/infection";
 import type { Case, QuickCasePrefillData, Specialty } from "@/types/case";
-import { getCaseSpecialties } from "@/types/case";
+import { getCaseSpecialties, isPlannedCase, getPatientDisplayName } from "@/types/case";
 
 const DAY_MS = 1000 * 60 * 60 * 24;
 
@@ -104,6 +104,28 @@ export function sortCasesByProcedureDateDesc(cases: Case[]): Case[] {
   );
 }
 
+export function filterOutPlannedCases(cases: Case[]): Case[] {
+  return cases.filter((c) => !isPlannedCase(c));
+}
+
+export function getPlannedCases(cases: Case[]): Case[] {
+  return cases
+    .filter(isPlannedCase)
+    .sort((a, b) => {
+      // Sort by plannedDate ascending (unscheduled last), then createdAt
+      if (a.plannedDate && b.plannedDate) {
+        return a.plannedDate.localeCompare(b.plannedDate);
+      }
+      if (a.plannedDate && !b.plannedDate) return -1;
+      if (!a.plannedDate && b.plannedDate) return 1;
+      return a.createdAt.localeCompare(b.createdAt);
+    });
+}
+
+export function getPlannedCaseCount(cases: Case[]): number {
+  return cases.filter(isPlannedCase).length;
+}
+
 export function filterCasesByVisibleSpecialties(
   cases: Case[],
   visibleSpecialties: Specialty[],
@@ -187,7 +209,8 @@ export function buildAttentionItems(
     inpatientItems.push({
       id: `inpatient-${caseData.id}`,
       type: "inpatient",
-      patientIdentifier: caseData.patientIdentifier,
+      patientIdentifier:
+        getPatientDisplayName(caseData) || caseData.patientIdentifier,
       diagnosisTitle:
         getCasePrimaryTitle(caseData) || caseData.procedureType || "Unknown",
       specialty: caseData.specialty,
@@ -229,7 +252,8 @@ export function buildAttentionItems(
     infectionItems.push({
       id: `infection-${caseData.id}`,
       type: "infection",
-      patientIdentifier: caseData.patientIdentifier,
+      patientIdentifier:
+        getPatientDisplayName(caseData) || caseData.patientIdentifier,
       diagnosisTitle:
         getCasePrimaryTitle(caseData) || caseData.procedureType || "Unknown",
       specialty: caseData.specialty,

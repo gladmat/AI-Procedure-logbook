@@ -165,7 +165,12 @@ function buildEncounter(c: Case, conditionRefs: string[]): FhirResource {
   return {
     resourceType: "Encounter",
     id: `encounter-${c.id}`,
-    status: c.caseStatus === "discharged" ? "finished" : "in-progress",
+    status:
+      c.caseStatus === "planned"
+        ? "planned"
+        : c.caseStatus === "discharged"
+          ? "finished"
+          : "in-progress",
     class: {
       system: "http://terminology.hl7.org/CodeSystem/v3-ActCode",
       code: classCode,
@@ -440,6 +445,44 @@ function buildDevice(proc: CaseProcedure): FhirResource | undefined {
   return device;
 }
 
+// ─── Patient ──────────────────────────────────────────────────────────────
+
+function buildPatient(c: Case): FhirResource | null {
+  const hasIdentity =
+    c.patientFirstName || c.patientLastName || c.patientDateOfBirth || c.patientNhi;
+  if (!hasIdentity) return null;
+
+  const patient: FhirResource = {
+    resourceType: "Patient",
+    id: c.patientIdentifier,
+  };
+
+  if (c.patientFirstName || c.patientLastName) {
+    patient.name = [
+      {
+        use: "official",
+        ...(c.patientLastName ? { family: c.patientLastName } : {}),
+        ...(c.patientFirstName ? { given: [c.patientFirstName] } : {}),
+      },
+    ];
+  }
+
+  if (c.patientDateOfBirth) {
+    patient.birthDate = c.patientDateOfBirth;
+  }
+
+  if (c.patientNhi) {
+    patient.identifier = [
+      {
+        system: "https://standards.digital.health.nz/ns/nhi-id",
+        value: c.patientNhi,
+      },
+    ];
+  }
+
+  return patient;
+}
+
 // ─── Bundle Builders ───────────────────────────────────────────────────────
 
 function caseToFhirBundle(c: Case): FhirBundle {
@@ -484,7 +527,13 @@ function caseToFhirBundle(c: Case): FhirBundle {
     }
   }
 
-  // Encounter as container (first entry)
+  // Patient resource (when identity fields available)
+  const patient = buildPatient(c);
+  if (patient) {
+    entries.unshift({ resource: patient });
+  }
+
+  // Encounter as container (first entry after Patient)
   const encounter = buildEncounter(c, conditionIds);
   entries.unshift({ resource: encounter });
 

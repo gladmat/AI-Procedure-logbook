@@ -260,7 +260,13 @@ export default function CaseDetailScreen() {
     navigation.setOptions({
       headerTitle: () => (
         <HeaderTitleText
-          title={caseData?.patientIdentifier || "Case Details"}
+          title={
+            [caseData?.patientFirstName, caseData?.patientLastName]
+              .filter(Boolean)
+              .join(" ") ||
+            caseData?.patientIdentifier ||
+            "Case Details"
+          }
           reserveWidth={164}
           fontSize={15}
         />
@@ -517,7 +523,12 @@ export default function CaseDetailScreen() {
     (g) => g.procedures.length > 0,
   );
   const hasPatientDemographics =
-    caseData.gender || caseData.age || caseData.ethnicity;
+    caseData.gender ||
+    caseData.age ||
+    caseData.ethnicity ||
+    caseData.patientFirstName ||
+    caseData.patientLastName ||
+    caseData.patientDateOfBirth;
   const hasAdmissionDetails =
     caseData.admissionDate ||
     caseData.dischargeDate ||
@@ -1157,15 +1168,35 @@ export default function CaseDetailScreen() {
                 { backgroundColor: theme.backgroundDefault },
               ]}
             >
+              {(caseData.patientFirstName || caseData.patientLastName) && (
+                <DetailRow
+                  label="Patient"
+                  value={[caseData.patientFirstName, caseData.patientLastName]
+                    .filter(Boolean)
+                    .join(" ")}
+                />
+              )}
+              {caseData.patientNhi && (
+                <DetailRow label="NHI" value={caseData.patientNhi} />
+              )}
+              {caseData.patientDateOfBirth && (
+                <DetailRow
+                  label="Date of Birth"
+                  value={
+                    caseData.age
+                      ? `${caseData.patientDateOfBirth} (age ${caseData.age})`
+                      : caseData.patientDateOfBirth
+                  }
+                />
+              )}
+              {!caseData.patientDateOfBirth && caseData.age && (
+                <DetailRow label="Age" value={String(caseData.age)} />
+              )}
               <DetailRow
                 label="Gender"
                 value={
                   caseData.gender ? GENDER_LABELS[caseData.gender] : undefined
                 }
-              />
-              <DetailRow
-                label="Age"
-                value={caseData.age ? String(caseData.age) : undefined}
               />
               <DetailRow label="Ethnicity" value={caseData.ethnicity} />
             </View>

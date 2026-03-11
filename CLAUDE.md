@@ -32,6 +32,10 @@ Key capabilities: multi-specialty case logging, SNOMED CT coded diagnoses and pr
 - **Capture Pipeline Phase C COMPLETE** — Smart Import from Camera Roll: `SmartImportScreen` with state machine (`picking → encrypting → prompting → deleting → done`), encrypts selected photos into Opus Inbox via `addMultipleToInbox` with `"smart_import"` sourceType, prompts surgeon to delete Camera Roll originals via `expo-media-library` `deleteAssetsAsync` (native iOS confirmation), "Always delete after import" preference (`smartImportPrefs.ts` AsyncStorage helper), InboxScreen gallery button rewired to navigate to SmartImport (renamed "Camera Roll"), PersonalisationScreen toggle for auto-delete preference, fullScreenModal presentation prevents swipe-dismiss during encryption, 32 tests (10 smartImportPrefs + 22 inboxStorage)
 - **Capture Pipeline Phase D COMPLETE** — Opus Camera: dedicated in-app camera (`OpusCameraScreen`) using `expo-camera` CameraView that captures photos directly to encrypted Opus Inbox, completely bypassing Camera Roll. Two modes: Quick Snap (instant camera, no template, rapid-fire to Inbox) and Guided Capture (template picker → guided viewfinder with step-by-step protocol prompts, auto-advance, phase filtering). `CapturePhase` type (`preop`/`intraop`/`postop`) assigned to all 65 protocol steps with `filterStepsByPhase()`. `InboxItem` extended with optional `templateId`, `templateStepIndex`, `patientIdentifier` fields and `"opus_camera"` sourceType. Fire-and-forget encryption queue for responsive rapid-fire capture. Stock camera replaced with Opus Camera navigation in both InboxScreen and OperativeMediaSection. fullScreenModal presentation, 26 new tests (7 inboxStorage + 19 mediaCaptureProtocols), 574 tests total
 - **Capture Pipeline Phase E COMPLETE** — Smart Assignment (Inbox-to-Case Bridge): context-aware tag inference when assigning inbox photos to cases. Pure-function `inboxAssignment.ts` with `inferMediaTagForInboxItem()` (priority chain: template step tag → temporal inference via `suggestTemporalTag()` → `"other"` fallback), `inboxItemToOperativeMediaSmart()` (sets tag + derives mediaType via `TAG_TO_MEDIA_TYPE`), `extractPatientIdHint()` (most common patient ID from batch). `procedureDate` passed through Inbox route params from OperativeMediaSection pick mode. Both assignment paths (pick mode + standalone case selection) now produce smart-tagged media instead of `tag: undefined / mediaType: "other"`. CasePickerModal enhanced with `initialSearch` patient ID pre-fill and 50-case limit footer hint. InboxScreen hardcoded `#fff` replaced with `OVERLAY_TEXT` constant, 17 new tests, 591 tests total
+- **Capture Pipeline Phase F COMPLETE** — Planned Case types and storage: CaseStatus extended with `"planned"`, Case interface extended with `plannedDate?`, `plannedNote?`, `plannedTemplateId?`, `OperativeMediaItem` extended with `templateId?`/`templateStepIndex?` for Opus Camera metadata carry-through, `resolvedCaseStatus()`/`isPlannedCase()` helpers, `filterOutPlannedCases()`/`getPlannedCases()`/`getPlannedCaseCount()` dashboard selectors, planned cases excluded from statistics, `plannedDate` CSV column, FHIR `"planned"` encounter status, `CaseIndexEntry` extended with `caseStatus`/`plannedDate`, 18 new tests
+- **Capture Pipeline Phase G COMPLETE** — Planned Case creation UI and access: `PlanCaseScreen` (ultra-minimal modal form: patient ID, planned date, specialty, note, template picker, "Open Opus Camera" button), `PlannedCaseListScreen` (sorted by plannedDate, per-row quick actions: Complete Case → CaseFormScreen edit mode, Camera → OpusCameraScreen), `AddCaseFAB` expanded with ActionSheet menu ("Log a Case" / "Plan a Case" / "Cancel"), completion flow overwrites `caseStatus: "planned"` → active/incomplete/discharged on save, `CaseFormScreen` shows "Complete Case" header when editing planned case
+- **Capture Pipeline Phase H COMPLETE** — Two-Layer Photo Assignment: `autoAssign()` pure function (template metadata priority → sequential fill → leave untagged), `findMatchingCasesByPatientId()` for NHI auto-match (case-insensitive, sorted by match count), `CaseMediaOrganiserScreen` (protocol slot grid + untagged strip, tap-to-assign, phase filter tabs, auto-organise button, Done returns updated media via MediaCallbackContext), "Organise with protocol" button in OperativeMediaSection (shown when protocol exists + untagged photos present), NHI auto-match banner in InboxScreen (async case loading, one-tap assign), 15 new tests (autoAssign + findMatchingCasesByPatientId + template metadata), 624 tests total
+- **Patient Identity COMPLETE** — On-device structured patient identity: `patientFirstName`, `patientLastName`, `patientDateOfBirth` (replaces `age`), `patientNhi` (NZ NHI with mod-11 check digit validation). Country-aware UI (`countryOfPractice === 'NZ'` → NHI field, non-NZ → generic identifier). Per-user HMAC-SHA256 replacing bare SHA-256 for patient identifier hashing (key in iOS Keychain via `expo-secure-store`), `hmac:` prefix distinguishes new hashes, lazy migration on case load, dual-hash lookup for backward compat. `stripPatientIdentityForSync()` security boundary removes identity fields before server sync. `nhiValidation.ts` (format + check digit), `patientIdentifierHmac.ts` (HMAC key management + hashing). PatientInfoSection refactored with NHI/name/DOB fields + privacy indicator. All display surfaces updated (CaseDetailScreen, CaseCard, CaseSummaryView, dashboard attention cards). CSV export +5 columns (43 total), FHIR Patient resource, PDF patient header, search by name/NHI, 25 new tests (12 NHI + 13 identity), 649 tests total
 - **Phase 5 IN PROGRESS** — Version 2.0.0, EAS config done (dev/preview/production profiles), pending manual regression + TestFlight submission
 
 ## Tech stack
@@ -87,7 +91,7 @@ npm run test:harness   # 500-case API test harness (requires running server + .e
 ```
 client/
   App.tsx                        # Root: 7 nested providers → RootStackNavigator
-  screens/                       # 25 screens + 9 onboarding sub-screens
+  screens/                       # 28 screens + 9 onboarding sub-screens
     DashboardScreen.tsx           # Surgical triage surface, 4-zone layout
     CaseDetailScreen.tsx          # Full case view, timeline, flap outcomes
     CaseFormScreen.tsx            # Case entry, delegates to section components
@@ -107,12 +111,15 @@ client/
     SurgicalPreferencesScreen.tsx # Role, supervision, RACS MALT settings
     EpisodeListScreen.tsx         # Treatment episode list
     EpisodeDetailScreen.tsx       # Episode view with linked cases
-    CaseSearchScreen.tsx          # Global case search with filters
+    CaseSearchScreen.tsx          # Global case search by patient name, NHI, diagnosis, procedure, facility
     StatisticsScreen.tsx          # 3-tier analytics: career overview, specialty deep-dives, operational insights
     NeedsAttentionListScreen.tsx  # Full-screen needs attention list with sections
     InboxScreen.tsx               # Photo inbox: date-grouped grid, multi-select, assign-to-case, pick mode
     SmartImportScreen.tsx         # Camera Roll import: encrypt → delete originals flow
     OpusCameraScreen.tsx          # Dedicated in-app camera: template picker + guided viewfinder + quick snap
+    PlanCaseScreen.tsx            # Planned case creation: patient ID, date, specialty, note, template picker
+    PlannedCaseListScreen.tsx     # Planned case list: sorted by date, complete/camera quick actions
+    CaseMediaOrganiserScreen.tsx  # Protocol slot grid + untagged strip: tap-to-assign, auto-organise
     onboarding/                   # 9 files: Welcome, FeaturePager, Auth, EmailSignup,
                                   #   Categories, Training, Hospital, Privacy, FeatureSlide
   components/                    # 120+ files across 13 subdirectories
@@ -148,8 +155,8 @@ client/
     usePracticePulse.ts          # Shared selector wrapper for thisMonth/thisWeek/completion metrics
     useDecryptedImage.ts         # Decrypt-on-demand hook for v2 encrypted media (file URI cache + sweep-aware)
   lib/
-    storage.ts                   # AsyncStorage CRUD, encryption, drafts, case index, one-time specialty repair
-    dashboardSelectors.ts        # Shared dashboard selector layer (counts, filters, attention items, pulse, quick-log params)
+    storage.ts                   # AsyncStorage CRUD, encryption, drafts, case index, HMAC hashing, lazy hash migration, one-time specialty repair
+    dashboardSelectors.ts        # Shared dashboard selector layer (counts, filters, attention items, pulse, quick-log params, planned case filtering)
     procedurePicklist.ts         # 500+ procedures across 12 specialties
     statistics.ts                # Case analytics, filtering, calculations (specialty-scoped + free-flap analytics)
     statisticsHelpers.ts         # Career overview, monthly volume, operational insights, milestones, specialty insights (454 lines)
@@ -201,16 +208,18 @@ client/
     skinCancerEpisodeHelpers.ts  # Episode link/update plans + follow-up transforms
     handInfectionBridge.ts       # HandInfectionDetails ↔ InfectionOverlay bridge functions
     inboxStorage.ts              # MMKV-backed inbox CRUD (createMMKV v4), sync reads, encrypt/decrypt pipeline
-    inboxAssignment.ts           # Smart tag inference for inbox-to-case assignment (template step → temporal → fallback)
+    inboxAssignment.ts           # Smart tag inference for inbox-to-case assignment (template step → temporal → fallback), autoAssign(), findMatchingCasesByPatientId()
+    nhiValidation.ts             # NZ NHI format validation (regex + mod-11 check digit)
+    patientIdentifierHmac.ts     # Per-user HMAC-SHA256 key management + hashing, legacy hash detection, sync stripping
     smartImportPrefs.ts          # AsyncStorage "always delete after import" preference
     diagnosisPicklists/          # 12 specialty picklists + lazy-loaded index
       index.ts                   # getDiagnosesForProcedure, reverse mapping
       {specialty}Diagnoses.ts    # Per-specialty (aesthetics, bodyContouring, breast,
                                  #   burns, cleftCranio, general, handSurgery, headNeck,
                                  #   lymphoedema, orthoplastic, peripheralNerve, skinCancer)
-    __tests__/                   # 24 test files incl. hand trauma, skin cancer, dashboard, dateValues, operative media, statistics, hand elective, joint implant, mediaEncryption, staging/terminology regressions, mediaTagMigration, mediaCaptureProtocols, inboxStorage, inboxAssignment
+    __tests__/                   # 28 test files incl. hand trauma, skin cancer, dashboard, dateValues, operative media, statistics, hand elective, joint implant, mediaEncryption, staging/terminology regressions, mediaTagMigration, mediaCaptureProtocols, inboxStorage, inboxAssignment, plannedCase, mediaOrganiser, nhiValidation, patientIdentity
   types/
-    case.ts                      # Case, DiagnosisGroup, Procedure, Timeline, Media (2322 lines)
+    case.ts                      # Case, DiagnosisGroup, Procedure, Timeline, Media, CaseStatus "planned", resolvedCaseStatus/isPlannedCase, calculateAgeFromDob, getPatientDisplayName helpers
     media.ts                     # MediaTag taxonomy (64 tags, 7 groups), MEDIA_TAG_REGISTRY, getTagsForGroup, getRelevantGroups
     inbox.ts                     # InboxItem (+ templateId/templateStepIndex/patientIdentifier metadata), InboxState — unassigned clinical photo metadata
     diagnosis.ts                 # Diagnosis picklist entry
@@ -288,7 +297,7 @@ Auth → Onboarding → Main (bottom tabs: Dashboard, Statistics, Settings) with
 - **Form state:** `useCaseForm()` hook → `useReducer` with 15+ actions (`SET_FIELD`, `SET_FIELDS`, `RESET_FORM`, `LOAD_CASE`, `LOAD_DRAFT`, `ADD_TEAM_MEMBER`, `REMOVE_TEAM_MEMBER`, `ADD_ANASTOMOSIS`, `UPDATE_ANASTOMOSIS`, `REMOVE_ANASTOMOSIS`, `ADD_DIAGNOSIS_GROUP`, `REMOVE_DIAGNOSIS_GROUP`, `UPDATE_DIAGNOSIS_GROUP`, `REORDER_DIAGNOSIS_GROUPS`, `UPDATE_CLINICAL_DETAIL`). Split context pattern: `CaseFormStateContext` + `CaseFormDispatchContext` for memo optimization.
 - **Server state:** TanStack React Query for API calls.
 - **Auth state:** `AuthContext` with JWT tokens, profile, facilities, device keys.
-- **Patient privacy:** Identifiers SHA-256 hashed in local case index.
+- **Patient privacy:** Identifiers HMAC-SHA256 hashed in local case index (per-user key in iOS Keychain). Patient identity fields (`patientFirstName`, `patientLastName`, `patientDateOfBirth`, `patientNhi`) stored on-device only, stripped before server sync via `stripPatientIdentityForSync()`. Legacy SHA-256 hashes detected by absence of `hmac:` prefix and lazily migrated.
 
 ### Multi-diagnosis group architecture
 
@@ -298,7 +307,7 @@ Each Case has `diagnosisGroups: DiagnosisGroup[]` instead of flat diagnosis/proc
 
 `CaseFormScreen.tsx` (778 lines) delegates to section components via `CaseFormContext`:
 
-1. `PatientInfoSection` — Demographics, ASA, smoking, BMI
+1. `PatientInfoSection` — Patient identity (NHI/name/DOB for NZ, generic identifier for non-NZ), privacy indicator, demographics, ASA, smoking, BMI
 2. `AdmissionSection` — Urgency, stay type, discharge outcome
 3. `DiagnosisProcedureSection` — Diagnosis groups, specialty-specific UI
 4. `TreatmentContextSection` — Reconstruction timing, prior radio/chemo, transfusion context for flap cases
@@ -802,7 +811,7 @@ PIN and biometric unlock via `AppLockContext`. Setup in `SetupAppLockScreen`, un
 
 ### Data export
 
-CSV (`exportCsv.ts`, 38 columns with primary dx/proc dedicated columns, semicolon-delimited secondary, 6 hand infection columns, 6 implant columns), FHIR R4 (`exportFhir.ts`, full Bundle with Condition, Procedure, Encounter, Device resources), and PDF (`exportPdf.ts`, HTML-to-PDF via expo-print with implant column, shared via expo-sharing). Export orchestration in `export.ts`. Configurable via `PersonalisationScreen`.
+CSV (`exportCsv.ts`, 43 columns with primary dx/proc dedicated columns, semicolon-delimited secondary, 6 hand infection columns, 6 implant columns, 5 patient identity columns), FHIR R4 (`exportFhir.ts`, full Bundle with Patient, Condition, Procedure, Encounter, Device resources), and PDF (`exportPdf.ts`, HTML-to-PDF via expo-print with implant column + patient name/DOB header, shared via expo-sharing). Export orchestration in `export.ts`. Configurable via `PersonalisationScreen`.
 
 ### Procedure outcomes
 
@@ -1175,8 +1184,8 @@ Configured in both `tsconfig.json` and `babel.config.js` (module-resolver plugin
 
 ## Testing
 
-- **Framework:** Vitest 4.0.18, **591 tests** across 34 files
-- **Client tests:** `client/lib/__tests__/` and `client/components/media/__tests__/` — handTraumaDiagnosis, handTraumaMapping, handTraumaUx, skinCancerConfig (89 tests), skinCancerPhase4 (11 tests), skinCancerPhase5 (18 tests), skinCancerDiagnoses (7 tests), dashboardSelectors (7 tests), handInfection (42 tests), handElective (52 tests), jointImplant (44 tests), mediaEncryption (7 tests), mediaFileStorage (3 tests), mediaMigration (4 tests), caseSpecialty (5 tests), storageSpecialtyRepair (2 tests), statisticsHelpers (3 tests), statistics (7 tests), dateValues (9 tests), dateFieldNormalization (4 tests), operativeMedia (19 tests), operativeMediaForm (4 tests), mediaAttachmentDefaults (4 tests), mediaContext (3 tests), mediaTagMigration (82 tests), mediaCaptureProtocols (46 tests), implantExport (3 tests), caseDraftPersistence (1 test), inboxStorage (29 tests), inboxAssignment (17 tests), smartImportPrefs (10 tests), plus media UI coverage for `MediaTagPicker` resync and resolved `MediaTagBadge` rendering
+- **Framework:** Vitest 4.0.18, **649 tests** across 39 files
+- **Client tests:** `client/lib/__tests__/` and `client/components/media/__tests__/` — handTraumaDiagnosis, handTraumaMapping, handTraumaUx, skinCancerConfig (89 tests), skinCancerPhase4 (11 tests), skinCancerPhase5 (18 tests), skinCancerDiagnoses (7 tests), dashboardSelectors (7 tests), handInfection (42 tests), handElective (52 tests), jointImplant (44 tests), mediaEncryption (7 tests), mediaFileStorage (3 tests), mediaMigration (4 tests), caseSpecialty (5 tests), storageSpecialtyRepair (2 tests), statisticsHelpers (3 tests), statistics (7 tests), dateValues (12 tests), dateFieldNormalization (4 tests), operativeMedia (19 tests), operativeMediaForm (4 tests), mediaAttachmentDefaults (4 tests), mediaContext (3 tests), mediaTagMigration (82 tests), mediaCaptureProtocols (41 tests), implantExport (3 tests), caseDraftPersistence (1 test), inboxStorage (29 tests), inboxAssignment (17 tests), smartImportPrefs (10 tests), plannedCase (18 tests), mediaOrganiser (15 tests), nhiValidation (12 tests), patientIdentity (13 tests), plus media UI coverage for `MediaTagPicker` resync and resolved `MediaTagBadge` rendering
 - **Server tests:** `server/__tests__/` — auth (17 tests), validation (7 tests), diagnosisStagingConfig (3 tests)
 - **Integration:** `npm run test:harness` — 500-case API harness across 12 specialties (requires running server). Tests nested procedure creation with caseProcedures, flaps, and anastomoses. Run with `--cleanup` to delete test data after.
 - **Run:** `npm run test` (once) or `npm run test:watch` (watch mode)

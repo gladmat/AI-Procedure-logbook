@@ -24,7 +24,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing } from "@/constants/theme";
-import { SPECIALTY_LABELS } from "@/types/case";
+import { SPECIALTY_LABELS, isPlannedCase } from "@/types/case";
 import { SectionHeader } from "@/components/SectionHeader";
 import { Button } from "@/components/Button";
 import { OperativeMediaSection } from "@/components/OperativeMediaSection";
@@ -438,12 +438,16 @@ export default function CaseFormScreen() {
     setReviewMode(false);
   }, []);
 
+  const isCompletingPlanned = form.isEditMode && form.existingCase != null && isPlannedCase(form.existingCase);
+
   const headerTitle = reviewMode
     ? "Review Case"
-    : form.isEditMode
-      ? "Edit Case"
-      : (SPECIALTY_HEADER_LABELS[form.specialty] ??
-        `${SPECIALTY_LABELS[form.specialty]} Case`);
+    : isCompletingPlanned
+      ? "Complete Case"
+      : form.isEditMode
+        ? "Edit Case"
+        : (SPECIALTY_HEADER_LABELS[form.specialty] ??
+          `${SPECIALTY_LABELS[form.specialty]} Case`);
 
   // ── Navigation header ─────────────────────────────────────────────────
 

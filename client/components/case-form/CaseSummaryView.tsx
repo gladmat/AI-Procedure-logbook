@@ -252,15 +252,29 @@ export function CaseSummaryView({
         onEdit={onEdit}
         warning={patientWarning}
       >
-        <SummaryRow label="Patient ID" value={state.patientIdentifier} />
+        {(state.patientFirstName || state.patientLastName) && (
+          <SummaryRow
+            label="Patient"
+            value={[state.patientFirstName, state.patientLastName]
+              .filter(Boolean)
+              .join(" ")}
+          />
+        )}
+        <SummaryRow
+          label={state.patientNhi ? "NHI" : "Patient ID"}
+          value={state.patientNhi || state.patientIdentifier}
+          mono
+        />
+        {state.patientDateOfBirth && (
+          <SummaryRow
+            label="Date of Birth"
+            value={state.patientDateOfBirth}
+            mono
+          />
+        )}
         <SummaryRow label="Procedure Date" value={state.procedureDate} mono />
         <SummaryRow label="Facility" value={state.facility} />
         <SummaryRow label="Gender" value={state.gender || undefined} />
-        <SummaryRow
-          label="Age"
-          value={state.age ? `${state.age} years` : undefined}
-          mono
-        />
         <SummaryRow label="Ethnicity" value={state.ethnicity || undefined} />
       </SummaryCard>
 

@@ -43,6 +43,27 @@ vi.mock("expo-crypto", () => ({
   },
 }));
 
+vi.mock("expo-secure-store", () => ({
+  getItemAsync: vi.fn(async () => null),
+  setItemAsync: vi.fn(async () => {}),
+  WHEN_UNLOCKED_THIS_DEVICE_ONLY: 6,
+}));
+
+vi.mock("@noble/hashes/hmac.js", () => ({
+  hmac: vi.fn(() => new Uint8Array(32)),
+}));
+
+vi.mock("@noble/hashes/sha2.js", () => ({
+  sha256: {},
+}));
+
+vi.mock("@noble/hashes/utils.js", () => ({
+  bytesToHex: vi.fn(() => "hmac-hash"),
+  hexToBytes: vi.fn(() => new Uint8Array(32)),
+  randomBytes: vi.fn(() => new Uint8Array(32)),
+  utf8ToBytes: vi.fn(() => new Uint8Array(0)),
+}));
+
 vi.mock("@/lib/encryption", () => ({
   decryptData: vi.fn(async (value: string) => value),
   encryptData: vi.fn(async (value: string) => value),

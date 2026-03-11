@@ -16,6 +16,10 @@ import * as Crypto from "expo-crypto";
 import { normalizeTimelineEventDateOnlyFields } from "./dateFieldNormalization";
 import { migrateCase, normalizeCaseDateOnlyFields } from "./migration";
 import { repairCaseSpecialty } from "./caseSpecialty";
+import {
+  hashPatientIdentifierHmac,
+  isLegacyHash,
+} from "./patientIdentifierHmac";
 
 const CASE_INDEX_KEY = "@surgical_logbook_case_index";
 const CASE_PREFIX = "@surgical_logbook_case_";
@@ -49,12 +53,28 @@ interface CaseIndexEntry {
   updatedAt: string;
   episodeId?: string;
   encounterClass?: string;
+  caseStatus?: string;
+  plannedDate?: string;
 }
 
-async function hashPatientIdentifier(
+/**
+ * Hash a patient identifier using per-user HMAC-SHA256.
+ * New hashes are prefixed with `hmac:`.
+ */
+export async function hashPatientIdentifier(
   patientIdentifier?: string,
 ): Promise<string | undefined> {
   if (!patientIdentifier) return undefined;
+  return hashPatientIdentifierHmac(patientIdentifier);
+}
+
+/**
+ * Legacy SHA-256 hash (no HMAC key). Used only for backward-compat
+ * matching against old index entries during the migration period.
+ */
+async function legacyHashPatientIdentifier(
+  patientIdentifier: string,
+): Promise<string> {
   const normalized = patientIdentifier.toUpperCase().replace(/\s/g, "");
   return Crypto.digestStringAsync(
     Crypto.CryptoDigestAlgorithm.SHA256,
@@ -307,11 +327,40 @@ export async function getCase(id: string): Promise<Case | null> {
     if (!encrypted) return null;
 
     const decrypted = await decryptData(encrypted);
-    return migrateCase(JSON.parse(decrypted));
+    const caseData = migrateCase(JSON.parse(decrypted));
+
+    // Lazy HMAC hash migration: upgrade SHA-256 → HMAC-SHA256 on load
+    if (caseData?.patientIdentifier) {
+      migrateHashIfNeeded(caseData.id, caseData.patientIdentifier).catch(
+        () => {},
+      );
+    }
+
+    return caseData;
   } catch (error) {
     console.error("Error reading case:", error);
     return null;
   }
+}
+
+/**
+ * If a case's index entry still has a legacy SHA-256 hash,
+ * recompute with HMAC-SHA256 and update the index.
+ */
+async function migrateHashIfNeeded(
+  caseId: string,
+  patientIdentifier: string,
+): Promise<void> {
+  const index = await getCaseIndex();
+  const entry = index.find((e) => e.id === caseId);
+  if (!entry?.patientIdentifierHash) return;
+  if (!isLegacyHash(entry.patientIdentifierHash)) return;
+
+  const newHash = await hashPatientIdentifier(patientIdentifier);
+  if (!newHash) return;
+
+  entry.patientIdentifierHash = newHash;
+  await saveCaseIndex(index);
 }
 
 export async function saveCase(caseData: Case): Promise<void> {
@@ -339,6 +388,8 @@ export async function saveCase(caseData: Case): Promise<void> {
       updatedAt: now,
       episodeId: caseData.episodeId,
       encounterClass: caseData.encounterClass,
+      caseStatus: caseData.caseStatus,
+      plannedDate: caseData.plannedDate,
     };
 
     if (existingIdx >= 0) {
@@ -444,11 +495,18 @@ export async function markNoComplications(caseId: string): Promise<void> {
 
 export async function findCasesByPatientId(patientId: string): Promise<Case[]> {
   const index = await getCaseIndex();
-  const patientIdentifierHash = await hashPatientIdentifier(patientId);
-  if (!patientIdentifierHash) return [];
+  const hmacHash = await hashPatientIdentifier(patientId);
+  if (!hmacHash) return [];
+
+  // Also compute legacy SHA-256 for backward compat with un-migrated entries
+  const legacyHash = await legacyHashPatientIdentifier(patientId);
 
   const matchingEntries = index.filter((e) => {
-    return e.patientIdentifierHash === patientIdentifierHash;
+    if (!e.patientIdentifierHash) return false;
+    return (
+      e.patientIdentifierHash === hmacHash ||
+      e.patientIdentifierHash === legacyHash
+    );
   });
 
   const cases: Case[] = [];

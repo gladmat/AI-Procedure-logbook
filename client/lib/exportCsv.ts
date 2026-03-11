@@ -1,4 +1,4 @@
-import { Case, SPECIALTY_LABELS } from "@/types/case";
+import { Case, SPECIALTY_LABELS, calculateAgeFromDob } from "@/types/case";
 import { TreatmentEpisode, ENCOUNTER_CLASS_LABELS } from "@/types/episode";
 import {
   HAND_INFECTION_TYPE_LABELS,
@@ -28,6 +28,11 @@ export interface CsvExportOptions {
 const CSV_HEADERS = [
   "case_id",
   "patient_id",
+  "patient_first_name",
+  "patient_last_name",
+  "patient_dob",
+  "patient_nhi",
+  "patient_age",
   "procedure_date",
   "facility",
   "specialty",
@@ -72,6 +77,7 @@ const CSV_HEADERS = [
   "implant_approach",
   "implant_bearing",
   "implant_joint_type",
+  "planned_date",
 ] as const;
 
 function escapeCsvField(
@@ -168,6 +174,13 @@ function caseToRow(c: Case, options: CsvExportOptions): string {
   const values: (string | number | boolean | undefined | null)[] = [
     c.id,
     options.includePatientId ? c.patientIdentifier : undefined,
+    options.includePatientId ? c.patientFirstName : undefined,
+    options.includePatientId ? c.patientLastName : undefined,
+    options.includePatientId ? c.patientDateOfBirth : undefined,
+    options.includePatientId ? c.patientNhi : undefined,
+    options.includePatientId
+      ? (calculateAgeFromDob(c.patientDateOfBirth) ?? c.age)
+      : undefined,
     c.procedureDate,
     c.facility,
     SPECIALTY_LABELS[c.specialty] || c.specialty,
@@ -218,6 +231,7 @@ function caseToRow(c: Case, options: CsvExportOptions): string {
     implantFields.approach,
     implantFields.bearing,
     implantFields.jointType,
+    c.plannedDate ?? "",
   ];
 
   return values.map(escapeCsvField).join(",");
@@ -227,9 +241,17 @@ export function exportCasesAsCsv(
   cases: Case[],
   options: CsvExportOptions = { includePatientId: true },
 ): string {
+  const PATIENT_ID_HEADERS = new Set([
+    "patient_id",
+    "patient_first_name",
+    "patient_last_name",
+    "patient_dob",
+    "patient_nhi",
+    "patient_age",
+  ]);
   const headers = options.includePatientId
     ? CSV_HEADERS
-    : CSV_HEADERS.filter((h) => h !== "patient_id");
+    : CSV_HEADERS.filter((h) => !PATIENT_ID_HEADERS.has(h));
 
   const headerRow = headers.join(",");
   const dataRows = cases.map((c) => caseToRow(c, options));

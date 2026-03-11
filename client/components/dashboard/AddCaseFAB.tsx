@@ -1,5 +1,5 @@
 import React from "react";
-import { Pressable, StyleSheet } from "react-native";
+import { Pressable, StyleSheet, ActionSheetIOS, Platform, Alert } from "react-native";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { Feather } from "@/components/FeatherIcon";
 import { useTheme } from "@/hooks/useTheme";
@@ -13,10 +13,11 @@ import Animated, {
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 interface AddCaseFABProps {
-  onPress: () => void;
+  onAddCase: () => void;
+  onPlanCase: () => void;
 }
 
-function AddCaseFABInner({ onPress }: AddCaseFABProps) {
+function AddCaseFABInner({ onAddCase, onPlanCase }: AddCaseFABProps) {
   const { theme, isDark } = useTheme();
   const tabBarHeight = useBottomTabBarHeight();
   const scale = useSharedValue(1);
@@ -35,7 +36,25 @@ function AddCaseFABInner({ onPress }: AddCaseFABProps) {
 
   const handlePress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    onPress();
+
+    if (Platform.OS === "ios") {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options: ["Log a Case", "Plan a Case", "Cancel"],
+          cancelButtonIndex: 2,
+        },
+        (buttonIndex) => {
+          if (buttonIndex === 0) onAddCase();
+          else if (buttonIndex === 1) onPlanCase();
+        },
+      );
+    } else {
+      Alert.alert("New Case", "What would you like to do?", [
+        { text: "Log a Case", onPress: onAddCase },
+        { text: "Plan a Case", onPress: onPlanCase },
+        { text: "Cancel", style: "cancel" },
+      ]);
+    }
   };
 
   return (
@@ -45,7 +64,7 @@ function AddCaseFABInner({ onPress }: AddCaseFABProps) {
       onPressOut={handlePressOut}
       accessibilityRole="button"
       accessibilityLabel="Add case"
-      accessibilityHint="Opens a new case form"
+      accessibilityHint="Opens options to log or plan a case"
       style={[
         styles.fab,
         { backgroundColor: theme.accent },
