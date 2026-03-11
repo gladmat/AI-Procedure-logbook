@@ -214,7 +214,7 @@ function AddCaseFABInner({
             ]}
           >
             <Text
-              style={[styles.labelText, { color: theme.textPrimary }]}
+              style={[styles.labelText, { color: theme.text }]}
               numberOfLines={1}
             >
               {item.label}
@@ -239,7 +239,7 @@ function AddCaseFABInner({
             <Feather
               name={item.icon}
               size={20}
-              color={item.isPrimary ? theme.accentContrast : theme.textPrimary}
+              color={item.isPrimary ? theme.accentContrast : theme.text}
             />
           </Pressable>
         </Animated.View>

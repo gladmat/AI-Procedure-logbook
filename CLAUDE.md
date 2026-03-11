@@ -125,7 +125,7 @@ client/
     onboarding/                   # 9 files: Welcome, FeaturePager, Auth, EmailSignup,
                                   #   Categories, Training, Hospital, Privacy, FeatureSlide
   components/                    # 120+ files across 13 subdirectories
-    case-form/                   # 10 section components (see "Case form" below)
+    case-form/                   # 9 components: 5 sections + CollapsibleFormSection, SectionNavBar, CaseSummaryView, TreatmentContextSection
     dashboard/                   # 10 files — dashboard v2 components (see "Dashboard redesign")
     statistics/                  # 6 files — BarChart, HorizontalBarChart, StatCard, MilestoneTimeline, SpecialtyDeepDiveCard, EmptyStatistics
     hand-trauma/                 # 15 files — unified hand trauma assessment
@@ -313,19 +313,17 @@ Auth → Onboarding → Main (bottom tabs: Dashboard, Statistics, Settings) with
 
 Each Case has `diagnosisGroups: DiagnosisGroup[]` instead of flat diagnosis/procedures fields. Each group bundles: specialty, diagnosis, staging, fractures, procedures, and optional `handInfectionDetails`. `procedureSuggestionSource` tracks origin: `"picklist"`, `"skinCancer"`, `"acuteHand"`, or `"manual"`. Enables multi-specialty cases (e.g., hand surgery + orthoplastic in one session). Old cases auto-migrated on load via `client/lib/migration.ts`, and clearly recoverable top-level specialty regressions are conservatively repaired via `client/lib/caseSpecialty.ts`. Helpers: `getAllProcedures(c)`, `getCaseSpecialties(c)`, `getPrimaryDiagnosisName(c)` in `client/types/case.ts`.
 
-### Case form sections
+### Case form sections (5-tab architecture)
 
-`CaseFormScreen.tsx` (778 lines) delegates to section components via `CaseFormContext`:
+`CaseFormScreen.tsx` delegates to 5 section components via `CaseFormContext`. All 5 pills are visible simultaneously on any iPhone (no horizontal scrolling):
 
-1. `PatientInfoSection` — Patient identity (NHI/name/DOB for NZ, generic identifier for non-NZ), privacy indicator, demographics, ASA, smoking, BMI
-2. `AdmissionSection` — Urgency, stay type, discharge outcome
-3. `DiagnosisProcedureSection` — Diagnosis groups, specialty-specific UI
-4. `TreatmentContextSection` — Reconstruction timing, prior radio/chemo, transfusion context for flap cases
-5. `PatientFactorsSection` — Risk factors, comorbidities
-6. `OperativeFactorsSection` — Surgery timing, team, anaesthesia
-7. `OutcomesSection` — Complications, Clavien-Dindo, outcomes
+1. `PatientInfoSection` (`patient`) — Patient identity (NHI/name/DOB for NZ, generic identifier for non-NZ), privacy indicator, procedure date, facility, demographics
+2. `CaseSection` (`case`) — Wraps `DiagnosisProcedureSection` (diagnosis groups, specialty-specific UI) + conditional `TreatmentContextSection` (flap cases only)
+3. `OperativeSection` (`operative`) — 4 sub-groups: Admission & Timing (urgency, stay type, dates, surgery times), Team & Anaesthesia (role, anaesthetic, operating team), Surgical Factors (wound risk, prophylaxis), Patient Factors (ASA, smoking, BMI, comorbidities — collapsed by default)
+4. `OperativeMediaSection` (`media`) — Operative photos with capture protocols
+5. `OutcomesSection` (`outcomes`) — Discharge outcome, mortality classification, unplanned readmission/ICU/return to theatre, MDM, infection documentation
 
-Plus: `CollapsibleFormSection` (card wrapper), `SectionNavBar` (horizontal pill navigation), `CaseSummaryView` (read-only review gating save with validation).
+Plus: `CollapsibleFormSection` (card wrapper), `SectionNavBar` (fixed-width pill navigation), `CaseSummaryView` (read-only 5-card review gating save with validation).
 
 Header uses a truncating centered title. Header right is compact: overflow icon for Clear/Revert + Save button. `CollapsibleFormSection` now measures closed content safely so default-collapsed sections like Treatment Context open reliably on first tap. SectionNavBar has no bottom border.
 

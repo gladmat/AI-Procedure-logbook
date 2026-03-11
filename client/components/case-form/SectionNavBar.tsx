@@ -1,5 +1,5 @@
-import React, { useRef, useEffect } from "react";
-import { View, ScrollView, Pressable, StyleSheet } from "react-native";
+import React from "react";
+import { View, Pressable, StyleSheet } from "react-native";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
@@ -13,12 +13,9 @@ export interface FormSection {
 
 export const FORM_SECTIONS: FormSection[] = [
   { id: "patient", label: "Patient" },
-  { id: "diagnosis", label: "Diagnosis" },
-  { id: "admission", label: "Admission" },
-  { id: "media", label: "Media" },
-  { id: "factors", label: "Factors" },
+  { id: "case", label: "Case" },
   { id: "operative", label: "Operative" },
-  { id: "infection", label: "Infection" },
+  { id: "media", label: "Media" },
   { id: "outcomes", label: "Outcomes" },
 ];
 
@@ -38,18 +35,6 @@ export function SectionNavBar({
   onSectionPress,
 }: SectionNavBarProps) {
   const { theme } = useTheme();
-  const scrollRef = useRef<ScrollView>(null);
-  const pillRefs = useRef<Record<string, { x: number; width: number }>>({});
-
-  useEffect(() => {
-    const pill = pillRefs.current[activeSection];
-    if (pill && scrollRef.current) {
-      scrollRef.current.scrollTo({
-        x: Math.max(0, pill.x - 60),
-        animated: true,
-      });
-    }
-  }, [activeSection]);
 
   return (
     <View
@@ -60,13 +45,7 @@ export function SectionNavBar({
         },
       ]}
     >
-      <ScrollView
-        ref={scrollRef}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-        accessibilityRole="tablist"
-      >
+      <View style={styles.pillRow} accessibilityRole="tablist">
         {FORM_SECTIONS.map((section) => {
           const isActive = activeSection === section.id;
           const completion = completionMap[section.id];
@@ -77,12 +56,6 @@ export function SectionNavBar({
             <Pressable
               key={section.id}
               onPress={() => onSectionPress(section.id)}
-              onLayout={(e) => {
-                pillRefs.current[section.id] = {
-                  x: e.nativeEvent.layout.x,
-                  width: e.nativeEvent.layout.width,
-                };
-              }}
               accessibilityRole="tab"
               accessibilityLabel={section.label}
               accessibilityState={{ selected: isActive }}
@@ -120,7 +93,7 @@ export function SectionNavBar({
             </Pressable>
           );
         })}
-      </ScrollView>
+      </View>
     </View>
   );
 }
@@ -129,17 +102,20 @@ const styles = StyleSheet.create({
   container: {
     height: NAV_BAR_HEIGHT,
   },
-  scrollContent: {
-    paddingHorizontal: Spacing.lg,
+  pillRow: {
+    flex: 1,
+    flexDirection: "row",
+    paddingHorizontal: Spacing.md,
     alignItems: "center",
-    gap: Spacing.sm,
+    gap: Spacing.xs,
   },
   pill: {
-    paddingHorizontal: Spacing.md,
+    flex: 1,
     paddingVertical: Spacing.xs,
     borderRadius: BorderRadius.full,
     minHeight: 44,
     justifyContent: "center",
+    alignItems: "center",
   },
   pillContent: {
     flexDirection: "row",

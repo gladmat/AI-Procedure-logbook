@@ -3,9 +3,10 @@ import { View, Pressable, StyleSheet } from "react-native";
 import { Feather } from "@/components/FeatherIcon";
 import * as Haptics from "expo-haptics";
 import { ThemedText } from "@/components/ThemedText";
-import { FormField, PickerField } from "@/components/FormField";
+import { FormField, PickerField, SelectField } from "@/components/FormField";
 import { SectionHeader } from "@/components/SectionHeader";
 import { CollapsibleFormSection } from "./CollapsibleFormSection";
+import { InfectionOverlayForm } from "@/components/InfectionOverlayForm";
 import {
   useCaseFormState,
   useCaseFormDispatch,
@@ -15,14 +16,29 @@ import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import {
   UnplannedICUReason,
+  UnplannedReadmissionReason,
   DischargeOutcome,
   MortalityClassification,
   UNPLANNED_ICU_LABELS,
+  UNPLANNED_READMISSION_LABELS,
   DISCHARGE_OUTCOME_LABELS,
   MORTALITY_CLASSIFICATION_LABELS,
 } from "@/types/case";
+import type { InfectionOverlay } from "@/types/infection";
 
-export const OutcomesSection = React.memo(function OutcomesSection() {
+interface OutcomesSectionProps {
+  infectionOverlay?: InfectionOverlay;
+  onInfectionChange: (v: InfectionOverlay | undefined) => void;
+  infectionCollapsed: boolean;
+  onInfectionToggle: () => void;
+}
+
+export const OutcomesSection = React.memo(function OutcomesSection({
+  infectionOverlay,
+  onInfectionChange,
+  infectionCollapsed,
+  onInfectionToggle,
+}: OutcomesSectionProps) {
   const { theme } = useTheme();
   const { state } = useCaseFormState();
   const { dispatch } = useCaseFormDispatch();
@@ -36,11 +52,63 @@ export const OutcomesSection = React.memo(function OutcomesSection() {
   return (
     <CollapsibleFormSection
       title="Outcomes"
-      subtitle="Discharge and complications"
+      subtitle="Discharge, complications, and infection"
       filledCount={filledCount}
       totalCount={1}
     >
       <SectionHeader title="Outcomes" />
+
+      <Pressable
+        style={styles.checkboxRow}
+        testID="checkbox-unplanned-readmission"
+        onPress={() => {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          const newValue = !state.isUnplannedReadmission;
+          dispatch(setField("isUnplannedReadmission", newValue));
+          if (!newValue) {
+            dispatch(setField("unplannedReadmission", "no"));
+          }
+        }}
+      >
+        <View
+          style={[
+            styles.checkbox,
+            {
+              backgroundColor: state.isUnplannedReadmission
+                ? theme.warning + "20"
+                : theme.backgroundDefault,
+              borderColor: state.isUnplannedReadmission
+                ? theme.warning
+                : theme.border,
+            },
+          ]}
+        >
+          {state.isUnplannedReadmission ? (
+            <Feather name="check" size={16} color={theme.warning} />
+          ) : null}
+        </View>
+        <ThemedText style={styles.checkboxLabel}>
+          Unplanned Readmission (within 28 days)
+        </ThemedText>
+      </Pressable>
+
+      {state.isUnplannedReadmission ? (
+        <SelectField
+          label="Readmission Reason"
+          value={state.unplannedReadmission}
+          options={Object.entries(UNPLANNED_READMISSION_LABELS)
+            .filter(([value]) => value !== "no")
+            .map(([value, label]) => ({
+              value,
+              label: label.replace("Yes - ", ""),
+            }))}
+          onSelect={(v: string) =>
+            dispatch(
+              setField("unplannedReadmission", v as UnplannedReadmissionReason),
+            )
+          }
+        />
+      ) : null}
 
       <PickerField
         label="Unplanned ICU Admission"
@@ -138,6 +206,19 @@ export const OutcomesSection = React.memo(function OutcomesSection() {
         </Pressable>
         <ThemedText style={styles.checkboxLabel}>Discussed at MDM</ThemedText>
       </View>
+
+      {/* ── Infection Documentation ───────────────────────────────────── */}
+
+      <SectionHeader
+        title="Infection Documentation"
+        subtitle="Add if this case involves infection"
+      />
+      <InfectionOverlayForm
+        value={infectionOverlay}
+        onChange={onInfectionChange}
+        collapsed={infectionCollapsed}
+        onToggleCollapse={onInfectionToggle}
+      />
     </CollapsibleFormSection>
   );
 });

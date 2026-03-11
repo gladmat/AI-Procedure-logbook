@@ -240,7 +240,7 @@ export function CaseSummaryView({
   const hasWarnings = errors.length > 0;
   const patientWarning = errors.find((e) => e.sectionId === "patient")?.message;
   const diagnosisWarning = errors.find(
-    (e) => e.sectionId === "diagnosis",
+    (e) => e.sectionId === "case",
   )?.message;
 
   return (
@@ -290,7 +290,7 @@ export function CaseSummaryView({
           <SummaryCard
             key={group.id}
             title={`Diagnosis Group ${idx + 1}`}
-            sectionId="diagnosis"
+            sectionId="case"
             onEdit={onEdit}
             accentColor={accentColor}
             warning={idx === 0 ? diagnosisWarning : undefined}
@@ -343,8 +343,12 @@ export function CaseSummaryView({
         );
       })}
 
-      {/* Admission */}
-      <SummaryCard title="Admission" sectionId="admission" onEdit={onEdit}>
+      {/* Operative */}
+      <SummaryCard
+        title="Operative Details"
+        sectionId="operative"
+        onEdit={onEdit}
+      >
         <SummaryRow
           label="Urgency"
           value={state.admissionUrgency || undefined}
@@ -365,6 +369,61 @@ export function CaseSummaryView({
           value={state.injuryDate || undefined}
           mono
         />
+        <SummaryRow
+          label="Start Time"
+          value={state.surgeryStartTime || undefined}
+          mono
+        />
+        <SummaryRow
+          label="End Time"
+          value={state.surgeryEndTime || undefined}
+          mono
+        />
+        <SummaryRow label="Duration" value={durationDisplay} mono />
+        <SummaryRow label="Role" value={state.role} />
+        <SummaryRow
+          label="Anaesthetic"
+          value={state.anaestheticType || undefined}
+        />
+        {state.operatingTeam.length > 0 ? (
+          <SummaryRow
+            label="Team"
+            value={state.operatingTeam
+              .map((m) => `${m.name} (${m.role})`)
+              .join(", ")}
+          />
+        ) : null}
+        <SummaryRow
+          label="Wound Risk"
+          value={state.woundInfectionRisk || undefined}
+        />
+        <SummaryRow
+          label="Antibiotics"
+          value={state.antibioticProphylaxis ? "Yes" : undefined}
+        />
+        <SummaryRow
+          label="DVT Prophylaxis"
+          value={state.dvtProphylaxis ? "Yes" : undefined}
+        />
+        <SummaryRow
+          label="ASA Score"
+          value={state.asaScore || undefined}
+          mono
+        />
+        <SummaryRow
+          label="BMI"
+          value={calculatedBmi ? `${calculatedBmi}` : undefined}
+          mono
+        />
+        <SummaryRow label="Smoking" value={state.smoker || undefined} />
+        <SummaryRow
+          label="Comorbidities"
+          value={
+            state.selectedComorbidities.length > 0
+              ? state.selectedComorbidities.map((c) => c.displayName).join(", ")
+              : undefined
+          }
+        />
       </SummaryCard>
 
       {/* Media */}
@@ -380,93 +439,17 @@ export function CaseSummaryView({
         />
       </SummaryCard>
 
-      {/* Patient Factors */}
-      <SummaryCard title="Patient Factors" sectionId="factors" onEdit={onEdit}>
-        <SummaryRow
-          label="ASA Score"
-          value={state.asaScore || undefined}
-          mono
-        />
-        <SummaryRow
-          label="BMI"
-          value={calculatedBmi ? `${calculatedBmi}` : undefined}
-          mono
-        />
-        <SummaryRow
-          label="Height"
-          value={state.heightCm ? `${state.heightCm} cm` : undefined}
-          mono
-        />
-        <SummaryRow
-          label="Weight"
-          value={state.weightKg ? `${state.weightKg} kg` : undefined}
-          mono
-        />
-        <SummaryRow label="Smoking" value={state.smoker || undefined} />
-        <SummaryRow
-          label="Comorbidities"
-          value={
-            state.selectedComorbidities.length > 0
-              ? state.selectedComorbidities.map((c) => c.displayName).join(", ")
-              : undefined
-          }
-        />
-      </SummaryCard>
-
-      {/* Operative Factors */}
-      <SummaryCard
-        title="Operative Factors"
-        sectionId="operative"
-        onEdit={onEdit}
-      >
-        <SummaryRow
-          label="Anaesthetic"
-          value={state.anaestheticType || undefined}
-        />
-        <SummaryRow
-          label="Wound Risk"
-          value={state.woundInfectionRisk || undefined}
-        />
-        <SummaryRow
-          label="Start Time"
-          value={state.surgeryStartTime || undefined}
-          mono
-        />
-        <SummaryRow
-          label="End Time"
-          value={state.surgeryEndTime || undefined}
-          mono
-        />
-        <SummaryRow label="Duration" value={durationDisplay} mono />
-        <SummaryRow label="Role" value={state.role} />
-        <SummaryRow
-          label="Antibiotics"
-          value={state.antibioticProphylaxis ? "Yes" : undefined}
-        />
-        <SummaryRow
-          label="DVT Prophylaxis"
-          value={state.dvtProphylaxis ? "Yes" : undefined}
-        />
-        {state.operatingTeam.length > 0 ? (
-          <SummaryRow
-            label="Team"
-            value={state.operatingTeam
-              .map((m) => `${m.name} (${m.role})`)
-              .join(", ")}
-          />
-        ) : null}
-      </SummaryCard>
-
-      {/* Infection */}
-      {state.infectionOverlay ? (
-        <SummaryCard title="Infection" sectionId="infection" onEdit={onEdit}>
-          <SummaryRow label="Documented" value="Yes" />
-        </SummaryCard>
-      ) : null}
-
       {/* Outcomes */}
       <SummaryCard title="Outcomes" sectionId="outcomes" onEdit={onEdit}>
         <SummaryRow label="Outcome" value={state.outcome || undefined} />
+        <SummaryRow
+          label="Unplanned Readmission"
+          value={
+            state.isUnplannedReadmission && state.unplannedReadmission !== "no"
+              ? state.unplannedReadmission
+              : undefined
+          }
+        />
         <SummaryRow
           label="Return to Theatre"
           value={state.returnToTheatre ? "Yes" : undefined}
@@ -483,6 +466,9 @@ export function CaseSummaryView({
           label="MDM Discussed"
           value={state.discussedAtMDM ? "Yes" : undefined}
         />
+        {state.infectionOverlay ? (
+          <SummaryRow label="Infection" value="Documented" />
+        ) : null}
       </SummaryCard>
 
       {/* Buttons */}

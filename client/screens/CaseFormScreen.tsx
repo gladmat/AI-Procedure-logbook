@@ -28,7 +28,7 @@ import { SPECIALTY_LABELS, isPlannedCase } from "@/types/case";
 import { SectionHeader } from "@/components/SectionHeader";
 import { Button } from "@/components/Button";
 import { OperativeMediaSection } from "@/components/OperativeMediaSection";
-import { InfectionOverlayForm } from "@/components/InfectionOverlayForm";
+
 import { useAuth } from "@/contexts/AuthContext";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 import {
@@ -41,10 +41,8 @@ import type { ValidationError } from "@/hooks/useCaseForm";
 import { useCaseDraft } from "@/hooks/useCaseDraft";
 import { CaseFormProvider } from "@/contexts/CaseFormContext";
 import { PatientInfoSection } from "@/components/case-form/PatientInfoSection";
-import { DiagnosisProcedureSection } from "@/components/case-form/DiagnosisProcedureSection";
-import { AdmissionSection } from "@/components/case-form/AdmissionSection";
-import { PatientFactorsSection } from "@/components/case-form/PatientFactorsSection";
-import { OperativeFactorsSection } from "@/components/case-form/OperativeFactorsSection";
+import { CaseSection } from "@/components/case-form/CaseSection";
+import { OperativeSection } from "@/components/case-form/OperativeSection";
 import { OutcomesSection } from "@/components/case-form/OutcomesSection";
 import {
   SectionNavBar,
@@ -54,8 +52,7 @@ import {
 import type { CompletionMap } from "@/components/case-form/SectionNavBar";
 import { CaseSummaryView } from "@/components/case-form/CaseSummaryView";
 import { EpisodeLinkBanner } from "@/components/EpisodeLinkBanner";
-import { TreatmentContextSection } from "@/components/case-form/TreatmentContextSection";
-import { caseHasFlapProcedure } from "@/lib/moduleVisibility";
+
 import { resolveFacilityName } from "@/lib/facilities";
 import { useFavouritesRecents } from "@/hooks/useFavouritesRecents";
 import type { TreatmentEpisode } from "@/types/episode";
@@ -260,37 +257,24 @@ export default function CaseFormScreen() {
         ].filter(Boolean).length,
         total: 3,
       },
-      diagnosis: {
+      case: {
         filled: s.diagnosisGroups.filter(
           (g) =>
             g.diagnosis && g.procedures.some((p) => p.procedureName.trim()),
         ).length,
         total: s.diagnosisGroups.length,
       },
-      admission: {
-        filled: [s.admissionUrgency, s.stayType, s.admissionDate].filter(
-          Boolean,
-        ).length,
-        total: 3,
+      operative: {
+        filled: [
+          s.admissionUrgency,
+          s.stayType,
+          s.anaestheticType,
+          s.surgeryStartTime,
+        ].filter(Boolean).length,
+        total: 4,
       },
       media: {
         filled: s.operativeMedia.length > 0 ? 1 : 0,
-        total: 1,
-      },
-      factors: {
-        filled: [s.asaScore, s.smoker].filter(Boolean).length,
-        total: 2,
-      },
-      operative: {
-        filled: [
-          s.anaestheticType,
-          s.woundInfectionRisk,
-          s.surgeryStartTime,
-        ].filter(Boolean).length,
-        total: 3,
-      },
-      infection: {
-        filled: s.infectionOverlay ? 1 : 0,
         total: 1,
       },
       outcomes: {
@@ -713,20 +697,20 @@ export default function CaseFormScreen() {
             </SectionWrapper>
 
             <SectionWrapper
-              sectionId="diagnosis"
+              sectionId="case"
               onLayout={handleSectionLayout}
             >
-              <DiagnosisProcedureSection
+              <CaseSection
                 scrollViewRef={scrollViewRef}
                 scrollPositionRef={scrollPositionRef}
               />
             </SectionWrapper>
 
             <SectionWrapper
-              sectionId="admission"
+              sectionId="operative"
               onLayout={handleSectionLayout}
             >
-              <AdmissionSection />
+              <OperativeSection />
             </SectionWrapper>
 
             <SectionWrapper sectionId="media" onLayout={handleSectionLayout}>
@@ -744,34 +728,12 @@ export default function CaseFormScreen() {
               />
             </SectionWrapper>
 
-            <SectionWrapper sectionId="factors" onLayout={handleSectionLayout}>
-              <PatientFactorsSection />
-            </SectionWrapper>
-
-            <SectionWrapper
-              sectionId="operative"
-              onLayout={handleSectionLayout}
-            >
-              <OperativeFactorsSection />
-            </SectionWrapper>
-
-            {caseHasFlapProcedure(form.state.diagnosisGroups) ? (
-              <TreatmentContextSection />
-            ) : null}
-
-            <SectionWrapper
-              sectionId="infection"
-              onLayout={handleSectionLayout}
-            >
-              <SectionHeader
-                title="Infection Documentation"
-                subtitle="Add if this case involves infection"
-              />
-              <InfectionOverlayForm
-                value={form.state.infectionOverlay}
-                onChange={(v) => form.dispatch(setField("infectionOverlay", v))}
-                collapsed={form.state.infectionCollapsed}
-                onToggleCollapse={() =>
+            <SectionWrapper sectionId="outcomes" onLayout={handleSectionLayout}>
+              <OutcomesSection
+                infectionOverlay={form.state.infectionOverlay ?? undefined}
+                onInfectionChange={(v) => form.dispatch(setField("infectionOverlay", v))}
+                infectionCollapsed={form.state.infectionCollapsed}
+                onInfectionToggle={() =>
                   form.dispatch(
                     setField(
                       "infectionCollapsed",
@@ -780,10 +742,6 @@ export default function CaseFormScreen() {
                   )
                 }
               />
-            </SectionWrapper>
-
-            <SectionWrapper sectionId="outcomes" onLayout={handleSectionLayout}>
-              <OutcomesSection />
             </SectionWrapper>
 
             <View style={styles.buttonContainer}>

@@ -735,7 +735,7 @@ export function validateRequiredFields(state: CaseFormState): {
   if (!hasCompleteDiagnosisGroup) {
     errors.push({
       field: "diagnosisGroups",
-      sectionId: "diagnosis",
+      sectionId: "case",
       message: "At least one diagnosis with a named procedure is required",
     });
   }
