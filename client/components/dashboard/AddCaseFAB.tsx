@@ -11,7 +11,6 @@ import Animated, {
   withSpring,
   withTiming,
   withDelay,
-  runOnJS,
 } from "react-native-reanimated";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -151,23 +150,32 @@ function AddCaseFABInner({
     opacity: backdropOpacity.value * 0.4,
   }));
 
-  const itemAnimatedStyles = useMemo(
-    () =>
-      SPEED_DIAL_ITEMS.map((_, i) => {
-        const progress = itemProgressValues[i]!;
-        const offsetY = BASE_OFFSET + i * (MINI_FAB_SIZE + ITEM_GAP);
+  const OFFSET_0 = BASE_OFFSET + 0 * (MINI_FAB_SIZE + ITEM_GAP);
+  const OFFSET_1 = BASE_OFFSET + 1 * (MINI_FAB_SIZE + ITEM_GAP);
+  const OFFSET_2 = BASE_OFFSET + 2 * (MINI_FAB_SIZE + ITEM_GAP);
 
-        // eslint-disable-next-line react-hooks/rules-of-hooks
-        return useAnimatedStyle(() => ({
-          opacity: progress.value,
-          transform: [
-            { translateY: -(offsetY * progress.value) },
-            { scale: 0.3 + 0.7 * progress.value },
-          ],
-        }));
-      }),
-    [itemProgressValues],
-  );
+  const itemStyle0 = useAnimatedStyle(() => ({
+    opacity: item0.value,
+    transform: [
+      { translateY: -(OFFSET_0 * item0.value) },
+      { scale: 0.3 + 0.7 * item0.value },
+    ],
+  }));
+  const itemStyle1 = useAnimatedStyle(() => ({
+    opacity: item1.value,
+    transform: [
+      { translateY: -(OFFSET_1 * item1.value) },
+      { scale: 0.3 + 0.7 * item1.value },
+    ],
+  }));
+  const itemStyle2 = useAnimatedStyle(() => ({
+    opacity: item2.value,
+    transform: [
+      { translateY: -(OFFSET_2 * item2.value) },
+      { scale: 0.3 + 0.7 * item2.value },
+    ],
+  }));
+  const itemAnimatedStyles = [itemStyle0, itemStyle1, itemStyle2];
 
   const fabBottom = tabBarHeight + 16;
 

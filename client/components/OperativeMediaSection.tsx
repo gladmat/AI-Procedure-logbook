@@ -20,10 +20,7 @@ import { resolveMediaTag } from "@/lib/mediaTagMigration";
 import { ProtocolBadge, GuidedCaptureFlow } from "@/components/media";
 import { findProtocols, mergeProtocols } from "@/data/mediaCaptureProtocols";
 import type { MediaContext } from "@/lib/mediaContext";
-import {
-  getInboxCount,
-  releaseReservedInboxItems,
-} from "@/lib/inboxStorage";
+import { getInboxCount, releaseReservedInboxItems } from "@/lib/inboxStorage";
 
 interface OperativeMediaSectionProps {
   media: OperativeMediaItem[];
@@ -151,7 +148,9 @@ export function OperativeMediaSection({
             if (item.sourceInboxId) {
               releaseReservedInboxItems([item.sourceInboxId]);
             } else {
-              const { deleteEncryptedMedia } = await import("@/lib/mediaStorage");
+              const { deleteEncryptedMedia } = await import(
+                "@/lib/mediaStorage"
+              );
               await deleteEncryptedMedia(item.localUri);
             }
           }
@@ -164,7 +163,10 @@ export function OperativeMediaSection({
   const handleFromInbox = () => {
     const count = getInboxCount();
     if (count === 0) {
-      Alert.alert("Inbox Empty", "No photos in the inbox. Take or import photos to the inbox first.");
+      Alert.alert(
+        "Inbox Empty",
+        "No photos in the inbox. Take or import photos to the inbox first.",
+      );
       return;
     }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -419,15 +421,17 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: "row",
+    flexWrap: "wrap",
     justifyContent: "space-between",
     alignItems: "center",
+    rowGap: Spacing.xs,
     marginBottom: Spacing.md,
   },
   headerLeft: {
     flexDirection: "row",
     alignItems: "center",
     gap: Spacing.sm,
-    flex: 1,
+    flexShrink: 1,
   },
   headerTitle: {
     fontWeight: "600",
