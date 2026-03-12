@@ -141,6 +141,10 @@ const DEFAULT_DONOR_VESSELS: Record<
     artery: "Thoracodorsal artery (serratus branch)",
     vein: "Thoracodorsal vein",
   },
+  lap: {
+    artery: "Lumbar artery (perforator branch)",
+    vein: "Lumbar vein",
+  },
   other: {
     artery: "",
     vein: "",

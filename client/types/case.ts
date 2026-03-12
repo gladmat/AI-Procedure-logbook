@@ -234,7 +234,8 @@ export type ProcedureTag =
   | "elective"
   | "revision"
   | "complex_wound"
-  | "lipofilling";
+  | "lipofilling"
+  | "gender_affirming";
 
 export type ASAScore = 1 | 2 | 3 | 4 | 5 | 6;
 
@@ -378,6 +379,7 @@ export type FreeFlap =
   | "parascapular"
   | "scapular"
   | "serratus_anterior"
+  | "lap"
   | "other";
 
 export const FREE_FLAP_LABELS: Record<FreeFlap, string> = {
@@ -398,6 +400,7 @@ export const FREE_FLAP_LABELS: Record<FreeFlap, string> = {
   parascapular: "Parascapular",
   scapular: "Scapular System",
   serratus_anterior: "Serratus Anterior",
+  lap: "LAP (Lumbar Artery Perforator)",
   other: "Other",
 };
 
@@ -2004,6 +2007,7 @@ export const PROCEDURE_TAG_LABELS: Record<ProcedureTag, string> = {
   revision: "Revision",
   complex_wound: "Complex Wound",
   lipofilling: "Lipofilling",
+  gender_affirming: "Gender-Affirming",
 };
 
 // RACS MALT Supervision Level Labels

@@ -43,10 +43,12 @@ export const PICKLIST_TO_FLAP_TYPE: Partial<Record<string, FreeFlap>> = {
   orth_ff_serratus: "serratus_anterior",
   orth_ff_scip: "scip",
   breast_recon_diep: "diep",
+  breast_recon_stacked: "diep",
   breast_recon_sgap: "sgap",
   breast_recon_igap: "igap",
   breast_recon_siea: "siea",
   breast_recon_scip: "scip",
+  breast_recon_lap: "lap",
   hn_fn_free_gracilis: "gracilis",
 };
 
@@ -3523,6 +3525,37 @@ const BREAST_AUTOLOGOUS_RECON: ProcedurePicklistEntry[] = [
     hasFreeFlap: true,
     sortOrder: 9,
   },
+  {
+    id: "breast_recon_lap",
+    displayName: "LAP flap (lumbar artery perforator)",
+    snomedCtCode: "234299000", // VERIFY
+    snomedCtDisplay: "Free flap reconstruction (procedure)",
+    specialties: ["breast"],
+    subcategory: "Autologous Reconstruction",
+    tags: ["free_flap", "microsurgery", "oncological"],
+    hasFreeFlap: true,
+    sortOrder: 10,
+  },
+  {
+    id: "breast_recon_tdap",
+    displayName: "TDAP flap (thoracodorsal artery perforator)",
+    snomedCtCode: "234299000", // VERIFY
+    snomedCtDisplay: "Pedicled flap reconstruction (procedure)",
+    specialties: ["breast"],
+    subcategory: "Autologous Reconstruction",
+    tags: ["pedicled_flap", "oncological"],
+    sortOrder: 11,
+  },
+  {
+    id: "breast_recon_omental",
+    displayName: "Omental flap breast reconstruction",
+    snomedCtCode: "234299000", // VERIFY
+    snomedCtDisplay: "Pedicled flap reconstruction (procedure)",
+    specialties: ["breast"],
+    subcategory: "Autologous Reconstruction",
+    tags: ["pedicled_flap", "oncological"],
+    sortOrder: 12,
+  },
 ];
 
 const BREAST_IMPLANT_RECON: ProcedurePicklistEntry[] = [
@@ -3655,6 +3688,27 @@ const BREAST_ONCOPLASTIC: ProcedurePicklistEntry[] = [
     subcategory: "Oncoplastic Surgery",
     tags: ["oncological", "elective"],
     sortOrder: 6,
+  },
+  {
+    id: "breast_onco_delayed_immediate_recon",
+    displayName: "Delayed-immediate reconstruction (expander at mastectomy)",
+    snomedCtCode: "384692006", // VERIFY
+    snomedCtDisplay: "Insertion of tissue expander into breast (procedure)",
+    specialties: ["breast"],
+    subcategory: "Oncoplastic Surgery",
+    tags: ["oncological"],
+    sortOrder: 7,
+  },
+  {
+    id: "breast_onco_oncoplastic_level2",
+    displayName:
+      "Oncoplastic Level 2 (volume replacement — perforator flap)",
+    snomedCtCode: "392090004", // VERIFY
+    snomedCtDisplay: "Oncoplastic breast surgery (procedure)",
+    specialties: ["breast"],
+    subcategory: "Oncoplastic Surgery",
+    tags: ["oncological", "pedicled_flap"],
+    sortOrder: 8,
   },
 ];
 
@@ -3894,6 +3948,180 @@ const BREAST_REVISION: ProcedurePicklistEntry[] = [
     subcategory: "Revision & Other",
     tags: ["revision"],
     sortOrder: 10,
+  },
+  {
+    id: "breast_rev_pocket_plane_conversion",
+    displayName: "Pocket plane conversion (subpectoral ↔ prepectoral)",
+    snomedCtCode: "392090004", // VERIFY
+    snomedCtDisplay: "Operative procedure on breast (procedure)",
+    specialties: ["breast"],
+    subcategory: "Revision & Other",
+    tags: ["revision"],
+    sortOrder: 11,
+  },
+  {
+    id: "breast_rev_capsulorrhaphy",
+    displayName: "Capsulorrhaphy (pocket adjustment)",
+    snomedCtCode: "392090004", // VERIFY
+    snomedCtDisplay: "Capsulorrhaphy of breast (procedure)",
+    specialties: ["breast"],
+    subcategory: "Revision & Other",
+    tags: ["revision"],
+    sortOrder: 12,
+  },
+  {
+    id: "breast_rev_symmastia_repair",
+    displayName: "Symmastia repair",
+    snomedCtCode: "392090004", // VERIFY
+    snomedCtDisplay: "Repair of symmastia (procedure)",
+    specialties: ["breast"],
+    subcategory: "Revision & Other",
+    tags: ["revision"],
+    sortOrder: 13,
+  },
+  {
+    id: "breast_rev_animation_deformity",
+    displayName: "Animation deformity correction",
+    snomedCtCode: "392090004", // VERIFY
+    snomedCtDisplay: "Correction of animation deformity of breast (procedure)",
+    specialties: ["breast"],
+    subcategory: "Revision & Other",
+    tags: ["revision"],
+    sortOrder: 14,
+  },
+  {
+    id: "breast_rev_neo_imf_creation",
+    displayName: "Neo-inframammary fold creation",
+    snomedCtCode: "392090004", // VERIFY
+    snomedCtDisplay: "Creation of inframammary fold (procedure)",
+    specialties: ["breast"],
+    subcategory: "Revision & Other",
+    tags: ["revision"],
+    sortOrder: 15,
+  },
+  {
+    id: "breast_rev_scar_revision",
+    displayName: "Dog ear / scar revision — breast",
+    snomedCtCode: "15738001", // VERIFY
+    snomedCtDisplay: "Revision of scar of skin (procedure)",
+    specialties: ["breast"],
+    subcategory: "Revision & Other",
+    tags: ["revision", "elective"],
+    sortOrder: 16,
+  },
+];
+
+// ═══════════════════════════════════════════════════════════════════════════
+// BREAST — GENDER-AFFIRMING (~6 procedures)
+// ═══════════════════════════════════════════════════════════════════════════
+
+const BREAST_GENDER_AFFIRMING: ProcedurePicklistEntry[] = [
+  {
+    id: "breast_ga_chest_masc_di_fng",
+    displayName: "Chest masculinisation — double incision with FNG",
+    snomedCtCode: "392090004", // VERIFY
+    snomedCtDisplay: "Chest masculinisation procedure (procedure)",
+    specialties: ["breast"],
+    subcategory: "Gender-Affirming",
+    tags: ["gender_affirming"],
+    sortOrder: 1,
+  },
+  {
+    id: "breast_ga_chest_masc_periareolar",
+    displayName: "Chest masculinisation — periareolar",
+    snomedCtCode: "392090004", // VERIFY
+    snomedCtDisplay: "Chest masculinisation procedure (procedure)",
+    specialties: ["breast"],
+    subcategory: "Gender-Affirming",
+    tags: ["gender_affirming"],
+    sortOrder: 2,
+  },
+  {
+    id: "breast_ga_chest_masc_keyhole",
+    displayName: "Chest masculinisation — keyhole",
+    snomedCtCode: "392090004", // VERIFY
+    snomedCtDisplay: "Chest masculinisation procedure (procedure)",
+    specialties: ["breast"],
+    subcategory: "Gender-Affirming",
+    tags: ["gender_affirming"],
+    sortOrder: 3,
+  },
+  {
+    id: "breast_ga_chest_masc_buttonhole",
+    displayName: "Chest masculinisation — buttonhole",
+    snomedCtCode: "392090004", // VERIFY
+    snomedCtDisplay: "Chest masculinisation procedure (procedure)",
+    specialties: ["breast"],
+    subcategory: "Gender-Affirming",
+    tags: ["gender_affirming"],
+    sortOrder: 4,
+  },
+  {
+    id: "breast_ga_augmentation_transfem",
+    displayName: "Breast augmentation — transfeminine",
+    snomedCtCode: "69031006", // VERIFY
+    snomedCtDisplay: "Augmentation mammoplasty (procedure)",
+    specialties: ["breast"],
+    subcategory: "Gender-Affirming",
+    tags: ["gender_affirming"],
+    sortOrder: 5,
+  },
+  {
+    id: "breast_ga_revision",
+    displayName: "Gender-affirming breast/chest revision",
+    snomedCtCode: "392090004", // VERIFY
+    snomedCtDisplay: "Revision of gender-affirming breast procedure (procedure)",
+    specialties: ["breast"],
+    subcategory: "Gender-Affirming",
+    tags: ["gender_affirming", "revision"],
+    sortOrder: 6,
+  },
+];
+
+// ═══════════════════════════════════════════════════════════════════════════
+// BREAST — FAT GRAFTING (~4 procedures)
+// ═══════════════════════════════════════════════════════════════════════════
+
+const BREAST_FAT_GRAFTING: ProcedurePicklistEntry[] = [
+  {
+    id: "breast_fat_recon",
+    displayName: "Fat grafting — breast reconstruction",
+    snomedCtCode: "37834008", // VERIFY
+    snomedCtDisplay: "Lipofilling to breast (procedure)",
+    specialties: ["breast"],
+    subcategory: "Fat Grafting",
+    tags: ["lipofilling", "oncological"],
+    sortOrder: 1,
+  },
+  {
+    id: "breast_fat_aesthetic",
+    displayName: "Fat grafting — breast aesthetic augmentation",
+    snomedCtCode: "37834008", // VERIFY
+    snomedCtDisplay: "Lipofilling to breast (procedure)",
+    specialties: ["breast"],
+    subcategory: "Fat Grafting",
+    tags: ["lipofilling", "elective"],
+    sortOrder: 2,
+  },
+  {
+    id: "breast_fat_revision_contour",
+    displayName: "Fat grafting — revision / contour correction",
+    snomedCtCode: "37834008", // VERIFY
+    snomedCtDisplay: "Lipofilling to breast (procedure)",
+    specialties: ["breast"],
+    subcategory: "Fat Grafting",
+    tags: ["lipofilling", "revision"],
+    sortOrder: 3,
+  },
+  {
+    id: "breast_fat_only_primary_recon",
+    displayName: "Fat-only primary breast reconstruction",
+    snomedCtCode: "37834008", // VERIFY
+    snomedCtDisplay: "Lipofilling breast reconstruction (procedure)",
+    specialties: ["breast"],
+    subcategory: "Fat Grafting",
+    tags: ["lipofilling", "oncological"],
+    sortOrder: 4,
   },
 ];
 
@@ -5552,6 +5780,8 @@ export const PROCEDURE_PICKLIST: ProcedurePicklistEntry[] = [
   ...BREAST_AESTHETIC,
   ...BREAST_NIPPLE,
   ...BREAST_REVISION,
+  ...BREAST_GENDER_AFFIRMING,
+  ...BREAST_FAT_GRAFTING,
   // Burns
   ...BURNS_ACUTE,
   ...BURNS_SKIN_GRAFT,

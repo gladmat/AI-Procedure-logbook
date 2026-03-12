@@ -1,3 +1,4 @@
 // client/components/breast/index.ts
-// Breast surgery module components — populated in Phase 2+
-export {};
+// Breast surgery module components
+export { BreastAssessment } from "./BreastAssessment";
+export { BreastSideCard } from "./BreastSideCard";

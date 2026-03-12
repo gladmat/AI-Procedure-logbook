@@ -113,6 +113,9 @@ import {
 import { SkinCancerAssessment } from "@/components/skin-cancer/SkinCancerAssessment";
 import { AcuteHandAssessment } from "@/components/acute-hand/AcuteHandAssessment";
 import { HandElectivePicker } from "@/components/hand-elective/HandElectivePicker";
+import { isBreastSpecialty } from "@/lib/breastConfig";
+import { BreastAssessment } from "@/components/breast/BreastAssessment";
+import type { BreastAssessmentData } from "@/types/breast";
 import { JointImplantSection } from "@/components/joint-implant/JointImplantSection";
 import type {
   SkinCancerLesionAssessment,
@@ -905,6 +908,8 @@ export function DiagnosisGroupEditor({
     groupSpecialty === "hand_wrist" && handCaseType === "acute";
 
   const isSkinCancerInlineFlow = groupSpecialty === "skin_cancer";
+
+  const isBreastModule = isBreastSpecialty(groupSpecialty);
 
   const currentGroupTitle = useMemo(
     () =>
@@ -2165,6 +2170,16 @@ export function DiagnosisGroupEditor({
             onBrowseFullPicker={() => setShowAcuteFullProcedurePicker(true)}
           />
         ) : null}
+
+        {/* Inline breast module — laterality + per-side clinical context */}
+        {isBreastModule && (
+          <BreastAssessment
+            value={group.breastAssessment ?? { laterality: "left", sides: {} }}
+            onChange={(breastAssessment: BreastAssessmentData) =>
+              onChange({ ...group, breastAssessment })
+            }
+          />
+        )}
 
         {hasSelectedHandCaseType &&
         showTraumaDiagnosisEditor &&

@@ -1,0 +1,295 @@
+/**
+ * BreastSideCard — Per-side card for breast assessment.
+ *
+ * Shows clinical context chips, reconstructive timing (when applicable),
+ * and placeholder slots for Phase 3+ module cards
+ * (ImplantDetails, BreastFlapDetails, Lipofilling, ChestMasculinisation).
+ */
+
+import React, { useCallback } from "react";
+import { View, Pressable, LayoutAnimation, StyleSheet } from "react-native";
+import * as Haptics from "expo-haptics";
+import { Feather } from "@expo/vector-icons";
+import { ThemedText } from "@/components/ThemedText";
+import { useTheme } from "@/hooks/useTheme";
+import { Spacing, BorderRadius, Shadows } from "@/constants/theme";
+import type {
+  BreastLaterality,
+  BreastSideAssessment,
+  BreastClinicalContext,
+  BreastReconTiming,
+} from "@/types/breast";
+import {
+  BREAST_CLINICAL_CONTEXT_LABELS,
+  BREAST_RECON_TIMING_LABELS,
+} from "@/types/breast";
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Types
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface Props {
+  side: BreastLaterality;
+  value: BreastSideAssessment;
+  onChange: (data: BreastSideAssessment) => void;
+  showCopyButton?: boolean;
+  onCopy?: () => void;
+}
+
+const CONTEXT_OPTIONS: {
+  key: BreastClinicalContext;
+  icon: React.ComponentProps<typeof Feather>["name"];
+}[] = [
+  { key: "reconstructive", icon: "shield" },
+  { key: "aesthetic", icon: "star" },
+  { key: "gender_affirming", icon: "heart" },
+];
+
+const TIMING_OPTIONS: BreastReconTiming[] = [
+  "immediate",
+  "delayed_immediate",
+  "delayed",
+];
+
+// Short labels for timing chips (full labels are too wide)
+const TIMING_SHORT_LABELS: Record<BreastReconTiming, string> = {
+  immediate: "Immediate",
+  delayed_immediate: "Delayed-Immediate",
+  delayed: "Delayed",
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Component
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const BreastSideCard = React.memo(function BreastSideCard({
+  side,
+  value,
+  onChange,
+  showCopyButton,
+  onCopy,
+}: Props) {
+  const { theme, isDark } = useTheme();
+
+  const sideLabel = side === "left" ? "Left Breast" : "Right Breast";
+
+  // ── Context ─────────────────────────────────────────────────────────────
+
+  const handleContextChange = useCallback(
+    (ctx: BreastClinicalContext) => {
+      if (ctx === value.clinicalContext) return;
+
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+
+      const next: BreastSideAssessment = {
+        ...value,
+        clinicalContext: ctx,
+      };
+
+      // Clear timing when switching away from reconstructive
+      if (ctx !== "reconstructive") {
+        delete next.reconstructionTiming;
+        delete next.priorRadiotherapy;
+        delete next.priorChemotherapy;
+        delete next.priorReconstructionType;
+        delete next.mdtDiscussed;
+      }
+
+      // Clear gender-affirming context when switching away
+      if (ctx !== "gender_affirming") {
+        delete next.genderAffirmingContext;
+      }
+
+      onChange(next);
+    },
+    [value, onChange],
+  );
+
+  // ── Timing ──────────────────────────────────────────────────────────────
+
+  const handleTimingChange = useCallback(
+    (timing: BreastReconTiming) => {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+      onChange({
+        ...value,
+        reconstructionTiming: timing === value.reconstructionTiming ? undefined : timing,
+      });
+    },
+    [value, onChange],
+  );
+
+  // ── Render ──────────────────────────────────────────────────────────────
+
+  const isReconstructive = value.clinicalContext === "reconstructive";
+
+  return (
+    <View
+      style={[
+        styles.card,
+        {
+          backgroundColor: theme.backgroundElevated,
+          borderColor: theme.border,
+          ...(isDark ? {} : Shadows.card),
+        },
+      ]}
+    >
+      {/* Header row */}
+      <View style={styles.headerRow}>
+        <ThemedText type="h4">{sideLabel}</ThemedText>
+        {showCopyButton && onCopy && (
+          <Pressable onPress={onCopy} style={styles.copyButton}>
+            <Feather name="copy" size={14} color={theme.link} />
+            <ThemedText
+              type="small"
+              style={{ color: theme.link, marginLeft: 4 }}
+            >
+              Copy to other side
+            </ThemedText>
+          </Pressable>
+        )}
+      </View>
+
+      {/* Clinical context chips */}
+      <ThemedText
+        type="small"
+        style={{ color: theme.textSecondary, marginBottom: Spacing.xs }}
+      >
+        Clinical Context
+      </ThemedText>
+      <View style={styles.chipRow}>
+        {CONTEXT_OPTIONS.map(({ key, icon }) => {
+          const selected = value.clinicalContext === key;
+          return (
+            <Pressable
+              key={key}
+              onPress={() => handleContextChange(key)}
+              style={[
+                styles.contextChip,
+                {
+                  backgroundColor: selected
+                    ? theme.link
+                    : theme.backgroundSecondary,
+                  borderColor: selected ? theme.link : theme.border,
+                },
+              ]}
+            >
+              <Feather
+                name={icon}
+                size={14}
+                color={selected ? theme.buttonText : theme.textSecondary}
+                style={{ marginRight: 4 }}
+              />
+              <ThemedText
+                type="small"
+                style={{
+                  color: selected ? theme.buttonText : theme.text,
+                  fontWeight: selected ? "600" : "400",
+                }}
+              >
+                {BREAST_CLINICAL_CONTEXT_LABELS[key]}
+              </ThemedText>
+            </Pressable>
+          );
+        })}
+      </View>
+
+      {/* Reconstructive timing — shown only for reconstructive context */}
+      {isReconstructive && (
+        <View style={styles.timingSection}>
+          <ThemedText
+            type="small"
+            style={{ color: theme.textSecondary, marginBottom: Spacing.xs }}
+          >
+            Reconstruction Timing
+          </ThemedText>
+          <View style={styles.chipRow}>
+            {TIMING_OPTIONS.map((timing) => {
+              const selected = value.reconstructionTiming === timing;
+              return (
+                <Pressable
+                  key={timing}
+                  onPress={() => handleTimingChange(timing)}
+                  style={[
+                    styles.timingChip,
+                    {
+                      backgroundColor: selected
+                        ? theme.link
+                        : theme.backgroundSecondary,
+                      borderColor: selected ? theme.link : theme.border,
+                    },
+                  ]}
+                >
+                  <ThemedText
+                    type="small"
+                    style={{
+                      color: selected ? theme.buttonText : theme.text,
+                      fontWeight: selected ? "600" : "400",
+                    }}
+                  >
+                    {TIMING_SHORT_LABELS[timing]}
+                  </ThemedText>
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
+      )}
+
+      {/* Phase 3+ module card slots — placeholders */}
+      {/* TODO Phase 3: ImplantDetailsCard */}
+      {/* TODO Phase 3: BreastFlapCard */}
+      {/* TODO Phase 3: LipofillingCard */}
+      {/* TODO Phase 3: ChestMasculinisationCard */}
+    </View>
+  );
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Styles
+// ─────────────────────────────────────────────────────────────────────────────
+
+const styles = StyleSheet.create({
+  card: {
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    padding: Spacing.lg,
+    marginBottom: Spacing.md,
+  },
+  headerRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: Spacing.md,
+  },
+  copyButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: Spacing.xs,
+    paddingHorizontal: Spacing.sm,
+  },
+  chipRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: Spacing.sm,
+    marginBottom: Spacing.md,
+  },
+  contextChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+  },
+  timingSection: {
+    marginTop: Spacing.xs,
+  },
+  timingChip: {
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+  },
+});

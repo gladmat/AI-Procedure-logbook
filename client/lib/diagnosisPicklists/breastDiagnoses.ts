@@ -803,6 +803,433 @@ const BREAST_DX_AESTHETIC: DiagnosisPicklistEntry[] = [
 ];
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// IMPLANT COMPLICATIONS — EXTENDED
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const BREAST_DX_IMPLANT_COMPLICATIONS_EXTENDED: DiagnosisPicklistEntry[] = [
+  {
+    id: "breast_dx_implant_malposition",
+    displayName: "Implant malposition",
+    shortName: "Malposition",
+    snomedCtCode: "236507001", // VERIFY
+    snomedCtDisplay: "Malposition of breast implant (disorder)",
+    specialty: "breast",
+    subcategory: "Implant Complications",
+    clinicalGroup: "reconstructive",
+    hasStaging: false,
+    searchSynonyms: [
+      "implant malposition",
+      "bottoming out",
+      "lateral displacement",
+      "high riding implant",
+    ],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "breast_rev_capsulorrhaphy",
+        displayName: "Capsulorrhaphy (pocket adjustment)",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "breast_rev_pocket_plane_conversion",
+        displayName: "Pocket plane conversion",
+        isDefault: false,
+        sortOrder: 2,
+      },
+    ],
+    sortOrder: 5,
+  },
+  {
+    id: "breast_dx_animation_deformity",
+    displayName: "Animation deformity",
+    shortName: "Animation deformity",
+    snomedCtCode: "236507001", // VERIFY
+    snomedCtDisplay: "Animation deformity of breast (disorder)",
+    specialty: "breast",
+    subcategory: "Implant Complications",
+    clinicalGroup: "reconstructive",
+    hasStaging: false,
+    searchSynonyms: [
+      "animation deformity",
+      "dynamic distortion",
+      "pectoralis muscle movement",
+    ],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "breast_rev_animation_deformity",
+        displayName: "Animation deformity correction",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "breast_rev_pocket_plane_conversion",
+        displayName: "Pocket plane conversion (to prepectoral)",
+        isDefault: false,
+        sortOrder: 2,
+      },
+    ],
+    sortOrder: 6,
+  },
+  {
+    id: "breast_dx_symmastia",
+    displayName: "Symmastia (breadloafing / uniboob)",
+    shortName: "Symmastia",
+    snomedCtCode: "236507001", // VERIFY
+    snomedCtDisplay: "Symmastia (disorder)",
+    specialty: "breast",
+    subcategory: "Implant Complications",
+    clinicalGroup: "reconstructive",
+    hasStaging: false,
+    searchSynonyms: [
+      "symmastia",
+      "breadloafing",
+      "uniboob",
+      "medial implant communication",
+    ],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "breast_rev_symmastia_repair",
+        displayName: "Symmastia repair",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "breast_rev_capsulorrhaphy",
+        displayName: "Capsulorrhaphy",
+        isDefault: false,
+        sortOrder: 2,
+      },
+    ],
+    sortOrder: 7,
+  },
+  {
+    id: "breast_dx_implant_infection",
+    displayName: "Breast implant infection / periprosthetic infection",
+    shortName: "Implant infection",
+    snomedCtCode: "236507001", // VERIFY
+    snomedCtDisplay: "Infection of breast implant (disorder)",
+    specialty: "breast",
+    subcategory: "Implant Complications",
+    clinicalGroup: "reconstructive",
+    hasStaging: false,
+    searchSynonyms: [
+      "implant infection",
+      "periprosthetic infection",
+      "infected implant",
+      "prosthetic infection breast",
+    ],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "breast_rev_implant_removal",
+        displayName: "Implant removal",
+        isDefault: true,
+        sortOrder: 1,
+      },
+    ],
+    sortOrder: 8,
+  },
+  {
+    id: "breast_dx_capsule_calcification",
+    displayName: "Capsule calcification",
+    shortName: "Capsule calcification",
+    snomedCtCode: "236507001", // VERIFY
+    snomedCtDisplay: "Calcification of breast implant capsule (disorder)",
+    specialty: "breast",
+    subcategory: "Implant Complications",
+    clinicalGroup: "reconstructive",
+    hasStaging: false,
+    searchSynonyms: [
+      "capsule calcification",
+      "calcified capsule",
+      "eggshell capsule",
+    ],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "breast_rev_capsulectomy_total",
+        displayName: "Total capsulectomy",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "breast_rev_implant_exchange",
+        displayName: "Implant exchange",
+        isDefault: false,
+        sortOrder: 2,
+      },
+    ],
+    sortOrder: 9,
+  },
+];
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// GENDER-AFFIRMING
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const BREAST_DX_GENDER_AFFIRMING: DiagnosisPicklistEntry[] = [
+  {
+    id: "breast_dx_gender_dysphoria_transmasc",
+    displayName: "Gender dysphoria — transmasculine (chest masculinisation)",
+    shortName: "Gender dysphoria (TM)",
+    snomedCtCode: "93461009", // VERIFY
+    snomedCtDisplay: "Gender dysphoria (finding)",
+    specialty: "breast",
+    subcategory: "Gender-Affirming",
+    clinicalGroup: "gender_affirming",
+    hasStaging: false,
+    searchSynonyms: [
+      "gender dysphoria",
+      "transmasculine",
+      "chest masculinisation",
+      "top surgery ftm",
+      "mastectomy transgender",
+    ],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "breast_ga_chest_masc_di_fng",
+        displayName: "Chest masculinisation — double incision with FNG",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "breast_ga_chest_masc_periareolar",
+        displayName: "Chest masculinisation — periareolar",
+        isDefault: false,
+        sortOrder: 2,
+      },
+      {
+        procedurePicklistId: "breast_ga_chest_masc_keyhole",
+        displayName: "Chest masculinisation — keyhole",
+        isDefault: false,
+        sortOrder: 3,
+      },
+      {
+        procedurePicklistId: "breast_ga_chest_masc_buttonhole",
+        displayName: "Chest masculinisation — buttonhole",
+        isDefault: false,
+        sortOrder: 4,
+      },
+    ],
+    sortOrder: 1,
+  },
+  {
+    id: "breast_dx_gender_dysphoria_transfem",
+    displayName: "Gender dysphoria — transfeminine (breast augmentation)",
+    shortName: "Gender dysphoria (TF)",
+    snomedCtCode: "93461009", // VERIFY
+    snomedCtDisplay: "Gender dysphoria (finding)",
+    specialty: "breast",
+    subcategory: "Gender-Affirming",
+    clinicalGroup: "gender_affirming",
+    hasStaging: false,
+    searchSynonyms: [
+      "gender dysphoria",
+      "transfeminine",
+      "breast augmentation transgender",
+      "top surgery mtf",
+    ],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "breast_ga_augmentation_transfem",
+        displayName: "Breast augmentation — transfeminine",
+        isDefault: true,
+        sortOrder: 1,
+      },
+    ],
+    sortOrder: 2,
+  },
+];
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// POST-TREATMENT
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const BREAST_DX_POST_TREATMENT: DiagnosisPicklistEntry[] = [
+  {
+    id: "breast_dx_lymphoedema",
+    displayName: "Breast lymphoedema (post-axillary surgery)",
+    shortName: "Breast lymphoedema",
+    snomedCtCode: "234097001", // VERIFY
+    snomedCtDisplay: "Lymphoedema of upper limb (disorder)",
+    specialty: "breast",
+    subcategory: "Post-Treatment",
+    clinicalGroup: "reconstructive",
+    hasStaging: false,
+    searchSynonyms: [
+      "breast lymphoedema",
+      "arm swelling",
+      "post-axillary",
+      "lymphedema",
+    ],
+    suggestedProcedures: [],
+    sortOrder: 1,
+  },
+  {
+    id: "breast_dx_radiation_damage",
+    displayName: "Radiation-damaged breast",
+    shortName: "Radiation damage",
+    snomedCtCode: "200936003", // VERIFY
+    snomedCtDisplay: "Radiation injury of breast (disorder)",
+    specialty: "breast",
+    subcategory: "Post-Treatment",
+    clinicalGroup: "reconstructive",
+    hasStaging: false,
+    searchSynonyms: [
+      "radiation damage",
+      "radiation fibrosis",
+      "post-radiotherapy breast",
+    ],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "breast_fat_recon",
+        displayName: "Fat grafting — breast reconstruction",
+        isDefault: true,
+        sortOrder: 1,
+      },
+    ],
+    sortOrder: 2,
+  },
+  {
+    id: "breast_dx_fibrosis",
+    displayName: "Breast fibrosis (post-treatment)",
+    shortName: "Breast fibrosis",
+    snomedCtCode: "367643001", // VERIFY
+    snomedCtDisplay: "Fibrosis of breast (disorder)",
+    specialty: "breast",
+    subcategory: "Post-Treatment",
+    clinicalGroup: "reconstructive",
+    hasStaging: false,
+    searchSynonyms: [
+      "breast fibrosis",
+      "scarring",
+      "post-treatment fibrosis",
+    ],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "breast_fat_recon",
+        displayName: "Fat grafting — breast reconstruction",
+        isDefault: true,
+        sortOrder: 1,
+      },
+    ],
+    sortOrder: 3,
+  },
+  {
+    id: "breast_dx_post_bct_deformity",
+    displayName: "Post-BCT deformity (breast-conserving therapy)",
+    shortName: "Post-BCT deformity",
+    snomedCtCode: "392090004", // VERIFY
+    snomedCtDisplay: "Deformity of breast following surgery (disorder)",
+    specialty: "breast",
+    subcategory: "Post-Treatment",
+    clinicalGroup: "reconstructive",
+    hasStaging: false,
+    searchSynonyms: [
+      "post-BCT deformity",
+      "lumpectomy defect",
+      "breast-conserving therapy deformity",
+      "partial mastectomy defect",
+    ],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "breast_fat_recon",
+        displayName: "Fat grafting — breast reconstruction",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "breast_onco_oncoplastic_level2",
+        displayName: "Oncoplastic Level 2 (volume replacement)",
+        isDefault: false,
+        sortOrder: 2,
+      },
+    ],
+    sortOrder: 4,
+  },
+];
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// CONGENITAL & OTHER
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const BREAST_DX_CONGENITAL_OTHER: DiagnosisPicklistEntry[] = [
+  {
+    id: "breast_dx_accessory_breast",
+    displayName: "Accessory breast tissue (polymastia)",
+    shortName: "Accessory breast",
+    snomedCtCode: "33552001", // VERIFY
+    snomedCtDisplay: "Polymastia (disorder)",
+    specialty: "breast",
+    subcategory: "Congenital & Other",
+    clinicalGroup: "elective",
+    hasStaging: false,
+    searchSynonyms: [
+      "accessory breast",
+      "polymastia",
+      "supernumerary breast",
+      "axillary breast tissue",
+    ],
+    suggestedProcedures: [],
+    sortOrder: 1,
+  },
+  {
+    id: "breast_dx_amastia",
+    displayName: "Amastia / athelia (congenital absence)",
+    shortName: "Amastia",
+    snomedCtCode: "69285007", // VERIFY
+    snomedCtDisplay: "Amastia (disorder)",
+    specialty: "breast",
+    subcategory: "Congenital & Other",
+    clinicalGroup: "reconstructive",
+    hasStaging: false,
+    searchSynonyms: [
+      "amastia",
+      "athelia",
+      "congenital absence breast",
+      "absent breast",
+    ],
+    suggestedProcedures: [],
+    sortOrder: 2,
+  },
+  {
+    id: "breast_dx_lactational_abscess",
+    displayName: "Lactational breast abscess",
+    shortName: "Lactational abscess",
+    snomedCtCode: "46217008", // VERIFY
+    snomedCtDisplay: "Lactational abscess of breast (disorder)",
+    specialty: "breast",
+    subcategory: "Congenital & Other",
+    clinicalGroup: "reconstructive",
+    hasStaging: false,
+    searchSynonyms: [
+      "lactational abscess",
+      "breast abscess breastfeeding",
+      "puerperal abscess",
+    ],
+    suggestedProcedures: [],
+    sortOrder: 3,
+  },
+  {
+    id: "breast_dx_non_lactational_abscess",
+    displayName: "Non-lactational breast abscess / periareolar abscess",
+    shortName: "Non-lactational abscess",
+    snomedCtCode: "57162001", // VERIFY
+    snomedCtDisplay: "Non-lactational abscess of breast (disorder)",
+    specialty: "breast",
+    subcategory: "Congenital & Other",
+    clinicalGroup: "reconstructive",
+    hasStaging: false,
+    searchSynonyms: [
+      "non-lactational abscess",
+      "periareolar abscess",
+      "Zuska disease",
+      "idiopathic granulomatous mastitis",
+    ],
+    suggestedProcedures: [],
+    sortOrder: 4,
+  },
+];
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // EXPORT
 // ═══════════════════════════════════════════════════════════════════════════════
 
@@ -810,7 +1237,11 @@ export const BREAST_DIAGNOSES: DiagnosisPicklistEntry[] = [
   ...BREAST_DX_ONCOLOGICAL,
   ...BREAST_DX_RECONSTRUCTION,
   ...BREAST_DX_IMPLANT_COMPLICATIONS,
+  ...BREAST_DX_IMPLANT_COMPLICATIONS_EXTENDED,
   ...BREAST_DX_AESTHETIC,
+  ...BREAST_DX_GENDER_AFFIRMING,
+  ...BREAST_DX_POST_TREATMENT,
+  ...BREAST_DX_CONGENITAL_OTHER,
 ];
 
 export function getBreastSubcategories(): string[] {
