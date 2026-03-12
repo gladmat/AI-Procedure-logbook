@@ -90,7 +90,9 @@ export interface DiagnosisPicklistEntry {
     | "elective"
     | "oncological"
     | "congenital"
-    | "reconstructive";
+    | "reconstructive"
+    | "aesthetic"
+    | "gender_affirming";
 
   /** Whether this diagnosis has staging/grading in diagnosisStagingConfig */
   hasStaging: boolean;

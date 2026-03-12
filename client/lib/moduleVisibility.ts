@@ -9,6 +9,7 @@ import type { EpisodeType } from "@/types/episode";
 import { procedureHasImplant } from "@/lib/jointImplant";
 import { PICKLIST_TO_FLAP_TYPE } from "@/lib/procedurePicklist";
 import { shouldActivateSkinCancerModuleForSnomed } from "@/lib/skinCancerConfig";
+import { isBreastSpecialty } from "@/lib/breastConfig";
 
 export interface ModuleVisibility {
   flapDetails: boolean;
@@ -21,6 +22,8 @@ export interface ModuleVisibility {
   skinCancerAssessment: boolean;
   /** Joint implant tracking for arthroplasty procedures */
   implant: boolean;
+  /** Breast surgery assessment module — specialty-gated */
+  breast: boolean;
 }
 
 /**
@@ -128,6 +131,9 @@ export function getModuleVisibility(
   // Joint Implant: any procedure with hasImplant flag (arthroplasty procedures)
   const implant = procedures.some(procedureHasImplant);
 
+  // Breast: specialty-gated (soft clinical context, not diagnosis-driven)
+  const breast = isBreastSpecialty(group.specialty);
+
   return {
     flapDetails,
     flapOutcome,
@@ -136,5 +142,6 @@ export function getModuleVisibility(
     woundAssessment,
     skinCancerAssessment,
     implant,
+    breast,
   };
 }

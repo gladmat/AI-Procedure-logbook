@@ -1046,6 +1046,38 @@ Following established patterns:
 | Integration point    | `DiagnosisGroupEditor.tsx` activates the module when diagnosis metadata matches                                         |
 | Tests                | `client/lib/__tests__/skinCancerAssessment.test.ts` for disclosure logic, margin recommendations, episode auto-creation |
 
+## Breast Module — Locked Decisions
+
+### Architecture
+- Soft clinical context per side (reconstructive/aesthetic/gender_affirming), NOT a hard gate
+- Per-side independence: left and right are fully independent data capture units
+- Modules activate on procedure type, not clinical context
+- BreastAssessment renders INLINE in DiagnosisGroupEditor (like HandTraumaAssessment)
+- Implant/Flap/Lipofilling cards render as collapsible sections WITHIN BreastAssessment
+
+### Anti-Patterns — DO NOT
+- DO NOT create a BreastLaterality gate that restricts procedure selection
+- DO NOT duplicate FreeFlapDetails fields — BreastFlapDetailsData extends, not replaces
+- DO NOT create a separate ReconstructionTiming type — reuse existing from free flap spec
+- DO NOT put implant details in a modal sheet — it's a collapsible inline section
+- DO NOT duplicate brand components — import from client/components/brand/
+- DO NOT create separate left/right procedure entries — procedures are per-case, breast assessment per-side
+- DO NOT make breastReconstructionMeta a required field on TreatmentEpisode — it's nullable JSONB
+- DO NOT add new episode types — use existing staged_reconstruction
+
+### Component Registry
+- Config: `client/lib/breastConfig.ts`
+- Types: `client/types/breast.ts`
+- Components: `client/components/breast/` (created in Phase 2+)
+
+### Data Flow
+- Implant details: BreastSideAssessment.implantDetails (per-side)
+- Flap details: BreastSideAssessment.flapDetails (per-side, breast extension only)
+- Generic flap fields: CaseProcedure.freeFlapDetails (existing, unchanged)
+- Lipofilling: BreastSideAssessment.lipofilling (per-side)
+- Liposuction: case-level (shared across sides)
+- Episode meta: TreatmentEpisode.breastReconstructionMeta (nullable JSONB)
+
 ## Design system: Charcoal + Amber
 
 All tokens in `client/constants/theme.ts` (single source of truth, 273 lines).

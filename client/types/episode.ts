@@ -76,6 +76,12 @@ export type PendingAction =
   | "wound_healing"
   | "staged_procedure_planned"
   | "awaiting_mdt"
+  | "awaiting_expander_exchange"
+  | "expansion_in_progress"
+  | "awaiting_nipple_recon"
+  | "awaiting_fat_grafting"
+  | "awaiting_symmetrisation"
+  | "awaiting_tattoo"
   | "other";
 
 export const PENDING_ACTION_LABELS: Record<PendingAction, string> = {
@@ -87,6 +93,12 @@ export const PENDING_ACTION_LABELS: Record<PendingAction, string> = {
   wound_healing: "Wound healing — monitoring",
   staged_procedure_planned: "Staged procedure planned",
   awaiting_mdt: "Awaiting MDT discussion",
+  awaiting_expander_exchange: "Awaiting expander-to-implant exchange",
+  expansion_in_progress: "Tissue expansion in progress",
+  awaiting_nipple_recon: "Awaiting nipple reconstruction",
+  awaiting_fat_grafting: "Awaiting fat grafting",
+  awaiting_symmetrisation: "Awaiting symmetrisation procedure",
+  awaiting_tattoo: "Awaiting nipple tattooing",
   other: "Other (see notes)",
 };
 
@@ -112,6 +124,8 @@ export interface TreatmentEpisode {
   ownerId: string;
   createdAt: string;
   updatedAt: string;
+  /** Breast reconstruction episode metadata (nullable, populated for staged_reconstruction breast episodes) */
+  breastReconstructionMeta?: import("./breast").BreastReconstructionMeta;
 }
 
 // ── Episode Prefill Data (for "+ Log Case" workflow) ────────────────────────

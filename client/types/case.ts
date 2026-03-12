@@ -233,7 +233,8 @@ export type ProcedureTag =
   | "acute"
   | "elective"
   | "revision"
-  | "complex_wound";
+  | "complex_wound"
+  | "lipofilling";
 
 export type ASAScore = 1 | 2 | 3 | 4 | 5 | 6;
 
@@ -1635,6 +1636,8 @@ export interface DiagnosisGroup {
   histologyResult?: GeneralHistologyResult;
   /** Hand infection inline assessment data (acute hand cases) */
   handInfectionDetails?: import("./handInfection").HandInfectionDetails;
+  /** Breast surgery assessment data (per-side details, implants, flaps, lipofilling) */
+  breastAssessment?: import("./breast").BreastAssessmentData;
 }
 
 export type GeneralHistologyCategory =
@@ -2000,6 +2003,7 @@ export const PROCEDURE_TAG_LABELS: Record<ProcedureTag, string> = {
   elective: "Elective",
   revision: "Revision",
   complex_wound: "Complex Wound",
+  lipofilling: "Lipofilling",
 };
 
 // RACS MALT Supervision Level Labels
