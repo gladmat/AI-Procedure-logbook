@@ -3426,9 +3426,9 @@ const BREAST_AUTOLOGOUS_RECON: ProcedurePicklistEntry[] = [
   {
     id: "breast_recon_diep",
     displayName: "DIEP flap breast reconstruction",
-    snomedCtCode: "234294006",
+    snomedCtCode: "395167000",
     snomedCtDisplay:
-      "Free deep inferior epigastric perforator flap (procedure)",
+      "Breast reconstruction with deep inferior epigastric perforator skin flap (procedure)",
     specialties: ["breast"],
     subcategory: "Autologous Reconstruction",
     tags: ["free_flap", "microsurgery", "oncological"],
@@ -3438,9 +3438,9 @@ const BREAST_AUTOLOGOUS_RECON: ProcedurePicklistEntry[] = [
   {
     id: "breast_recon_tram_free",
     displayName: "Free TRAM flap breast reconstruction",
-    snomedCtCode: "446078000",
+    snomedCtCode: "426781008",
     snomedCtDisplay:
-      "Free transverse rectus abdominis myocutaneous flap (procedure)",
+      "Reconstruction of breast using free transverse rectus abdominis myocutaneous flap (procedure)",
     specialties: ["breast"],
     subcategory: "Autologous Reconstruction",
     tags: ["free_flap", "microsurgery", "oncological"],
@@ -3450,9 +3450,9 @@ const BREAST_AUTOLOGOUS_RECON: ProcedurePicklistEntry[] = [
   {
     id: "breast_recon_tram_pedicled",
     displayName: "Pedicled TRAM flap breast reconstruction",
-    snomedCtCode: "446078000", // VERIFY — may have pedicled-specific code
+    snomedCtCode: "426433000",
     snomedCtDisplay:
-      "Pedicled transverse rectus abdominis myocutaneous flap (procedure)",
+      "Reconstruction of breast using pedicle transverse rectus abdominis myocutaneous flap (procedure)",
     specialties: ["breast"],
     subcategory: "Autologous Reconstruction",
     tags: ["pedicled_flap", "oncological"],
@@ -3461,8 +3461,9 @@ const BREAST_AUTOLOGOUS_RECON: ProcedurePicklistEntry[] = [
   {
     id: "breast_recon_ld_implant",
     displayName: "Pedicled LD flap ± implant breast reconstruction",
-    snomedCtCode: "234281001",
-    snomedCtDisplay: "Pedicled latissimus dorsi flap (procedure)",
+    snomedCtCode: "14561009",
+    snomedCtDisplay:
+      "Breast reconstruction with latissimus dorsi myocutaneous flap with implant (procedure)",
     specialties: ["breast"],
     subcategory: "Autologous Reconstruction",
     tags: ["pedicled_flap", "oncological"],
@@ -3471,8 +3472,9 @@ const BREAST_AUTOLOGOUS_RECON: ProcedurePicklistEntry[] = [
   {
     id: "breast_recon_sgap",
     displayName: "SGAP flap breast reconstruction",
-    snomedCtCode: "234301003", // VERIFY
-    snomedCtDisplay: "Free superior gluteal artery perforator flap (procedure)",
+    snomedCtCode: "427381000",
+    snomedCtDisplay:
+      "Reconstruction of breast using free superior gluteal artery perforator flap (procedure)",
     specialties: ["breast"],
     subcategory: "Autologous Reconstruction",
     tags: ["free_flap", "microsurgery", "oncological"],
@@ -3482,8 +3484,9 @@ const BREAST_AUTOLOGOUS_RECON: ProcedurePicklistEntry[] = [
   {
     id: "breast_recon_igap",
     displayName: "IGAP flap breast reconstruction",
-    snomedCtCode: "234302005", // VERIFY
-    snomedCtDisplay: "Free inferior gluteal artery perforator flap (procedure)",
+    snomedCtCode: "425538003",
+    snomedCtDisplay:
+      "Reconstruction of breast using free inferior gluteal artery perforator flap (procedure)",
     specialties: ["breast"],
     subcategory: "Autologous Reconstruction",
     tags: ["free_flap", "microsurgery", "oncological"],
@@ -3493,9 +3496,9 @@ const BREAST_AUTOLOGOUS_RECON: ProcedurePicklistEntry[] = [
   {
     id: "breast_recon_siea",
     displayName: "SIEA flap breast reconstruction",
-    snomedCtCode: "234300002",
+    snomedCtCode: "1263418008",
     snomedCtDisplay:
-      "Free superficial inferior epigastric artery flap (procedure)",
+      "Reconstruction of breast using free superficial inferior epigastric artery flap (procedure)",
     specialties: ["breast"],
     subcategory: "Autologous Reconstruction",
     tags: ["free_flap", "microsurgery", "oncological"],
@@ -3505,8 +3508,8 @@ const BREAST_AUTOLOGOUS_RECON: ProcedurePicklistEntry[] = [
   {
     id: "breast_recon_stacked",
     displayName: "Stacked / bipedicled flap breast reconstruction",
-    snomedCtCode: "122462001", // VERIFY
-    snomedCtDisplay: "Stacked free flap breast reconstruction (procedure)",
+    snomedCtCode: "61938004",
+    snomedCtDisplay: "Breast reconstruction with free flap (procedure)",
     specialties: ["breast"],
     subcategory: "Autologous Reconstruction",
     tags: ["free_flap", "microsurgery", "oncological"],
@@ -3516,9 +3519,8 @@ const BREAST_AUTOLOGOUS_RECON: ProcedurePicklistEntry[] = [
   {
     id: "breast_recon_scip",
     displayName: "SCIP flap breast reconstruction",
-    snomedCtCode: "234299000",
-    snomedCtDisplay:
-      "Free superficial circumflex iliac artery flap (procedure)",
+    snomedCtCode: "61938004",
+    snomedCtDisplay: "Breast reconstruction with free flap (procedure)",
     specialties: ["breast"],
     subcategory: "Autologous Reconstruction",
     tags: ["free_flap", "microsurgery", "oncological"],
@@ -3528,8 +3530,8 @@ const BREAST_AUTOLOGOUS_RECON: ProcedurePicklistEntry[] = [
   {
     id: "breast_recon_lap",
     displayName: "LAP flap (lumbar artery perforator)",
-    snomedCtCode: "234299000", // VERIFY
-    snomedCtDisplay: "Free flap reconstruction (procedure)",
+    snomedCtCode: "61938004",
+    snomedCtDisplay: "Breast reconstruction with free flap (procedure)",
     specialties: ["breast"],
     subcategory: "Autologous Reconstruction",
     tags: ["free_flap", "microsurgery", "oncological"],
@@ -3539,8 +3541,8 @@ const BREAST_AUTOLOGOUS_RECON: ProcedurePicklistEntry[] = [
   {
     id: "breast_recon_tdap",
     displayName: "TDAP flap (thoracodorsal artery perforator)",
-    snomedCtCode: "234299000", // VERIFY
-    snomedCtDisplay: "Pedicled flap reconstruction (procedure)",
+    snomedCtCode: "303445008",
+    snomedCtDisplay: "Reconstruction of breast with flap (procedure)",
     specialties: ["breast"],
     subcategory: "Autologous Reconstruction",
     tags: ["pedicled_flap", "oncological"],
@@ -3549,8 +3551,8 @@ const BREAST_AUTOLOGOUS_RECON: ProcedurePicklistEntry[] = [
   {
     id: "breast_recon_omental",
     displayName: "Omental flap breast reconstruction",
-    snomedCtCode: "234299000", // VERIFY
-    snomedCtDisplay: "Pedicled flap reconstruction (procedure)",
+    snomedCtCode: "303445008",
+    snomedCtDisplay: "Reconstruction of breast with flap (procedure)",
     specialties: ["breast"],
     subcategory: "Autologous Reconstruction",
     tags: ["pedicled_flap", "oncological"],
@@ -3562,7 +3564,7 @@ const BREAST_IMPLANT_RECON: ProcedurePicklistEntry[] = [
   {
     id: "breast_impl_expander_insertion",
     displayName: "Tissue expander insertion",
-    snomedCtCode: "384692006", // VERIFY
+    snomedCtCode: "319175008",
     snomedCtDisplay: "Insertion of tissue expander into breast (procedure)",
     specialties: ["breast"],
     subcategory: "Implant-Based Reconstruction",
@@ -3572,8 +3574,9 @@ const BREAST_IMPLANT_RECON: ProcedurePicklistEntry[] = [
   {
     id: "breast_impl_dti",
     displayName: "Direct-to-implant reconstruction",
-    snomedCtCode: "69031006",
-    snomedCtDisplay: "Insertion of breast prosthesis (procedure)",
+    snomedCtCode: "443611007",
+    snomedCtDisplay:
+      "Reconstruction of breast with immediate insertion of breast prosthesis (procedure)",
     specialties: ["breast"],
     subcategory: "Implant-Based Reconstruction",
     tags: ["oncological"],
@@ -3582,9 +3585,9 @@ const BREAST_IMPLANT_RECON: ProcedurePicklistEntry[] = [
   {
     id: "breast_impl_expander_to_implant",
     displayName: "Expander-to-implant exchange",
-    snomedCtCode: "69031006", // VERIFY
+    snomedCtCode: "3741000032107",
     snomedCtDisplay:
-      "Exchange of tissue expander for permanent implant (procedure)",
+      "Exchange of breast tissue expander with prosthesis (procedure)",
     specialties: ["breast"],
     subcategory: "Implant-Based Reconstruction",
     tags: ["oncological", "revision"],
@@ -3593,9 +3596,8 @@ const BREAST_IMPLANT_RECON: ProcedurePicklistEntry[] = [
   {
     id: "breast_impl_adm_assisted",
     displayName: "ADM-assisted implant reconstruction",
-    snomedCtCode: "69031006", // VERIFY
-    snomedCtDisplay:
-      "Acellular dermal matrix assisted breast reconstruction (procedure)",
+    snomedCtCode: "302343007",
+    snomedCtDisplay: "Insertion of prosthesis for breast (procedure)",
     specialties: ["breast"],
     subcategory: "Implant-Based Reconstruction",
     tags: ["oncological"],
@@ -3604,9 +3606,8 @@ const BREAST_IMPLANT_RECON: ProcedurePicklistEntry[] = [
   {
     id: "breast_impl_prepectoral",
     displayName: "Prepectoral implant reconstruction",
-    snomedCtCode: "69031006", // VERIFY
-    snomedCtDisplay:
-      "Prepectoral breast reconstruction with implant (procedure)",
+    snomedCtCode: "302343007",
+    snomedCtDisplay: "Insertion of prosthesis for breast (procedure)",
     specialties: ["breast"],
     subcategory: "Implant-Based Reconstruction",
     tags: ["oncological"],
@@ -3615,9 +3616,8 @@ const BREAST_IMPLANT_RECON: ProcedurePicklistEntry[] = [
   {
     id: "breast_impl_combined_autologous",
     displayName: "Combined autologous + implant reconstruction",
-    snomedCtCode: "69031006", // VERIFY
-    snomedCtDisplay:
-      "Combined autologous and implant breast reconstruction (procedure)",
+    snomedCtCode: "303445008",
+    snomedCtDisplay: "Reconstruction of breast with flap (procedure)",
     specialties: ["breast"],
     subcategory: "Implant-Based Reconstruction",
     tags: ["oncological", "pedicled_flap"],
@@ -3629,7 +3629,7 @@ const BREAST_ONCOPLASTIC: ProcedurePicklistEntry[] = [
   {
     id: "breast_onco_therapeutic_mammoplasty",
     displayName: "Therapeutic mammoplasty (oncoplastic excision + reshaping)",
-    snomedCtCode: "392090004", // VERIFY
+    snomedCtCode: "1368181000168101",
     snomedCtDisplay: "Therapeutic mammoplasty (procedure)",
     specialties: ["breast"],
     subcategory: "Oncoplastic Surgery",
@@ -3639,9 +3639,8 @@ const BREAST_ONCOPLASTIC: ProcedurePicklistEntry[] = [
   {
     id: "breast_onco_volume_displacement",
     displayName: "Volume displacement technique",
-    snomedCtCode: "392090004", // VERIFY
-    snomedCtDisplay:
-      "Oncoplastic breast surgery — volume displacement (procedure)",
+    snomedCtCode: "392090004",
+    snomedCtDisplay: "Operation on breast (procedure)",
     specialties: ["breast"],
     subcategory: "Oncoplastic Surgery",
     tags: ["oncological"],
@@ -3650,9 +3649,8 @@ const BREAST_ONCOPLASTIC: ProcedurePicklistEntry[] = [
   {
     id: "breast_onco_volume_replacement",
     displayName: "Volume replacement technique (LD / local perforator flap)",
-    snomedCtCode: "392090004", // VERIFY
-    snomedCtDisplay:
-      "Oncoplastic breast surgery — volume replacement (procedure)",
+    snomedCtCode: "392090004",
+    snomedCtDisplay: "Operation on breast (procedure)",
     specialties: ["breast"],
     subcategory: "Oncoplastic Surgery",
     tags: ["oncological", "pedicled_flap"],
@@ -3661,8 +3659,8 @@ const BREAST_ONCOPLASTIC: ProcedurePicklistEntry[] = [
   {
     id: "breast_onco_ssm",
     displayName: "Skin-sparing mastectomy + immediate reconstruction",
-    snomedCtCode: "428564008", // VERIFY
-    snomedCtDisplay: "Skin-sparing mastectomy (procedure)",
+    snomedCtCode: "428564008",
+    snomedCtDisplay: "Skin sparing mastectomy (procedure)",
     specialties: ["breast"],
     subcategory: "Oncoplastic Surgery",
     tags: ["oncological"],
@@ -3671,8 +3669,9 @@ const BREAST_ONCOPLASTIC: ProcedurePicklistEntry[] = [
   {
     id: "breast_onco_nsm",
     displayName: "Nipple-sparing mastectomy + immediate reconstruction",
-    snomedCtCode: "726429001", // VERIFY
-    snomedCtDisplay: "Nipple-sparing mastectomy (procedure)",
+    snomedCtCode: "1380209001",
+    snomedCtDisplay:
+      "Nipple preserving subcutaneous mastectomy (procedure)",
     specialties: ["breast"],
     subcategory: "Oncoplastic Surgery",
     tags: ["oncological"],
@@ -3682,8 +3681,9 @@ const BREAST_ONCOPLASTIC: ProcedurePicklistEntry[] = [
     id: "breast_onco_contralateral_symmetrisation",
     displayName:
       "Contralateral symmetrisation (reduction / mastopexy / augmentation)",
-    snomedCtCode: "64368001",
-    snomedCtDisplay: "Reduction mammoplasty (procedure)",
+    snomedCtCode: "1179788009",
+    snomedCtDisplay:
+      "Contralateral symmetrising reduction mammoplasty (procedure)",
     specialties: ["breast"],
     subcategory: "Oncoplastic Surgery",
     tags: ["oncological", "elective"],
@@ -3692,7 +3692,7 @@ const BREAST_ONCOPLASTIC: ProcedurePicklistEntry[] = [
   {
     id: "breast_onco_delayed_immediate_recon",
     displayName: "Delayed-immediate reconstruction (expander at mastectomy)",
-    snomedCtCode: "384692006", // VERIFY
+    snomedCtCode: "319175008",
     snomedCtDisplay: "Insertion of tissue expander into breast (procedure)",
     specialties: ["breast"],
     subcategory: "Oncoplastic Surgery",
@@ -3703,8 +3703,8 @@ const BREAST_ONCOPLASTIC: ProcedurePicklistEntry[] = [
     id: "breast_onco_oncoplastic_level2",
     displayName:
       "Oncoplastic Level 2 (volume replacement — perforator flap)",
-    snomedCtCode: "392090004", // VERIFY
-    snomedCtDisplay: "Oncoplastic breast surgery (procedure)",
+    snomedCtCode: "392090004",
+    snomedCtDisplay: "Operation on breast (procedure)",
     specialties: ["breast"],
     subcategory: "Oncoplastic Surgery",
     tags: ["oncological", "pedicled_flap"],
@@ -3716,7 +3716,7 @@ const BREAST_AESTHETIC: ProcedurePicklistEntry[] = [
   {
     id: "breast_aes_augmentation_implant",
     displayName: "Breast augmentation — implant",
-    snomedCtCode: "69031006",
+    snomedCtCode: "22890008",
     snomedCtDisplay: "Augmentation mammoplasty (procedure)",
     specialties: ["breast", "aesthetics"],
     subcategory: "Aesthetic Breast",
@@ -3726,8 +3726,8 @@ const BREAST_AESTHETIC: ProcedurePicklistEntry[] = [
   {
     id: "breast_aes_augmentation_fat",
     displayName: "Breast augmentation — fat transfer",
-    snomedCtCode: "37834008", // VERIFY
-    snomedCtDisplay: "Lipofilling breast augmentation (procedure)",
+    snomedCtCode: "764926003",
+    snomedCtDisplay: "Transfer of fat to breast (procedure)",
     specialties: ["breast", "aesthetics"],
     subcategory: "Aesthetic Breast",
     tags: ["elective"],
@@ -3736,7 +3736,7 @@ const BREAST_AESTHETIC: ProcedurePicklistEntry[] = [
   {
     id: "breast_aes_reduction_wise",
     displayName: "Breast reduction — Wise pattern (inverted-T)",
-    snomedCtCode: "64368001",
+    snomedCtCode: "59214008",
     snomedCtDisplay: "Reduction mammoplasty (procedure)",
     specialties: ["breast"],
     subcategory: "Aesthetic Breast",
@@ -3746,7 +3746,7 @@ const BREAST_AESTHETIC: ProcedurePicklistEntry[] = [
   {
     id: "breast_aes_reduction_vertical",
     displayName: "Breast reduction — vertical scar",
-    snomedCtCode: "64368001",
+    snomedCtCode: "59214008",
     snomedCtDisplay: "Reduction mammoplasty (procedure)",
     specialties: ["breast"],
     subcategory: "Aesthetic Breast",
@@ -3756,7 +3756,7 @@ const BREAST_AESTHETIC: ProcedurePicklistEntry[] = [
   {
     id: "breast_aes_reduction_superomedial",
     displayName: "Breast reduction — superomedial pedicle",
-    snomedCtCode: "64368001",
+    snomedCtCode: "59214008",
     snomedCtDisplay: "Reduction mammoplasty (procedure)",
     specialties: ["breast"],
     subcategory: "Aesthetic Breast",
@@ -3766,7 +3766,7 @@ const BREAST_AESTHETIC: ProcedurePicklistEntry[] = [
   {
     id: "breast_aes_mastopexy_periareolar",
     displayName: "Mastopexy — periareolar (Benelli)",
-    snomedCtCode: "172158009", // VERIFY
+    snomedCtCode: "50843001",
     snomedCtDisplay: "Mastopexy (procedure)",
     specialties: ["breast"],
     subcategory: "Aesthetic Breast",
@@ -3776,7 +3776,7 @@ const BREAST_AESTHETIC: ProcedurePicklistEntry[] = [
   {
     id: "breast_aes_mastopexy_vertical",
     displayName: "Mastopexy — vertical scar",
-    snomedCtCode: "172158009", // VERIFY
+    snomedCtCode: "50843001",
     snomedCtDisplay: "Mastopexy (procedure)",
     specialties: ["breast"],
     subcategory: "Aesthetic Breast",
@@ -3786,7 +3786,7 @@ const BREAST_AESTHETIC: ProcedurePicklistEntry[] = [
   {
     id: "breast_aes_mastopexy_wise",
     displayName: "Mastopexy — Wise pattern (inverted-T)",
-    snomedCtCode: "172158009", // VERIFY
+    snomedCtCode: "50843001",
     snomedCtDisplay: "Mastopexy (procedure)",
     specialties: ["breast"],
     subcategory: "Aesthetic Breast",
@@ -3796,8 +3796,8 @@ const BREAST_AESTHETIC: ProcedurePicklistEntry[] = [
   {
     id: "breast_aes_augmentation_mastopexy",
     displayName: "Augmentation-mastopexy",
-    snomedCtCode: "392090004",
-    snomedCtDisplay: "Operative procedure on breast (procedure)",
+    snomedCtCode: "22890008",
+    snomedCtDisplay: "Augmentation mammoplasty (procedure)",
     specialties: ["breast", "aesthetics"],
     subcategory: "Aesthetic Breast",
     tags: ["elective"],
@@ -3806,8 +3806,8 @@ const BREAST_AESTHETIC: ProcedurePicklistEntry[] = [
   {
     id: "breast_aes_gynaecomastia",
     displayName: "Gynaecomastia surgery (liposuction ± excision)",
-    snomedCtCode: "45187007", // VERIFY
-    snomedCtDisplay: "Excision of gynaecomastia (procedure)",
+    snomedCtCode: "59620004",
+    snomedCtDisplay: "Mastectomy for gynaecomastia (procedure)",
     specialties: ["breast", "aesthetics"],
     subcategory: "Aesthetic Breast",
     tags: ["elective"],
@@ -3819,8 +3819,8 @@ const BREAST_NIPPLE: ProcedurePicklistEntry[] = [
   {
     id: "breast_nipple_reconstruction",
     displayName: "Nipple reconstruction (local flap)",
-    snomedCtCode: "172230009", // VERIFY
-    snomedCtDisplay: "Reconstruction of nipple (procedure)",
+    snomedCtCode: "387628008",
+    snomedCtDisplay: "Nipple reconstruction (procedure)",
     specialties: ["breast"],
     subcategory: "Nipple & Areola",
     tags: ["oncological"],
@@ -3829,8 +3829,8 @@ const BREAST_NIPPLE: ProcedurePicklistEntry[] = [
   {
     id: "breast_nipple_tattooing",
     displayName: "Nipple-areola tattooing",
-    snomedCtCode: "172230009", // VERIFY
-    snomedCtDisplay: "Nipple areola tattooing (procedure)",
+    snomedCtCode: "428379000",
+    snomedCtDisplay: "Tattooing of nipple (procedure)",
     specialties: ["breast"],
     subcategory: "Nipple & Areola",
     tags: ["oncological"],
@@ -3839,8 +3839,8 @@ const BREAST_NIPPLE: ProcedurePicklistEntry[] = [
   {
     id: "breast_nipple_inverted_correction",
     displayName: "Inverted nipple correction",
-    snomedCtCode: "172230009", // VERIFY
-    snomedCtDisplay: "Correction of inverted nipple (procedure)",
+    snomedCtCode: "24093008",
+    snomedCtDisplay: "Correction of inverted nipples (procedure)",
     specialties: ["breast"],
     subcategory: "Nipple & Areola",
     tags: ["elective"],
@@ -3852,8 +3852,8 @@ const BREAST_REVISION: ProcedurePicklistEntry[] = [
   {
     id: "breast_rev_capsulectomy_partial",
     displayName: "Capsulectomy — partial",
-    snomedCtCode: "285183003", // VERIFY
-    snomedCtDisplay: "Capsulectomy of breast (procedure)",
+    snomedCtCode: "90991008",
+    snomedCtDisplay: "Periprosthetic capsulectomy of breast (procedure)",
     specialties: ["breast"],
     subcategory: "Revision & Other",
     tags: ["revision"],
@@ -3862,8 +3862,8 @@ const BREAST_REVISION: ProcedurePicklistEntry[] = [
   {
     id: "breast_rev_capsulectomy_total",
     displayName: "Capsulectomy — total",
-    snomedCtCode: "285183003", // VERIFY
-    snomedCtDisplay: "Total capsulectomy of breast (procedure)",
+    snomedCtCode: "90991008",
+    snomedCtDisplay: "Periprosthetic capsulectomy of breast (procedure)",
     specialties: ["breast"],
     subcategory: "Revision & Other",
     tags: ["revision"],
@@ -3872,8 +3872,8 @@ const BREAST_REVISION: ProcedurePicklistEntry[] = [
   {
     id: "breast_rev_capsulectomy_en_bloc",
     displayName: "Capsulectomy — en bloc",
-    snomedCtCode: "285183003", // VERIFY
-    snomedCtDisplay: "En bloc capsulectomy of breast (procedure)",
+    snomedCtCode: "90991008",
+    snomedCtDisplay: "Periprosthetic capsulectomy of breast (procedure)",
     specialties: ["breast"],
     subcategory: "Revision & Other",
     tags: ["revision"],
@@ -3882,8 +3882,8 @@ const BREAST_REVISION: ProcedurePicklistEntry[] = [
   {
     id: "breast_rev_capsulotomy",
     displayName: "Capsulotomy",
-    snomedCtCode: "39853008", // VERIFY
-    snomedCtDisplay: "Capsulotomy of breast (procedure)",
+    snomedCtCode: "57554003",
+    snomedCtDisplay: "Periprosthetic capsulotomy of breast (procedure)",
     specialties: ["breast"],
     subcategory: "Revision & Other",
     tags: ["revision"],
@@ -3892,8 +3892,8 @@ const BREAST_REVISION: ProcedurePicklistEntry[] = [
   {
     id: "breast_rev_implant_removal",
     displayName: "Implant removal ± capsulectomy",
-    snomedCtCode: "69130005",
-    snomedCtDisplay: "Removal of breast prosthesis (procedure)",
+    snomedCtCode: "27315000",
+    snomedCtDisplay: "Removal of breast implant (procedure)",
     specialties: ["breast"],
     subcategory: "Revision & Other",
     tags: ["revision"],
@@ -3902,8 +3902,8 @@ const BREAST_REVISION: ProcedurePicklistEntry[] = [
   {
     id: "breast_rev_implant_exchange",
     displayName: "Implant exchange (size / type change)",
-    snomedCtCode: "69130005", // VERIFY
-    snomedCtDisplay: "Exchange of breast prosthesis (procedure)",
+    snomedCtCode: "442128000",
+    snomedCtDisplay: "Renewal of prosthesis of breast (procedure)",
     specialties: ["breast"],
     subcategory: "Revision & Other",
     tags: ["revision"],
@@ -3912,8 +3912,8 @@ const BREAST_REVISION: ProcedurePicklistEntry[] = [
   {
     id: "breast_rev_fat_grafting",
     displayName: "Fat grafting to breast",
-    snomedCtCode: "37834008", // VERIFY
-    snomedCtDisplay: "Lipofilling to breast (procedure)",
+    snomedCtCode: "764926003",
+    snomedCtDisplay: "Transfer of fat to breast (procedure)",
     specialties: ["breast"],
     subcategory: "Revision & Other",
     tags: ["revision", "elective"],
@@ -3923,7 +3923,7 @@ const BREAST_REVISION: ProcedurePicklistEntry[] = [
     id: "breast_rev_tuberous_correction",
     displayName: "Tuberous breast correction",
     snomedCtCode: "392090004",
-    snomedCtDisplay: "Operative procedure on breast (procedure)",
+    snomedCtDisplay: "Operation on breast (procedure)",
     specialties: ["breast"],
     subcategory: "Revision & Other",
     tags: ["elective"],
@@ -3932,8 +3932,8 @@ const BREAST_REVISION: ProcedurePicklistEntry[] = [
   {
     id: "breast_rev_poland_correction",
     displayName: "Poland syndrome correction",
-    snomedCtCode: "122465003", // VERIFY
-    snomedCtDisplay: "Reconstruction for Poland syndrome (procedure)",
+    snomedCtCode: "122465003",
+    snomedCtDisplay: "Reconstruction procedure (procedure)",
     specialties: ["breast"],
     subcategory: "Revision & Other",
     tags: ["elective"],
@@ -3942,8 +3942,8 @@ const BREAST_REVISION: ProcedurePicklistEntry[] = [
   {
     id: "breast_rev_flap_revision",
     displayName: "Autologous breast reconstruction revision / debulking",
-    snomedCtCode: "122462001", // VERIFY
-    snomedCtDisplay: "Revision of breast reconstruction (procedure)",
+    snomedCtCode: "392090004",
+    snomedCtDisplay: "Operation on breast (procedure)",
     specialties: ["breast"],
     subcategory: "Revision & Other",
     tags: ["revision"],
@@ -3952,8 +3952,8 @@ const BREAST_REVISION: ProcedurePicklistEntry[] = [
   {
     id: "breast_rev_pocket_plane_conversion",
     displayName: "Pocket plane conversion (subpectoral ↔ prepectoral)",
-    snomedCtCode: "392090004", // VERIFY
-    snomedCtDisplay: "Operative procedure on breast (procedure)",
+    snomedCtCode: "392090004",
+    snomedCtDisplay: "Operation on breast (procedure)",
     specialties: ["breast"],
     subcategory: "Revision & Other",
     tags: ["revision"],
@@ -3962,8 +3962,8 @@ const BREAST_REVISION: ProcedurePicklistEntry[] = [
   {
     id: "breast_rev_capsulorrhaphy",
     displayName: "Capsulorrhaphy (pocket adjustment)",
-    snomedCtCode: "392090004", // VERIFY
-    snomedCtDisplay: "Capsulorrhaphy of breast (procedure)",
+    snomedCtCode: "392090004",
+    snomedCtDisplay: "Operation on breast (procedure)",
     specialties: ["breast"],
     subcategory: "Revision & Other",
     tags: ["revision"],
@@ -3972,8 +3972,8 @@ const BREAST_REVISION: ProcedurePicklistEntry[] = [
   {
     id: "breast_rev_symmastia_repair",
     displayName: "Symmastia repair",
-    snomedCtCode: "392090004", // VERIFY
-    snomedCtDisplay: "Repair of symmastia (procedure)",
+    snomedCtCode: "392090004",
+    snomedCtDisplay: "Operation on breast (procedure)",
     specialties: ["breast"],
     subcategory: "Revision & Other",
     tags: ["revision"],
@@ -3982,8 +3982,8 @@ const BREAST_REVISION: ProcedurePicklistEntry[] = [
   {
     id: "breast_rev_animation_deformity",
     displayName: "Animation deformity correction",
-    snomedCtCode: "392090004", // VERIFY
-    snomedCtDisplay: "Correction of animation deformity of breast (procedure)",
+    snomedCtCode: "392090004",
+    snomedCtDisplay: "Operation on breast (procedure)",
     specialties: ["breast"],
     subcategory: "Revision & Other",
     tags: ["revision"],
@@ -3992,8 +3992,8 @@ const BREAST_REVISION: ProcedurePicklistEntry[] = [
   {
     id: "breast_rev_neo_imf_creation",
     displayName: "Neo-inframammary fold creation",
-    snomedCtCode: "392090004", // VERIFY
-    snomedCtDisplay: "Creation of inframammary fold (procedure)",
+    snomedCtCode: "392090004",
+    snomedCtDisplay: "Operation on breast (procedure)",
     specialties: ["breast"],
     subcategory: "Revision & Other",
     tags: ["revision"],
@@ -4002,7 +4002,7 @@ const BREAST_REVISION: ProcedurePicklistEntry[] = [
   {
     id: "breast_rev_scar_revision",
     displayName: "Dog ear / scar revision — breast",
-    snomedCtCode: "15738001", // VERIFY
+    snomedCtCode: "15738001",
     snomedCtDisplay: "Revision of scar of skin (procedure)",
     specialties: ["breast"],
     subcategory: "Revision & Other",
