@@ -2378,7 +2378,7 @@ const HEAD_NECK_SITE_RECONSTRUCTION: ProcedurePicklistEntry[] = [
     displayName: "Ear reconstruction — total (rib framework / Medpor)",
     snomedCtCode: "287777008", // VERIFY
     snomedCtDisplay: "Total reconstruction of external ear (procedure)",
-    specialties: ["head_neck"],
+    specialties: ["head_neck", "cleft_cranio"],
     subcategory: "Site-Specific Reconstruction",
     tags: ["elective"],
     sortOrder: 5,
@@ -2388,7 +2388,7 @@ const HEAD_NECK_SITE_RECONSTRUCTION: ProcedurePicklistEntry[] = [
     displayName: "Ear reconstruction — osseointegrated prosthesis",
     snomedCtCode: "287777008", // VERIFY
     snomedCtDisplay: "Reconstruction of ear with prosthesis (procedure)",
-    specialties: ["head_neck"],
+    specialties: ["head_neck", "cleft_cranio"],
     subcategory: "Site-Specific Reconstruction",
     tags: ["elective"],
     sortOrder: 6,

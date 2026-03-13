@@ -30,11 +30,7 @@ import { BREAST_DIAGNOSES } from "./breastDiagnoses";
 import { AESTHETICS_DIAGNOSES } from "./aestheticsDiagnoses";
 import { GENERAL_DIAGNOSES, GEN_DX_SKIN_CANCER } from "./generalDiagnoses";
 
-import {
-  HEAD_NECK_DIAGNOSES,
-  HN_DX_SKIN_CANCER,
-  HN_DX_CLEFT_CRANIOFACIAL,
-} from "./headNeckDiagnoses";
+import { HEAD_NECK_DIAGNOSES, HN_DX_SKIN_CANCER } from "./headNeckDiagnoses";
 import { ORTHOPLASTIC_DIAGNOSES } from "./orthoplasticDiagnoses";
 import { CLEFT_CRANIO_DIAGNOSES } from "./cleftCranioDiagnoses";
 import { SKIN_CANCER_DIAGNOSES } from "./skinCancerDiagnoses";
@@ -49,11 +45,7 @@ export { BODY_CONTOURING_DIAGNOSES } from "./bodyContouringDiagnoses";
 export { BREAST_DIAGNOSES } from "./breastDiagnoses";
 export { AESTHETICS_DIAGNOSES } from "./aestheticsDiagnoses";
 export { GENERAL_DIAGNOSES, GEN_DX_SKIN_CANCER } from "./generalDiagnoses";
-export {
-  HEAD_NECK_DIAGNOSES,
-  HN_DX_SKIN_CANCER,
-  HN_DX_CLEFT_CRANIOFACIAL,
-} from "./headNeckDiagnoses";
+export { HEAD_NECK_DIAGNOSES, HN_DX_SKIN_CANCER } from "./headNeckDiagnoses";
 export { ORTHOPLASTIC_DIAGNOSES } from "./orthoplasticDiagnoses";
 export { CLEFT_CRANIO_DIAGNOSES } from "./cleftCranioDiagnoses";
 export { SKIN_CANCER_DIAGNOSES } from "./skinCancerDiagnoses";
@@ -101,7 +93,7 @@ const SPECIALTY_MAP: Partial<Record<Specialty, DiagnosisPicklistEntry[]>> = {
   general: [...GENERAL_DIAGNOSES, ...HN_DX_SKIN_CANCER],
   head_neck: [...HEAD_NECK_DIAGNOSES, ...GEN_DX_SKIN_CANCER],
   orthoplastic: ORTHOPLASTIC_DIAGNOSES,
-  cleft_cranio: [...CLEFT_CRANIO_DIAGNOSES, ...HN_DX_CLEFT_CRANIOFACIAL],
+  cleft_cranio: CLEFT_CRANIO_DIAGNOSES,
   skin_cancer: SKIN_CANCER_DIAGNOSES,
   lymphoedema: LYMPHOEDEMA_DIAGNOSES,
   peripheral_nerve: PERIPHERAL_NERVE_DIAGNOSES,

@@ -825,6 +825,196 @@ export const diagnosisStagingConfigs: DiagnosisStagingConfig[] = [
       },
     ],
   },
+
+  // ─── Head & Neck Cancer — TNM Staging (AJCC 8th Edition) ─────────────────
+  {
+    snomedCtCodes: [
+      "363505006", // Malignant neoplasm of oral cavity
+      "363462002", // Carcinoma of tongue
+      "363479009", // Carcinoma of floor of mouth
+      "363484005", // Carcinoma of buccal mucosa
+      "363471001", // Malignant neoplasm of oropharynx
+      "93832008", // Malignant neoplasm of mandible
+      "93833003", // Malignant neoplasm of maxilla
+      "254585009", // Maxillary sinus carcinoma
+      "363401002", // Malignant neoplasm of pharynx
+      "363353009", // Malignant neoplasm of larynx
+      "15611004", // Mucoepidermoid carcinoma
+      "3839000", // Adenoid cystic carcinoma
+      "53654007", // Acinic cell carcinoma
+      "93871006", // Malignant neoplasm of submandibular gland
+    ],
+    keywords: [
+      "oral cavity cancer",
+      "tongue cancer",
+      "floor of mouth",
+      "oropharyngeal",
+      "mandible tumour",
+      "maxilla tumour",
+      "pharyngeal cancer",
+      "laryngeal cancer",
+      "head and neck cancer",
+      "salivary gland carcinoma",
+    ],
+    stagingSystems: [
+      {
+        name: "TNM T Stage (AJCC 8th Ed)",
+        description: "Primary tumour extent",
+        options: [
+          {
+            value: "Tx",
+            label: "Tx",
+            description: "Primary tumour cannot be assessed",
+          },
+          {
+            value: "T0",
+            label: "T0",
+            description: "No evidence of primary tumour",
+          },
+          {
+            value: "Tis",
+            label: "Tis",
+            description: "Carcinoma in situ",
+          },
+          {
+            value: "T1",
+            label: "T1",
+            description: "Tumour ≤2 cm in greatest dimension",
+          },
+          {
+            value: "T2",
+            label: "T2",
+            description: "Tumour >2 cm but ≤4 cm in greatest dimension",
+          },
+          {
+            value: "T3",
+            label: "T3",
+            description: "Tumour >4 cm in greatest dimension",
+          },
+          {
+            value: "T4a",
+            label: "T4a",
+            description:
+              "Moderately advanced local disease — invasion of adjacent structures",
+          },
+          {
+            value: "T4b",
+            label: "T4b",
+            description:
+              "Very advanced local disease — invasion of masticator space, pterygoid plates, skull base, or encases carotid artery",
+          },
+        ],
+      },
+      {
+        name: "TNM N Stage (AJCC 8th Ed)",
+        description: "Regional lymph node involvement",
+        options: [
+          {
+            value: "Nx",
+            label: "Nx",
+            description: "Regional lymph nodes cannot be assessed",
+          },
+          {
+            value: "N0",
+            label: "N0",
+            description: "No regional lymph node metastasis",
+          },
+          {
+            value: "N1",
+            label: "N1",
+            description:
+              "Single ipsilateral node ≤3 cm without extranodal extension",
+          },
+          {
+            value: "N2a",
+            label: "N2a",
+            description:
+              "Single ipsilateral node >3 cm but ≤6 cm without extranodal extension",
+          },
+          {
+            value: "N2b",
+            label: "N2b",
+            description:
+              "Multiple ipsilateral nodes, none >6 cm, without extranodal extension",
+          },
+          {
+            value: "N2c",
+            label: "N2c",
+            description:
+              "Bilateral or contralateral nodes, none >6 cm, without extranodal extension",
+          },
+          {
+            value: "N3a",
+            label: "N3a",
+            description: "Any node >6 cm without extranodal extension",
+          },
+          {
+            value: "N3b",
+            label: "N3b",
+            description:
+              "Any node(s) with clinically overt extranodal extension",
+          },
+        ],
+      },
+      {
+        name: "TNM M Stage",
+        description: "Distant metastasis",
+        options: [
+          {
+            value: "M0",
+            label: "M0",
+            description: "No distant metastasis",
+          },
+          {
+            value: "M1",
+            label: "M1",
+            description: "Distant metastasis present",
+          },
+        ],
+      },
+      {
+        name: "Overall Stage (AJCC 8th Ed)",
+        description: "Combined AJCC 8th Edition stage grouping",
+        options: [
+          {
+            value: "0",
+            label: "Stage 0",
+            description: "Tis N0 M0",
+          },
+          {
+            value: "I",
+            label: "Stage I",
+            description: "T1 N0 M0",
+          },
+          {
+            value: "II",
+            label: "Stage II",
+            description: "T2 N0 M0",
+          },
+          {
+            value: "III",
+            label: "Stage III",
+            description: "T3 N0 M0; or T1–T3 N1 M0",
+          },
+          {
+            value: "IVA",
+            label: "Stage IVA",
+            description: "T4a N0–N1 M0; or T1–T4a N2 M0",
+          },
+          {
+            value: "IVB",
+            label: "Stage IVB",
+            description: "T4b any N M0; or any T N3 M0",
+          },
+          {
+            value: "IVC",
+            label: "Stage IVC",
+            description: "Any T any N M1",
+          },
+        ],
+      },
+    ],
+  },
 ];
 
 /**

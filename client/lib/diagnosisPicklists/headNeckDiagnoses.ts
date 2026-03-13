@@ -6,7 +6,6 @@
  * Mixed determinism:
  * - Skin cancer excisions → highly predictable (site-based reconstruction)
  * - Facial fractures → very deterministic (1:1 mapping)
- * - Cleft / craniofacial → deterministic
  * - Facial nerve / major reconstruction → LOOSE suggestions only
  *   (procedure depends on defect + patient factors, not just diagnosis)
  *
@@ -615,122 +614,6 @@ const HN_DX_FACIAL_FRACTURES: DiagnosisPicklistEntry[] = [
 ];
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// CLEFT / CRANIOFACIAL — Deterministic
-// ═══════════════════════════════════════════════════════════════════════════════
-
-export const HN_DX_CLEFT_CRANIOFACIAL: DiagnosisPicklistEntry[] = [
-  {
-    id: "hn_dx_cleft_lip_unilateral",
-    displayName: "Cleft lip — unilateral",
-    shortName: "Unilateral cleft lip",
-    snomedCtCode: "80281008",
-    snomedCtDisplay: "Unilateral cleft lip (disorder)",
-    specialty: "head_neck",
-    subcategory: "Cleft / Craniofacial",
-    clinicalGroup: "congenital",
-    hasStaging: false,
-    searchSynonyms: [
-      "unilateral cleft",
-      "cleft lip",
-      "CL",
-      "lip cleft",
-      "Millard",
-      "Mohler",
-    ],
-    suggestedProcedures: [
-      {
-        procedurePicklistId: "hn_cleft_lip_unilateral",
-        displayName: "Unilateral cleft lip repair",
-        isDefault: true,
-        sortOrder: 1,
-      },
-    ],
-    sortOrder: 1,
-  },
-  {
-    id: "hn_dx_cleft_lip_bilateral",
-    displayName: "Cleft lip — bilateral",
-    shortName: "Bilateral cleft lip",
-    snomedCtCode: "87979003",
-    snomedCtDisplay: "Bilateral cleft lip (disorder)",
-    specialty: "head_neck",
-    subcategory: "Cleft / Craniofacial",
-    clinicalGroup: "congenital",
-    hasStaging: false,
-    searchSynonyms: ["bilateral cleft", "BCL", "bilateral CLP"],
-    suggestedProcedures: [
-      {
-        procedurePicklistId: "hn_cleft_lip_bilateral",
-        displayName: "Bilateral cleft lip repair",
-        isDefault: true,
-        sortOrder: 1,
-      },
-    ],
-    sortOrder: 2,
-  },
-  {
-    id: "hn_dx_cleft_palate",
-    displayName: "Cleft palate",
-    shortName: "Cleft palate",
-    snomedCtCode: "87979003",
-    snomedCtDisplay: "Cleft palate (disorder)",
-    specialty: "head_neck",
-    subcategory: "Cleft / Craniofacial",
-    clinicalGroup: "congenital",
-    hasStaging: false,
-    searchSynonyms: [
-      "palate cleft",
-      "CP",
-      "palatoplasty",
-      "Veau",
-      "Furlow",
-      "von Langenbeck",
-    ],
-    suggestedProcedures: [
-      {
-        procedurePicklistId: "hn_cleft_palate",
-        displayName: "Cleft palate repair",
-        isDefault: true,
-        sortOrder: 1,
-      },
-      {
-        procedurePicklistId: "hn_cleft_velopharyngeal_insufficiency",
-        displayName: "VPI surgery (secondary)",
-        isDefault: false,
-        sortOrder: 2,
-      },
-    ],
-    sortOrder: 3,
-  },
-  {
-    id: "hn_dx_alveolar_cleft",
-    displayName: "Alveolar cleft",
-    shortName: "Alveolar cleft",
-    snomedCtCode: "87979003",
-    snomedCtDisplay: "Alveolar cleft (disorder)",
-    specialty: "head_neck",
-    subcategory: "Cleft / Craniofacial",
-    clinicalGroup: "congenital",
-    hasStaging: false,
-    searchSynonyms: [
-      "alveolar bone graft",
-      "ABG",
-      "secondary bone graft",
-      "alveolar cleft",
-    ],
-    suggestedProcedures: [
-      {
-        procedurePicklistId: "hn_cleft_alveolar_bone_graft",
-        displayName: "Alveolar bone graft",
-        isDefault: true,
-        sortOrder: 1,
-      },
-    ],
-    sortOrder: 4,
-  },
-];
-
-// ═══════════════════════════════════════════════════════════════════════════════
 // FACIAL NERVE / HEAD & NECK ONCOLOGY / OTHER
 // Procedure suggestions are intentionally LOOSE — too many variables.
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -903,39 +786,6 @@ const HN_DX_NERVE_ONCO_OTHER: DiagnosisPicklistEntry[] = [
       },
     ],
     sortOrder: 4,
-  },
-  {
-    id: "hn_dx_microtia",
-    displayName: "Microtia / anotia",
-    shortName: "Microtia",
-    snomedCtCode: "35541004",
-    snomedCtDisplay: "Microtia (disorder)",
-    specialty: "head_neck",
-    subcategory: "Facial Nerve & Other",
-    clinicalGroup: "congenital",
-    hasStaging: false,
-    searchSynonyms: [
-      "microtia",
-      "anotia",
-      "ear reconstruction",
-      "rib cartilage",
-      "Medpor",
-    ],
-    suggestedProcedures: [
-      {
-        procedurePicklistId: "hn_recon_ear_total",
-        displayName: "Total ear reconstruction (autologous)",
-        isDefault: true,
-        sortOrder: 1,
-      },
-      {
-        procedurePicklistId: "hn_recon_ear_prosthetic",
-        displayName: "Ear reconstruction — prosthetic (BAHA/Medpor)",
-        isDefault: false,
-        sortOrder: 2,
-      },
-    ],
-    sortOrder: 5,
   },
 ];
 

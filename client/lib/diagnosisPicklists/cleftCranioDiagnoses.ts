@@ -427,6 +427,39 @@ const CC_DX_CRANIOFACIAL: DiagnosisPicklistEntry[] = [
     ],
     sortOrder: 7,
   },
+  {
+    id: "cc_dx_microtia",
+    displayName: "Microtia / anotia",
+    shortName: "Microtia",
+    snomedCtCode: "35541004",
+    snomedCtDisplay: "Microtia (disorder)",
+    specialty: "cleft_cranio",
+    subcategory: "Congenital",
+    clinicalGroup: "congenital",
+    hasStaging: false,
+    searchSynonyms: [
+      "microtia",
+      "anotia",
+      "ear reconstruction",
+      "rib cartilage",
+      "Medpor",
+    ],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hn_recon_ear_total",
+        displayName: "Total ear reconstruction (autologous)",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "hn_recon_ear_prosthetic",
+        displayName: "Ear reconstruction — prosthetic (BAHA/Medpor)",
+        isDefault: false,
+        sortOrder: 2,
+      },
+    ],
+    sortOrder: 8,
+  },
 ];
 
 // ═══════════════════════════════════════════════════════════════════════════════
