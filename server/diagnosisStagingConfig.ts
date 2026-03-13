@@ -609,14 +609,24 @@ export const diagnosisStagingConfigs: DiagnosisStagingConfig[] = [
   // Facial Nerve Palsy (House-Brackmann Grade)
   {
     snomedCtCodes: [
-      "280816001", // Facial nerve palsy
-      "95666003", // Bell's palsy
+      "280816001", // Facial nerve palsy (unspecified)
+      "193093009", // Bell's palsy
+      "283195000", // Traumatic facial nerve injury
+      "429473009", // Post-parotidectomy / post-surgical palsy
+      "95822006", // Congenital facial palsy
+      "47038005", // Moebius syndrome
+      "186524009", // Ramsay Hunt syndrome
+      "95666006", // Facial synkinesis
     ],
     keywords: [
       "facial nerve palsy",
       "bell's palsy",
       "facial palsy",
       "house-brackmann",
+      "facial nerve injury",
+      "synkinesis",
+      "ramsay hunt",
+      "moebius",
     ],
     stagingSystems: [
       {

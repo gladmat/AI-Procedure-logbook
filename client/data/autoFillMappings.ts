@@ -36,13 +36,44 @@ export const DIAGNOSIS_TO_RECIPIENT_SITE: Record<string, AnatomicalRegion> = {
   breast_dx_phyllodes: "breast_chest",
   breast_dx_poland: "breast_chest",
 
-  // Head & Neck
+  // Head & Neck — Facial nerve (all 9 new diagnoses)
+  hn_dx_fn_bells_palsy: "head_neck",
+  hn_dx_fn_traumatic_injury: "head_neck",
+  hn_dx_fn_post_parotidectomy: "head_neck",
+  hn_dx_fn_congenital: "head_neck",
+  hn_dx_fn_moebius: "head_neck",
+  hn_dx_fn_ramsay_hunt: "head_neck",
+  hn_dx_fn_unspecified: "head_neck",
+  hn_dx_fn_synkinesis: "head_neck",
+  hn_dx_fn_established_palsy: "head_neck",
+
+  // Head & Neck — Cancer (all oncological diagnoses)
   hn_dx_oral_cavity_scc: "head_neck",
-  hn_dx_facial_nerve_chronic: "head_neck",
-  hn_dx_facial_nerve_acute: "head_neck",
-  hn_dx_mohs_defect: "head_neck",
+  hn_dx_oropharyngeal_scc: "head_neck",
+  hn_dx_laryngeal_scc: "head_neck",
+  hn_dx_hypopharyngeal_scc: "head_neck",
+  hn_dx_nasopharyngeal_ca: "head_neck",
+  hn_dx_nasal_sinus_scc: "head_neck",
+  hn_dx_salivary_duct_ca: "head_neck",
+  hn_dx_acinic_cell_ca: "head_neck",
+  hn_dx_adenoid_cystic_ca: "head_neck",
+  hn_dx_mucoepidermoid_ca: "head_neck",
+  hn_dx_thyroid_ca: "head_neck",
+
+  // Head & Neck — Salivary gland (malignant)
   hn_dx_parotid_tumour: "head_neck",
+  hn_dx_submandibular_tumour: "head_neck",
+
+  // Head & Neck — Other
+  hn_dx_mohs_defect: "head_neck",
   hn_dx_fx_mandible: "head_neck",
+
+  // Head & Neck — Soft tissue (scalp avulsion, facial tissue loss)
+  hn_dx_scalp_avulsion: "head_neck",
+  hn_dx_facial_tissue_loss: "head_neck",
+
+  // Head & Neck — Acquired deformities
+  hn_dx_post_burn_contracture: "head_neck",
 
   // Pressure injuries (general)
   gen_dx_pressure_sacral: "perineum",
@@ -116,14 +147,24 @@ export const DIEP_BILATERAL_DEFAULTS: Partial<FlapSpecificDetails> = {
 // Gracilis and Fibula defaults depend on diagnosis/recipient context
 // ═══════════════════════════════════════════════════════════════════════════
 
+/** All facial nerve diagnosis IDs — gracilis used as muscle-only for reanimation */
+const FACIAL_NERVE_DIAGNOSIS_IDS = new Set([
+  "hn_dx_fn_bells_palsy",
+  "hn_dx_fn_traumatic_injury",
+  "hn_dx_fn_post_parotidectomy",
+  "hn_dx_fn_congenital",
+  "hn_dx_fn_moebius",
+  "hn_dx_fn_ramsay_hunt",
+  "hn_dx_fn_unspecified",
+  "hn_dx_fn_synkinesis",
+  "hn_dx_fn_established_palsy",
+]);
+
 export function getGracilisContextDefaults(diagnosisId: string): {
   flapSpecificDetails: Partial<FlapSpecificDetails>;
   skinIsland?: boolean;
 } {
-  if (
-    diagnosisId === "hn_dx_facial_nerve_chronic" ||
-    diagnosisId === "hn_dx_facial_nerve_acute"
-  ) {
+  if (FACIAL_NERVE_DIAGNOSIS_IDS.has(diagnosisId)) {
     return {
       flapSpecificDetails: { gracilisTissueComposition: "muscle_only" },
     };
