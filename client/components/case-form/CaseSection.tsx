@@ -1,8 +1,12 @@
 import React from "react";
 import { DiagnosisProcedureSection } from "@/components/case-form/DiagnosisProcedureSection";
 import { TreatmentContextSection } from "@/components/case-form/TreatmentContextSection";
+import { JointCaseContextSection } from "@/components/case-form/JointCaseContextSection";
 import { useCaseFormState } from "@/contexts/CaseFormContext";
-import { caseHasFlapProcedure } from "@/lib/moduleVisibility";
+import {
+  caseHasFlapProcedure,
+  caseNeedsJointContext,
+} from "@/lib/moduleVisibility";
 
 interface CaseSectionProps {
   scrollViewRef: React.RefObject<any>;
@@ -13,7 +17,7 @@ export const CaseSection = React.memo(function CaseSection({
   scrollViewRef,
   scrollPositionRef,
 }: CaseSectionProps) {
-  const { state } = useCaseFormState();
+  const { state, specialty } = useCaseFormState();
 
   return (
     <>
@@ -23,6 +27,9 @@ export const CaseSection = React.memo(function CaseSection({
       />
       {caseHasFlapProcedure(state.diagnosisGroups) ? (
         <TreatmentContextSection />
+      ) : null}
+      {caseNeedsJointContext(specialty, state.diagnosisGroups) ? (
+        <JointCaseContextSection />
       ) : null}
     </>
   );

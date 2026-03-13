@@ -54,6 +54,7 @@ import {
   CLINICAL_SUSPICION_LABELS,
   UnplannedReadmissionReason,
   UnplannedICUReason,
+  JOINT_CASE_PARTNER_SPECIALTY_LABELS,
 } from "@/types/case";
 import { getCasePrimaryTitle } from "@/lib/caseDiagnosisSummary";
 import {
@@ -1772,6 +1773,57 @@ export default function CaseDetailScreen() {
               <ThemedText style={styles.consultantName}>
                 {caseData.responsibleConsultantName}
               </ThemedText>
+            </View>
+          </>
+        ) : null}
+
+        {/* Joint Case Context */}
+        {caseData.jointCaseContext?.isJointCase ? (
+          <>
+            <SectionHeader title="Joint Case" />
+            <View
+              style={[
+                styles.card,
+                { backgroundColor: theme.backgroundDefault },
+              ]}
+            >
+              {caseData.jointCaseContext.partnerSpecialty ? (
+                <DetailRow
+                  label="Partner Specialty"
+                  value={
+                    JOINT_CASE_PARTNER_SPECIALTY_LABELS[
+                      caseData.jointCaseContext.partnerSpecialty
+                    ]
+                  }
+                />
+              ) : null}
+              {caseData.jointCaseContext.partnerConsultantName ? (
+                <DetailRow
+                  label="Partner Consultant"
+                  value={caseData.jointCaseContext.partnerConsultantName}
+                />
+              ) : null}
+              {caseData.jointCaseContext.ablativeSurgeon ? (
+                <DetailRow
+                  label="Ablative Surgeon"
+                  value={
+                    caseData.jointCaseContext.ablativeSurgeon === "partner"
+                      ? "Partner team"
+                      : "Self"
+                  }
+                />
+              ) : null}
+              {caseData.jointCaseContext.reconstructionSequence ? (
+                <DetailRow
+                  label="Reconstruction"
+                  value={
+                    caseData.jointCaseContext.reconstructionSequence ===
+                    "immediate"
+                      ? "Immediate"
+                      : "Delayed"
+                  }
+                />
+              ) : null}
             </View>
           </>
         ) : null}

@@ -38,6 +38,7 @@ import {
   ReconstructionTiming,
   QuickCasePrefillData,
   calculateAgeFromDob,
+  JointCaseContext,
 } from "@/types/case";
 import { InfectionOverlay } from "@/types/infection";
 import type { EncounterClass, EpisodePrefillData } from "@/types/episode";
@@ -257,6 +258,9 @@ export interface CaseFormState {
   intraoperativeTransfusion: boolean;
   transfusionUnits: string;
 
+  // Joint Case Context (H&N free flap cases)
+  jointCaseContext: JointCaseContext | undefined;
+
   // Episode linkage
   episodeId: string;
   episodeSequence: number;
@@ -360,6 +364,7 @@ export function getDefaultFormState(
     priorChemotherapy: false,
     intraoperativeTransfusion: false,
     transfusionUnits: "",
+    jointCaseContext: undefined,
     episodeId: "",
     episodeSequence: 0,
     encounterClass: "",
@@ -473,6 +478,7 @@ function loadCaseIntoFormState(
     transfusionUnits: caseData.transfusionUnits
       ? String(caseData.transfusionUnits)
       : "",
+    jointCaseContext: caseData.jointCaseContext ?? undefined,
     episodeId: caseData.episodeId ?? "",
     episodeSequence: caseData.episodeSequence ?? 0,
     encounterClass: (caseData.encounterClass as EncounterClass) ?? "",
@@ -1046,6 +1052,11 @@ export function buildDuplicateState(
     patientLastName: source.patientLastName ?? "",
     patientDateOfBirth: source.patientDateOfBirth ?? "",
     patientNhi: source.patientNhi ?? "",
+
+    // Joint case context (carry forward — same surgical setting)
+    jointCaseContext: source.jointCaseContext
+      ? { ...source.jointCaseContext }
+      : undefined,
 
     // ── Cleared fields ───────────────────────────────────────
     patientIdentifier: skinCancerFollowUpPrefill
@@ -1830,6 +1841,9 @@ export function useCaseForm({
             state.intraoperativeTransfusion || undefined,
           transfusionUnits: state.transfusionUnits
             ? parseInt(state.transfusionUnits)
+            : undefined,
+          jointCaseContext: state.jointCaseContext?.isJointCase
+            ? state.jointCaseContext
             : undefined,
           episodeId: state.episodeId || undefined,
           episodeSequence: computedEpisodeSequence || undefined,

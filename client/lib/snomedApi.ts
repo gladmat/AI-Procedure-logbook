@@ -295,12 +295,16 @@ export const RECIPIENT_VESSEL_PRESETS: Record<
       "Superior thyroid artery",
       "Transverse cervical artery",
       "External carotid artery",
+      "Occipital artery",
     ],
     veins: [
       "Facial vein",
       "External jugular vein",
       "Internal jugular vein",
       "Anterior jugular vein",
+      "Retromandibular vein",
+      "Superior thyroid vein",
+      "Transverse cervical vein",
     ],
   },
   breast_chest: {

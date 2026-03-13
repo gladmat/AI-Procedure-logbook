@@ -3,7 +3,7 @@
  * Determines which clinical detail module rows are visible for a given DiagnosisGroup.
  */
 
-import type { DiagnosisGroup } from "@/types/case";
+import type { DiagnosisGroup, Specialty } from "@/types/case";
 import type { InfectionOverlay } from "@/types/infection";
 import type { EpisodeType } from "@/types/episode";
 import { procedureHasImplant } from "@/lib/jointImplant";
@@ -65,6 +65,16 @@ export function caseHasFlapProcedure(groups: DiagnosisGroup[]): boolean {
  */
 export function caseHasFreeFlap(groups: DiagnosisGroup[]): boolean {
   return groups.some((g) => g.procedures.some(procedureHasFreeFlap));
+}
+
+/**
+ * Case-level predicate: show Joint Case Context section when H&N specialty + free/pedicled flap.
+ */
+export function caseNeedsJointContext(
+  specialty: Specialty | undefined,
+  diagnosisGroups: DiagnosisGroup[],
+): boolean {
+  return specialty === "head_neck" && caseHasFlapProcedure(diagnosisGroups);
 }
 
 /**

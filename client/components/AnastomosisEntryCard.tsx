@@ -72,58 +72,52 @@ export function AnastomosisEntryCard({
   }, [entry, onUpdate]);
 
   useEffect(() => {
-    if (recipientRegion) {
-      setIsLoading(true);
-      Promise.all([
-        fetchVesselsByRegion(recipientRegion, "artery"),
-        fetchVesselsByRegion(recipientRegion, "vein"),
-      ])
-        .then(([arteriesData, veinsData]) => {
-          if (arteriesData.length > 0) {
-            setArteries(arteriesData);
-          } else {
-            const localArteries = getRecipientVesselPresets(
-              recipientRegion,
-              "artery",
-            );
-            setArteries(
-              localArteries.map(
-                (name) =>
-                  ({
-                    snomedCtCode: name.toLowerCase().replace(/\s+/g, "_"),
-                    displayName: name,
-                    commonName: name,
-                  }) as SnomedRefItem,
-              ),
-            );
-          }
+    if (!recipientRegion) return;
 
-          if (veinsData.length > 0) {
-            setVeins(veinsData);
-          } else {
-            const localVeins = getRecipientVesselPresets(
-              recipientRegion,
-              "vein",
-            );
-            setVeins(
-              localVeins.map(
-                (name) =>
-                  ({
-                    snomedCtCode: name.toLowerCase().replace(/\s+/g, "_"),
-                    displayName: name,
-                    commonName: name,
-                  }) as SnomedRefItem,
-              ),
-            );
-          }
-        })
-        .catch((err) => {
-          console.error("Error fetching vessels:", err);
+    const applyLocalPresets = () => {
+      const localArteries = getRecipientVesselPresets(recipientRegion, "artery");
+      const localVeins = getRecipientVesselPresets(recipientRegion, "vein");
+      setArteries(
+        localArteries.map(
+          (name) =>
+            ({
+              snomedCtCode: name.toLowerCase().replace(/\s+/g, "_"),
+              displayName: name,
+              commonName: name,
+            }) as SnomedRefItem,
+        ),
+      );
+      setVeins(
+        localVeins.map(
+          (name) =>
+            ({
+              snomedCtCode: name.toLowerCase().replace(/\s+/g, "_"),
+              displayName: name,
+              commonName: name,
+            }) as SnomedRefItem,
+        ),
+      );
+    };
+
+    // Head & neck: use curated local presets directly (no API round-trip)
+    if (recipientRegion === "head_neck") {
+      applyLocalPresets();
+      return;
+    }
+
+    setIsLoading(true);
+    Promise.all([
+      fetchVesselsByRegion(recipientRegion, "artery"),
+      fetchVesselsByRegion(recipientRegion, "vein"),
+    ])
+      .then(([arteriesData, veinsData]) => {
+        if (arteriesData.length > 0) {
+          setArteries(arteriesData);
+        } else {
           const localArteries = getRecipientVesselPresets(
             recipientRegion,
             "artery",
           );
-          const localVeins = getRecipientVesselPresets(recipientRegion, "vein");
           setArteries(
             localArteries.map(
               (name) =>
@@ -132,7 +126,16 @@ export function AnastomosisEntryCard({
                   displayName: name,
                   commonName: name,
                 }) as SnomedRefItem,
-            ),
+              ),
+          );
+        }
+
+        if (veinsData.length > 0) {
+          setVeins(veinsData);
+        } else {
+          const localVeins = getRecipientVesselPresets(
+            recipientRegion,
+            "vein",
           );
           setVeins(
             localVeins.map(
@@ -142,11 +145,15 @@ export function AnastomosisEntryCard({
                   displayName: name,
                   commonName: name,
                 }) as SnomedRefItem,
-            ),
+              ),
           );
-        })
-        .finally(() => setIsLoading(false));
-    }
+        }
+      })
+      .catch((err) => {
+        console.error("Error fetching vessels:", err);
+        applyLocalPresets();
+      })
+      .finally(() => setIsLoading(false));
   }, [recipientRegion]);
 
   const vesselOptions =

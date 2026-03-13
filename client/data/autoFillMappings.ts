@@ -75,6 +75,105 @@ export const DIAGNOSIS_TO_RECIPIENT_SITE: Record<string, AnatomicalRegion> = {
   // Head & Neck — Acquired deformities
   hn_dx_post_burn_contracture: "head_neck",
 
+  // Head & Neck — Skin cancer (site-specific, Phase 2+)
+  hn_dx_skin_lesion_excision_biopsy: "head_neck",
+  hn_dx_bcc_face: "head_neck",
+  hn_dx_scc_face: "head_neck",
+  hn_dx_melanoma_face: "head_neck",
+  hn_dx_skin_cancer_nose: "head_neck",
+  hn_dx_skin_cancer_ear: "head_neck",
+  hn_dx_skin_cancer_lip: "head_neck",
+  hn_dx_skin_cancer_eyelid: "head_neck",
+
+  // Head & Neck — Facial fracture subtypes (Phase 2+)
+  hn_dx_fx_mandible_condyle: "head_neck",
+  hn_dx_fx_mandible_angle: "head_neck",
+  hn_dx_fx_mandible_body: "head_neck",
+  hn_dx_fx_mandible_symphysis: "head_neck",
+  hn_dx_fx_mandible_parasymphysis: "head_neck",
+  hn_dx_fx_mandible_ramus: "head_neck",
+  hn_dx_fx_zygoma: "head_neck",
+  hn_dx_fx_orbital_floor: "head_neck",
+  hn_dx_fx_orbital_medial_wall: "head_neck",
+  hn_dx_fx_nasal: "head_neck",
+  hn_dx_fx_lefort_1: "head_neck",
+  hn_dx_fx_lefort_2: "head_neck",
+  hn_dx_fx_lefort_3: "head_neck",
+  hn_dx_fx_frontal_sinus: "head_neck",
+  hn_dx_fx_noe: "head_neck",
+  hn_dx_fx_panfacial: "head_neck",
+
+  // Head & Neck — Facial nerve (Phase 2+ IDs, non-fn_ prefix)
+  hn_dx_bells_palsy: "head_neck",
+  hn_dx_facial_nerve_palsy: "head_neck",
+  hn_dx_traumatic_nerve_injury: "head_neck",
+  hn_dx_post_parotidectomy_palsy: "head_neck",
+  hn_dx_post_surgical_palsy: "head_neck",
+  hn_dx_congenital_palsy: "head_neck",
+  hn_dx_moebius: "head_neck",
+  hn_dx_ramsay_hunt: "head_neck",
+  hn_dx_synkinesis: "head_neck",
+
+  // Head & Neck — Cancer subtypes (Phase 2+)
+  hn_dx_oral_cavity_ca: "head_neck",
+  hn_dx_tongue_ca: "head_neck",
+  hn_dx_floor_mouth_ca: "head_neck",
+  hn_dx_buccal_ca: "head_neck",
+  hn_dx_oropharynx_ca: "head_neck",
+  hn_dx_mandible_tumour: "head_neck",
+  hn_dx_maxilla_tumour: "head_neck",
+  hn_dx_maxillary_sinus_ca: "head_neck",
+  hn_dx_pharynx_ca: "head_neck",
+  hn_dx_larynx_ca: "head_neck",
+  hn_dx_orn_mandible: "head_neck",
+  hn_dx_orn_maxilla: "head_neck",
+
+  // Head & Neck — Salivary gland subtypes (Phase 2+)
+  hn_dx_parotid_pleomorphic: "head_neck",
+  hn_dx_parotid_warthin: "head_neck",
+  hn_dx_parotid_mucoepidermoid: "head_neck",
+  hn_dx_parotid_adenoid_cystic: "head_neck",
+  hn_dx_parotid_acinic_cell: "head_neck",
+  hn_dx_parotid_nos: "head_neck",
+  hn_dx_submandibular_malignant: "head_neck",
+
+  // Head & Neck — Soft tissue trauma (Phase 2+)
+  hn_dx_facial_laceration: "head_neck",
+  hn_dx_laceration_lip: "head_neck",
+  hn_dx_laceration_eyelid: "head_neck",
+  hn_dx_laceration_nose: "head_neck",
+  hn_dx_laceration_ear: "head_neck",
+  hn_dx_dog_bite_face: "head_neck",
+  hn_dx_animal_bite_face: "head_neck",
+  hn_dx_complex_facial_wound: "head_neck",
+
+  // Head & Neck — Acquired deformities (Phase 2+)
+  hn_dx_post_burn_contracture_face: "head_neck",
+  hn_dx_hypertrophic_scar_face: "head_neck",
+  hn_dx_keloid_face: "head_neck",
+  hn_dx_post_traumatic_deformity: "head_neck",
+  hn_dx_post_surgical_deformity: "head_neck",
+  hn_dx_facial_asymmetry: "head_neck",
+
+  // Head & Neck — Vascular malformations (Phase 2+)
+  hn_dx_haemangioma_face: "head_neck",
+  hn_dx_infantile_haemangioma: "head_neck",
+  hn_dx_avm_face: "head_neck",
+  hn_dx_venous_malformation_face: "head_neck",
+  hn_dx_lymphatic_malformation: "head_neck",
+  hn_dx_cystic_hygroma: "head_neck",
+  hn_dx_port_wine_stain: "head_neck",
+
+  // Head & Neck — Benign tumours & cysts (Phase 2+)
+  hn_dx_dermoid_cyst: "head_neck",
+  hn_dx_epidermoid_cyst: "head_neck",
+  hn_dx_lipoma_face: "head_neck",
+  hn_dx_lipoma_neck: "head_neck",
+  hn_dx_neurofibroma: "head_neck",
+  hn_dx_pilomatricoma: "head_neck",
+  hn_dx_sebaceous_cyst: "head_neck",
+  hn_dx_keratoacanthoma: "head_neck",
+
   // Pressure injuries (general)
   gen_dx_pressure_sacral: "perineum",
   gen_dx_pressure_ischial: "perineum",
@@ -130,6 +229,10 @@ export function getDefaultFlapSpecificDetails(
       return { tdapTissueComposition: "fasciocutaneous" };
     case "serratus_anterior":
       return { serratusTissueComposition: "muscle_only" };
+    case "medial_femoral_condyle":
+      return { mfcTissueComposition: "bone_only", mfcBoneSource: "medial_condyle" };
+    case "omentum":
+      return {};
     default:
       return {};
   }
@@ -272,6 +375,7 @@ export const ARTERY_TO_CONCOMITANT_VEIN: Record<string, string> = {
   "Superior thyroid artery": "Internal jugular vein",
   "Transverse cervical artery": "External jugular vein",
   "External carotid artery": "Internal jugular vein",
+  "Occipital artery": "External jugular vein",
 
   // Perineum / Pelvis
   "Internal pudendal artery": "Internal pudendal vein",

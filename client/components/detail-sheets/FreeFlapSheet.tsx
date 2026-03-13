@@ -15,6 +15,7 @@ interface FreeFlapSheetProps {
   initialDetails: FreeFlapDetails;
   procedureType: string;
   picklistEntryId?: string;
+  priorRadiotherapy?: boolean;
 }
 
 export function FreeFlapSheet({
@@ -24,6 +25,7 @@ export function FreeFlapSheet({
   initialDetails,
   procedureType,
   picklistEntryId,
+  priorRadiotherapy,
 }: FreeFlapSheetProps) {
   const [localDetails, setLocalDetails] =
     useState<FreeFlapDetails>(initialDetails);
@@ -53,6 +55,7 @@ export function FreeFlapSheet({
         procedureType={procedureType}
         picklistEntryId={picklistEntryId}
         onUpdate={setLocalDetails}
+        priorRadiotherapy={priorRadiotherapy}
       />
     </DetailModuleSheet>
   );

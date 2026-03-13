@@ -67,6 +67,8 @@ interface FreeFlapClinicalFieldsProps {
   procedureType: string;
   picklistEntryId?: string;
   onUpdate: (details: FreeFlapDetails) => void;
+  /** Case-level priorRadiotherapy — enables irradiated vessel fields for H&N */
+  priorRadiotherapy?: boolean;
 }
 
 const DEFAULT_DONOR_VESSELS: Record<
@@ -145,6 +147,14 @@ const DEFAULT_DONOR_VESSELS: Record<
     artery: "Lumbar artery (perforator branch)",
     vein: "Lumbar vein",
   },
+  medial_femoral_condyle: {
+    artery: "Descending genicular artery",
+    vein: "Descending genicular vein",
+  },
+  omentum: {
+    artery: "Right gastroepiploic artery",
+    vein: "Right gastroepiploic vein",
+  },
   other: {
     artery: "",
     vein: "",
@@ -156,6 +166,7 @@ export function FreeFlapClinicalFields({
   procedureType,
   picklistEntryId,
   onUpdate,
+  priorRadiotherapy,
 }: FreeFlapClinicalFieldsProps) {
   const { theme } = useTheme();
 
@@ -741,6 +752,75 @@ export function FreeFlapClinicalFields({
           />
         </View>
       </View>
+
+      {recipientSiteRegion === "head_neck" && priorRadiotherapy ? (
+        <CollapsibleFormSection
+          title="Irradiated Neck Vessel Assessment"
+          defaultExpanded={false}
+          filledCount={
+            [
+              clinicalDetails.irradiatedVesselStatus,
+              clinicalDetails.irradiatedVesselPreference,
+              clinicalDetails.irradiatedNeckDissectionPerformed !== undefined
+                ? "filled"
+                : undefined,
+            ].filter(Boolean).length
+          }
+          totalCount={3}
+        >
+          <PickerField
+            label="Vessel Status"
+            value={clinicalDetails.irradiatedVesselStatus || ""}
+            options={[
+              { value: "normal", label: "Normal" },
+              { value: "thickened", label: "Thickened" },
+              { value: "calcified", label: "Calcified" },
+              { value: "friable", label: "Friable" },
+            ]}
+            onSelect={(v) =>
+              onUpdate({
+                ...clinicalDetails,
+                irradiatedVesselStatus: v as FreeFlapDetails["irradiatedVesselStatus"],
+              })
+            }
+          />
+          <PickerField
+            label="Vessel Selection Preference"
+            value={clinicalDetails.irradiatedVesselPreference || ""}
+            options={[
+              { value: "contralateral", label: "Contralateral (non-irradiated)" },
+              { value: "ipsilateral_viable", label: "Ipsilateral — viable" },
+              { value: "vein_graft_required", label: "Vein graft required" },
+            ]}
+            onSelect={(v) =>
+              onUpdate({
+                ...clinicalDetails,
+                irradiatedVesselPreference: v as FreeFlapDetails["irradiatedVesselPreference"],
+              })
+            }
+          />
+          <PickerField
+            label="Neck Dissection Performed"
+            value={
+              clinicalDetails.irradiatedNeckDissectionPerformed === true
+                ? "yes"
+                : clinicalDetails.irradiatedNeckDissectionPerformed === false
+                  ? "no"
+                  : ""
+            }
+            options={[
+              { value: "yes", label: "Yes" },
+              { value: "no", label: "No" },
+            ]}
+            onSelect={(v) =>
+              onUpdate({
+                ...clinicalDetails,
+                irradiatedNeckDissectionPerformed: v === "yes",
+              })
+            }
+          />
+        </CollapsibleFormSection>
+      ) : null}
 
       {flapType ? (
         <FlapSpecificFields

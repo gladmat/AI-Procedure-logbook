@@ -380,6 +380,8 @@ export type FreeFlap =
   | "scapular"
   | "serratus_anterior"
   | "lap"
+  | "medial_femoral_condyle"
+  | "omentum"
   | "other";
 
 export const FREE_FLAP_LABELS: Record<FreeFlap, string> = {
@@ -401,6 +403,8 @@ export const FREE_FLAP_LABELS: Record<FreeFlap, string> = {
   scapular: "Scapular System",
   serratus_anterior: "Serratus Anterior",
   lap: "LAP (Lumbar Artery Perforator)",
+  medial_femoral_condyle: "Medial Femoral Condyle (MFC)",
+  omentum: "Omentum Free Flap",
   other: "Other",
 };
 
@@ -587,6 +591,18 @@ export type FibulaFixation =
   | "combination";
 export type FibulaDentalImplant = "immediate" | "delayed" | "not_planned";
 export type FibulaReconSite = "mandible" | "maxilla" | "long_bone";
+export type BrownMandibleClass = "I" | "II" | "III" | "IV";
+export type MandibleSegment =
+  | "symphysis"
+  | "parasymphysis"
+  | "body"
+  | "angle"
+  | "ramus"
+  | "condyle";
+
+export type MFCBoneSource = "medial_condyle" | "supracondylar" | "medial_epicondyle";
+export type MFCTissueComposition = "bone_only" | "osteocutaneous" | "osteoperiosteal";
+export type MFCFixation = "screws" | "plate_and_screws" | "wires";
 
 export type ScapularSkinPaddle =
   | "scapular"
@@ -730,6 +746,8 @@ export interface FlapSpecificDetails {
   fibulaSkinPaddleCount?: number;
   fibulaDentalImplant?: FibulaDentalImplant;
   fibulaReconSite?: FibulaReconSite;
+  fibulaBrownClass?: BrownMandibleClass;
+  fibulaMandibleSegments?: MandibleSegment[];
 
   scapularSkinPaddle?: ScapularSkinPaddle;
   scapularBoneComponent?: ScapularBoneComponent;
@@ -774,6 +792,11 @@ export interface FlapSpecificDetails {
   serratusNerveStatus?: SerratusNerveStatus;
   serratusNerveTarget?: SerratusNerveTarget;
   serratusChimeric?: SerratusChimeric;
+
+  mfcBoneSource?: MFCBoneSource;
+  mfcTissueComposition?: MFCTissueComposition;
+  mfcFixation?: MFCFixation;
+  mfcBoneLength?: number;
 }
 
 export const FLAP_SNOMED_MAP: Partial<
@@ -1082,6 +1105,26 @@ export const RECONSTRUCTION_TIMING_LABELS: Record<
   salvage: "Salvage (after failed reconstruction)",
 };
 
+export type JointCasePartnerSpecialty = "ent" | "omfs" | "neurosurgery" | "other";
+
+export interface JointCaseContext {
+  isJointCase: boolean;
+  partnerSpecialty?: JointCasePartnerSpecialty;
+  partnerConsultantName?: string;
+  ablativeSurgeon?: "partner" | "self";
+  reconstructionSequence?: "immediate" | "delayed";
+}
+
+export const JOINT_CASE_PARTNER_SPECIALTY_LABELS: Record<
+  JointCasePartnerSpecialty,
+  string
+> = {
+  ent: "ENT (Otolaryngology)",
+  omfs: "OMFS (Oral & Maxillofacial)",
+  neurosurgery: "Neurosurgery",
+  other: "Other",
+};
+
 export type PerfusionAssessment =
   | "none"
   | "clinical_only"
@@ -1375,6 +1418,11 @@ export interface FreeFlapDetails {
   perfusionAssessment?: PerfusionAssessment;
   positionChangeRequired?: boolean;
   donorSiteClosureMethod?: DonorSiteClosureMethod;
+
+  // H&N irradiated neck vessel assessment (shown when head_neck + priorRadiotherapy)
+  irradiatedVesselStatus?: "normal" | "thickened" | "calcified" | "friable";
+  irradiatedVesselPreference?: "contralateral" | "ipsilateral_viable" | "vein_graft_required";
+  irradiatedNeckDissectionPerformed?: boolean;
 
   // Flap outcome stored in local clinicalDetails
   flapOutcome?: FreeFlapOutcomeDetails;
@@ -1767,6 +1815,9 @@ export interface Case {
 
   // Infection Overlay (can be attached to any case as primary or secondary pathology)
   infectionOverlay?: InfectionOverlay;
+
+  // Joint case context (H&N free flap cases with ENT/OMFS/neurosurgery)
+  jointCaseContext?: JointCaseContext;
 
   // Case Status (active until discharge note recorded)
   caseStatus?: CaseStatus;

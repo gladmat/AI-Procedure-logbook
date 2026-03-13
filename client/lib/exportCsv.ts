@@ -138,6 +138,11 @@ const CSV_HEADERS = [
   "breast_R_lipofilling_volume_ml",
   "breast_lipofilling_harvest_technique",
   "breast_lipofilling_total_harvested_ml",
+  // ── Joint case columns ──
+  "joint_case",
+  "partner_specialty",
+  "partner_consultant",
+  "ablative_surgeon",
 ] as const;
 
 function escapeCsvField(
@@ -417,6 +422,11 @@ function caseToRow(c: Case, options: CsvExportOptions): string {
     c.plannedDate ?? "",
     // ── Breast module ──
     ...breastFields,
+    // ── Joint case ──
+    c.jointCaseContext?.isJointCase ? "Yes" : "",
+    c.jointCaseContext?.partnerSpecialty ?? "",
+    c.jointCaseContext?.partnerConsultantName ?? "",
+    c.jointCaseContext?.ablativeSurgeon ?? "",
   ];
 
   return values.map(escapeCsvField).join(",");

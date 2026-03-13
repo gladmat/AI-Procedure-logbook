@@ -1,4 +1,8 @@
-import { Case, SPECIALTY_LABELS } from "@/types/case";
+import {
+  Case,
+  SPECIALTY_LABELS,
+  JOINT_CASE_PARTNER_SPECIALTY_LABELS,
+} from "@/types/case";
 import {
   generateImplantSummary,
   getImplantBearingProcedures,
@@ -130,6 +134,9 @@ export function buildPdfHtml(cases: Case[], options: PdfExportOptions): string {
       escapeHtml(roleLabel) +
         (c.responsibleConsultantName
           ? `<br/><small>${escapeHtml(c.responsibleConsultantName)}</small>`
+          : "") +
+        (c.jointCaseContext?.isJointCase && c.jointCaseContext.partnerSpecialty
+          ? `<br/><small>Joint: ${escapeHtml(JOINT_CASE_PARTNER_SPECIALTY_LABELS[c.jointCaseContext.partnerSpecialty])}${c.jointCaseContext.partnerConsultantName ? ` (${escapeHtml(c.jointCaseContext.partnerConsultantName)})` : ""}</small>`
           : ""),
       escapeHtml(primary?.diagnosis?.displayName || ""),
       escapeHtml(primaryProc?.procedureName || ""),

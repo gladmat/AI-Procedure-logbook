@@ -3113,6 +3113,7 @@ export function DiagnosisGroupEditor({
             }
             procedureType={activeFlapSheetProcedure.procedureName}
             picklistEntryId={activeFlapSheetProcedure.picklistEntryId}
+            priorRadiotherapy={caseFormState.priorRadiotherapy}
           />
         ) : null}
 

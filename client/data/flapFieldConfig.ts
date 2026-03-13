@@ -802,6 +802,33 @@ export const FLAP_FIELD_CONFIG: Partial<
         { value: "long_bone", label: "Long bone" },
       ],
     },
+    {
+      key: "fibulaBrownClass",
+      label: "Brown Classification",
+      type: "select",
+      hint: "Mandible defect classification (Brown et al.)",
+      showWhen: { key: "fibulaReconSite", values: ["mandible"] },
+      options: [
+        { value: "I", label: "Class I — Lateral (no condyle)" },
+        { value: "II", label: "Class II — Includes angle" },
+        { value: "III", label: "Class III — Includes symphysis" },
+        { value: "IV", label: "Class IV — Includes condyle" },
+      ],
+    },
+    {
+      key: "fibulaMandibleSegments",
+      label: "Mandible Segments Involved",
+      type: "multi_select",
+      showWhen: { key: "fibulaReconSite", values: ["mandible"] },
+      options: [
+        { value: "symphysis", label: "Symphysis" },
+        { value: "parasymphysis", label: "Parasymphysis" },
+        { value: "body", label: "Body" },
+        { value: "angle", label: "Angle" },
+        { value: "ramus", label: "Ramus" },
+        { value: "condyle", label: "Condyle" },
+      ],
+    },
   ],
 
   scapular: [
@@ -1362,6 +1389,47 @@ export const FLAP_FIELD_CONFIG: Partial<
         { value: "partial_proximal", label: "Partial-proximal" },
         { value: "segmental", label: "Segmental" },
       ],
+    },
+  ],
+
+  medial_femoral_condyle: [
+    {
+      key: "mfcBoneSource",
+      label: "Bone Harvest Site",
+      type: "select",
+      required: true,
+      options: [
+        { value: "medial_condyle", label: "Medial condyle" },
+        { value: "supracondylar", label: "Supracondylar" },
+        { value: "medial_epicondyle", label: "Medial epicondyle" },
+      ],
+    },
+    {
+      key: "mfcTissueComposition",
+      label: "Tissue Composition",
+      type: "select",
+      options: [
+        { value: "bone_only", label: "Bone only (corticoperiosteal)" },
+        { value: "osteocutaneous", label: "Osteocutaneous" },
+        { value: "osteoperiosteal", label: "Osteoperiosteal" },
+      ],
+    },
+    {
+      key: "mfcFixation",
+      label: "Fixation Method",
+      type: "select",
+      options: [
+        { value: "screws", label: "Screws" },
+        { value: "plate_and_screws", label: "Plate and screws" },
+        { value: "wires", label: "Wires" },
+      ],
+    },
+    {
+      key: "mfcBoneLength",
+      label: "Bone Length",
+      type: "number",
+      unit: "cm",
+      placeholder: "3",
     },
   ],
 };

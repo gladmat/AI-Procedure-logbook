@@ -255,6 +255,51 @@ function buildEncounter(c: Case, conditionRefs: string[]): FhirResource {
       condition: { reference: `Condition/${ref}` },
       rank: i + 1,
     })),
+    // Joint case context as extension
+    ...(c.jointCaseContext?.isJointCase
+      ? {
+          extension: [
+            {
+              url: "urn:opus:joint-case-context",
+              extension: [
+                ...(c.jointCaseContext.partnerSpecialty
+                  ? [
+                      {
+                        url: "partnerSpecialty",
+                        valueString: c.jointCaseContext.partnerSpecialty,
+                      },
+                    ]
+                  : []),
+                ...(c.jointCaseContext.partnerConsultantName
+                  ? [
+                      {
+                        url: "partnerConsultant",
+                        valueString: c.jointCaseContext.partnerConsultantName,
+                      },
+                    ]
+                  : []),
+                ...(c.jointCaseContext.ablativeSurgeon
+                  ? [
+                      {
+                        url: "ablativeSurgeon",
+                        valueString: c.jointCaseContext.ablativeSurgeon,
+                      },
+                    ]
+                  : []),
+                ...(c.jointCaseContext.reconstructionSequence
+                  ? [
+                      {
+                        url: "reconstructionSequence",
+                        valueString:
+                          c.jointCaseContext.reconstructionSequence,
+                      },
+                    ]
+                  : []),
+              ],
+            },
+          ],
+        }
+      : {}),
     participant: c.teamMembers?.map((m) => ({
       type: [
         {

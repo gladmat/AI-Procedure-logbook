@@ -55,6 +55,8 @@ export const PICKLIST_TO_FLAP_TYPE: Partial<Record<string, FreeFlap>> = {
   hn_nerve_gracilis_ld: "latissimus_dorsi",
   hn_recon_mandible_dcia: "other", // DCIA = iliac crest; no dedicated FreeFlap value
   hn_recon_pharyngoesophageal: "radial_forearm", // tubed RFFF
+  hn_ff_medial_femoral_condyle: "medial_femoral_condyle",
+  hn_ff_omentum: "omentum",
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -2324,6 +2326,29 @@ const HEAD_NECK_FREE_FLAPS: ProcedurePicklistEntry[] = [
     tags: ["free_flap", "microsurgery"],
     hasFreeFlap: true,
     sortOrder: 3,
+  },
+  {
+    id: "hn_ff_medial_femoral_condyle",
+    displayName: "Free MFC flap (Medial Femoral Condyle)",
+    snomedCtCode: "726633006",
+    snomedCtDisplay:
+      "Free vascularized medial femoral condyle bone graft (procedure)",
+    specialties: ["head_neck", "orthoplastic"],
+    subcategory: "Free Flap — Head & Neck",
+    tags: ["free_flap", "microsurgery"],
+    hasFreeFlap: true,
+    sortOrder: 4,
+  },
+  {
+    id: "hn_ff_omentum",
+    displayName: "Free omentum flap",
+    snomedCtCode: "44827002",
+    snomedCtDisplay: "Free omental flap transfer (procedure)",
+    specialties: ["head_neck"],
+    subcategory: "Free Flap — Head & Neck",
+    tags: ["free_flap", "microsurgery"],
+    hasFreeFlap: true,
+    sortOrder: 5,
   },
 ];
 
