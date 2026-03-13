@@ -23,6 +23,10 @@ import {
   BREAST_CLINICAL_CONTEXT_LABELS,
   BREAST_RECON_TIMING_LABELS,
 } from "@/types/breast";
+import type { BreastModuleFlags } from "@/lib/breastConfig";
+import { ImplantDetailsCard } from "./ImplantDetailsCard";
+import { BreastFlapCard } from "./BreastFlapCard";
+import { LipofillingCard } from "./LipofillingCard";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -32,6 +36,7 @@ interface Props {
   side: BreastLaterality;
   value: BreastSideAssessment;
   onChange: (data: BreastSideAssessment) => void;
+  moduleFlags: BreastModuleFlags;
   showCopyButton?: boolean;
   onCopy?: () => void;
 }
@@ -66,6 +71,7 @@ export const BreastSideCard = React.memo(function BreastSideCard({
   side,
   value,
   onChange,
+  moduleFlags,
   showCopyButton,
   onCopy,
 }: Props) {
@@ -237,11 +243,29 @@ export const BreastSideCard = React.memo(function BreastSideCard({
         </View>
       )}
 
-      {/* Phase 3+ module card slots — placeholders */}
-      {/* TODO Phase 3: ImplantDetailsCard */}
-      {/* TODO Phase 3: BreastFlapCard */}
-      {/* TODO Phase 3: LipofillingCard */}
-      {/* TODO Phase 3: ChestMasculinisationCard */}
+      {/* ── Specialty module cards ────────────────────────────────────── */}
+
+      {moduleFlags.showImplantDetails && (
+        <ImplantDetailsCard
+          value={value.implantDetails ?? {}}
+          onChange={(implantDetails) => onChange({ ...value, implantDetails })}
+        />
+      )}
+
+      {moduleFlags.showBreastFlapDetails && (
+        <BreastFlapCard
+          value={value.flapDetails ?? {}}
+          onChange={(flapDetails) => onChange({ ...value, flapDetails })}
+        />
+      )}
+
+      {moduleFlags.showLipofilling && (
+        <LipofillingCard
+          side={side}
+          value={value.lipofilling ?? {}}
+          onChange={(lipofilling) => onChange({ ...value, lipofilling })}
+        />
+      )}
     </View>
   );
 });

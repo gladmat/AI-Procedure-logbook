@@ -145,6 +145,101 @@ export function calculateBreastCompletion(
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// SUMMARY STRING HELPERS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+import type {
+  ImplantDetailsData,
+  BreastFlapDetailsData,
+  LipofillingData,
+  LiposuctionData,
+} from "@/types/breast";
+import {
+  IMPLANT_PLANE_LABELS,
+  IMPLANT_SHAPE_LABELS,
+  BREAST_RECIPIENT_ARTERY_LABELS,
+  IMA_INTERSPACE_LABELS,
+} from "@/types/breast";
+
+/**
+ * One-line implant summary for card headers.
+ * e.g. "350cc Allergan Round Dual Plane"
+ */
+export function getImplantSummary(data: ImplantDetailsData | undefined): string {
+  if (!data) return "";
+  const parts: string[] = [];
+  if (data.volumeCc) parts.push(`${data.volumeCc}cc`);
+  if (data.manufacturer) {
+    const mfr = IMPLANT_MANUFACTURERS.find((m) => m.id === data.manufacturer);
+    parts.push(mfr ? mfr.label.split(" (")[0]! : data.manufacturer);
+  }
+  if (data.shape) parts.push(IMPLANT_SHAPE_LABELS[data.shape]);
+  if (data.implantPlane) parts.push(IMPLANT_PLANE_LABELS[data.implantPlane]);
+  return parts.join(" ");
+}
+
+/**
+ * One-line flap summary for card headers.
+ * e.g. "2 perforators, IMA 3rd Interspace, coupler 2.8mm, 485g"
+ */
+export function getFlapSummary(data: BreastFlapDetailsData | undefined): string {
+  if (!data) return "";
+  const parts: string[] = [];
+  const perfCount = data.perforators?.length ?? 0;
+  if (perfCount > 0) parts.push(`${perfCount} perforator${perfCount > 1 ? "s" : ""}`);
+  if (data.recipientArtery) {
+    const arteryLabel = BREAST_RECIPIENT_ARTERY_LABELS[data.recipientArtery];
+    if (data.recipientArtery === "ima" && data.imaInterspace) {
+      parts.push(`${arteryLabel} ${IMA_INTERSPACE_LABELS[data.imaInterspace]}`);
+    } else {
+      parts.push(arteryLabel);
+    }
+  }
+  if (data.venousCouplerUsed && data.venousCouplerSizeMm) {
+    parts.push(`coupler ${data.venousCouplerSizeMm}mm`);
+  }
+  if (data.flapWeightGrams) parts.push(`${data.flapWeightGrams}g`);
+  return parts.join(", ");
+}
+
+/**
+ * One-line lipofilling summary for card headers.
+ * e.g. "2 sites, 120ml harvested, 80ml injected (L)"
+ */
+export function getLipofillingSummary(data: LipofillingData | undefined): string {
+  if (!data) return "";
+  const parts: string[] = [];
+  const siteCount = data.harvestSites?.length ?? 0;
+  if (siteCount > 0) parts.push(`${siteCount} site${siteCount > 1 ? "s" : ""}`);
+  if (data.totalVolumeHarvestedMl) parts.push(`${data.totalVolumeHarvestedMl}ml harvested`);
+  const leftVol = data.injectionLeft?.volumeInjectedMl;
+  const rightVol = data.injectionRight?.volumeInjectedMl;
+  if (leftVol && rightVol) {
+    parts.push(`${leftVol}ml (L), ${rightVol}ml (R)`);
+  } else if (leftVol) {
+    parts.push(`${leftVol}ml injected (L)`);
+  } else if (rightVol) {
+    parts.push(`${rightVol}ml injected (R)`);
+  }
+  return parts.join(", ");
+}
+
+/**
+ * One-line liposuction summary for card headers.
+ * e.g. "2 areas, 450ml"
+ */
+export function getLiposuctionSummary(data: LiposuctionData | undefined): string {
+  if (!data) return "";
+  const parts: string[] = [];
+  const areaCount = data.areas?.length ?? 0;
+  if (areaCount > 0) parts.push(`${areaCount} area${areaCount > 1 ? "s" : ""}`);
+  const totalMl = data.totalAspirateMl ??
+    (data.areas ?? []).reduce((sum, a) => sum + (a.volumeAspirateMl ?? 0), 0);
+  if (totalMl > 0) parts.push(`${totalMl}ml`);
+  return parts.join(", ");
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // PREDEFINED PRODUCT LISTS
 // ═══════════════════════════════════════════════════════════════════════════════
 

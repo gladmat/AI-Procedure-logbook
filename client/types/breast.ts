@@ -31,6 +31,8 @@ export interface BreastAssessmentData {
   };
   /** Optional link to a reconstruction episode */
   reconstructionEpisodeId?: string;
+  /** Case-level liposuction data (shared across sides) */
+  liposuction?: LiposuctionData;
 }
 
 export interface BreastSideAssessment {
@@ -90,7 +92,7 @@ export const PRIOR_RECONSTRUCTION_LABELS: Record<PriorReconstructionType, string
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export interface ImplantDetailsData {
-  deviceType: ImplantDeviceType;
+  deviceType?: ImplantDeviceType;
   manufacturer?: string;
   productName?: string;
   catalogReference?: string;
@@ -170,7 +172,19 @@ export const IMPLANT_PROFILE_LABELS: Record<ImplantProfile, string> = {
 };
 
 export type ImplantShellType = "single_lumen" | "dual_lumen";
+
+export const IMPLANT_SHELL_TYPE_LABELS: Record<ImplantShellType, string> = {
+  single_lumen: "Single Lumen",
+  dual_lumen: "Dual Lumen",
+};
+
 export type DualPlaneType = "I" | "II" | "III";
+
+export const DUAL_PLANE_TYPE_LABELS: Record<DualPlaneType, string> = {
+  I: "Type I",
+  II: "Type II",
+  III: "Type III",
+};
 
 export type ImplantPlane = "subglandular" | "subfascial" | "subpectoral" | "dual_plane" | "prepectoral";
 
@@ -194,6 +208,13 @@ export const IMPLANT_INCISION_LABELS: Record<ImplantIncision, string> = {
 
 export type ExpanderPortType = "integrated_magnetic" | "integrated_rfid" | "remote" | "external";
 
+export const EXPANDER_PORT_TYPE_LABELS: Record<ExpanderPortType, string> = {
+  integrated_magnetic: "Integrated Magnetic (AllerganPort)",
+  integrated_rfid: "Integrated RFID (AirXpander)",
+  remote: "Remote Port",
+  external: "External Fill Tube",
+};
+
 export type PocketRinse = "none" | "saline_only" | "betadine" | "triple_antibiotic" | "adams_solution" | "other";
 
 export const POCKET_RINSE_LABELS: Record<PocketRinse, string> = {
@@ -213,7 +234,24 @@ export interface AdmDetails {
 }
 
 export type AdmOrigin = "human_allograft" | "porcine_xenograft" | "bovine_xenograft" | "synthetic_absorbable" | "synthetic_nonabsorbable" | "other";
+
+export const ADM_ORIGIN_LABELS: Record<AdmOrigin, string> = {
+  human_allograft: "Human Allograft (ADM)",
+  porcine_xenograft: "Porcine Xenograft",
+  bovine_xenograft: "Bovine Xenograft",
+  synthetic_absorbable: "Synthetic Absorbable",
+  synthetic_nonabsorbable: "Synthetic Non-Absorbable",
+  other: "Other",
+};
+
 export type AdmPosition = "inferior_sling" | "anterior_wrap" | "total_wrap" | "partial_coverage";
+
+export const ADM_POSITION_LABELS: Record<AdmPosition, string> = {
+  inferior_sling: "Inferior Pole Sling",
+  anterior_wrap: "Anterior Coverage / Wrap",
+  total_wrap: "Total Wrap",
+  partial_coverage: "Partial Coverage",
+};
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // BREAST FLAP DETAILS (extends existing FreeFlapDetails)
@@ -244,11 +282,32 @@ export interface BreastFlapDetailsData {
 
 export interface PerforatorEntry {
   id: string;
-  row?: "medial" | "lateral";
+  row?: PerforatorRow;
   calibreMm?: number;
-  type?: "musculocutaneous" | "septocutaneous";
-  intramuscularCourse?: "short_direct" | "long_oblique";
+  type?: PerforatorType;
+  intramuscularCourse?: IntramuscularCourse;
 }
+
+export type PerforatorRow = "medial" | "lateral";
+
+export const PERFORATOR_ROW_LABELS: Record<PerforatorRow, string> = {
+  medial: "Medial Row",
+  lateral: "Lateral Row",
+};
+
+export type PerforatorType = "musculocutaneous" | "septocutaneous";
+
+export const PERFORATOR_TYPE_LABELS: Record<PerforatorType, string> = {
+  musculocutaneous: "Musculocutaneous",
+  septocutaneous: "Septocutaneous",
+};
+
+export type IntramuscularCourse = "short_direct" | "long_oblique";
+
+export const INTRAMUSCULAR_COURSE_LABELS: Record<IntramuscularCourse, string> = {
+  short_direct: "Short / Direct",
+  long_oblique: "Long / Oblique",
+};
 
 export type BreastRecipientArtery = "ima" | "ima_perforator" | "thoracodorsal" | "circumflex_scapular" | "lateral_thoracic" | "other";
 
@@ -262,7 +321,23 @@ export const BREAST_RECIPIENT_ARTERY_LABELS: Record<BreastRecipientArtery, strin
 };
 
 export type BreastRecipientVein = "imv" | "imv_perforator" | "thoracodorsal" | "cephalic" | "other";
+
+export const BREAST_RECIPIENT_VEIN_LABELS: Record<BreastRecipientVein, string> = {
+  imv: "Internal Mammary Vein",
+  imv_perforator: "IMV Perforator",
+  thoracodorsal: "Thoracodorsal Vein",
+  cephalic: "Cephalic Vein",
+  other: "Other",
+};
+
 export type ImaInterspace = "2nd" | "3rd" | "4th";
+
+export const IMA_INTERSPACE_LABELS: Record<ImaInterspace, string> = {
+  "2nd": "2nd Interspace",
+  "3rd": "3rd Interspace",
+  "4th": "4th Interspace",
+};
+
 export type RibManagement = "total_preservation" | "partial_removal" | "full_segment_removal";
 
 export const RIB_MANAGEMENT_LABELS: Record<RibManagement, string> = {
@@ -272,16 +347,47 @@ export const RIB_MANAGEMENT_LABELS: Record<RibManagement, string> = {
 };
 
 export type AnastomosisTechnique = "end_to_end_handsewn" | "end_to_side_handsewn" | "coupler" | "end_to_end_coupler";
+
+export const ANASTOMOSIS_TECHNIQUE_LABELS: Record<AnastomosisTechnique, string> = {
+  end_to_end_handsewn: "End-to-End (handsewn)",
+  end_to_side_handsewn: "End-to-Side (handsewn)",
+  coupler: "Coupler",
+  end_to_end_coupler: "End-to-End (coupler-assisted)",
+};
+
 export type DieaBranchingPattern = "type_1" | "type_2" | "type_3" | "unknown";
+
+export const DIEA_BRANCHING_LABELS: Record<DieaBranchingPattern, string> = {
+  type_1: "Type 1 (single dominant)",
+  type_2: "Type 2 (bifurcating)",
+  type_3: "Type 3 (trifurcating)",
+  unknown: "Unknown / Not assessed",
+};
+
 export type FascialClosureMethod = "primary" | "mesh_onlay" | "mesh_sublay" | "mesh_inlay" | "component_separation";
+
+export const FASCIAL_CLOSURE_LABELS: Record<FascialClosureMethod, string> = {
+  primary: "Primary Closure",
+  mesh_onlay: "Mesh Onlay",
+  mesh_sublay: "Mesh Sublay (retromuscular)",
+  mesh_inlay: "Mesh Inlay (bridging)",
+  component_separation: "Component Separation",
+};
+
 export type ThoracodorsalNerveManagement = "preserved" | "divided" | "partial_neurectomy";
+
+export const THORACODORSAL_NERVE_LABELS: Record<ThoracodorsalNerveManagement, string> = {
+  preserved: "Preserved",
+  divided: "Divided",
+  partial_neurectomy: "Partial Neurectomy",
+};
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // LIPOFILLING
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export interface LipofillingData {
-  harvestSites: LipofillingHarvestSite[];
+  harvestSites?: LipofillingHarvestSite[];
   totalVolumeHarvestedMl?: number;
   harvestTechnique?: LipofillingHarvestTechnique;
   cannulaSizeMm?: number;
@@ -304,13 +410,11 @@ export interface LipofillingData {
 }
 
 export interface LipofillingInjectionSide {
-  volumeInjectedMl: number;
+  volumeInjectedMl?: number;
   injectionTechnique?: LipofillingInjectionTechnique;
   injectionPlanes?: LipofillingInjectionPlane[];
   recipientSiteCondition?: RecipientSiteCondition;
 }
-
-export type LipofillingHarvestSite = "abdomen" | "flanks" | "inner_thigh" | "outer_thigh" | "buttocks" | "arms" | "back" | "other";
 
 export type LipofillingHarvestTechnique = "coleman_syringe" | "power_assisted" | "vaser" | "water_assisted" | "standard_suction" | "other";
 
@@ -335,12 +439,78 @@ export const PROCESSING_METHOD_LABELS: Record<LipofillingProcessingMethod, strin
   other: "Other",
 };
 
+export type LipofillingHarvestSite = "abdomen" | "flanks" | "inner_thigh" | "outer_thigh" | "buttocks" | "arms" | "back" | "other";
+
+export const HARVEST_SITE_LABELS: Record<LipofillingHarvestSite, string> = {
+  abdomen: "Abdomen",
+  flanks: "Flanks / Love Handles",
+  inner_thigh: "Inner Thigh",
+  outer_thigh: "Outer Thigh",
+  buttocks: "Buttocks",
+  arms: "Arms",
+  back: "Back",
+  other: "Other",
+};
+
 export type LipofillingAdditive = "none" | "prp" | "prf" | "svf" | "ascs";
+
+export const LIPOFILLING_ADDITIVE_LABELS: Record<LipofillingAdditive, string> = {
+  none: "None",
+  prp: "PRP (Platelet-Rich Plasma)",
+  prf: "PRF (Platelet-Rich Fibrin)",
+  svf: "SVF (Stromal Vascular Fraction)",
+  ascs: "ASCs (Adipose Stem Cells)",
+};
+
 export type LipofillingInjectionTechnique = "microdroplet" | "threading" | "fan_pattern" | "multiplane";
+
+export const LIPOFILLING_INJECTION_TECHNIQUE_LABELS: Record<LipofillingInjectionTechnique, string> = {
+  microdroplet: "Microdroplet",
+  threading: "Threading / Linear",
+  fan_pattern: "Fan Pattern",
+  multiplane: "Multiplane",
+};
+
 export type LipofillingInjectionPlane = "subcutaneous" | "intramuscular" | "subglandular" | "prepectoral";
+
+export const LIPOFILLING_INJECTION_PLANE_LABELS: Record<LipofillingInjectionPlane, string> = {
+  subcutaneous: "Subcutaneous",
+  intramuscular: "Intramuscular",
+  subglandular: "Subglandular",
+  prepectoral: "Prepectoral",
+};
+
 export type RecipientSiteCondition = "native" | "irradiated" | "scarred" | "previously_reconstructed";
+
+export const RECIPIENT_SITE_CONDITION_LABELS: Record<RecipientSiteCondition, string> = {
+  native: "Native (no prior surgery)",
+  irradiated: "Irradiated",
+  scarred: "Scarred",
+  previously_reconstructed: "Previously Reconstructed",
+};
+
 export type LipofillingIndication = "contour_correction" | "volume_restoration" | "skin_quality_improvement" | "rippling_correction" | "symmetrisation" | "primary_reconstruction" | "aesthetic_augmentation";
+
+export const LIPOFILLING_INDICATION_LABELS: Record<LipofillingIndication, string> = {
+  contour_correction: "Contour Correction",
+  volume_restoration: "Volume Restoration",
+  skin_quality_improvement: "Skin Quality Improvement",
+  rippling_correction: "Rippling Correction",
+  symmetrisation: "Symmetrisation",
+  primary_reconstruction: "Primary Reconstruction",
+  aesthetic_augmentation: "Aesthetic Augmentation",
+};
+
 export type LipofillingContext = "adjunct_to_implant" | "adjunct_to_flap" | "adjunct_to_bct" | "primary_reconstruction" | "standalone_aesthetic" | "revision";
+
+export const LIPOFILLING_CONTEXT_LABELS: Record<LipofillingContext, string> = {
+  adjunct_to_implant: "Adjunct to Implant Reconstruction",
+  adjunct_to_flap: "Adjunct to Flap Reconstruction",
+  adjunct_to_bct: "Adjunct to Breast-Conserving Therapy",
+  primary_reconstruction: "Primary Fat-Only Reconstruction",
+  standalone_aesthetic: "Standalone Aesthetic",
+  revision: "Revision / Touch-up",
+};
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // LIPOSUCTION
@@ -349,7 +519,7 @@ export type LipofillingContext = "adjunct_to_implant" | "adjunct_to_flap" | "adj
 export interface LiposuctionData {
   technique?: LiposuctionTechnique;
   wettingTechnique?: WettingTechnique;
-  areas: LiposuctionArea[];
+  areas?: LiposuctionArea[];
   totalAspirateMl?: number;
   tumescentVolumeMl?: number;
 }
@@ -360,7 +530,23 @@ export interface LiposuctionArea {
 }
 
 export type LiposuctionTechnique = "sal" | "pal" | "vaser" | "lal" | "wal";
+
+export const LIPOSUCTION_TECHNIQUE_LABELS: Record<LiposuctionTechnique, string> = {
+  sal: "SAL (Suction-Assisted)",
+  pal: "PAL (Power-Assisted)",
+  vaser: "VASER (Ultrasound-Assisted)",
+  lal: "LAL (Laser-Assisted)",
+  wal: "WAL (Water-Assisted)",
+};
+
 export type WettingTechnique = "dry" | "wet" | "superwet" | "tumescent";
+
+export const WETTING_TECHNIQUE_LABELS: Record<WettingTechnique, string> = {
+  dry: "Dry",
+  wet: "Wet",
+  superwet: "Super-wet",
+  tumescent: "Tumescent",
+};
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // GENDER-AFFIRMING
@@ -402,6 +588,14 @@ export const CHEST_MASC_TECHNIQUE_LABELS: Record<ChestMasculinisationTechnique, 
 };
 
 export type NacManagement = "free_nipple_graft" | "pedicled" | "removed" | "tattoo_planned" | "not_applicable";
+
+export const NAC_MANAGEMENT_LABELS: Record<NacManagement, string> = {
+  free_nipple_graft: "Free Nipple Graft",
+  pedicled: "Pedicled NAC",
+  removed: "Removed / Discarded",
+  tattoo_planned: "Tattoo Planned",
+  not_applicable: "N/A",
+};
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // NIPPLE DETAILS (minimal)

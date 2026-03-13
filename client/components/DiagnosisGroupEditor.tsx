@@ -113,7 +113,7 @@ import {
 import { SkinCancerAssessment } from "@/components/skin-cancer/SkinCancerAssessment";
 import { AcuteHandAssessment } from "@/components/acute-hand/AcuteHandAssessment";
 import { HandElectivePicker } from "@/components/hand-elective/HandElectivePicker";
-import { isBreastSpecialty } from "@/lib/breastConfig";
+import { isBreastSpecialty, getBreastModuleFlags, getBreastClinicalContext } from "@/lib/breastConfig";
 import { BreastAssessment } from "@/components/breast/BreastAssessment";
 import type { BreastAssessmentData } from "@/types/breast";
 import { JointImplantSection } from "@/components/joint-implant/JointImplantSection";
@@ -910,6 +910,15 @@ export function DiagnosisGroupEditor({
   const isSkinCancerInlineFlow = groupSpecialty === "skin_cancer";
 
   const isBreastModule = isBreastSpecialty(groupSpecialty);
+
+  const breastModuleFlags = useMemo(() => {
+    if (!isBreastModule) return undefined;
+    const picklistEntries = procedures
+      .map((p) => (p.picklistEntryId ? findPicklistEntry(p.picklistEntryId) : undefined))
+      .filter((e): e is NonNullable<typeof e> => !!e);
+    const clinicalContext = getBreastClinicalContext(selectedDiagnosis ?? undefined);
+    return getBreastModuleFlags(picklistEntries, clinicalContext);
+  }, [isBreastModule, procedures, selectedDiagnosis]);
 
   const currentGroupTitle = useMemo(
     () =>
@@ -2172,12 +2181,13 @@ export function DiagnosisGroupEditor({
         ) : null}
 
         {/* Inline breast module — laterality + per-side clinical context */}
-        {isBreastModule && (
+        {isBreastModule && breastModuleFlags && (
           <BreastAssessment
             value={group.breastAssessment ?? { laterality: "left", sides: {} }}
             onChange={(breastAssessment: BreastAssessmentData) =>
               onChange({ ...group, breastAssessment })
             }
+            moduleFlags={breastModuleFlags}
           />
         )}
 

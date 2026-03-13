@@ -12,11 +12,14 @@ import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { BreastSideCard } from "./BreastSideCard";
+import { LiposuctionCard } from "./LiposuctionCard";
 import type {
   BreastAssessmentData,
   BreastLaterality,
   BreastSideAssessment,
+  LiposuctionData,
 } from "@/types/breast";
+import type { BreastModuleFlags } from "@/lib/breastConfig";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -25,6 +28,7 @@ import type {
 interface Props {
   value: BreastAssessmentData;
   onChange: (data: BreastAssessmentData) => void;
+  moduleFlags: BreastModuleFlags;
 }
 
 type LateralityOption = "left" | "right" | "bilateral";
@@ -42,6 +46,7 @@ const LATERALITY_OPTIONS: { key: LateralityOption; label: string }[] = [
 export const BreastAssessment = React.memo(function BreastAssessment({
   value,
   onChange,
+  moduleFlags,
 }: Props) {
   const { theme } = useTheme();
 
@@ -163,6 +168,16 @@ export const BreastAssessment = React.memo(function BreastAssessment({
         })}
       </View>
 
+      {/* Case-level liposuction — shown when lipofilling is active */}
+      {moduleFlags.showLipofilling && (
+        <LiposuctionCard
+          value={value.liposuction ?? {}}
+          onChange={(liposuction: LiposuctionData) =>
+            onChange({ ...value, liposuction })
+          }
+        />
+      )}
+
       {/* Per-side cards */}
       {activeSides.map((side) => {
         const sideData = value.sides[side];
@@ -182,6 +197,7 @@ export const BreastAssessment = React.memo(function BreastAssessment({
             side={side}
             value={sideData}
             onChange={(updated) => handleSideChange(side, updated)}
+            moduleFlags={moduleFlags}
             showCopyButton={showCopy}
             onCopy={() => handleCopy(side)}
           />
