@@ -22,16 +22,12 @@ import type {
 } from "@/types/breast";
 import { BREAST_CLINICAL_CONTEXT_LABELS } from "@/types/breast";
 import type { BreastModuleFlags } from "@/lib/breastConfig";
-import {
-  calculateBreastCompletion,
-  getBreastSideVisibility,
-} from "@/lib/breastConfig";
+import { getBreastSideVisibility } from "@/lib/breastConfig";
 import { ImplantDetailsCard } from "./ImplantDetailsCard";
 import { BreastFlapCard } from "./BreastFlapCard";
 import { GenderAffirmingContextCard } from "./GenderAffirmingContextCard";
 import { ChestMasculinisationCard } from "./ChestMasculinisationCard";
 import { ReconstructionEpisodeCard } from "./ReconstructionEpisodeCard";
-import { BreastCompletionSummary } from "./BreastCompletionSummary";
 import { NippleDetailsCard } from "./NippleDetailsCard";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -156,11 +152,6 @@ export const BreastSideCard = React.memo(function BreastSideCard({
   // ── Render ──────────────────────────────────────────────────────────────
 
   const visibility = getBreastSideVisibility(value, moduleFlags);
-  const completionStatus = calculateBreastCompletion(
-    value,
-    visibility,
-    lipofilling,
-  );
 
   return (
     <View
@@ -177,7 +168,6 @@ export const BreastSideCard = React.memo(function BreastSideCard({
       <View style={styles.headerRow}>
         <View style={styles.headerLeft}>
           <ThemedText type="h4">{sideLabel}</ThemedText>
-          <BreastCompletionSummary status={completionStatus} />
         </View>
         {showCopyButton && onCopy && (
           <Pressable onPress={onCopy} style={styles.copyButton}>

@@ -8,6 +8,7 @@
 import type { DiagnosisPicklistEntry } from "@/types/diagnosis";
 import type { ProcedurePicklistEntry } from "@/lib/procedurePicklist";
 import type {
+  BreastAssessmentData,
   BreastClinicalContext,
   BreastSideAssessment,
   LipofillingData,
@@ -120,6 +121,32 @@ export function getBreastModuleFlags(
     showChestMasculinisation: hasChestMasc,
     showNippleDetails: hasNipple,
   };
+}
+
+/**
+ * Returns true if at least one breast module-specific card should render.
+ * Used to gate BreastAssessment rendering until procedures are selected.
+ */
+export function hasAnyBreastModuleFlag(flags: BreastModuleFlags): boolean {
+  return (
+    flags.showImplantDetails ||
+    flags.showBreastFlapDetails ||
+    flags.showPedicledFlapDetails ||
+    flags.showLipofilling ||
+    flags.showChestMasculinisation ||
+    flags.showNippleDetails
+  );
+}
+
+/**
+ * Returns true if a breast assessment has existing data (edit mode preservation).
+ * Prevents hiding BreastAssessment when loading a saved case.
+ */
+export function hasExistingBreastData(
+  assessment: BreastAssessmentData | undefined,
+): boolean {
+  if (!assessment?.sides) return false;
+  return !!(assessment.sides.left || assessment.sides.right);
 }
 
 export function getBreastSideVisibility(

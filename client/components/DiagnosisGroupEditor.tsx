@@ -117,8 +117,11 @@ import {
   isBreastSpecialty,
   getBreastModuleFlags,
   getBreastClinicalContext,
+  hasAnyBreastModuleFlag,
+  hasExistingBreastData,
 } from "@/lib/breastConfig";
 import { BreastAssessment } from "@/components/breast/BreastAssessment";
+import { BreastProcedureList } from "@/components/breast/BreastProcedureList";
 import type { BreastAssessmentData } from "@/types/breast";
 import { normalizeBreastAssessment } from "@/lib/breastState";
 import { JointImplantSection } from "@/components/joint-implant/JointImplantSection";
@@ -324,6 +327,8 @@ function DiagnosisGroupEditorInner({
 
   // Feature 2: procedure filtering
   const [showAllProcedures, setShowAllProcedures] = useState<boolean>(false);
+  const [showCustomProcedureEntry, setShowCustomProcedureEntry] =
+    useState<boolean>(false);
 
   // Feature 3: hand surgery trauma/acute/elective branching
   const [handCaseType, setHandCaseType] = useState<
@@ -2343,28 +2348,6 @@ function DiagnosisGroupEditorInner({
           />
         ) : null}
 
-        {/* Inline breast module — laterality + per-side clinical context */}
-        {isBreastModule && breastModuleFlags && (
-          <BreastAssessment
-            value={normalizedBreastAssessment!}
-            onChange={(breastAssessment: BreastAssessmentData) =>
-              onChange({ ...group, breastAssessment })
-            }
-            moduleFlags={breastModuleFlags}
-            defaultClinicalContext={defaultBreastClinicalContext}
-            isTransmasculine={
-              selectedDiagnosis?.id === "breast_dx_gender_dysphoria_transmasc"
-            }
-            linkedEpisodeId={linkedBreastEpisodeId}
-            linkedEpisodeTitle={linkedBreastEpisodeTitle}
-            onCreateEpisode={() => {
-              void handleCreateBreastEpisode();
-            }}
-            onUnlinkEpisode={handleUnlinkBreastEpisode}
-            breastPreferences={profile?.surgicalPreferences?.breast}
-          />
-        )}
-
         {hasSelectedHandCaseType &&
         showTraumaDiagnosisEditor &&
         !isSkinCancerInlineFlow &&
@@ -2997,6 +2980,86 @@ function DiagnosisGroupEditorInner({
                           Show all procedures
                         </ThemedText>
                       </Pressable>
+                    ) : isBreastModule ? (
+                      <>
+                        {/* Breast: compact procedure list */}
+                        <BreastProcedureList
+                          procedures={procedures}
+                          onRemove={(proc) => {
+                            if (proc.picklistEntryId && selectedSuggestionIds.has(proc.picklistEntryId)) {
+                              handleToggleProcedureSuggestion(proc.picklistEntryId, false);
+                            } else {
+                              removeProcedure(proc.id);
+                            }
+                          }}
+                          onMoveUp={moveProcedureUp}
+                          onMoveDown={moveProcedureDown}
+                        />
+
+                        {showCustomProcedureEntry ? (
+                          <>
+                            <ProcedureEntryCard
+                              procedure={procedures[procedures.length - 1]!}
+                              index={procedures.length - 1}
+                              isOnlyProcedure={false}
+                              onUpdate={updateProcedure}
+                              onDelete={() => {
+                                removeProcedure(procedures[procedures.length - 1]!.id);
+                                setShowCustomProcedureEntry(false);
+                              }}
+                              onMoveUp={() => moveProcedureUp(procedures[procedures.length - 1]!.id)}
+                              onMoveDown={() => {}}
+                              canMoveUp={procedures.length > 1}
+                              canMoveDown={false}
+                              diagnosisId={selectedDiagnosis?.id}
+                              clinicalGroup={selectedDiagnosis?.clinicalGroup}
+                              diagnosisLaterality={
+                                diagnosisClinicalDetails.laterality
+                              }
+                            />
+                            <Pressable
+                              style={styles.showAllProceduresLink}
+                              onPress={() => setShowCustomProcedureEntry(false)}
+                            >
+                              <Feather
+                                name="chevron-up"
+                                size={16}
+                                color={theme.textSecondary}
+                              />
+                              <ThemedText
+                                style={[
+                                  styles.showAllProceduresText,
+                                  { color: theme.textSecondary },
+                                ]}
+                              >
+                                Collapse
+                              </ThemedText>
+                            </Pressable>
+                          </>
+                        ) : (
+                          <Pressable
+                            style={styles.showAllProceduresLink}
+                            onPress={() => {
+                              addProcedure();
+                              setShowCustomProcedureEntry(true);
+                            }}
+                          >
+                            <Feather
+                              name="plus"
+                              size={16}
+                              color={theme.link}
+                            />
+                            <ThemedText
+                              style={[
+                                styles.showAllProceduresText,
+                                { color: theme.link },
+                              ]}
+                            >
+                              Add custom procedure
+                            </ThemedText>
+                          </Pressable>
+                        )}
+                      </>
                     ) : (
                       <>
                         {showAllProcedures ? (
@@ -3108,6 +3171,32 @@ function DiagnosisGroupEditorInner({
               })()
             ) : null}
           </>
+        ) : null}
+
+        {/* Inline breast module — laterality + per-side clinical context */}
+        {/* Renders AFTER procedures so module flags are driven by selected procedures */}
+        {isBreastModule &&
+        breastModuleFlags &&
+        (hasAnyBreastModuleFlag(breastModuleFlags) ||
+          hasExistingBreastData(group.breastAssessment)) ? (
+          <BreastAssessment
+            value={normalizedBreastAssessment!}
+            onChange={(breastAssessment: BreastAssessmentData) =>
+              onChange({ ...group, breastAssessment })
+            }
+            moduleFlags={breastModuleFlags}
+            defaultClinicalContext={defaultBreastClinicalContext}
+            isTransmasculine={
+              selectedDiagnosis?.id === "breast_dx_gender_dysphoria_transmasc"
+            }
+            linkedEpisodeId={linkedBreastEpisodeId}
+            linkedEpisodeTitle={linkedBreastEpisodeTitle}
+            onCreateEpisode={() => {
+              void handleCreateBreastEpisode();
+            }}
+            onUnlinkEpisode={handleUnlinkBreastEpisode}
+            breastPreferences={profile?.surgicalPreferences?.breast}
+          />
         ) : null}
 
         {/* Histology pending toggle — non-skin-cancer specialties only */}
