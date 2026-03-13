@@ -2118,8 +2118,8 @@ const HEAD_NECK_LOCAL_FLAPS: ProcedurePicklistEntry[] = [
   {
     id: "hn_local_advancement",
     displayName: "Advancement flap — face",
-    snomedCtCode: "122462001",
-    snomedCtDisplay: "Flap reconstruction (procedure)",
+    snomedCtCode: "177449008",
+    snomedCtDisplay: "Local advancement flap, fasciocutaneous (procedure)",
     specialties: ["head_neck"],
     subcategory: "Local Flaps",
     tags: ["local_flap"],
@@ -2128,8 +2128,8 @@ const HEAD_NECK_LOCAL_FLAPS: ProcedurePicklistEntry[] = [
   {
     id: "hn_local_rotation",
     displayName: "Rotation flap — face / scalp",
-    snomedCtCode: "122462001",
-    snomedCtDisplay: "Flap reconstruction (procedure)",
+    snomedCtCode: "304102003",
+    snomedCtDisplay: "Local rotation flap (procedure)",
     specialties: ["head_neck"],
     subcategory: "Local Flaps",
     tags: ["local_flap"],
@@ -2138,8 +2138,8 @@ const HEAD_NECK_LOCAL_FLAPS: ProcedurePicklistEntry[] = [
   {
     id: "hn_local_transposition",
     displayName: "Transposition flap — face",
-    snomedCtCode: "122462001",
-    snomedCtDisplay: "Flap reconstruction (procedure)",
+    snomedCtCode: "304099003",
+    snomedCtDisplay: "Local transposition flap (procedure)",
     specialties: ["head_neck"],
     subcategory: "Local Flaps",
     tags: ["local_flap"],
@@ -2148,8 +2148,8 @@ const HEAD_NECK_LOCAL_FLAPS: ProcedurePicklistEntry[] = [
   {
     id: "hn_local_bilobed",
     displayName: "Bilobed flap (nose / cheek)",
-    snomedCtCode: "122462001",
-    snomedCtDisplay: "Flap reconstruction (procedure)",
+    snomedCtCode: "304099003",
+    snomedCtDisplay: "Local transposition flap (procedure)",
     specialties: ["head_neck"],
     subcategory: "Local Flaps",
     tags: ["local_flap"],
@@ -2158,8 +2158,8 @@ const HEAD_NECK_LOCAL_FLAPS: ProcedurePicklistEntry[] = [
   {
     id: "hn_local_rhomboid",
     displayName: "Rhomboid / Limberg flap",
-    snomedCtCode: "122462001",
-    snomedCtDisplay: "Flap reconstruction (procedure)",
+    snomedCtCode: "304099003",
+    snomedCtDisplay: "Local transposition flap (procedure)",
     specialties: ["head_neck", "general"],
     subcategory: "Local Flaps",
     tags: ["local_flap"],
@@ -2168,8 +2168,8 @@ const HEAD_NECK_LOCAL_FLAPS: ProcedurePicklistEntry[] = [
   {
     id: "hn_local_vy",
     displayName: "V-Y advancement flap — face",
-    snomedCtCode: "122462001",
-    snomedCtDisplay: "Flap reconstruction (procedure)",
+    snomedCtCode: "1202012002",
+    snomedCtDisplay: "Reconstruction of skin using local V-Y advancement flap (procedure)",
     specialties: ["head_neck"],
     subcategory: "Local Flaps",
     tags: ["local_flap"],
@@ -2178,8 +2178,8 @@ const HEAD_NECK_LOCAL_FLAPS: ProcedurePicklistEntry[] = [
   {
     id: "hn_local_nasolabial",
     displayName: "Nasolabial flap",
-    snomedCtCode: "122462001",
-    snomedCtDisplay: "Flap reconstruction (procedure)",
+    snomedCtCode: "1217425004",
+    snomedCtDisplay: "Reconstruction using nasolabial skin flap (procedure)",
     specialties: ["head_neck"],
     subcategory: "Local Flaps",
     tags: ["local_flap"],
@@ -2188,8 +2188,8 @@ const HEAD_NECK_LOCAL_FLAPS: ProcedurePicklistEntry[] = [
   {
     id: "hn_local_zplasty",
     displayName: "Z-plasty (scar revision / contracture release)",
-    snomedCtCode: "13760004",
-    snomedCtDisplay: "Z-plasty (procedure)",
+    snomedCtCode: "70515000",
+    snomedCtDisplay: "Plastic repair by z plasty (procedure)",
     specialties: ["head_neck", "general"],
     subcategory: "Local Flaps",
     tags: ["local_flap", "revision"],
@@ -2201,8 +2201,8 @@ const HEAD_NECK_REGIONAL_FLAPS: ProcedurePicklistEntry[] = [
   {
     id: "hn_reg_paramedian_forehead",
     displayName: "Paramedian forehead flap",
-    snomedCtCode: "122462001",
-    snomedCtDisplay: "Flap reconstruction (procedure)",
+    snomedCtCode: "1201949008",
+    snomedCtDisplay: "Reconstruction using flap from forehead (procedure)",
     specialties: ["head_neck"],
     subcategory: "Regional Flaps",
     tags: ["pedicled_flap"],
@@ -2211,8 +2211,8 @@ const HEAD_NECK_REGIONAL_FLAPS: ProcedurePicklistEntry[] = [
   {
     id: "hn_reg_cervicofacial",
     displayName: "Cervicofacial advancement flap",
-    snomedCtCode: "122462001",
-    snomedCtDisplay: "Flap reconstruction (procedure)",
+    snomedCtCode: "177449008",
+    snomedCtDisplay: "Local advancement flap, fasciocutaneous (procedure)",
     specialties: ["head_neck"],
     subcategory: "Regional Flaps",
     tags: ["pedicled_flap"],
@@ -2221,8 +2221,8 @@ const HEAD_NECK_REGIONAL_FLAPS: ProcedurePicklistEntry[] = [
   {
     id: "hn_reg_abbe",
     displayName: "Abbe flap (lip switch)",
-    snomedCtCode: "53410002", // VERIFY
-    snomedCtDisplay: "Abbe flap reconstruction of lip (procedure)",
+    snomedCtCode: "173257005",
+    snomedCtDisplay: "Reconstruction of lip with Abbe flap (procedure)",
     specialties: ["head_neck"],
     subcategory: "Regional Flaps",
     tags: ["pedicled_flap"],
@@ -2231,8 +2231,8 @@ const HEAD_NECK_REGIONAL_FLAPS: ProcedurePicklistEntry[] = [
   {
     id: "hn_reg_karapandzic",
     displayName: "Karapandzic flap",
-    snomedCtCode: "13372005",
-    snomedCtDisplay: "Reconstruction of lip (procedure)",
+    snomedCtCode: "119863003",
+    snomedCtDisplay: "Lip reconstruction (procedure)",
     specialties: ["head_neck"],
     subcategory: "Regional Flaps",
     tags: ["pedicled_flap"],
@@ -2241,8 +2241,8 @@ const HEAD_NECK_REGIONAL_FLAPS: ProcedurePicklistEntry[] = [
   {
     id: "hn_reg_estlander",
     displayName: "Estlander flap",
-    snomedCtCode: "13372005",
-    snomedCtDisplay: "Reconstruction of lip (procedure)",
+    snomedCtCode: "119863003",
+    snomedCtDisplay: "Lip reconstruction (procedure)",
     specialties: ["head_neck"],
     subcategory: "Regional Flaps",
     tags: ["pedicled_flap"],
@@ -2251,8 +2251,8 @@ const HEAD_NECK_REGIONAL_FLAPS: ProcedurePicklistEntry[] = [
   {
     id: "hn_reg_submental_island",
     displayName: "Submental island flap",
-    snomedCtCode: "122462001", // VERIFY
-    snomedCtDisplay: "Flap reconstruction (procedure)",
+    snomedCtCode: "122465003",
+    snomedCtDisplay: "Reconstruction procedure (procedure)",
     specialties: ["head_neck"],
     subcategory: "Regional Flaps",
     tags: ["pedicled_flap"],
@@ -2261,8 +2261,8 @@ const HEAD_NECK_REGIONAL_FLAPS: ProcedurePicklistEntry[] = [
   {
     id: "hn_reg_supraclavicular",
     displayName: "Supraclavicular flap",
-    snomedCtCode: "122462001", // VERIFY
-    snomedCtDisplay: "Flap reconstruction (procedure)",
+    snomedCtCode: "122465003",
+    snomedCtDisplay: "Reconstruction procedure (procedure)",
     specialties: ["head_neck"],
     subcategory: "Regional Flaps",
     tags: ["pedicled_flap"],
@@ -2271,8 +2271,8 @@ const HEAD_NECK_REGIONAL_FLAPS: ProcedurePicklistEntry[] = [
   {
     id: "hn_reg_deltopectoral",
     displayName: "Deltopectoral flap",
-    snomedCtCode: "122462001", // VERIFY
-    snomedCtDisplay: "Flap reconstruction (procedure)",
+    snomedCtCode: "736739001",
+    snomedCtDisplay: "Reconstruction using deltopectoral pedicle flap (procedure)",
     specialties: ["head_neck"],
     subcategory: "Regional Flaps",
     tags: ["pedicled_flap"],
@@ -2281,8 +2281,8 @@ const HEAD_NECK_REGIONAL_FLAPS: ProcedurePicklistEntry[] = [
   {
     id: "hn_reg_pectoralis_major",
     displayName: "Pectoralis major flap (PMMC)",
-    snomedCtCode: "234281001", // VERIFY
-    snomedCtDisplay: "Pedicled pectoralis major flap (procedure)",
+    snomedCtCode: "14390001000004103",
+    snomedCtDisplay: "Reconstruction of mouth using pectoralis major myocutaneous flap (procedure)",
     specialties: ["head_neck"],
     subcategory: "Regional Flaps",
     tags: ["pedicled_flap"],
@@ -2296,9 +2296,9 @@ const HEAD_NECK_FREE_FLAPS: ProcedurePicklistEntry[] = [
   {
     id: "hn_ff_vram",
     displayName: "Free VRAM flap (Vertical Rectus Abdominis Myocutaneous)",
-    snomedCtCode: "446078000", // VERIFY — TRAM parent
+    snomedCtCode: "122465003",
     snomedCtDisplay:
-      "Free vertical rectus abdominis myocutaneous flap (procedure)",
+      "Reconstruction procedure (procedure)",
     specialties: ["head_neck", "general"],
     subcategory: "Free Flap — Head & Neck",
     tags: ["free_flap", "microsurgery"],
@@ -2308,8 +2308,8 @@ const HEAD_NECK_FREE_FLAPS: ProcedurePicklistEntry[] = [
   {
     id: "hn_ff_jejunal",
     displayName: "Free jejunal flap",
-    snomedCtCode: "234290004", // VERIFY
-    snomedCtDisplay: "Free jejunal flap transfer (procedure)",
+    snomedCtCode: "172952004",
+    snomedCtDisplay: "Reconstruction of pharynx with free jejunal transfer (procedure)",
     specialties: ["head_neck"],
     subcategory: "Free Flap — Head & Neck",
     tags: ["free_flap", "microsurgery"],
@@ -2319,8 +2319,8 @@ const HEAD_NECK_FREE_FLAPS: ProcedurePicklistEntry[] = [
   {
     id: "hn_ff_iliac_crest",
     displayName: "Free iliac crest (DCIA) flap",
-    snomedCtCode: "234291003", // VERIFY
-    snomedCtDisplay: "Free iliac crest flap transfer (procedure)",
+    snomedCtCode: "442840002",
+    snomedCtDisplay: "Transplant of free osteocutaneous flap from iliac crest using microvascular anastomosis (procedure)",
     specialties: ["head_neck"],
     subcategory: "Free Flap — Head & Neck",
     tags: ["free_flap", "microsurgery"],
@@ -2330,9 +2330,9 @@ const HEAD_NECK_FREE_FLAPS: ProcedurePicklistEntry[] = [
   {
     id: "hn_ff_medial_femoral_condyle",
     displayName: "Free MFC flap (Medial Femoral Condyle)",
-    snomedCtCode: "726633006",
+    snomedCtCode: "122465003",
     snomedCtDisplay:
-      "Free vascularized medial femoral condyle bone graft (procedure)",
+      "Reconstruction procedure (procedure)",
     specialties: ["head_neck", "orthoplastic"],
     subcategory: "Free Flap — Head & Neck",
     tags: ["free_flap", "microsurgery"],
@@ -2342,8 +2342,8 @@ const HEAD_NECK_FREE_FLAPS: ProcedurePicklistEntry[] = [
   {
     id: "hn_ff_omentum",
     displayName: "Free omentum flap",
-    snomedCtCode: "44827002",
-    snomedCtDisplay: "Free omental flap transfer (procedure)",
+    snomedCtCode: "173459005",
+    snomedCtDisplay: "Reconstruction of mouth defect with free omental flap (procedure)",
     specialties: ["head_neck"],
     subcategory: "Free Flap — Head & Neck",
     tags: ["free_flap", "microsurgery"],
@@ -2356,7 +2356,7 @@ const HEAD_NECK_SITE_RECONSTRUCTION: ProcedurePicklistEntry[] = [
   {
     id: "hn_recon_nose_partial",
     displayName: "Nasal reconstruction — partial",
-    snomedCtCode: "54002009", // VERIFY
+    snomedCtCode: "232470004",
     snomedCtDisplay: "Reconstruction of nose (procedure)",
     specialties: ["head_neck"],
     subcategory: "Site-Specific Reconstruction",
@@ -2366,8 +2366,8 @@ const HEAD_NECK_SITE_RECONSTRUCTION: ProcedurePicklistEntry[] = [
   {
     id: "hn_recon_nose_total",
     displayName: "Nasal reconstruction — total / subtotal",
-    snomedCtCode: "54002009", // VERIFY
-    snomedCtDisplay: "Total reconstruction of nose (procedure)",
+    snomedCtCode: "232470004",
+    snomedCtDisplay: "Reconstruction of nose (procedure)",
     specialties: ["head_neck"],
     subcategory: "Site-Specific Reconstruction",
     tags: ["oncological"],
@@ -2376,8 +2376,8 @@ const HEAD_NECK_SITE_RECONSTRUCTION: ProcedurePicklistEntry[] = [
   {
     id: "hn_recon_lip_wedge",
     displayName: "Wedge excision of lip",
-    snomedCtCode: "38765008",
-    snomedCtDisplay: "Wedge excision of lip (procedure)",
+    snomedCtCode: "173225009",
+    snomedCtDisplay: "Wedge resection of lip (procedure)",
     specialties: ["head_neck", "skin_cancer"],
     subcategory: "Site-Specific Reconstruction",
     tags: ["oncological"],
@@ -2386,8 +2386,8 @@ const HEAD_NECK_SITE_RECONSTRUCTION: ProcedurePicklistEntry[] = [
   {
     id: "hn_recon_lip",
     displayName: "Lip reconstruction (primary closure / flap)",
-    snomedCtCode: "83891000", // VERIFY
-    snomedCtDisplay: "Reconstruction of lip (procedure)",
+    snomedCtCode: "119863003",
+    snomedCtDisplay: "Lip reconstruction (procedure)",
     specialties: ["head_neck"],
     subcategory: "Site-Specific Reconstruction",
     tags: ["oncological"],
@@ -2396,8 +2396,8 @@ const HEAD_NECK_SITE_RECONSTRUCTION: ProcedurePicklistEntry[] = [
   {
     id: "hn_recon_ear_partial",
     displayName: "Ear reconstruction — partial / wedge",
-    snomedCtCode: "287777008", // VERIFY
-    snomedCtDisplay: "Reconstruction of external ear (procedure)",
+    snomedCtCode: "120136006",
+    snomedCtDisplay: "External ear reconstruction (procedure)",
     specialties: ["head_neck"],
     subcategory: "Site-Specific Reconstruction",
     tags: ["oncological"],
@@ -2406,8 +2406,8 @@ const HEAD_NECK_SITE_RECONSTRUCTION: ProcedurePicklistEntry[] = [
   {
     id: "hn_recon_ear_total",
     displayName: "Ear reconstruction — total (rib framework / Medpor)",
-    snomedCtCode: "287777008", // VERIFY
-    snomedCtDisplay: "Total reconstruction of external ear (procedure)",
+    snomedCtCode: "120136006",
+    snomedCtDisplay: "External ear reconstruction (procedure)",
     specialties: ["head_neck", "cleft_cranio"],
     subcategory: "Site-Specific Reconstruction",
     tags: ["elective"],
@@ -2416,8 +2416,8 @@ const HEAD_NECK_SITE_RECONSTRUCTION: ProcedurePicklistEntry[] = [
   {
     id: "hn_recon_ear_prosthetic",
     displayName: "Ear reconstruction — osseointegrated prosthesis",
-    snomedCtCode: "287777008", // VERIFY
-    snomedCtDisplay: "Reconstruction of ear with prosthesis (procedure)",
+    snomedCtCode: "120136006",
+    snomedCtDisplay: "External ear reconstruction (procedure)",
     specialties: ["head_neck", "cleft_cranio"],
     subcategory: "Site-Specific Reconstruction",
     tags: ["elective"],
@@ -2426,8 +2426,8 @@ const HEAD_NECK_SITE_RECONSTRUCTION: ProcedurePicklistEntry[] = [
   {
     id: "hn_recon_eyelid_upper",
     displayName: "Eyelid reconstruction — upper",
-    snomedCtCode: "274883006", // VERIFY
-    snomedCtDisplay: "Reconstruction of upper eyelid (procedure)",
+    snomedCtCode: "2242005",
+    snomedCtDisplay: "Reconstruction of eyelid (procedure)",
     specialties: ["head_neck"],
     subcategory: "Site-Specific Reconstruction",
     tags: ["oncological"],
@@ -2436,8 +2436,8 @@ const HEAD_NECK_SITE_RECONSTRUCTION: ProcedurePicklistEntry[] = [
   {
     id: "hn_recon_eyelid_lower",
     displayName: "Eyelid reconstruction — lower",
-    snomedCtCode: "274884000", // VERIFY
-    snomedCtDisplay: "Reconstruction of lower eyelid (procedure)",
+    snomedCtCode: "2242005",
+    snomedCtDisplay: "Reconstruction of eyelid (procedure)",
     specialties: ["head_neck"],
     subcategory: "Site-Specific Reconstruction",
     tags: ["oncological"],
@@ -2446,8 +2446,8 @@ const HEAD_NECK_SITE_RECONSTRUCTION: ProcedurePicklistEntry[] = [
   {
     id: "hn_recon_tenzel",
     displayName: "Tenzel semicircular flap (eyelid)",
-    snomedCtCode: "274883006", // VERIFY — rotational advancement flap for eyelid
-    snomedCtDisplay: "Reconstruction of eyelid with flap (procedure)",
+    snomedCtCode: "2242005",
+    snomedCtDisplay: "Reconstruction of eyelid (procedure)",
     specialties: ["head_neck", "skin_cancer"],
     subcategory: "Site-Specific Reconstruction",
     tags: ["oncological"],
@@ -2456,8 +2456,8 @@ const HEAD_NECK_SITE_RECONSTRUCTION: ProcedurePicklistEntry[] = [
   {
     id: "hn_recon_scalp",
     displayName: "Scalp reconstruction (flap / graft / tissue expansion)",
-    snomedCtCode: "122465003", // VERIFY
-    snomedCtDisplay: "Reconstruction of scalp (procedure)",
+    snomedCtCode: "122465003",
+    snomedCtDisplay: "Reconstruction procedure (procedure)",
     specialties: ["head_neck"],
     subcategory: "Site-Specific Reconstruction",
     tags: ["oncological", "complex_wound"],
@@ -2466,8 +2466,8 @@ const HEAD_NECK_SITE_RECONSTRUCTION: ProcedurePicklistEntry[] = [
   {
     id: "hn_recon_oral_tongue_floor",
     displayName: "Oral cavity / tongue / floor of mouth reconstruction",
-    snomedCtCode: "122465003", // VERIFY
-    snomedCtDisplay: "Reconstruction of oral cavity (procedure)",
+    snomedCtCode: "122465003",
+    snomedCtDisplay: "Reconstruction procedure (procedure)",
     specialties: ["head_neck"],
     subcategory: "Site-Specific Reconstruction",
     tags: ["oncological", "free_flap"],
@@ -2476,7 +2476,7 @@ const HEAD_NECK_SITE_RECONSTRUCTION: ProcedurePicklistEntry[] = [
   {
     id: "hn_recon_mandible",
     displayName: "Mandible reconstruction (plate / fibula / flap)",
-    snomedCtCode: "66567009", // VERIFY
+    snomedCtCode: "88366003",
     snomedCtDisplay: "Reconstruction of mandible (procedure)",
     specialties: ["head_neck"],
     subcategory: "Site-Specific Reconstruction",
@@ -2486,8 +2486,8 @@ const HEAD_NECK_SITE_RECONSTRUCTION: ProcedurePicklistEntry[] = [
   {
     id: "hn_recon_maxilla",
     displayName: "Maxillary / midface reconstruction",
-    snomedCtCode: "122465003", // VERIFY
-    snomedCtDisplay: "Reconstruction of maxilla (procedure)",
+    snomedCtCode: "122465003",
+    snomedCtDisplay: "Reconstruction procedure (procedure)",
     specialties: ["head_neck"],
     subcategory: "Site-Specific Reconstruction",
     tags: ["oncological"],
@@ -2496,8 +2496,8 @@ const HEAD_NECK_SITE_RECONSTRUCTION: ProcedurePicklistEntry[] = [
   {
     id: "hn_recon_pharynx",
     displayName: "Pharyngeal / oesophageal reconstruction",
-    snomedCtCode: "122465003", // VERIFY
-    snomedCtDisplay: "Reconstruction of pharynx (procedure)",
+    snomedCtCode: "122465003",
+    snomedCtDisplay: "Reconstruction procedure (procedure)",
     specialties: ["head_neck"],
     subcategory: "Site-Specific Reconstruction",
     tags: ["oncological", "free_flap"],
@@ -2509,7 +2509,7 @@ const HEAD_NECK_EYELID_RECON: ProcedurePicklistEntry[] = [
   {
     id: "hn_eyelid_direct_closure",
     displayName: "Direct closure of eyelid defect",
-    snomedCtCode: "172267003", // VERIFY
+    snomedCtCode: "2242005",
     snomedCtDisplay: "Reconstruction of eyelid (procedure)",
     specialties: ["head_neck"],
     subcategory: "Eyelid Reconstruction",
@@ -2519,7 +2519,7 @@ const HEAD_NECK_EYELID_RECON: ProcedurePicklistEntry[] = [
   {
     id: "hn_eyelid_canthotomy",
     displayName: "Lateral canthotomy / cantholysis",
-    snomedCtCode: "46936001",
+    snomedCtCode: "59077004",
     snomedCtDisplay: "Canthotomy (procedure)",
     specialties: ["head_neck"],
     subcategory: "Eyelid Reconstruction",
@@ -2529,7 +2529,7 @@ const HEAD_NECK_EYELID_RECON: ProcedurePicklistEntry[] = [
   {
     id: "hn_eyelid_ftsg",
     displayName: "Full-thickness skin graft to eyelid",
-    snomedCtCode: "61581000",
+    snomedCtCode: "783539008",
     snomedCtDisplay: "Full thickness skin graft (procedure)",
     specialties: ["head_neck"],
     subcategory: "Eyelid Reconstruction",
@@ -2539,8 +2539,8 @@ const HEAD_NECK_EYELID_RECON: ProcedurePicklistEntry[] = [
   {
     id: "hn_eyelid_tenzel",
     displayName: "Tenzel semicircular rotation flap",
-    snomedCtCode: "122462001", // VERIFY
-    snomedCtDisplay: "Flap reconstruction (procedure)",
+    snomedCtCode: "2242005",
+    snomedCtDisplay: "Reconstruction of eyelid (procedure)",
     specialties: ["head_neck"],
     subcategory: "Eyelid Reconstruction",
     tags: ["oncological"],
@@ -2549,7 +2549,7 @@ const HEAD_NECK_EYELID_RECON: ProcedurePicklistEntry[] = [
   {
     id: "hn_eyelid_tarsomarginal_graft",
     displayName: "Tarsomarginal graft",
-    snomedCtCode: "172267003", // VERIFY
+    snomedCtCode: "2242005",
     snomedCtDisplay: "Reconstruction of eyelid (procedure)",
     specialties: ["head_neck"],
     subcategory: "Eyelid Reconstruction",
@@ -2559,7 +2559,7 @@ const HEAD_NECK_EYELID_RECON: ProcedurePicklistEntry[] = [
   {
     id: "hn_eyelid_tarsoconjunctival_graft",
     displayName: "Free tarsoconjunctival graft",
-    snomedCtCode: "172267003", // VERIFY
+    snomedCtCode: "2242005",
     snomedCtDisplay: "Reconstruction of eyelid (procedure)",
     specialties: ["head_neck"],
     subcategory: "Eyelid Reconstruction",
@@ -2569,8 +2569,8 @@ const HEAD_NECK_EYELID_RECON: ProcedurePicklistEntry[] = [
   {
     id: "hn_eyelid_hughes",
     displayName: "Hughes tarsoconjunctival flap",
-    snomedCtCode: "312961002",
-    snomedCtDisplay: "Tarsoconjunctival flap reconstruction (procedure)",
+    snomedCtCode: "47920001",
+    snomedCtDisplay: "Reconstruction of eyelid with tarsoconjunctival flap (procedure)",
     specialties: ["head_neck"],
     subcategory: "Eyelid Reconstruction",
     tags: ["oncological"],
@@ -2579,7 +2579,7 @@ const HEAD_NECK_EYELID_RECON: ProcedurePicklistEntry[] = [
   {
     id: "hn_eyelid_cutler_beard",
     displayName: "Cutler-Beard bridge flap",
-    snomedCtCode: "172267003", // VERIFY
+    snomedCtCode: "2242005",
     snomedCtDisplay: "Reconstruction of eyelid (procedure)",
     specialties: ["head_neck"],
     subcategory: "Eyelid Reconstruction",
@@ -2589,8 +2589,8 @@ const HEAD_NECK_EYELID_RECON: ProcedurePicklistEntry[] = [
   {
     id: "hn_eyelid_mustarde",
     displayName: "Mustardé cheek rotation flap",
-    snomedCtCode: "173259009",
-    snomedCtDisplay: "Mustardé rotation flap (procedure)",
+    snomedCtCode: "2242005",
+    snomedCtDisplay: "Reconstruction of eyelid (procedure)",
     specialties: ["head_neck"],
     subcategory: "Eyelid Reconstruction",
     tags: ["oncological"],
@@ -2599,8 +2599,8 @@ const HEAD_NECK_EYELID_RECON: ProcedurePicklistEntry[] = [
   {
     id: "hn_eyelid_fricke",
     displayName: "Fricke flap (temporal forehead)",
-    snomedCtCode: "122462001", // VERIFY
-    snomedCtDisplay: "Flap reconstruction (procedure)",
+    snomedCtCode: "2242005",
+    snomedCtDisplay: "Reconstruction of eyelid (procedure)",
     specialties: ["head_neck"],
     subcategory: "Eyelid Reconstruction",
     tags: ["oncological"],
@@ -2609,7 +2609,7 @@ const HEAD_NECK_EYELID_RECON: ProcedurePicklistEntry[] = [
   {
     id: "hn_eyelid_medial_canthal_recon",
     displayName: "Medial canthal reconstruction",
-    snomedCtCode: "172267003", // VERIFY
+    snomedCtCode: "2242005",
     snomedCtDisplay: "Reconstruction of eyelid (procedure)",
     specialties: ["head_neck"],
     subcategory: "Eyelid Reconstruction",
@@ -2619,8 +2619,8 @@ const HEAD_NECK_EYELID_RECON: ProcedurePicklistEntry[] = [
   {
     id: "hn_eyelid_ectropion_repair",
     displayName: "Ectropion repair",
-    snomedCtCode: "172258009",
-    snomedCtDisplay: "Correction of ectropion (procedure)",
+    snomedCtCode: "71408000",
+    snomedCtDisplay: "Repair of ectropion (procedure)",
     specialties: ["head_neck"],
     subcategory: "Eyelid Reconstruction",
     tags: ["elective"],
@@ -2629,8 +2629,8 @@ const HEAD_NECK_EYELID_RECON: ProcedurePicklistEntry[] = [
   {
     id: "hn_eyelid_entropion_repair",
     displayName: "Entropion repair",
-    snomedCtCode: "172254001",
-    snomedCtDisplay: "Correction of entropion (procedure)",
+    snomedCtCode: "37625005",
+    snomedCtDisplay: "Repair of entropion (procedure)",
     specialties: ["head_neck"],
     subcategory: "Eyelid Reconstruction",
     tags: ["elective"],
@@ -2642,7 +2642,7 @@ const HEAD_NECK_FACIAL_NERVE: ProcedurePicklistEntry[] = [
   {
     id: "hn_fn_primary_repair",
     displayName: "Facial nerve primary repair",
-    snomedCtCode: "22649006",
+    snomedCtCode: "171628006",
     snomedCtDisplay: "Repair of facial nerve (procedure)",
     specialties: ["head_neck"],
     subcategory: "Facial Nerve & Reanimation",
@@ -2652,7 +2652,7 @@ const HEAD_NECK_FACIAL_NERVE: ProcedurePicklistEntry[] = [
   {
     id: "hn_fn_cable_graft",
     displayName: "Facial nerve cable graft",
-    snomedCtCode: "7428004",
+    snomedCtCode: "307253003",
     snomedCtDisplay: "Nerve graft (procedure)",
     specialties: ["head_neck"],
     subcategory: "Facial Nerve & Reanimation",
@@ -2662,8 +2662,8 @@ const HEAD_NECK_FACIAL_NERVE: ProcedurePicklistEntry[] = [
   {
     id: "hn_fn_cross_face",
     displayName: "Cross-face nerve graft (CFNG)",
-    snomedCtCode: "7428004", // VERIFY
-    snomedCtDisplay: "Cross-face nerve graft (procedure)",
+    snomedCtCode: "1557941000168102",
+    snomedCtDisplay: "Cross facial nerve graft (procedure)",
     specialties: ["head_neck"],
     subcategory: "Facial Nerve & Reanimation",
     tags: ["nerve_repair", "microsurgery"],
@@ -2672,8 +2672,8 @@ const HEAD_NECK_FACIAL_NERVE: ProcedurePicklistEntry[] = [
   {
     id: "hn_fn_masseteric_transfer",
     displayName: "Masseteric nerve transfer to facial nerve",
-    snomedCtCode: "56625009", // VERIFY
-    snomedCtDisplay: "Nerve transfer to facial nerve (procedure)",
+    snomedCtCode: "840681000168101",
+    snomedCtDisplay: "Nerve transfer (procedure)",
     specialties: ["head_neck"],
     subcategory: "Facial Nerve & Reanimation",
     tags: ["nerve_repair", "microsurgery"],
@@ -2682,8 +2682,8 @@ const HEAD_NECK_FACIAL_NERVE: ProcedurePicklistEntry[] = [
   {
     id: "hn_fn_free_gracilis",
     displayName: "Free gracilis transfer for facial reanimation",
-    snomedCtCode: "234297004",
-    snomedCtDisplay: "Free gracilis flap (procedure)",
+    snomedCtCode: "122465003",
+    snomedCtDisplay: "Reconstruction procedure (procedure)",
     specialties: ["head_neck"],
     subcategory: "Facial Nerve & Reanimation",
     tags: ["free_flap", "microsurgery"],
@@ -2693,8 +2693,8 @@ const HEAD_NECK_FACIAL_NERVE: ProcedurePicklistEntry[] = [
   {
     id: "hn_fn_static_sling",
     displayName: "Static sling (fascia lata / alloplastic)",
-    snomedCtCode: "122465003", // VERIFY
-    snomedCtDisplay: "Static sling procedure for facial palsy (procedure)",
+    snomedCtCode: "37539001",
+    snomedCtDisplay: "Fascial sling for facial weakness (procedure)",
     specialties: ["head_neck"],
     subcategory: "Facial Nerve & Reanimation",
     tags: ["elective"],
@@ -2703,8 +2703,8 @@ const HEAD_NECK_FACIAL_NERVE: ProcedurePicklistEntry[] = [
   {
     id: "hn_fn_gold_weight",
     displayName: "Upper eyelid gold / platinum weight",
-    snomedCtCode: "274883006", // VERIFY
-    snomedCtDisplay: "Insertion of eyelid weight (procedure)",
+    snomedCtCode: "172280008",
+    snomedCtDisplay: "Insertion of gold weight into upper eyelid (procedure)",
     specialties: ["head_neck"],
     subcategory: "Facial Nerve & Reanimation",
     tags: ["elective"],
@@ -2717,7 +2717,7 @@ const HEAD_NECK_FACIAL_REANIMATION: ProcedurePicklistEntry[] = [
   {
     id: "hn_nerve_cable_graft_great_auricular",
     displayName: "Cable nerve graft — great auricular",
-    snomedCtCode: "7428004", // VERIFY
+    snomedCtCode: "307253003",
     snomedCtDisplay: "Nerve graft (procedure)",
     specialties: ["head_neck"],
     subcategory: "Facial Reanimation",
@@ -2727,8 +2727,8 @@ const HEAD_NECK_FACIAL_REANIMATION: ProcedurePicklistEntry[] = [
   {
     id: "hn_nerve_cfng_stage2",
     displayName: "CFNG Stage 2 (coaptation to gracilis motor nerve)",
-    snomedCtCode: "7428004", // VERIFY
-    snomedCtDisplay: "Cross-face nerve graft stage 2 (procedure)",
+    snomedCtCode: "1557941000168102",
+    snomedCtDisplay: "Cross facial nerve graft (procedure)",
     specialties: ["head_neck"],
     subcategory: "Facial Reanimation",
     tags: ["microsurgery"],
@@ -2737,8 +2737,8 @@ const HEAD_NECK_FACIAL_REANIMATION: ProcedurePicklistEntry[] = [
   {
     id: "hn_nerve_hypoglossal_full",
     displayName: "Hypoglossal-to-facial transfer (full)",
-    snomedCtCode: "359607002",
-    snomedCtDisplay: "Hypoglossal-facial anastomosis (procedure)",
+    snomedCtCode: "867007",
+    snomedCtDisplay: "Facial-hypoglossal nerve anastomosis (procedure)",
     specialties: ["head_neck"],
     subcategory: "Facial Reanimation",
     tags: ["microsurgery"],
@@ -2747,8 +2747,8 @@ const HEAD_NECK_FACIAL_REANIMATION: ProcedurePicklistEntry[] = [
   {
     id: "hn_nerve_hypoglossal_split",
     displayName: "Hypoglossal-to-facial transfer (partial / split)",
-    snomedCtCode: "359607002", // VERIFY
-    snomedCtDisplay: "Hypoglossal-facial anastomosis (procedure)",
+    snomedCtCode: "867007",
+    snomedCtDisplay: "Facial-hypoglossal nerve anastomosis (procedure)",
     specialties: ["head_neck"],
     subcategory: "Facial Reanimation",
     tags: ["microsurgery"],
@@ -2757,8 +2757,8 @@ const HEAD_NECK_FACIAL_REANIMATION: ProcedurePicklistEntry[] = [
   {
     id: "hn_nerve_spinal_accessory",
     displayName: "Spinal accessory-to-facial transfer",
-    snomedCtCode: "56625009", // VERIFY
-    snomedCtDisplay: "Nerve transfer to facial nerve (procedure)",
+    snomedCtCode: "840681000168101",
+    snomedCtDisplay: "Nerve transfer (procedure)",
     specialties: ["head_neck"],
     subcategory: "Facial Reanimation",
     tags: ["microsurgery"],
@@ -2767,8 +2767,8 @@ const HEAD_NECK_FACIAL_REANIMATION: ProcedurePicklistEntry[] = [
   {
     id: "hn_nerve_dual_innervation",
     displayName: "Combined CFNG + masseteric (babysitter + CFNG)",
-    snomedCtCode: "56625009", // VERIFY
-    snomedCtDisplay: "Dual innervation nerve transfer (procedure)",
+    snomedCtCode: "840681000168101",
+    snomedCtDisplay: "Nerve transfer (procedure)",
     specialties: ["head_neck"],
     subcategory: "Facial Reanimation",
     tags: ["microsurgery"],
@@ -2778,8 +2778,8 @@ const HEAD_NECK_FACIAL_REANIMATION: ProcedurePicklistEntry[] = [
   {
     id: "hn_nerve_gracilis_masseteric",
     displayName: "Free gracilis — masseteric nerve innervation",
-    snomedCtCode: "234297004",
-    snomedCtDisplay: "Free gracilis flap (procedure)",
+    snomedCtCode: "122465003",
+    snomedCtDisplay: "Reconstruction procedure (procedure)",
     specialties: ["head_neck"],
     subcategory: "Facial Reanimation",
     tags: ["free_flap", "microsurgery"],
@@ -2789,8 +2789,8 @@ const HEAD_NECK_FACIAL_REANIMATION: ProcedurePicklistEntry[] = [
   {
     id: "hn_nerve_gracilis_double",
     displayName: "Free gracilis — double innervation (CFNG + masseteric)",
-    snomedCtCode: "234297004", // VERIFY
-    snomedCtDisplay: "Free gracilis flap (procedure)",
+    snomedCtCode: "122465003",
+    snomedCtDisplay: "Reconstruction procedure (procedure)",
     specialties: ["head_neck"],
     subcategory: "Facial Reanimation",
     tags: ["free_flap", "microsurgery"],
@@ -2800,8 +2800,8 @@ const HEAD_NECK_FACIAL_REANIMATION: ProcedurePicklistEntry[] = [
   {
     id: "hn_nerve_gracilis_ld",
     displayName: "Free functional latissimus dorsi transfer",
-    snomedCtCode: "234284000", // VERIFY
-    snomedCtDisplay: "Free latissimus dorsi flap (procedure)",
+    snomedCtCode: "1162652005",
+    snomedCtDisplay: "Reconstruction using latissimus dorsi flap (procedure)",
     specialties: ["head_neck"],
     subcategory: "Facial Reanimation",
     tags: ["free_flap", "microsurgery"],
@@ -2812,8 +2812,8 @@ const HEAD_NECK_FACIAL_REANIMATION: ProcedurePicklistEntry[] = [
   {
     id: "hn_nerve_temporalis_labbe",
     displayName: "Temporalis transfer (Labbé orthodromic)",
-    snomedCtCode: "122462001", // VERIFY
-    snomedCtDisplay: "Temporalis muscle transfer (procedure)",
+    snomedCtCode: "122465003",
+    snomedCtDisplay: "Reconstruction procedure (procedure)",
     specialties: ["head_neck"],
     subcategory: "Facial Reanimation",
     tags: ["pedicled_flap"],
@@ -2822,8 +2822,8 @@ const HEAD_NECK_FACIAL_REANIMATION: ProcedurePicklistEntry[] = [
   {
     id: "hn_nerve_temporalis_tendon",
     displayName: "Temporalis tendon transfer",
-    snomedCtCode: "122462001", // VERIFY
-    snomedCtDisplay: "Temporalis tendon transfer (procedure)",
+    snomedCtCode: "122465003",
+    snomedCtDisplay: "Reconstruction procedure (procedure)",
     specialties: ["head_neck"],
     subcategory: "Facial Reanimation",
     tags: ["elective"],
@@ -2832,8 +2832,8 @@ const HEAD_NECK_FACIAL_REANIMATION: ProcedurePicklistEntry[] = [
   {
     id: "hn_nerve_masseter_transfer_regional",
     displayName: "Masseter muscle transfer",
-    snomedCtCode: "122462001", // VERIFY
-    snomedCtDisplay: "Regional muscle transfer (procedure)",
+    snomedCtCode: "122465003",
+    snomedCtDisplay: "Reconstruction procedure (procedure)",
     specialties: ["head_neck"],
     subcategory: "Facial Reanimation",
     tags: ["pedicled_flap"],
@@ -2843,8 +2843,8 @@ const HEAD_NECK_FACIAL_REANIMATION: ProcedurePicklistEntry[] = [
   {
     id: "hn_nerve_static_sling_adm",
     displayName: "Static fascial sling — AlloDerm / ADM",
-    snomedCtCode: "122465003", // VERIFY
-    snomedCtDisplay: "Static sling procedure for facial palsy (procedure)",
+    snomedCtCode: "37539001",
+    snomedCtDisplay: "Fascial sling for facial weakness (procedure)",
     specialties: ["head_neck"],
     subcategory: "Facial Reanimation",
     tags: ["elective"],
@@ -2853,8 +2853,8 @@ const HEAD_NECK_FACIAL_REANIMATION: ProcedurePicklistEntry[] = [
   {
     id: "hn_nerve_lateral_tarsal_strip",
     displayName: "Lower eyelid tightening (lateral tarsal strip)",
-    snomedCtCode: "172258009", // VERIFY
-    snomedCtDisplay: "Lateral tarsal strip procedure (procedure)",
+    snomedCtCode: "429055001",
+    snomedCtDisplay: "Replacement of lateral canthal tendon using tarsal strip (procedure)",
     specialties: ["head_neck"],
     subcategory: "Facial Reanimation",
     tags: ["elective"],
@@ -2863,8 +2863,8 @@ const HEAD_NECK_FACIAL_REANIMATION: ProcedurePicklistEntry[] = [
   {
     id: "hn_nerve_brow_lift_palsy",
     displayName: "Brow lift for facial palsy",
-    snomedCtCode: "274883006", // VERIFY
-    snomedCtDisplay: "Brow lift (procedure)",
+    snomedCtCode: "177246004",
+    snomedCtDisplay: "Browlift (procedure)",
     specialties: ["head_neck"],
     subcategory: "Facial Reanimation",
     tags: ["elective"],
@@ -2873,9 +2873,9 @@ const HEAD_NECK_FACIAL_REANIMATION: ProcedurePicklistEntry[] = [
   {
     id: "hn_nerve_botox_synkinesis",
     displayName: "Botulinum toxin for synkinesis",
-    snomedCtCode: "404909007", // VERIFY
+    snomedCtCode: "1156037003",
     snomedCtDisplay:
-      "Injection of botulinum toxin into facial muscle (procedure)",
+      "Injection of botulinum toxin into muscle of face (procedure)",
     specialties: ["head_neck"],
     subcategory: "Facial Reanimation",
     tags: ["elective"],
@@ -2887,7 +2887,7 @@ const HEAD_NECK_CLEFT_CRANIOFACIAL: ProcedurePicklistEntry[] = [
   {
     id: "hn_cleft_lip_unilateral",
     displayName: "Cleft lip repair — unilateral",
-    snomedCtCode: "13895006",
+    snomedCtCode: "234647001",
     snomedCtDisplay: "Repair of cleft lip (procedure)",
     specialties: ["cleft_cranio", "head_neck"],
     subcategory: "Cleft & Craniofacial",
@@ -2897,7 +2897,7 @@ const HEAD_NECK_CLEFT_CRANIOFACIAL: ProcedurePicklistEntry[] = [
   {
     id: "hn_cleft_lip_bilateral",
     displayName: "Cleft lip repair — bilateral",
-    snomedCtCode: "13895006",
+    snomedCtCode: "234647001",
     snomedCtDisplay: "Repair of cleft lip (procedure)",
     specialties: ["cleft_cranio", "head_neck"],
     subcategory: "Cleft & Craniofacial",
@@ -2907,7 +2907,7 @@ const HEAD_NECK_CLEFT_CRANIOFACIAL: ProcedurePicklistEntry[] = [
   {
     id: "hn_cleft_palate",
     displayName: "Cleft palate repair",
-    snomedCtCode: "172735006",
+    snomedCtCode: "234890003",
     snomedCtDisplay: "Repair of cleft palate (procedure)",
     specialties: ["cleft_cranio", "head_neck"],
     subcategory: "Cleft & Craniofacial",
@@ -2917,8 +2917,8 @@ const HEAD_NECK_CLEFT_CRANIOFACIAL: ProcedurePicklistEntry[] = [
   {
     id: "hn_cleft_alveolar_bone_graft",
     displayName: "Alveolar bone graft",
-    snomedCtCode: "54550001",
-    snomedCtDisplay: "Bone graft of alveolar ridge (procedure)",
+    snomedCtCode: "178493006",
+    snomedCtDisplay: "Alveolar bone graft (procedure)",
     specialties: ["cleft_cranio", "head_neck"],
     subcategory: "Cleft & Craniofacial",
     tags: ["elective"],
@@ -2927,8 +2927,8 @@ const HEAD_NECK_CLEFT_CRANIOFACIAL: ProcedurePicklistEntry[] = [
   {
     id: "hn_cleft_lip_revision",
     displayName: "Cleft lip / nose revision",
-    snomedCtCode: "13895006", // VERIFY
-    snomedCtDisplay: "Revision of cleft lip repair (procedure)",
+    snomedCtCode: "234647001",
+    snomedCtDisplay: "Repair of cleft lip (procedure)",
     specialties: ["cleft_cranio", "head_neck"],
     subcategory: "Cleft & Craniofacial",
     tags: ["revision"],
@@ -2937,7 +2937,7 @@ const HEAD_NECK_CLEFT_CRANIOFACIAL: ProcedurePicklistEntry[] = [
   {
     id: "hn_cleft_velopharyngeal_insufficiency",
     displayName: "VPI surgery (pharyngoplasty / pharyngeal flap)",
-    snomedCtCode: "41925006",
+    snomedCtCode: "389059002",
     snomedCtDisplay: "Pharyngoplasty (procedure)",
     specialties: ["cleft_cranio", "head_neck"],
     subcategory: "Cleft & Craniofacial",
@@ -2947,8 +2947,8 @@ const HEAD_NECK_CLEFT_CRANIOFACIAL: ProcedurePicklistEntry[] = [
   {
     id: "hn_craniosynostosis",
     displayName: "Craniosynostosis surgery (cranial vault remodelling)",
-    snomedCtCode: "274038009", // VERIFY
-    snomedCtDisplay: "Craniosynostosis repair (procedure)",
+    snomedCtCode: "1053351000168108",
+    snomedCtDisplay: "Cranial vault remodelling for scaphocephaly (procedure)",
     specialties: ["cleft_cranio", "head_neck"],
     subcategory: "Cleft & Craniofacial",
     tags: ["elective"],
@@ -2957,8 +2957,8 @@ const HEAD_NECK_CLEFT_CRANIOFACIAL: ProcedurePicklistEntry[] = [
   {
     id: "hn_lefort_osteotomy",
     displayName: "Le Fort osteotomy (I / II / III)",
-    snomedCtCode: "59782002", // VERIFY
-    snomedCtDisplay: "Le Fort osteotomy (procedure)",
+    snomedCtCode: "239299006",
+    snomedCtDisplay: "Le Fort I osteotomy (procedure)",
     specialties: ["cleft_cranio", "head_neck"],
     subcategory: "Cleft & Craniofacial",
     tags: ["elective"],
@@ -2967,8 +2967,8 @@ const HEAD_NECK_CLEFT_CRANIOFACIAL: ProcedurePicklistEntry[] = [
   {
     id: "hn_distraction_osteogenesis",
     displayName: "Distraction osteogenesis — craniofacial",
-    snomedCtCode: "431548006", // VERIFY
-    snomedCtDisplay: "Distraction osteogenesis (procedure)",
+    snomedCtCode: "1222491000168105",
+    snomedCtDisplay: "Osteotomy of mandible with distraction osteogenesis (procedure)",
     specialties: ["cleft_cranio", "head_neck"],
     subcategory: "Cleft & Craniofacial",
     tags: ["elective"],
@@ -2980,7 +2980,7 @@ const HEAD_NECK_FACIAL_FRACTURES: ProcedurePicklistEntry[] = [
   {
     id: "hn_fx_mandible_orif",
     displayName: "Mandible fracture ORIF",
-    snomedCtCode: "24529004",
+    snomedCtCode: "608778008",
     snomedCtDisplay:
       "Open reduction of fracture of mandible with internal fixation (procedure)",
     specialties: ["head_neck"],
@@ -2991,8 +2991,8 @@ const HEAD_NECK_FACIAL_FRACTURES: ProcedurePicklistEntry[] = [
   {
     id: "hn_fx_mandible_imf",
     displayName: "Mandible fracture — IMF / closed reduction",
-    snomedCtCode: "24529004", // VERIFY — may have closed-specific code
-    snomedCtDisplay: "Closed reduction of fracture of mandible (procedure)",
+    snomedCtCode: "699158003",
+    snomedCtDisplay: "Closed reduction of fracture of mandible with internal fixation (procedure)",
     specialties: ["head_neck"],
     subcategory: "Facial Fractures",
     tags: ["trauma"],
@@ -3001,8 +3001,8 @@ const HEAD_NECK_FACIAL_FRACTURES: ProcedurePicklistEntry[] = [
   {
     id: "hn_fx_zygoma_orif",
     displayName: "Zygoma fracture ORIF",
-    snomedCtCode: "50528002",
-    snomedCtDisplay: "Open reduction of fracture of zygoma (procedure)",
+    snomedCtCode: "1363007003",
+    snomedCtDisplay: "Open reduction of fracture of zygomatic complex (procedure)",
     specialties: ["head_neck"],
     subcategory: "Facial Fractures",
     tags: ["trauma"],
@@ -3011,8 +3011,8 @@ const HEAD_NECK_FACIAL_FRACTURES: ProcedurePicklistEntry[] = [
   {
     id: "hn_fx_zygoma_gillies",
     displayName: "Zygoma reduction — Gillies approach",
-    snomedCtCode: "50528002", // VERIFY
-    snomedCtDisplay: "Closed reduction of fracture of zygoma (procedure)",
+    snomedCtCode: "80083004",
+    snomedCtDisplay: "Open reduction of fracture of facial bone (procedure)",
     specialties: ["head_neck"],
     subcategory: "Facial Fractures",
     tags: ["trauma"],
@@ -3021,8 +3021,8 @@ const HEAD_NECK_FACIAL_FRACTURES: ProcedurePicklistEntry[] = [
   {
     id: "hn_fx_orbital_floor",
     displayName: "Orbital floor fracture repair",
-    snomedCtCode: "359634005",
-    snomedCtDisplay: "Repair of fracture of orbital floor (procedure)",
+    snomedCtCode: "239385005",
+    snomedCtDisplay: "Repair orbital floor (procedure)",
     specialties: ["head_neck"],
     subcategory: "Facial Fractures",
     tags: ["trauma"],
@@ -3031,8 +3031,8 @@ const HEAD_NECK_FACIAL_FRACTURES: ProcedurePicklistEntry[] = [
   {
     id: "hn_fx_lefort",
     displayName: "Le Fort fracture ORIF (I / II / III)",
-    snomedCtCode: "50528002", // VERIFY
-    snomedCtDisplay: "Open reduction of Le Fort fracture (procedure)",
+    snomedCtCode: "80083004",
+    snomedCtDisplay: "Open reduction of fracture of facial bone (procedure)",
     specialties: ["head_neck"],
     subcategory: "Facial Fractures",
     tags: ["trauma"],
@@ -3041,8 +3041,8 @@ const HEAD_NECK_FACIAL_FRACTURES: ProcedurePicklistEntry[] = [
   {
     id: "hn_fx_frontal_sinus",
     displayName: "Frontal sinus fracture repair",
-    snomedCtCode: "50528002", // VERIFY
-    snomedCtDisplay: "Repair of fracture of frontal sinus (procedure)",
+    snomedCtCode: "80083004",
+    snomedCtDisplay: "Open reduction of fracture of facial bone (procedure)",
     specialties: ["head_neck"],
     subcategory: "Facial Fractures",
     tags: ["trauma"],
@@ -3051,8 +3051,8 @@ const HEAD_NECK_FACIAL_FRACTURES: ProcedurePicklistEntry[] = [
   {
     id: "hn_fx_nasal",
     displayName: "Nasal fracture reduction (closed / open)",
-    snomedCtCode: "36070001",
-    snomedCtDisplay: "Reduction of nasal fracture (procedure)",
+    snomedCtCode: "25060006",
+    snomedCtDisplay: "Closed reduction of nasal fracture (procedure)",
     specialties: ["head_neck"],
     subcategory: "Facial Fractures",
     tags: ["trauma"],
@@ -3061,8 +3061,8 @@ const HEAD_NECK_FACIAL_FRACTURES: ProcedurePicklistEntry[] = [
   {
     id: "hn_fx_noe",
     displayName: "Naso-orbito-ethmoidal (NOE) fracture repair",
-    snomedCtCode: "50528002", // VERIFY
-    snomedCtDisplay: "Repair of naso-orbito-ethmoidal fracture (procedure)",
+    snomedCtCode: "80083004",
+    snomedCtDisplay: "Open reduction of fracture of facial bone (procedure)",
     specialties: ["head_neck"],
     subcategory: "Facial Fractures",
     tags: ["trauma"],
@@ -3071,8 +3071,8 @@ const HEAD_NECK_FACIAL_FRACTURES: ProcedurePicklistEntry[] = [
   {
     id: "hn_fx_panfacial",
     displayName: "Panfacial fracture reconstruction",
-    snomedCtCode: "50528002", // VERIFY
-    snomedCtDisplay: "Repair of panfacial fracture (procedure)",
+    snomedCtCode: "80083004",
+    snomedCtDisplay: "Open reduction of fracture of facial bone (procedure)",
     specialties: ["head_neck"],
     subcategory: "Facial Fractures",
     tags: ["trauma"],
@@ -3085,8 +3085,8 @@ const HEAD_NECK_FRACTURE_SUBTYPES: ProcedurePicklistEntry[] = [
   {
     id: "hn_fx_mandible_imf_arch_bars",
     displayName: "Closed reduction mandible — arch bars IMF",
-    snomedCtCode: "699158003", // VERIFY
-    snomedCtDisplay: "Closed reduction of fracture of mandible (procedure)",
+    snomedCtCode: "1003619004",
+    snomedCtDisplay: "External fixation of mandible with arch bars (procedure)",
     specialties: ["head_neck"],
     subcategory: "Facial Fractures",
     tags: ["trauma"],
@@ -3095,8 +3095,8 @@ const HEAD_NECK_FRACTURE_SUBTYPES: ProcedurePicklistEntry[] = [
   {
     id: "hn_fx_mandible_imf_screws",
     displayName: "Closed reduction mandible — MMF screws",
-    snomedCtCode: "699158003", // VERIFY
-    snomedCtDisplay: "Closed reduction of fracture of mandible (procedure)",
+    snomedCtCode: "699158003",
+    snomedCtDisplay: "Closed reduction of fracture of mandible with internal fixation (procedure)",
     specialties: ["head_neck"],
     subcategory: "Facial Fractures",
     tags: ["trauma"],
@@ -3105,9 +3105,9 @@ const HEAD_NECK_FRACTURE_SUBTYPES: ProcedurePicklistEntry[] = [
   {
     id: "hn_fx_mandible_orif_miniplate",
     displayName: "ORIF mandible — miniplate (Champy technique)",
-    snomedCtCode: "173361004", // VERIFY
+    snomedCtCode: "302475009",
     snomedCtDisplay:
-      "Internal fixation of fracture of mandible (procedure)",
+      "Fixation of mandible - internal (procedure)",
     specialties: ["head_neck"],
     subcategory: "Facial Fractures",
     tags: ["trauma"],
@@ -3116,9 +3116,9 @@ const HEAD_NECK_FRACTURE_SUBTYPES: ProcedurePicklistEntry[] = [
   {
     id: "hn_fx_mandible_orif_recon_plate",
     displayName: "ORIF mandible — reconstruction plate",
-    snomedCtCode: "173361004", // VERIFY
+    snomedCtCode: "302475009",
     snomedCtDisplay:
-      "Internal fixation of fracture of mandible (procedure)",
+      "Fixation of mandible - internal (procedure)",
     specialties: ["head_neck"],
     subcategory: "Facial Fractures",
     tags: ["trauma"],
@@ -3127,9 +3127,9 @@ const HEAD_NECK_FRACTURE_SUBTYPES: ProcedurePicklistEntry[] = [
   {
     id: "hn_fx_mandible_orif_lag_screw",
     displayName: "ORIF mandible — lag screw",
-    snomedCtCode: "173361004", // VERIFY
+    snomedCtCode: "302475009",
     snomedCtDisplay:
-      "Internal fixation of fracture of mandible (procedure)",
+      "Fixation of mandible - internal (procedure)",
     specialties: ["head_neck"],
     subcategory: "Facial Fractures",
     tags: ["trauma"],
@@ -3138,9 +3138,9 @@ const HEAD_NECK_FRACTURE_SUBTYPES: ProcedurePicklistEntry[] = [
   {
     id: "hn_fx_mandible_condyle_orif",
     displayName: "ORIF condylar fracture (open approach)",
-    snomedCtCode: "173361004", // VERIFY
+    snomedCtCode: "302475009",
     snomedCtDisplay:
-      "Internal fixation of fracture of mandible (procedure)",
+      "Fixation of mandible - internal (procedure)",
     specialties: ["head_neck"],
     subcategory: "Facial Fractures",
     tags: ["trauma"],
@@ -3149,8 +3149,8 @@ const HEAD_NECK_FRACTURE_SUBTYPES: ProcedurePicklistEntry[] = [
   {
     id: "hn_fx_mandible_external_fix",
     displayName: "External fixation of mandible",
-    snomedCtCode: "24529004", // VERIFY
-    snomedCtDisplay: "External fixation of fracture of mandible (procedure)",
+    snomedCtCode: "1003619004",
+    snomedCtDisplay: "External fixation of mandible with arch bars (procedure)",
     specialties: ["head_neck"],
     subcategory: "Facial Fractures",
     tags: ["trauma"],
@@ -3160,9 +3160,9 @@ const HEAD_NECK_FRACTURE_SUBTYPES: ProcedurePicklistEntry[] = [
   {
     id: "hn_fx_zmc_orif_multipoint",
     displayName: "ORIF ZMC — multi-point fixation",
-    snomedCtCode: "50528002", // VERIFY
+    snomedCtCode: "1363007003",
     snomedCtDisplay:
-      "Open reduction of fracture of zygoma (procedure)",
+      "Open reduction of fracture of zygomatic complex (procedure)",
     specialties: ["head_neck"],
     subcategory: "Facial Fractures",
     tags: ["trauma"],
@@ -3171,7 +3171,7 @@ const HEAD_NECK_FRACTURE_SUBTYPES: ProcedurePicklistEntry[] = [
   {
     id: "hn_fx_zygomatic_arch_orif",
     displayName: "ORIF zygomatic arch (isolated)",
-    snomedCtCode: "50528002", // VERIFY
+    snomedCtCode: "1363011009",
     snomedCtDisplay:
       "Open reduction of fracture of zygomatic arch (procedure)",
     specialties: ["head_neck"],
@@ -3182,8 +3182,8 @@ const HEAD_NECK_FRACTURE_SUBTYPES: ProcedurePicklistEntry[] = [
   {
     id: "hn_fx_orbital_floor_graft",
     displayName: "Orbital floor repair — bone graft / mesh",
-    snomedCtCode: "359634005", // VERIFY
-    snomedCtDisplay: "Repair of fracture of orbital floor (procedure)",
+    snomedCtCode: "239385005",
+    snomedCtDisplay: "Repair orbital floor (procedure)",
     specialties: ["head_neck"],
     subcategory: "Facial Fractures",
     tags: ["trauma"],
@@ -3192,8 +3192,8 @@ const HEAD_NECK_FRACTURE_SUBTYPES: ProcedurePicklistEntry[] = [
   {
     id: "hn_fx_orbital_medial_wall_repair",
     displayName: "ORIF medial orbital wall",
-    snomedCtCode: "359634005", // VERIFY
-    snomedCtDisplay: "Repair of fracture of orbit (procedure)",
+    snomedCtCode: "239385005",
+    snomedCtDisplay: "Repair orbital floor (procedure)",
     specialties: ["head_neck"],
     subcategory: "Facial Fractures",
     tags: ["trauma"],
@@ -3203,8 +3203,8 @@ const HEAD_NECK_FRACTURE_SUBTYPES: ProcedurePicklistEntry[] = [
   {
     id: "hn_fx_frontal_cranialization",
     displayName: "Frontal sinus cranialization",
-    snomedCtCode: "50528002", // VERIFY
-    snomedCtDisplay: "Cranialization of frontal sinus (procedure)",
+    snomedCtCode: "80083004",
+    snomedCtDisplay: "Open reduction of fracture of facial bone (procedure)",
     specialties: ["head_neck"],
     subcategory: "Facial Fractures",
     tags: ["trauma"],
@@ -3213,7 +3213,7 @@ const HEAD_NECK_FRACTURE_SUBTYPES: ProcedurePicklistEntry[] = [
   {
     id: "hn_fx_frontal_obliteration",
     displayName: "Frontal sinus obliteration",
-    snomedCtCode: "50528002", // VERIFY
+    snomedCtCode: "232513006",
     snomedCtDisplay: "Obliteration of frontal sinus (procedure)",
     specialties: ["head_neck"],
     subcategory: "Facial Fractures",
@@ -3223,9 +3223,9 @@ const HEAD_NECK_FRACTURE_SUBTYPES: ProcedurePicklistEntry[] = [
   {
     id: "hn_fx_frontal_bone_orif",
     displayName: "ORIF frontal bone fracture",
-    snomedCtCode: "50528002", // VERIFY
+    snomedCtCode: "80083004",
     snomedCtDisplay:
-      "Open reduction of fracture of frontal bone (procedure)",
+      "Open reduction of fracture of facial bone (procedure)",
     specialties: ["head_neck"],
     subcategory: "Facial Fractures",
     tags: ["trauma"],
@@ -3237,8 +3237,8 @@ const HEAD_NECK_FACIAL_SOFT_TISSUE_TRAUMA: ProcedurePicklistEntry[] = [
   {
     id: "hn_trauma_facial_lac_simple",
     displayName: "Facial laceration repair — simple",
-    snomedCtCode: "238182008",
-    snomedCtDisplay: "Suture of skin (procedure)",
+    snomedCtCode: "302410007",
+    snomedCtDisplay: "Primary suture of skin (procedure)",
     specialties: ["head_neck"],
     subcategory: "Facial Soft Tissue Trauma",
     tags: ["trauma"],
@@ -3247,8 +3247,8 @@ const HEAD_NECK_FACIAL_SOFT_TISSUE_TRAUMA: ProcedurePicklistEntry[] = [
   {
     id: "hn_trauma_facial_lac_complex",
     displayName: "Facial laceration repair — complex / layered",
-    snomedCtCode: "20720004",
-    snomedCtDisplay: "Wound repair (procedure)",
+    snomedCtCode: "4041000032107",
+    snomedCtDisplay: "Repair of facial wound (procedure)",
     specialties: ["head_neck"],
     subcategory: "Facial Soft Tissue Trauma",
     tags: ["trauma"],
@@ -3257,8 +3257,8 @@ const HEAD_NECK_FACIAL_SOFT_TISSUE_TRAUMA: ProcedurePicklistEntry[] = [
   {
     id: "hn_trauma_nasal_lac",
     displayName: "Nasal laceration repair",
-    snomedCtCode: "238182008",
-    snomedCtDisplay: "Suture of skin (procedure)",
+    snomedCtCode: "302410007",
+    snomedCtDisplay: "Primary suture of skin (procedure)",
     specialties: ["head_neck"],
     subcategory: "Facial Soft Tissue Trauma",
     tags: ["trauma"],
@@ -3267,8 +3267,8 @@ const HEAD_NECK_FACIAL_SOFT_TISSUE_TRAUMA: ProcedurePicklistEntry[] = [
   {
     id: "hn_trauma_lip_lac",
     displayName: "Lip laceration repair",
-    snomedCtCode: "238182008",
-    snomedCtDisplay: "Suture of skin (procedure)",
+    snomedCtCode: "302410007",
+    snomedCtDisplay: "Primary suture of skin (procedure)",
     specialties: ["head_neck"],
     subcategory: "Facial Soft Tissue Trauma",
     tags: ["trauma"],
@@ -3277,8 +3277,8 @@ const HEAD_NECK_FACIAL_SOFT_TISSUE_TRAUMA: ProcedurePicklistEntry[] = [
   {
     id: "hn_trauma_eyelid_lac",
     displayName: "Eyelid / periorbital laceration repair",
-    snomedCtCode: "238182008",
-    snomedCtDisplay: "Suture of skin (procedure)",
+    snomedCtCode: "302410007",
+    snomedCtDisplay: "Primary suture of skin (procedure)",
     specialties: ["head_neck"],
     subcategory: "Facial Soft Tissue Trauma",
     tags: ["trauma"],
@@ -3287,8 +3287,8 @@ const HEAD_NECK_FACIAL_SOFT_TISSUE_TRAUMA: ProcedurePicklistEntry[] = [
   {
     id: "hn_trauma_ear_lac",
     displayName: "Ear laceration repair ± cartilage",
-    snomedCtCode: "238182008",
-    snomedCtDisplay: "Suture of skin (procedure)",
+    snomedCtCode: "302410007",
+    snomedCtDisplay: "Primary suture of skin (procedure)",
     specialties: ["head_neck"],
     subcategory: "Facial Soft Tissue Trauma",
     tags: ["trauma"],
@@ -3297,8 +3297,8 @@ const HEAD_NECK_FACIAL_SOFT_TISSUE_TRAUMA: ProcedurePicklistEntry[] = [
   {
     id: "hn_trauma_scalp_lac",
     displayName: "Scalp laceration repair",
-    snomedCtCode: "238182008",
-    snomedCtDisplay: "Suture of skin (procedure)",
+    snomedCtCode: "302410007",
+    snomedCtDisplay: "Primary suture of skin (procedure)",
     specialties: ["head_neck", "general"],
     subcategory: "Facial Soft Tissue Trauma",
     tags: ["trauma"],
@@ -3307,8 +3307,8 @@ const HEAD_NECK_FACIAL_SOFT_TISSUE_TRAUMA: ProcedurePicklistEntry[] = [
   {
     id: "hn_trauma_facial_wound_exploration",
     displayName: "Facial wound exploration + debridement",
-    snomedCtCode: "360160003",
-    snomedCtDisplay: "Exploration of wound (procedure)",
+    snomedCtCode: "302438004",
+    snomedCtDisplay: "Exploration of wound of skin (procedure)",
     specialties: ["head_neck"],
     subcategory: "Facial Soft Tissue Trauma",
     tags: ["trauma"],
@@ -3317,8 +3317,8 @@ const HEAD_NECK_FACIAL_SOFT_TISSUE_TRAUMA: ProcedurePicklistEntry[] = [
   {
     id: "hn_soft_tissue_parotid_duct_repair",
     displayName: "Parotid duct repair",
-    snomedCtCode: "238182008", // VERIFY
-    snomedCtDisplay: "Repair of parotid duct (procedure)",
+    snomedCtCode: "287448005",
+    snomedCtDisplay: "Salivary duct repair (procedure)",
     specialties: ["head_neck"],
     subcategory: "Facial Soft Tissue Trauma",
     tags: ["trauma"],
@@ -3330,8 +3330,8 @@ const HEAD_NECK_OTHER: ProcedurePicklistEntry[] = [
   {
     id: "hn_other_tissue_expansion",
     displayName: "Tissue expansion — head / neck",
-    snomedCtCode: "61218004", // VERIFY
-    snomedCtDisplay: "Tissue expansion (procedure)",
+    snomedCtCode: "122465003",
+    snomedCtDisplay: "Reconstruction procedure (procedure)",
     specialties: ["head_neck"],
     subcategory: "Other Head & Neck",
     tags: ["elective"],
@@ -3340,8 +3340,8 @@ const HEAD_NECK_OTHER: ProcedurePicklistEntry[] = [
   {
     id: "hn_other_dermoid_excision",
     displayName: "Dermoid cyst excision — face / scalp",
-    snomedCtCode: "35646002", // VERIFY
-    snomedCtDisplay: "Excision of dermoid cyst (procedure)",
+    snomedCtCode: "35646002",
+    snomedCtDisplay: "Excision of lesion of skin (procedure)",
     specialties: ["head_neck"],
     subcategory: "Other Head & Neck",
     tags: ["elective"],
@@ -3355,7 +3355,7 @@ const HEAD_NECK_CANCER_RECON: ProcedurePicklistEntry[] = [
   {
     id: "hn_neck_dissection_radical",
     displayName: "Radical neck dissection",
-    snomedCtCode: "64585002",
+    snomedCtCode: "45685007",
     snomedCtDisplay: "Radical neck dissection (procedure)",
     specialties: ["head_neck"],
     subcategory: "H&N Cancer Reconstruction",
@@ -3365,7 +3365,7 @@ const HEAD_NECK_CANCER_RECON: ProcedurePicklistEntry[] = [
   {
     id: "hn_neck_dissection_modified_radical",
     displayName: "Modified radical neck dissection",
-    snomedCtCode: "173761000", // VERIFY
+    snomedCtCode: "11347004",
     snomedCtDisplay: "Modified radical neck dissection (procedure)",
     specialties: ["head_neck"],
     subcategory: "H&N Cancer Reconstruction",
@@ -3375,8 +3375,8 @@ const HEAD_NECK_CANCER_RECON: ProcedurePicklistEntry[] = [
   {
     id: "hn_neck_dissection_selective",
     displayName: "Selective neck dissection (specify levels)",
-    snomedCtCode: "397538000", // VERIFY
-    snomedCtDisplay: "Selective neck dissection (procedure)",
+    snomedCtCode: "234246002",
+    snomedCtDisplay: "Selective neck dissection of cervical lymph nodes (procedure)",
     specialties: ["head_neck"],
     subcategory: "H&N Cancer Reconstruction",
     tags: ["oncological"],
@@ -3395,7 +3395,7 @@ const HEAD_NECK_CANCER_RECON: ProcedurePicklistEntry[] = [
   {
     id: "hn_recon_mandible_dcia",
     displayName: "Mandible reconstruction — DCIA free flap",
-    snomedCtCode: "66567009", // VERIFY
+    snomedCtCode: "88366003",
     snomedCtDisplay: "Reconstruction of mandible (procedure)",
     specialties: ["head_neck"],
     subcategory: "H&N Cancer Reconstruction",
@@ -3406,8 +3406,8 @@ const HEAD_NECK_CANCER_RECON: ProcedurePicklistEntry[] = [
   {
     id: "hn_recon_maxilla_obturator",
     displayName: "Maxilla/midface — obturator prosthesis",
-    snomedCtCode: "122465003", // VERIFY
-    snomedCtDisplay: "Maxillary reconstruction with obturator (procedure)",
+    snomedCtCode: "122465003",
+    snomedCtDisplay: "Reconstruction procedure (procedure)",
     specialties: ["head_neck"],
     subcategory: "H&N Cancer Reconstruction",
     tags: ["oncological"],
@@ -3416,8 +3416,8 @@ const HEAD_NECK_CANCER_RECON: ProcedurePicklistEntry[] = [
   {
     id: "hn_recon_maxilla_free_flap",
     displayName: "Maxilla/midface reconstruction — free flap",
-    snomedCtCode: "122465003", // VERIFY
-    snomedCtDisplay: "Reconstruction of maxilla with free flap (procedure)",
+    snomedCtCode: "122465003",
+    snomedCtDisplay: "Reconstruction procedure (procedure)",
     specialties: ["head_neck"],
     subcategory: "H&N Cancer Reconstruction",
     tags: ["free_flap", "microsurgery", "oncological"],
@@ -3427,8 +3427,8 @@ const HEAD_NECK_CANCER_RECON: ProcedurePicklistEntry[] = [
   {
     id: "hn_recon_oropharynx",
     displayName: "Oropharyngeal reconstruction — free flap",
-    snomedCtCode: "122465003", // VERIFY
-    snomedCtDisplay: "Reconstruction of oropharynx (procedure)",
+    snomedCtCode: "122465003",
+    snomedCtDisplay: "Reconstruction procedure (procedure)",
     specialties: ["head_neck"],
     subcategory: "H&N Cancer Reconstruction",
     tags: ["free_flap", "microsurgery", "oncological"],
@@ -3438,8 +3438,8 @@ const HEAD_NECK_CANCER_RECON: ProcedurePicklistEntry[] = [
   {
     id: "hn_recon_pharyngoesophageal",
     displayName: "Pharyngoesophageal reconstruction — tubed RFFF",
-    snomedCtCode: "122465003", // VERIFY
-    snomedCtDisplay: "Reconstruction of pharynx and oesophagus (procedure)",
+    snomedCtCode: "122465003",
+    snomedCtDisplay: "Reconstruction procedure (procedure)",
     specialties: ["head_neck"],
     subcategory: "H&N Cancer Reconstruction",
     tags: ["free_flap", "microsurgery", "oncological"],
@@ -3449,8 +3449,8 @@ const HEAD_NECK_CANCER_RECON: ProcedurePicklistEntry[] = [
   {
     id: "hn_recon_parotidectomy_defect",
     displayName: "Parotidectomy defect reconstruction",
-    snomedCtCode: "122465003", // VERIFY
-    snomedCtDisplay: "Reconstruction of parotidectomy defect (procedure)",
+    snomedCtCode: "122465003",
+    snomedCtDisplay: "Reconstruction procedure (procedure)",
     specialties: ["head_neck"],
     subcategory: "H&N Cancer Reconstruction",
     tags: ["oncological"],
@@ -3460,7 +3460,7 @@ const HEAD_NECK_CANCER_RECON: ProcedurePicklistEntry[] = [
     id: "hn_tracheostomy",
     displayName: "Tracheostomy",
     snomedCtCode: "48387007",
-    snomedCtDisplay: "Tracheostomy (procedure)",
+    snomedCtDisplay: "Tracheotomy (procedure)",
     specialties: ["head_neck", "burns"],
     subcategory: "H&N Cancer Reconstruction",
     tags: ["acute", "oncological"],
@@ -3469,8 +3469,8 @@ const HEAD_NECK_CANCER_RECON: ProcedurePicklistEntry[] = [
   {
     id: "hn_vein_graft_irradiated_neck",
     displayName: "Vein graft for irradiated neck (vessel preparation)",
-    snomedCtCode: "122465003", // VERIFY
-    snomedCtDisplay: "Vein graft for vessel preparation (procedure)",
+    snomedCtCode: "122465003",
+    snomedCtDisplay: "Reconstruction procedure (procedure)",
     specialties: ["head_neck"],
     subcategory: "H&N Cancer Reconstruction",
     tags: ["microsurgery"],
@@ -3484,8 +3484,8 @@ const HEAD_NECK_NASAL_RECON: ProcedurePicklistEntry[] = [
   {
     id: "hn_nose_secondary_intention",
     displayName: "Secondary intention healing — nose",
-    snomedCtCode: "122465003", // VERIFY
-    snomedCtDisplay: "Wound healing by secondary intention of nose (procedure)",
+    snomedCtCode: "122465003",
+    snomedCtDisplay: "Reconstruction procedure (procedure)",
     specialties: ["head_neck", "skin_cancer"],
     subcategory: "Nasal Reconstruction",
     tags: ["oncological"],
@@ -3494,8 +3494,8 @@ const HEAD_NECK_NASAL_RECON: ProcedurePicklistEntry[] = [
   {
     id: "hn_nose_ftsg",
     displayName: "Full-thickness skin graft to nose",
-    snomedCtCode: "61581000",
-    snomedCtDisplay: "Full-thickness skin graft to nose (procedure)",
+    snomedCtCode: "783539008",
+    snomedCtDisplay: "Full thickness skin graft (procedure)",
     specialties: ["head_neck", "skin_cancer"],
     subcategory: "Nasal Reconstruction",
     tags: ["oncological"],
@@ -3504,8 +3504,8 @@ const HEAD_NECK_NASAL_RECON: ProcedurePicklistEntry[] = [
   {
     id: "hn_nose_composite_graft",
     displayName: "Composite graft (ear cartilage to alar rim)",
-    snomedCtCode: "122465003", // VERIFY
-    snomedCtDisplay: "Composite graft to nose (procedure)",
+    snomedCtCode: "17217009",
+    snomedCtDisplay: "Composite graft (procedure)",
     specialties: ["head_neck", "skin_cancer"],
     subcategory: "Nasal Reconstruction",
     tags: ["oncological"],
@@ -3514,8 +3514,8 @@ const HEAD_NECK_NASAL_RECON: ProcedurePicklistEntry[] = [
   {
     id: "hn_nose_turnin_flap",
     displayName: "Turn-in flap (intranasal lining)",
-    snomedCtCode: "122462001", // VERIFY
-    snomedCtDisplay: "Local flap to nose (procedure)",
+    snomedCtCode: "232470004",
+    snomedCtDisplay: "Reconstruction of nose (procedure)",
     specialties: ["head_neck", "skin_cancer"],
     subcategory: "Nasal Reconstruction",
     tags: ["oncological"],
@@ -3524,8 +3524,8 @@ const HEAD_NECK_NASAL_RECON: ProcedurePicklistEntry[] = [
   {
     id: "hn_nose_dorsal_nasal_rieger",
     displayName: "Dorsal nasal flap (Rieger)",
-    snomedCtCode: "122462001", // VERIFY
-    snomedCtDisplay: "Dorsal nasal rotation flap (procedure)",
+    snomedCtCode: "232470004",
+    snomedCtDisplay: "Reconstruction of nose (procedure)",
     specialties: ["head_neck", "skin_cancer"],
     subcategory: "Nasal Reconstruction",
     tags: ["oncological"],
@@ -3534,8 +3534,8 @@ const HEAD_NECK_NASAL_RECON: ProcedurePicklistEntry[] = [
   {
     id: "hn_nose_forehead_3stage",
     displayName: "Paramedian forehead flap — 3 stage",
-    snomedCtCode: "447069007",
-    snomedCtDisplay: "Paramedian forehead flap (procedure)",
+    snomedCtCode: "1201949008",
+    snomedCtDisplay: "Reconstruction using flap from forehead (procedure)",
     specialties: ["head_neck", "skin_cancer"],
     subcategory: "Nasal Reconstruction",
     tags: ["oncological", "pedicled_flap"],
@@ -3544,8 +3544,8 @@ const HEAD_NECK_NASAL_RECON: ProcedurePicklistEntry[] = [
   {
     id: "hn_nose_septal_pivot",
     displayName: "Septal pivot flap (intranasal lining)",
-    snomedCtCode: "122462001", // VERIFY
-    snomedCtDisplay: "Septal flap for nasal lining (procedure)",
+    snomedCtCode: "232470004",
+    snomedCtDisplay: "Reconstruction of nose (procedure)",
     specialties: ["head_neck", "skin_cancer"],
     subcategory: "Nasal Reconstruction",
     tags: ["oncological"],
@@ -3554,8 +3554,8 @@ const HEAD_NECK_NASAL_RECON: ProcedurePicklistEntry[] = [
   {
     id: "hn_nose_septal_hinge",
     displayName: "Septal hinge flap",
-    snomedCtCode: "122462001", // VERIFY
-    snomedCtDisplay: "Septal hinge flap (procedure)",
+    snomedCtCode: "232470004",
+    snomedCtDisplay: "Reconstruction of nose (procedure)",
     specialties: ["head_neck", "skin_cancer"],
     subcategory: "Nasal Reconstruction",
     tags: ["oncological"],
@@ -3569,8 +3569,8 @@ const HEAD_NECK_LIP_RECON: ProcedurePicklistEntry[] = [
   {
     id: "hn_lip_vermilion_advance",
     displayName: "Vermilion advancement (lip shave)",
-    snomedCtCode: "83891005", // VERIFY
-    snomedCtDisplay: "Vermilion advancement (procedure)",
+    snomedCtCode: "173218002",
+    snomedCtDisplay: "Excision of vermilion border and advancement of lip mucosa (procedure)",
     specialties: ["head_neck", "skin_cancer"],
     subcategory: "Lip Reconstruction",
     tags: ["oncological"],
@@ -3579,8 +3579,8 @@ const HEAD_NECK_LIP_RECON: ProcedurePicklistEntry[] = [
   {
     id: "hn_lip_mucosal_advance",
     displayName: "Mucosal advancement flap",
-    snomedCtCode: "83891005", // VERIFY
-    snomedCtDisplay: "Mucosal advancement flap of lip (procedure)",
+    snomedCtCode: "119863003",
+    snomedCtDisplay: "Lip reconstruction (procedure)",
     specialties: ["head_neck", "skin_cancer"],
     subcategory: "Lip Reconstruction",
     tags: ["oncological"],
@@ -3589,8 +3589,8 @@ const HEAD_NECK_LIP_RECON: ProcedurePicklistEntry[] = [
   {
     id: "hn_lip_tongue_flap",
     displayName: "Tongue flap for lip",
-    snomedCtCode: "83891005", // VERIFY
-    snomedCtDisplay: "Tongue flap for lip reconstruction (procedure)",
+    snomedCtCode: "173250007",
+    snomedCtDisplay: "Reconstruction of lip with tongue flap (procedure)",
     specialties: ["head_neck", "skin_cancer"],
     subcategory: "Lip Reconstruction",
     tags: ["oncological"],
@@ -3599,8 +3599,8 @@ const HEAD_NECK_LIP_RECON: ProcedurePicklistEntry[] = [
   {
     id: "hn_lip_bernard_burow",
     displayName: "Bernard-Burow flap (cheek advancement)",
-    snomedCtCode: "83891005", // VERIFY
-    snomedCtDisplay: "Bernard-Burow lip reconstruction (procedure)",
+    snomedCtCode: "119863003",
+    snomedCtDisplay: "Lip reconstruction (procedure)",
     specialties: ["head_neck", "skin_cancer"],
     subcategory: "Lip Reconstruction",
     tags: ["oncological"],
@@ -3609,8 +3609,8 @@ const HEAD_NECK_LIP_RECON: ProcedurePicklistEntry[] = [
   {
     id: "hn_lip_staircase_webster",
     displayName: "Staircase technique (Webster modification)",
-    snomedCtCode: "83891005", // VERIFY
-    snomedCtDisplay: "Webster staircase lip reconstruction (procedure)",
+    snomedCtCode: "119863003",
+    snomedCtDisplay: "Lip reconstruction (procedure)",
     specialties: ["head_neck", "skin_cancer"],
     subcategory: "Lip Reconstruction",
     tags: ["oncological"],
@@ -3619,8 +3619,8 @@ const HEAD_NECK_LIP_RECON: ProcedurePicklistEntry[] = [
   {
     id: "hn_lip_gillies_fan",
     displayName: "Gillies fan flap",
-    snomedCtCode: "83891005", // VERIFY
-    snomedCtDisplay: "Gillies fan flap for lip reconstruction (procedure)",
+    snomedCtCode: "119863003",
+    snomedCtDisplay: "Lip reconstruction (procedure)",
     specialties: ["head_neck", "skin_cancer"],
     subcategory: "Lip Reconstruction",
     tags: ["oncological"],
@@ -3629,8 +3629,8 @@ const HEAD_NECK_LIP_RECON: ProcedurePicklistEntry[] = [
   {
     id: "hn_lip_commissuroplasty",
     displayName: "Commissuroplasty",
-    snomedCtCode: "83891005", // VERIFY
-    snomedCtDisplay: "Commissuroplasty (procedure)",
+    snomedCtCode: "1385901000168100",
+    snomedCtDisplay: "Oral commissuroplasty (procedure)",
     specialties: ["head_neck", "skin_cancer"],
     subcategory: "Lip Reconstruction",
     tags: ["oncological", "trauma"],
@@ -3644,8 +3644,8 @@ const HEAD_NECK_EAR_RECON: ProcedurePicklistEntry[] = [
   {
     id: "hn_ear_wedge_excision",
     displayName: "Wedge excision of ear",
-    snomedCtCode: "287777008", // VERIFY
-    snomedCtDisplay: "Wedge excision of ear (procedure)",
+    snomedCtCode: "120136006",
+    snomedCtDisplay: "External ear reconstruction (procedure)",
     specialties: ["head_neck"],
     subcategory: "Ear Reconstruction",
     tags: ["oncological"],
@@ -3654,8 +3654,8 @@ const HEAD_NECK_EAR_RECON: ProcedurePicklistEntry[] = [
   {
     id: "hn_ear_antia_buch",
     displayName: "Antia-Buch flap (helical advancement)",
-    snomedCtCode: "287777008", // VERIFY
-    snomedCtDisplay: "Helical advancement flap of ear (procedure)",
+    snomedCtCode: "172609001",
+    snomedCtDisplay: "Reconstruction of external ear with rim advancement flap (procedure)",
     specialties: ["head_neck"],
     subcategory: "Ear Reconstruction",
     tags: ["oncological"],
@@ -3664,8 +3664,8 @@ const HEAD_NECK_EAR_RECON: ProcedurePicklistEntry[] = [
   {
     id: "hn_ear_composite_graft",
     displayName: "Composite graft reconstruction (ear)",
-    snomedCtCode: "287777008", // VERIFY
-    snomedCtDisplay: "Composite graft to ear (procedure)",
+    snomedCtCode: "17217009",
+    snomedCtDisplay: "Composite graft (procedure)",
     specialties: ["head_neck"],
     subcategory: "Ear Reconstruction",
     tags: ["oncological"],
@@ -3674,8 +3674,8 @@ const HEAD_NECK_EAR_RECON: ProcedurePicklistEntry[] = [
   {
     id: "hn_ear_retroauricular_flap",
     displayName: "Retroauricular flap",
-    snomedCtCode: "287777008", // VERIFY
-    snomedCtDisplay: "Retroauricular flap (procedure)",
+    snomedCtCode: "120136006",
+    snomedCtDisplay: "External ear reconstruction (procedure)",
     specialties: ["head_neck"],
     subcategory: "Ear Reconstruction",
     tags: ["oncological"],
@@ -3684,8 +3684,8 @@ const HEAD_NECK_EAR_RECON: ProcedurePicklistEntry[] = [
   {
     id: "hn_ear_temporoparietal_fascia",
     displayName: "Temporoparietal fascia flap for ear",
-    snomedCtCode: "287777008", // VERIFY
-    snomedCtDisplay: "Temporoparietal fascia flap (procedure)",
+    snomedCtCode: "120136006",
+    snomedCtDisplay: "External ear reconstruction (procedure)",
     specialties: ["head_neck"],
     subcategory: "Ear Reconstruction",
     tags: ["oncological", "pedicled_flap"],
@@ -3699,8 +3699,8 @@ const HEAD_NECK_SCALP_RECON: ProcedurePicklistEntry[] = [
   {
     id: "hn_scalp_stsg",
     displayName: "Split-thickness skin graft to scalp",
-    snomedCtCode: "72495009", // VERIFY
-    snomedCtDisplay: "Split-thickness skin graft to scalp (procedure)",
+    snomedCtCode: "265675003",
+    snomedCtDisplay: "Split thickness skin graft (procedure)",
     specialties: ["head_neck"],
     subcategory: "Scalp Reconstruction",
     tags: ["oncological", "trauma"],
@@ -3709,8 +3709,8 @@ const HEAD_NECK_SCALP_RECON: ProcedurePicklistEntry[] = [
   {
     id: "hn_scalp_ftsg",
     displayName: "Full-thickness skin graft to scalp",
-    snomedCtCode: "61581000", // VERIFY
-    snomedCtDisplay: "Full-thickness skin graft to scalp (procedure)",
+    snomedCtCode: "783539008",
+    snomedCtDisplay: "Full thickness skin graft (procedure)",
     specialties: ["head_neck"],
     subcategory: "Scalp Reconstruction",
     tags: ["oncological"],
@@ -3719,8 +3719,8 @@ const HEAD_NECK_SCALP_RECON: ProcedurePicklistEntry[] = [
   {
     id: "hn_scalp_orticochea",
     displayName: "Orticochea three-flap scalp reconstruction",
-    snomedCtCode: "122465003", // VERIFY
-    snomedCtDisplay: "Three-flap scalp reconstruction (procedure)",
+    snomedCtCode: "122465003",
+    snomedCtDisplay: "Reconstruction procedure (procedure)",
     specialties: ["head_neck"],
     subcategory: "Scalp Reconstruction",
     tags: ["oncological"],
@@ -3729,8 +3729,8 @@ const HEAD_NECK_SCALP_RECON: ProcedurePicklistEntry[] = [
   {
     id: "hn_scalp_tissue_expansion",
     displayName: "Tissue expansion — scalp",
-    snomedCtCode: "61218004", // VERIFY
-    snomedCtDisplay: "Tissue expansion of scalp (procedure)",
+    snomedCtCode: "122465003",
+    snomedCtDisplay: "Reconstruction procedure (procedure)",
     specialties: ["head_neck"],
     subcategory: "Scalp Reconstruction",
     tags: ["elective"],
@@ -3744,8 +3744,8 @@ const HEAD_NECK_OTHER_PROCEDURES: ProcedurePicklistEntry[] = [
   {
     id: "hn_excision_benign_tumour",
     displayName: "Excision of benign facial tumour / cyst",
-    snomedCtCode: "392022005", // VERIFY
-    snomedCtDisplay: "Excision of benign neoplasm of face (procedure)",
+    snomedCtCode: "118445002",
+    snomedCtDisplay: "Excision of benign neoplasm (procedure)",
     specialties: ["head_neck"],
     subcategory: "Other Head & Neck",
     tags: ["elective"],
@@ -3754,7 +3754,7 @@ const HEAD_NECK_OTHER_PROCEDURES: ProcedurePicklistEntry[] = [
   {
     id: "hn_parotidectomy_superficial",
     displayName: "Superficial parotidectomy",
-    snomedCtCode: "33482003", // VERIFY
+    snomedCtCode: "275006003",
     snomedCtDisplay: "Superficial parotidectomy (procedure)",
     specialties: ["head_neck"],
     subcategory: "Salivary Gland Surgery",
@@ -3764,8 +3764,8 @@ const HEAD_NECK_OTHER_PROCEDURES: ProcedurePicklistEntry[] = [
   {
     id: "hn_parotidectomy_total",
     displayName: "Total parotidectomy (nerve-sparing)",
-    snomedCtCode: "30956003", // VERIFY
-    snomedCtDisplay: "Total parotidectomy (procedure)",
+    snomedCtCode: "13358001",
+    snomedCtDisplay: "Complete parotidectomy (procedure)",
     specialties: ["head_neck"],
     subcategory: "Salivary Gland Surgery",
     tags: ["oncological"],
@@ -3774,7 +3774,7 @@ const HEAD_NECK_OTHER_PROCEDURES: ProcedurePicklistEntry[] = [
   {
     id: "hn_submandibular_gland_excision",
     displayName: "Submandibular gland excision",
-    snomedCtCode: "19543009", // VERIFY
+    snomedCtCode: "47227006",
     snomedCtDisplay: "Excision of submandibular gland (procedure)",
     specialties: ["head_neck"],
     subcategory: "Salivary Gland Surgery",
@@ -3784,8 +3784,8 @@ const HEAD_NECK_OTHER_PROCEDURES: ProcedurePicklistEntry[] = [
   {
     id: "hn_excision_vascular_malformation",
     displayName: "Excision of vascular malformation — face",
-    snomedCtCode: "392022005", // VERIFY
-    snomedCtDisplay: "Excision of vascular malformation of face (procedure)",
+    snomedCtCode: "118445002",
+    snomedCtDisplay: "Excision of benign neoplasm (procedure)",
     specialties: ["head_neck"],
     subcategory: "Other Head & Neck",
     tags: ["elective"],
@@ -3794,8 +3794,8 @@ const HEAD_NECK_OTHER_PROCEDURES: ProcedurePicklistEntry[] = [
   {
     id: "hn_scar_revision_face",
     displayName: "Scar revision — face / neck",
-    snomedCtCode: "234261004", // VERIFY
-    snomedCtDisplay: "Scar revision of face (procedure)",
+    snomedCtCode: "284079008",
+    snomedCtDisplay: "Revision of scar (procedure)",
     specialties: ["head_neck"],
     subcategory: "Other Head & Neck",
     tags: ["elective"],
@@ -3804,8 +3804,8 @@ const HEAD_NECK_OTHER_PROCEDURES: ProcedurePicklistEntry[] = [
   {
     id: "hn_fat_grafting_face",
     displayName: "Fat grafting to face (structural)",
-    snomedCtCode: "394886001", // VERIFY
-    snomedCtDisplay: "Fat grafting to face (procedure)",
+    snomedCtCode: "712822003",
+    snomedCtDisplay: "Grafting of fat (procedure)",
     specialties: ["head_neck"],
     subcategory: "Other Head & Neck",
     tags: ["lipofilling"],
