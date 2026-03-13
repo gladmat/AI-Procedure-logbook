@@ -174,7 +174,7 @@ export const HN_DX_SKIN_CANCER: DiagnosisPicklistEntry[] = [
         sortOrder: 2,
       },
       {
-        procedurePicklistId: "hn_other_neck_dissection",
+        procedurePicklistId: "hn_neck_dissection_selective",
         displayName: "Neck dissection",
         isDefault: false,
         sortOrder: 3,
@@ -219,6 +219,30 @@ export const HN_DX_SKIN_CANCER: DiagnosisPicklistEntry[] = [
         isDefault: false,
         sortOrder: 4,
       },
+      {
+        procedurePicklistId: "hn_nose_ftsg",
+        displayName: "Full-thickness skin graft to nose",
+        isDefault: false,
+        sortOrder: 5,
+      },
+      {
+        procedurePicklistId: "hn_nose_composite_graft",
+        displayName: "Composite graft (ear cartilage to alar rim)",
+        isDefault: false,
+        sortOrder: 6,
+      },
+      {
+        procedurePicklistId: "hn_nose_dorsal_nasal_rieger",
+        displayName: "Dorsal nasal flap (Rieger)",
+        isDefault: false,
+        sortOrder: 7,
+      },
+      {
+        procedurePicklistId: "hn_nose_forehead_3stage",
+        displayName: "Paramedian forehead flap — 3 stage",
+        isDefault: false,
+        sortOrder: 8,
+      },
     ],
     sortOrder: 4,
   },
@@ -252,6 +276,24 @@ export const HN_DX_SKIN_CANCER: DiagnosisPicklistEntry[] = [
         displayName: "Partial ear reconstruction",
         isDefault: false,
         sortOrder: 3,
+      },
+      {
+        procedurePicklistId: "hn_ear_wedge_excision",
+        displayName: "Wedge excision of ear",
+        isDefault: false,
+        sortOrder: 4,
+      },
+      {
+        procedurePicklistId: "hn_ear_antia_buch",
+        displayName: "Antia-Buch flap (helical advancement)",
+        isDefault: false,
+        sortOrder: 5,
+      },
+      {
+        procedurePicklistId: "hn_ear_composite_graft",
+        displayName: "Composite graft reconstruction (ear)",
+        isDefault: false,
+        sortOrder: 6,
       },
     ],
     sortOrder: 5,
@@ -298,6 +340,18 @@ export const HN_DX_SKIN_CANCER: DiagnosisPicklistEntry[] = [
         displayName: "Lip reconstruction",
         isDefault: false,
         sortOrder: 4,
+      },
+      {
+        procedurePicklistId: "hn_lip_vermilion_advance",
+        displayName: "Vermilion advancement (lip shave)",
+        isDefault: false,
+        sortOrder: 5,
+      },
+      {
+        procedurePicklistId: "hn_lip_bernard_burow",
+        displayName: "Bernard-Burow flap (cheek advancement)",
+        isDefault: false,
+        sortOrder: 6,
       },
     ],
     sortOrder: 6,
@@ -1480,7 +1534,7 @@ const HN_DX_CANCER: DiagnosisPicklistEntry[] = [
     ],
     suggestedProcedures: [
       {
-        procedurePicklistId: "hn_other_neck_dissection",
+        procedurePicklistId: "hn_neck_dissection_selective",
         displayName: "Neck dissection",
         isDefault: true,
         sortOrder: 1,
@@ -1535,7 +1589,7 @@ const HN_DX_CANCER: DiagnosisPicklistEntry[] = [
     ],
     suggestedProcedures: [
       {
-        procedurePicklistId: "hn_other_neck_dissection",
+        procedurePicklistId: "hn_neck_dissection_selective",
         displayName: "Neck dissection",
         isDefault: false,
         sortOrder: 1,
@@ -1573,7 +1627,7 @@ const HN_DX_CANCER: DiagnosisPicklistEntry[] = [
     ],
     suggestedProcedures: [
       {
-        procedurePicklistId: "hn_other_neck_dissection",
+        procedurePicklistId: "hn_neck_dissection_selective",
         displayName: "Neck dissection",
         isDefault: false,
         sortOrder: 1,
@@ -1610,7 +1664,7 @@ const HN_DX_CANCER: DiagnosisPicklistEntry[] = [
     ],
     suggestedProcedures: [
       {
-        procedurePicklistId: "hn_other_neck_dissection",
+        procedurePicklistId: "hn_neck_dissection_selective",
         displayName: "Neck dissection",
         isDefault: false,
         sortOrder: 1,
@@ -1647,7 +1701,7 @@ const HN_DX_CANCER: DiagnosisPicklistEntry[] = [
     ],
     suggestedProcedures: [
       {
-        procedurePicklistId: "hn_other_neck_dissection",
+        procedurePicklistId: "hn_neck_dissection_selective",
         displayName: "Neck dissection",
         isDefault: false,
         sortOrder: 1,
@@ -1679,22 +1733,28 @@ const HN_DX_CANCER: DiagnosisPicklistEntry[] = [
     ],
     suggestedProcedures: [
       {
-        procedurePicklistId: "hn_other_neck_dissection",
+        procedurePicklistId: "hn_neck_dissection_selective",
         displayName: "Neck dissection",
         isDefault: false,
         sortOrder: 1,
       },
       {
+        procedurePicklistId: "hn_recon_oropharynx",
+        displayName: "Oropharyngeal reconstruction — free flap",
+        isDefault: false,
+        sortOrder: 2,
+      },
+      {
         procedurePicklistId: "orth_ff_rfff",
         displayName: "Free RFFF (radial forearm free flap)",
         isDefault: false,
-        sortOrder: 2,
+        sortOrder: 3,
       },
       {
         procedurePicklistId: "orth_ff_alt",
         displayName: "Free ALT flap",
         isDefault: false,
-        sortOrder: 3,
+        sortOrder: 4,
       },
     ],
     sortOrder: 6,
@@ -1723,16 +1783,22 @@ const HN_DX_CANCER: DiagnosisPicklistEntry[] = [
         sortOrder: 1,
       },
       {
-        procedurePicklistId: "orth_ff_fibula",
-        displayName: "Free fibula flap (osteocutaneous)",
+        procedurePicklistId: "hn_recon_mandible_dcia",
+        displayName: "Mandible reconstruction — DCIA free flap",
         isDefault: false,
         sortOrder: 2,
       },
       {
-        procedurePicklistId: "hn_other_neck_dissection",
-        displayName: "Neck dissection",
+        procedurePicklistId: "orth_ff_fibula",
+        displayName: "Free fibula flap (osteocutaneous)",
         isDefault: false,
         sortOrder: 3,
+      },
+      {
+        procedurePicklistId: "hn_neck_dissection_selective",
+        displayName: "Neck dissection",
+        isDefault: false,
+        sortOrder: 4,
       },
     ],
     sortOrder: 7,
@@ -1754,16 +1820,22 @@ const HN_DX_CANCER: DiagnosisPicklistEntry[] = [
     ],
     suggestedProcedures: [
       {
-        procedurePicklistId: "hn_other_neck_dissection",
+        procedurePicklistId: "hn_neck_dissection_selective",
         displayName: "Neck dissection",
         isDefault: false,
         sortOrder: 1,
       },
       {
+        procedurePicklistId: "hn_recon_maxilla_free_flap",
+        displayName: "Maxilla/midface reconstruction — free flap",
+        isDefault: false,
+        sortOrder: 2,
+      },
+      {
         procedurePicklistId: "orth_ff_fibula",
         displayName: "Free fibula flap",
         isDefault: false,
-        sortOrder: 2,
+        sortOrder: 3,
       },
     ],
     sortOrder: 8,
@@ -1785,10 +1857,16 @@ const HN_DX_CANCER: DiagnosisPicklistEntry[] = [
     ],
     suggestedProcedures: [
       {
-        procedurePicklistId: "hn_other_neck_dissection",
+        procedurePicklistId: "hn_neck_dissection_selective",
         displayName: "Neck dissection",
         isDefault: false,
         sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "hn_recon_maxilla_free_flap",
+        displayName: "Maxilla/midface reconstruction — free flap",
+        isDefault: false,
+        sortOrder: 2,
       },
     ],
     sortOrder: 9,
@@ -1811,22 +1889,28 @@ const HN_DX_CANCER: DiagnosisPicklistEntry[] = [
     ],
     suggestedProcedures: [
       {
-        procedurePicklistId: "hn_other_neck_dissection",
+        procedurePicklistId: "hn_neck_dissection_selective",
         displayName: "Neck dissection",
         isDefault: false,
         sortOrder: 1,
       },
       {
+        procedurePicklistId: "hn_recon_pharyngoesophageal",
+        displayName: "Pharyngoesophageal reconstruction — tubed RFFF",
+        isDefault: false,
+        sortOrder: 2,
+      },
+      {
         procedurePicklistId: "orth_ff_rfff",
         displayName: "Free RFFF (radial forearm free flap)",
         isDefault: false,
-        sortOrder: 2,
+        sortOrder: 3,
       },
       {
         procedurePicklistId: "orth_ff_alt",
         displayName: "Free ALT flap",
         isDefault: false,
-        sortOrder: 3,
+        sortOrder: 4,
       },
     ],
     sortOrder: 10,
@@ -1848,16 +1932,22 @@ const HN_DX_CANCER: DiagnosisPicklistEntry[] = [
     ],
     suggestedProcedures: [
       {
-        procedurePicklistId: "hn_other_neck_dissection",
+        procedurePicklistId: "hn_neck_dissection_selective",
         displayName: "Neck dissection",
         isDefault: false,
         sortOrder: 1,
       },
       {
+        procedurePicklistId: "hn_tracheostomy",
+        displayName: "Tracheostomy",
+        isDefault: false,
+        sortOrder: 2,
+      },
+      {
         procedurePicklistId: "orth_ff_rfff",
         displayName: "Free RFFF (radial forearm free flap)",
         isDefault: false,
-        sortOrder: 2,
+        sortOrder: 3,
       },
     ],
     sortOrder: 11,
@@ -1944,7 +2034,7 @@ const HN_DX_SALIVARY_GLAND: DiagnosisPicklistEntry[] = [
     ],
     suggestedProcedures: [
       {
-        procedurePicklistId: "hn_other_parotidectomy",
+        procedurePicklistId: "hn_parotidectomy_superficial",
         displayName: "Parotidectomy",
         isDefault: true,
         sortOrder: 1,
@@ -1969,7 +2059,7 @@ const HN_DX_SALIVARY_GLAND: DiagnosisPicklistEntry[] = [
     ],
     suggestedProcedures: [
       {
-        procedurePicklistId: "hn_other_parotidectomy",
+        procedurePicklistId: "hn_parotidectomy_superficial",
         displayName: "Parotidectomy (superficial)",
         isDefault: true,
         sortOrder: 1,
@@ -1994,7 +2084,7 @@ const HN_DX_SALIVARY_GLAND: DiagnosisPicklistEntry[] = [
     ],
     suggestedProcedures: [
       {
-        procedurePicklistId: "hn_other_parotidectomy",
+        procedurePicklistId: "hn_parotidectomy_superficial",
         displayName: "Parotidectomy (superficial)",
         isDefault: true,
         sortOrder: 1,
@@ -2019,13 +2109,13 @@ const HN_DX_SALIVARY_GLAND: DiagnosisPicklistEntry[] = [
     ],
     suggestedProcedures: [
       {
-        procedurePicklistId: "hn_other_parotidectomy",
+        procedurePicklistId: "hn_parotidectomy_total",
         displayName: "Parotidectomy (total)",
         isDefault: true,
         sortOrder: 1,
       },
       {
-        procedurePicklistId: "hn_other_neck_dissection",
+        procedurePicklistId: "hn_neck_dissection_selective",
         displayName: "Neck dissection",
         isDefault: false,
         sortOrder: 2,
@@ -2050,13 +2140,13 @@ const HN_DX_SALIVARY_GLAND: DiagnosisPicklistEntry[] = [
     ],
     suggestedProcedures: [
       {
-        procedurePicklistId: "hn_other_parotidectomy",
+        procedurePicklistId: "hn_parotidectomy_total",
         displayName: "Parotidectomy (total)",
         isDefault: true,
         sortOrder: 1,
       },
       {
-        procedurePicklistId: "hn_other_neck_dissection",
+        procedurePicklistId: "hn_neck_dissection_selective",
         displayName: "Neck dissection",
         isDefault: false,
         sortOrder: 2,
@@ -2080,13 +2170,13 @@ const HN_DX_SALIVARY_GLAND: DiagnosisPicklistEntry[] = [
     ],
     suggestedProcedures: [
       {
-        procedurePicklistId: "hn_other_parotidectomy",
+        procedurePicklistId: "hn_parotidectomy_total",
         displayName: "Parotidectomy (total)",
         isDefault: true,
         sortOrder: 1,
       },
       {
-        procedurePicklistId: "hn_other_neck_dissection",
+        procedurePicklistId: "hn_neck_dissection_selective",
         displayName: "Neck dissection",
         isDefault: false,
         sortOrder: 2,
@@ -2111,7 +2201,7 @@ const HN_DX_SALIVARY_GLAND: DiagnosisPicklistEntry[] = [
     ],
     suggestedProcedures: [
       {
-        procedurePicklistId: "hn_other_parotidectomy",
+        procedurePicklistId: "hn_parotidectomy_superficial",
         displayName: "Parotidectomy",
         isDefault: true,
         sortOrder: 1,
@@ -2136,7 +2226,7 @@ const HN_DX_SALIVARY_GLAND: DiagnosisPicklistEntry[] = [
     ],
     suggestedProcedures: [
       {
-        procedurePicklistId: "hn_other_parotidectomy",
+        procedurePicklistId: "hn_submandibular_gland_excision",
         displayName: "Submandibular gland excision",
         isDefault: true,
         sortOrder: 1,
@@ -2161,13 +2251,13 @@ const HN_DX_SALIVARY_GLAND: DiagnosisPicklistEntry[] = [
     ],
     suggestedProcedures: [
       {
-        procedurePicklistId: "hn_other_parotidectomy",
+        procedurePicklistId: "hn_submandibular_gland_excision",
         displayName: "Submandibular gland excision",
         isDefault: true,
         sortOrder: 1,
       },
       {
-        procedurePicklistId: "hn_other_neck_dissection",
+        procedurePicklistId: "hn_neck_dissection_selective",
         displayName: "Neck dissection",
         isDefault: false,
         sortOrder: 2,
@@ -2441,6 +2531,24 @@ const HN_DX_SOFT_TISSUE_TRAUMA: DiagnosisPicklistEntry[] = [
         isDefault: true,
         sortOrder: 1,
       },
+      {
+        procedurePicklistId: "hn_scalp_stsg",
+        displayName: "Split-thickness skin graft to scalp",
+        isDefault: false,
+        sortOrder: 2,
+      },
+      {
+        procedurePicklistId: "hn_scalp_ftsg",
+        displayName: "Full-thickness skin graft to scalp",
+        isDefault: false,
+        sortOrder: 3,
+      },
+      {
+        procedurePicklistId: "hn_scalp_tissue_expansion",
+        displayName: "Tissue expansion — scalp",
+        isDefault: false,
+        sortOrder: 4,
+      },
     ],
     sortOrder: 9,
   },
@@ -2498,7 +2606,32 @@ const HN_DX_ACQUIRED_DEFORMITIES: DiagnosisPicklistEntry[] = [
       "facial contracture",
       "burn scar",
     ],
-    suggestedProcedures: [],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hn_scar_revision_face",
+        displayName: "Scar revision — face / neck",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "hn_local_zplasty",
+        displayName: "Z-plasty (contracture release)",
+        isDefault: false,
+        sortOrder: 2,
+      },
+      {
+        procedurePicklistId: "hn_fat_grafting_face",
+        displayName: "Fat grafting to face",
+        isDefault: false,
+        sortOrder: 3,
+      },
+      {
+        procedurePicklistId: "orth_ftsg",
+        displayName: "Full-thickness skin graft",
+        isDefault: false,
+        sortOrder: 4,
+      },
+    ],
     sortOrder: 1,
   },
   {
@@ -2516,7 +2649,20 @@ const HN_DX_ACQUIRED_DEFORMITIES: DiagnosisPicklistEntry[] = [
       "raised scar",
       "thickened scar",
     ],
-    suggestedProcedures: [],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hn_scar_revision_face",
+        displayName: "Scar revision — face / neck",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "hn_local_zplasty",
+        displayName: "Z-plasty (scar revision)",
+        isDefault: false,
+        sortOrder: 2,
+      },
+    ],
     sortOrder: 2,
   },
   {
@@ -2534,7 +2680,14 @@ const HN_DX_ACQUIRED_DEFORMITIES: DiagnosisPicklistEntry[] = [
       "keloid scar",
       "cheloid",
     ],
-    suggestedProcedures: [],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hn_scar_revision_face",
+        displayName: "Scar revision — face / neck",
+        isDefault: true,
+        sortOrder: 1,
+      },
+    ],
     sortOrder: 3,
   },
   {
@@ -2552,7 +2705,20 @@ const HN_DX_ACQUIRED_DEFORMITIES: DiagnosisPicklistEntry[] = [
       "malunion",
       "facial asymmetry trauma",
     ],
-    suggestedProcedures: [],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hn_scar_revision_face",
+        displayName: "Scar revision — face / neck",
+        isDefault: false,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "hn_fat_grafting_face",
+        displayName: "Fat grafting to face (structural)",
+        isDefault: false,
+        sortOrder: 2,
+      },
+    ],
     sortOrder: 4,
   },
   {
@@ -2570,7 +2736,20 @@ const HN_DX_ACQUIRED_DEFORMITIES: DiagnosisPicklistEntry[] = [
       "iatrogenic deformity",
       "surgical deformity",
     ],
-    suggestedProcedures: [],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hn_scar_revision_face",
+        displayName: "Scar revision — face / neck",
+        isDefault: false,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "hn_fat_grafting_face",
+        displayName: "Fat grafting to face (structural)",
+        isDefault: false,
+        sortOrder: 2,
+      },
+    ],
     sortOrder: 5,
   },
   {
@@ -2588,7 +2767,20 @@ const HN_DX_ACQUIRED_DEFORMITIES: DiagnosisPicklistEntry[] = [
       "hemifacial",
       "progressive hemifacial atrophy",
     ],
-    suggestedProcedures: [],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hn_fat_grafting_face",
+        displayName: "Fat grafting to face (structural)",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "hn_scar_revision_face",
+        displayName: "Scar revision — face / neck",
+        isDefault: false,
+        sortOrder: 2,
+      },
+    ],
     sortOrder: 6,
   },
 ];
@@ -2613,7 +2805,14 @@ const HN_DX_VASCULAR_MALFORMATIONS: DiagnosisPicklistEntry[] = [
       "hemangioma",
       "strawberry naevus",
     ],
-    suggestedProcedures: [],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hn_excision_vascular_malformation",
+        displayName: "Excision of vascular malformation — face",
+        isDefault: false,
+        sortOrder: 1,
+      },
+    ],
     sortOrder: 1,
   },
   {
@@ -2632,7 +2831,14 @@ const HN_DX_VASCULAR_MALFORMATIONS: DiagnosisPicklistEntry[] = [
       "propranolol",
       "PHACES",
     ],
-    suggestedProcedures: [],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hn_excision_vascular_malformation",
+        displayName: "Excision of vascular malformation — face",
+        isDefault: false,
+        sortOrder: 1,
+      },
+    ],
     sortOrder: 2,
   },
   {
@@ -2650,7 +2856,14 @@ const HN_DX_VASCULAR_MALFORMATIONS: DiagnosisPicklistEntry[] = [
       "arteriovenous malformation",
       "high-flow malformation",
     ],
-    suggestedProcedures: [],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hn_excision_vascular_malformation",
+        displayName: "Excision of vascular malformation — face",
+        isDefault: false,
+        sortOrder: 1,
+      },
+    ],
     sortOrder: 3,
   },
   {
@@ -2668,7 +2881,14 @@ const HN_DX_VASCULAR_MALFORMATIONS: DiagnosisPicklistEntry[] = [
       "VM",
       "low-flow malformation",
     ],
-    suggestedProcedures: [],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hn_excision_vascular_malformation",
+        displayName: "Excision of vascular malformation — face",
+        isDefault: false,
+        sortOrder: 1,
+      },
+    ],
     sortOrder: 4,
   },
   {
@@ -2687,7 +2907,14 @@ const HN_DX_VASCULAR_MALFORMATIONS: DiagnosisPicklistEntry[] = [
       "macrocystic",
       "microcystic",
     ],
-    suggestedProcedures: [],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hn_excision_vascular_malformation",
+        displayName: "Excision of vascular malformation — face",
+        isDefault: false,
+        sortOrder: 1,
+      },
+    ],
     sortOrder: 5,
   },
   {
@@ -2705,7 +2932,14 @@ const HN_DX_VASCULAR_MALFORMATIONS: DiagnosisPicklistEntry[] = [
       "lymphangioma",
       "neck mass congenital",
     ],
-    suggestedProcedures: [],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hn_excision_vascular_malformation",
+        displayName: "Excision of vascular malformation — face",
+        isDefault: false,
+        sortOrder: 1,
+      },
+    ],
     sortOrder: 6,
   },
   {
@@ -2750,7 +2984,14 @@ const HN_DX_BENIGN_TUMOURS_CYSTS: DiagnosisPicklistEntry[] = [
       "dermoid cyst",
       "external angular dermoid",
     ],
-    suggestedProcedures: [],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hn_other_dermoid_excision",
+        displayName: "Dermoid cyst excision",
+        isDefault: true,
+        sortOrder: 1,
+      },
+    ],
     sortOrder: 1,
   },
   {
@@ -2768,7 +3009,14 @@ const HN_DX_BENIGN_TUMOURS_CYSTS: DiagnosisPicklistEntry[] = [
       "epidermal inclusion cyst",
       "sebaceous cyst",
     ],
-    suggestedProcedures: [],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hn_excision_benign_tumour",
+        displayName: "Excision of benign facial tumour / cyst",
+        isDefault: true,
+        sortOrder: 1,
+      },
+    ],
     sortOrder: 2,
   },
   {
@@ -2785,7 +3033,14 @@ const HN_DX_BENIGN_TUMOURS_CYSTS: DiagnosisPicklistEntry[] = [
       "lipoma face",
       "fatty lump face",
     ],
-    suggestedProcedures: [],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hn_excision_benign_tumour",
+        displayName: "Excision of benign facial tumour / cyst",
+        isDefault: true,
+        sortOrder: 1,
+      },
+    ],
     sortOrder: 3,
   },
   {
@@ -2803,7 +3058,14 @@ const HN_DX_BENIGN_TUMOURS_CYSTS: DiagnosisPicklistEntry[] = [
       "fatty lump neck",
       "posterior triangle lipoma",
     ],
-    suggestedProcedures: [],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hn_excision_benign_tumour",
+        displayName: "Excision of benign facial tumour / cyst",
+        isDefault: true,
+        sortOrder: 1,
+      },
+    ],
     sortOrder: 4,
   },
   {
@@ -2821,7 +3083,14 @@ const HN_DX_BENIGN_TUMOURS_CYSTS: DiagnosisPicklistEntry[] = [
       "NF1",
       "plexiform",
     ],
-    suggestedProcedures: [],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hn_excision_benign_tumour",
+        displayName: "Excision of benign facial tumour / cyst",
+        isDefault: true,
+        sortOrder: 1,
+      },
+    ],
     sortOrder: 5,
   },
   {
@@ -2839,7 +3108,14 @@ const HN_DX_BENIGN_TUMOURS_CYSTS: DiagnosisPicklistEntry[] = [
       "calcifying epithelioma",
       "Malherbe",
     ],
-    suggestedProcedures: [],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hn_excision_benign_tumour",
+        displayName: "Excision of benign facial tumour / cyst",
+        isDefault: true,
+        sortOrder: 1,
+      },
+    ],
     sortOrder: 6,
   },
   {
@@ -2857,7 +3133,14 @@ const HN_DX_BENIGN_TUMOURS_CYSTS: DiagnosisPicklistEntry[] = [
       "pilar cyst",
       "trichilemmal cyst",
     ],
-    suggestedProcedures: [],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hn_excision_benign_tumour",
+        displayName: "Excision of benign facial tumour / cyst",
+        isDefault: true,
+        sortOrder: 1,
+      },
+    ],
     sortOrder: 7,
   },
   {
@@ -2875,7 +3158,14 @@ const HN_DX_BENIGN_TUMOURS_CYSTS: DiagnosisPicklistEntry[] = [
       "KA",
       "molluscan sebaceum",
     ],
-    suggestedProcedures: [],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hn_excision_benign_tumour",
+        displayName: "Excision of benign facial tumour / cyst",
+        isDefault: true,
+        sortOrder: 1,
+      },
+    ],
     sortOrder: 8,
   },
 ];

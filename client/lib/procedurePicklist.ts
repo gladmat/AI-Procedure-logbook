@@ -53,6 +53,8 @@ export const PICKLIST_TO_FLAP_TYPE: Partial<Record<string, FreeFlap>> = {
   hn_nerve_gracilis_masseteric: "gracilis",
   hn_nerve_gracilis_double: "gracilis",
   hn_nerve_gracilis_ld: "latissimus_dorsi",
+  hn_recon_mandible_dcia: "other", // DCIA = iliac crest; no dedicated FreeFlap value
+  hn_recon_pharyngoesophageal: "radial_forearm", // tubed RFFF
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -3301,36 +3303,6 @@ const HEAD_NECK_FACIAL_SOFT_TISSUE_TRAUMA: ProcedurePicklistEntry[] = [
 
 const HEAD_NECK_OTHER: ProcedurePicklistEntry[] = [
   {
-    id: "hn_other_neck_dissection",
-    displayName: "Neck dissection (selective / modified radical / radical)",
-    snomedCtCode: "24994004",
-    snomedCtDisplay: "Neck dissection (procedure)",
-    specialties: ["head_neck"],
-    subcategory: "Other Head & Neck",
-    tags: ["oncological"],
-    sortOrder: 1,
-  },
-  {
-    id: "hn_other_parotidectomy",
-    displayName: "Parotidectomy (superficial / total)",
-    snomedCtCode: "33482003",
-    snomedCtDisplay: "Parotidectomy (procedure)",
-    specialties: ["head_neck"],
-    subcategory: "Other Head & Neck",
-    tags: ["oncological"],
-    sortOrder: 2,
-  },
-  {
-    id: "hn_other_tracheostomy",
-    displayName: "Tracheostomy",
-    snomedCtCode: "48387007",
-    snomedCtDisplay: "Tracheostomy (procedure)",
-    specialties: ["head_neck", "burns"],
-    subcategory: "Other Head & Neck",
-    tags: ["trauma"],
-    sortOrder: 3,
-  },
-  {
     id: "hn_other_tissue_expansion",
     displayName: "Tissue expansion — head / neck",
     snomedCtCode: "61218004", // VERIFY
@@ -3338,7 +3310,7 @@ const HEAD_NECK_OTHER: ProcedurePicklistEntry[] = [
     specialties: ["head_neck"],
     subcategory: "Other Head & Neck",
     tags: ["elective"],
-    sortOrder: 4,
+    sortOrder: 1,
   },
   {
     id: "hn_other_dermoid_excision",
@@ -3348,7 +3320,471 @@ const HEAD_NECK_OTHER: ProcedurePicklistEntry[] = [
     specialties: ["head_neck"],
     subcategory: "Other Head & Neck",
     tags: ["elective"],
+    sortOrder: 2,
+  },
+];
+
+// ── H&N Cancer Reconstruction (12 procedures) ──
+
+const HEAD_NECK_CANCER_RECON: ProcedurePicklistEntry[] = [
+  {
+    id: "hn_neck_dissection_radical",
+    displayName: "Radical neck dissection",
+    snomedCtCode: "64585002",
+    snomedCtDisplay: "Radical neck dissection (procedure)",
+    specialties: ["head_neck"],
+    subcategory: "H&N Cancer Reconstruction",
+    tags: ["oncological"],
+    sortOrder: 1,
+  },
+  {
+    id: "hn_neck_dissection_modified_radical",
+    displayName: "Modified radical neck dissection",
+    snomedCtCode: "173761000", // VERIFY
+    snomedCtDisplay: "Modified radical neck dissection (procedure)",
+    specialties: ["head_neck"],
+    subcategory: "H&N Cancer Reconstruction",
+    tags: ["oncological"],
+    sortOrder: 2,
+  },
+  {
+    id: "hn_neck_dissection_selective",
+    displayName: "Selective neck dissection (specify levels)",
+    snomedCtCode: "397538000", // VERIFY
+    snomedCtDisplay: "Selective neck dissection (procedure)",
+    specialties: ["head_neck"],
+    subcategory: "H&N Cancer Reconstruction",
+    tags: ["oncological"],
+    sortOrder: 3,
+  },
+  {
+    id: "hn_slnb_head_neck",
+    displayName: "Sentinel lymph node biopsy — head & neck",
+    snomedCtCode: "396487001",
+    snomedCtDisplay: "Sentinel lymph node biopsy (procedure)",
+    specialties: ["head_neck"],
+    subcategory: "H&N Cancer Reconstruction",
+    tags: ["oncological"],
+    sortOrder: 4,
+  },
+  {
+    id: "hn_recon_mandible_dcia",
+    displayName: "Mandible reconstruction — DCIA free flap",
+    snomedCtCode: "66567009", // VERIFY
+    snomedCtDisplay: "Reconstruction of mandible (procedure)",
+    specialties: ["head_neck"],
+    subcategory: "H&N Cancer Reconstruction",
+    tags: ["free_flap", "microsurgery", "oncological"],
+    hasFreeFlap: true,
     sortOrder: 5,
+  },
+  {
+    id: "hn_recon_maxilla_obturator",
+    displayName: "Maxilla/midface — obturator prosthesis",
+    snomedCtCode: "122465003", // VERIFY
+    snomedCtDisplay: "Maxillary reconstruction with obturator (procedure)",
+    specialties: ["head_neck"],
+    subcategory: "H&N Cancer Reconstruction",
+    tags: ["oncological"],
+    sortOrder: 6,
+  },
+  {
+    id: "hn_recon_maxilla_free_flap",
+    displayName: "Maxilla/midface reconstruction — free flap",
+    snomedCtCode: "122465003", // VERIFY
+    snomedCtDisplay: "Reconstruction of maxilla with free flap (procedure)",
+    specialties: ["head_neck"],
+    subcategory: "H&N Cancer Reconstruction",
+    tags: ["free_flap", "microsurgery", "oncological"],
+    hasFreeFlap: true,
+    sortOrder: 7,
+  },
+  {
+    id: "hn_recon_oropharynx",
+    displayName: "Oropharyngeal reconstruction — free flap",
+    snomedCtCode: "122465003", // VERIFY
+    snomedCtDisplay: "Reconstruction of oropharynx (procedure)",
+    specialties: ["head_neck"],
+    subcategory: "H&N Cancer Reconstruction",
+    tags: ["free_flap", "microsurgery", "oncological"],
+    hasFreeFlap: true,
+    sortOrder: 8,
+  },
+  {
+    id: "hn_recon_pharyngoesophageal",
+    displayName: "Pharyngoesophageal reconstruction — tubed RFFF",
+    snomedCtCode: "122465003", // VERIFY
+    snomedCtDisplay: "Reconstruction of pharynx and oesophagus (procedure)",
+    specialties: ["head_neck"],
+    subcategory: "H&N Cancer Reconstruction",
+    tags: ["free_flap", "microsurgery", "oncological"],
+    hasFreeFlap: true,
+    sortOrder: 9,
+  },
+  {
+    id: "hn_recon_parotidectomy_defect",
+    displayName: "Parotidectomy defect reconstruction",
+    snomedCtCode: "122465003", // VERIFY
+    snomedCtDisplay: "Reconstruction of parotidectomy defect (procedure)",
+    specialties: ["head_neck"],
+    subcategory: "H&N Cancer Reconstruction",
+    tags: ["oncological"],
+    sortOrder: 10,
+  },
+  {
+    id: "hn_tracheostomy",
+    displayName: "Tracheostomy",
+    snomedCtCode: "48387007",
+    snomedCtDisplay: "Tracheostomy (procedure)",
+    specialties: ["head_neck", "burns"],
+    subcategory: "H&N Cancer Reconstruction",
+    tags: ["acute", "oncological"],
+    sortOrder: 11,
+  },
+  {
+    id: "hn_vein_graft_irradiated_neck",
+    displayName: "Vein graft for irradiated neck (vessel preparation)",
+    snomedCtCode: "122465003", // VERIFY
+    snomedCtDisplay: "Vein graft for vessel preparation (procedure)",
+    specialties: ["head_neck"],
+    subcategory: "H&N Cancer Reconstruction",
+    tags: ["microsurgery"],
+    sortOrder: 12,
+  },
+];
+
+// ── Nasal Reconstruction (8 procedures) ──
+
+const HEAD_NECK_NASAL_RECON: ProcedurePicklistEntry[] = [
+  {
+    id: "hn_nose_secondary_intention",
+    displayName: "Secondary intention healing — nose",
+    snomedCtCode: "122465003", // VERIFY
+    snomedCtDisplay: "Wound healing by secondary intention of nose (procedure)",
+    specialties: ["head_neck", "skin_cancer"],
+    subcategory: "Nasal Reconstruction",
+    tags: ["oncological"],
+    sortOrder: 1,
+  },
+  {
+    id: "hn_nose_ftsg",
+    displayName: "Full-thickness skin graft to nose",
+    snomedCtCode: "61581000",
+    snomedCtDisplay: "Full-thickness skin graft to nose (procedure)",
+    specialties: ["head_neck", "skin_cancer"],
+    subcategory: "Nasal Reconstruction",
+    tags: ["oncological"],
+    sortOrder: 2,
+  },
+  {
+    id: "hn_nose_composite_graft",
+    displayName: "Composite graft (ear cartilage to alar rim)",
+    snomedCtCode: "122465003", // VERIFY
+    snomedCtDisplay: "Composite graft to nose (procedure)",
+    specialties: ["head_neck", "skin_cancer"],
+    subcategory: "Nasal Reconstruction",
+    tags: ["oncological"],
+    sortOrder: 3,
+  },
+  {
+    id: "hn_nose_turnin_flap",
+    displayName: "Turn-in flap (intranasal lining)",
+    snomedCtCode: "122462001", // VERIFY
+    snomedCtDisplay: "Local flap to nose (procedure)",
+    specialties: ["head_neck", "skin_cancer"],
+    subcategory: "Nasal Reconstruction",
+    tags: ["oncological"],
+    sortOrder: 4,
+  },
+  {
+    id: "hn_nose_dorsal_nasal_rieger",
+    displayName: "Dorsal nasal flap (Rieger)",
+    snomedCtCode: "122462001", // VERIFY
+    snomedCtDisplay: "Dorsal nasal rotation flap (procedure)",
+    specialties: ["head_neck", "skin_cancer"],
+    subcategory: "Nasal Reconstruction",
+    tags: ["oncological"],
+    sortOrder: 5,
+  },
+  {
+    id: "hn_nose_forehead_3stage",
+    displayName: "Paramedian forehead flap — 3 stage",
+    snomedCtCode: "447069007",
+    snomedCtDisplay: "Paramedian forehead flap (procedure)",
+    specialties: ["head_neck", "skin_cancer"],
+    subcategory: "Nasal Reconstruction",
+    tags: ["oncological", "pedicled_flap"],
+    sortOrder: 6,
+  },
+  {
+    id: "hn_nose_septal_pivot",
+    displayName: "Septal pivot flap (intranasal lining)",
+    snomedCtCode: "122462001", // VERIFY
+    snomedCtDisplay: "Septal flap for nasal lining (procedure)",
+    specialties: ["head_neck", "skin_cancer"],
+    subcategory: "Nasal Reconstruction",
+    tags: ["oncological"],
+    sortOrder: 7,
+  },
+  {
+    id: "hn_nose_septal_hinge",
+    displayName: "Septal hinge flap",
+    snomedCtCode: "122462001", // VERIFY
+    snomedCtDisplay: "Septal hinge flap (procedure)",
+    specialties: ["head_neck", "skin_cancer"],
+    subcategory: "Nasal Reconstruction",
+    tags: ["oncological"],
+    sortOrder: 8,
+  },
+];
+
+// ── Lip Reconstruction (7 procedures) ──
+
+const HEAD_NECK_LIP_RECON: ProcedurePicklistEntry[] = [
+  {
+    id: "hn_lip_vermilion_advance",
+    displayName: "Vermilion advancement (lip shave)",
+    snomedCtCode: "83891005", // VERIFY
+    snomedCtDisplay: "Vermilion advancement (procedure)",
+    specialties: ["head_neck", "skin_cancer"],
+    subcategory: "Lip Reconstruction",
+    tags: ["oncological"],
+    sortOrder: 1,
+  },
+  {
+    id: "hn_lip_mucosal_advance",
+    displayName: "Mucosal advancement flap",
+    snomedCtCode: "83891005", // VERIFY
+    snomedCtDisplay: "Mucosal advancement flap of lip (procedure)",
+    specialties: ["head_neck", "skin_cancer"],
+    subcategory: "Lip Reconstruction",
+    tags: ["oncological"],
+    sortOrder: 2,
+  },
+  {
+    id: "hn_lip_tongue_flap",
+    displayName: "Tongue flap for lip",
+    snomedCtCode: "83891005", // VERIFY
+    snomedCtDisplay: "Tongue flap for lip reconstruction (procedure)",
+    specialties: ["head_neck", "skin_cancer"],
+    subcategory: "Lip Reconstruction",
+    tags: ["oncological"],
+    sortOrder: 3,
+  },
+  {
+    id: "hn_lip_bernard_burow",
+    displayName: "Bernard-Burow flap (cheek advancement)",
+    snomedCtCode: "83891005", // VERIFY
+    snomedCtDisplay: "Bernard-Burow lip reconstruction (procedure)",
+    specialties: ["head_neck", "skin_cancer"],
+    subcategory: "Lip Reconstruction",
+    tags: ["oncological"],
+    sortOrder: 4,
+  },
+  {
+    id: "hn_lip_staircase_webster",
+    displayName: "Staircase technique (Webster modification)",
+    snomedCtCode: "83891005", // VERIFY
+    snomedCtDisplay: "Webster staircase lip reconstruction (procedure)",
+    specialties: ["head_neck", "skin_cancer"],
+    subcategory: "Lip Reconstruction",
+    tags: ["oncological"],
+    sortOrder: 5,
+  },
+  {
+    id: "hn_lip_gillies_fan",
+    displayName: "Gillies fan flap",
+    snomedCtCode: "83891005", // VERIFY
+    snomedCtDisplay: "Gillies fan flap for lip reconstruction (procedure)",
+    specialties: ["head_neck", "skin_cancer"],
+    subcategory: "Lip Reconstruction",
+    tags: ["oncological"],
+    sortOrder: 6,
+  },
+  {
+    id: "hn_lip_commissuroplasty",
+    displayName: "Commissuroplasty",
+    snomedCtCode: "83891005", // VERIFY
+    snomedCtDisplay: "Commissuroplasty (procedure)",
+    specialties: ["head_neck", "skin_cancer"],
+    subcategory: "Lip Reconstruction",
+    tags: ["oncological", "trauma"],
+    sortOrder: 7,
+  },
+];
+
+// ── Ear Reconstruction — Acquired (5 procedures) ──
+
+const HEAD_NECK_EAR_RECON: ProcedurePicklistEntry[] = [
+  {
+    id: "hn_ear_wedge_excision",
+    displayName: "Wedge excision of ear",
+    snomedCtCode: "287777008", // VERIFY
+    snomedCtDisplay: "Wedge excision of ear (procedure)",
+    specialties: ["head_neck"],
+    subcategory: "Ear Reconstruction",
+    tags: ["oncological"],
+    sortOrder: 1,
+  },
+  {
+    id: "hn_ear_antia_buch",
+    displayName: "Antia-Buch flap (helical advancement)",
+    snomedCtCode: "287777008", // VERIFY
+    snomedCtDisplay: "Helical advancement flap of ear (procedure)",
+    specialties: ["head_neck"],
+    subcategory: "Ear Reconstruction",
+    tags: ["oncological"],
+    sortOrder: 2,
+  },
+  {
+    id: "hn_ear_composite_graft",
+    displayName: "Composite graft reconstruction (ear)",
+    snomedCtCode: "287777008", // VERIFY
+    snomedCtDisplay: "Composite graft to ear (procedure)",
+    specialties: ["head_neck"],
+    subcategory: "Ear Reconstruction",
+    tags: ["oncological"],
+    sortOrder: 3,
+  },
+  {
+    id: "hn_ear_retroauricular_flap",
+    displayName: "Retroauricular flap",
+    snomedCtCode: "287777008", // VERIFY
+    snomedCtDisplay: "Retroauricular flap (procedure)",
+    specialties: ["head_neck"],
+    subcategory: "Ear Reconstruction",
+    tags: ["oncological"],
+    sortOrder: 4,
+  },
+  {
+    id: "hn_ear_temporoparietal_fascia",
+    displayName: "Temporoparietal fascia flap for ear",
+    snomedCtCode: "287777008", // VERIFY
+    snomedCtDisplay: "Temporoparietal fascia flap (procedure)",
+    specialties: ["head_neck"],
+    subcategory: "Ear Reconstruction",
+    tags: ["oncological", "pedicled_flap"],
+    sortOrder: 5,
+  },
+];
+
+// ── Scalp Reconstruction (4 procedures) ──
+
+const HEAD_NECK_SCALP_RECON: ProcedurePicklistEntry[] = [
+  {
+    id: "hn_scalp_stsg",
+    displayName: "Split-thickness skin graft to scalp",
+    snomedCtCode: "72495009", // VERIFY
+    snomedCtDisplay: "Split-thickness skin graft to scalp (procedure)",
+    specialties: ["head_neck"],
+    subcategory: "Scalp Reconstruction",
+    tags: ["oncological", "trauma"],
+    sortOrder: 1,
+  },
+  {
+    id: "hn_scalp_ftsg",
+    displayName: "Full-thickness skin graft to scalp",
+    snomedCtCode: "61581000", // VERIFY
+    snomedCtDisplay: "Full-thickness skin graft to scalp (procedure)",
+    specialties: ["head_neck"],
+    subcategory: "Scalp Reconstruction",
+    tags: ["oncological"],
+    sortOrder: 2,
+  },
+  {
+    id: "hn_scalp_orticochea",
+    displayName: "Orticochea three-flap scalp reconstruction",
+    snomedCtCode: "122465003", // VERIFY
+    snomedCtDisplay: "Three-flap scalp reconstruction (procedure)",
+    specialties: ["head_neck"],
+    subcategory: "Scalp Reconstruction",
+    tags: ["oncological"],
+    sortOrder: 3,
+  },
+  {
+    id: "hn_scalp_tissue_expansion",
+    displayName: "Tissue expansion — scalp",
+    snomedCtCode: "61218004", // VERIFY
+    snomedCtDisplay: "Tissue expansion of scalp (procedure)",
+    specialties: ["head_neck"],
+    subcategory: "Scalp Reconstruction",
+    tags: ["elective"],
+    sortOrder: 4,
+  },
+];
+
+// ── Other H&N + Salivary Gland (7 procedures) ──
+
+const HEAD_NECK_OTHER_PROCEDURES: ProcedurePicklistEntry[] = [
+  {
+    id: "hn_excision_benign_tumour",
+    displayName: "Excision of benign facial tumour / cyst",
+    snomedCtCode: "392022005", // VERIFY
+    snomedCtDisplay: "Excision of benign neoplasm of face (procedure)",
+    specialties: ["head_neck"],
+    subcategory: "Other Head & Neck",
+    tags: ["elective"],
+    sortOrder: 1,
+  },
+  {
+    id: "hn_parotidectomy_superficial",
+    displayName: "Superficial parotidectomy",
+    snomedCtCode: "33482003", // VERIFY
+    snomedCtDisplay: "Superficial parotidectomy (procedure)",
+    specialties: ["head_neck"],
+    subcategory: "Salivary Gland Surgery",
+    tags: ["elective"],
+    sortOrder: 2,
+  },
+  {
+    id: "hn_parotidectomy_total",
+    displayName: "Total parotidectomy (nerve-sparing)",
+    snomedCtCode: "30956003", // VERIFY
+    snomedCtDisplay: "Total parotidectomy (procedure)",
+    specialties: ["head_neck"],
+    subcategory: "Salivary Gland Surgery",
+    tags: ["oncological"],
+    sortOrder: 3,
+  },
+  {
+    id: "hn_submandibular_gland_excision",
+    displayName: "Submandibular gland excision",
+    snomedCtCode: "19543009", // VERIFY
+    snomedCtDisplay: "Excision of submandibular gland (procedure)",
+    specialties: ["head_neck"],
+    subcategory: "Salivary Gland Surgery",
+    tags: ["elective"],
+    sortOrder: 4,
+  },
+  {
+    id: "hn_excision_vascular_malformation",
+    displayName: "Excision of vascular malformation — face",
+    snomedCtCode: "392022005", // VERIFY
+    snomedCtDisplay: "Excision of vascular malformation of face (procedure)",
+    specialties: ["head_neck"],
+    subcategory: "Other Head & Neck",
+    tags: ["elective"],
+    sortOrder: 5,
+  },
+  {
+    id: "hn_scar_revision_face",
+    displayName: "Scar revision — face / neck",
+    snomedCtCode: "234261004", // VERIFY
+    snomedCtDisplay: "Scar revision of face (procedure)",
+    specialties: ["head_neck"],
+    subcategory: "Other Head & Neck",
+    tags: ["elective"],
+    sortOrder: 6,
+  },
+  {
+    id: "hn_fat_grafting_face",
+    displayName: "Fat grafting to face (structural)",
+    snomedCtCode: "394886001", // VERIFY
+    snomedCtDisplay: "Fat grafting to face (procedure)",
+    specialties: ["head_neck"],
+    subcategory: "Other Head & Neck",
+    tags: ["lipofilling"],
+    sortOrder: 7,
   },
 ];
 
@@ -6235,6 +6671,12 @@ export const PROCEDURE_PICKLIST: ProcedurePicklistEntry[] = [
   ...HEAD_NECK_FRACTURE_SUBTYPES,
   ...HEAD_NECK_FACIAL_SOFT_TISSUE_TRAUMA,
   ...HEAD_NECK_OTHER,
+  ...HEAD_NECK_CANCER_RECON,
+  ...HEAD_NECK_NASAL_RECON,
+  ...HEAD_NECK_LIP_RECON,
+  ...HEAD_NECK_EAR_RECON,
+  ...HEAD_NECK_SCALP_RECON,
+  ...HEAD_NECK_OTHER_PROCEDURES,
   // General
   ...GENERAL_SKIN_LESION,
   ...GENERAL_MELANOMA,
