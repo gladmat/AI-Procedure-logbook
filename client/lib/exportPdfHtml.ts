@@ -8,6 +8,11 @@ import {
   formatRoleDisplay,
   resolveSupervisionLevel,
 } from "@/types/operativeRole";
+import {
+  getImplantSummary as getBreastImplantSummary,
+  getFlapSummary as getBreastFlapSummary,
+  getChestMascSummary,
+} from "@/lib/breastConfig";
 
 export interface PdfExportOptions {
   includePatientId?: boolean;
@@ -63,13 +68,35 @@ export function buildPdfHtml(cases: Case[], options: PdfExportOptions): string {
     const implantProcedures = (c.diagnosisGroups ?? []).flatMap((group) =>
       getImplantBearingProcedures(group.procedures ?? []),
     );
-    const implantSummary = implantProcedures
+    const jointImplantSummary = implantProcedures
       .map((procedure) => {
         const summary = generateImplantSummary(procedure.implantDetails);
         return summary
           ? `${procedure.procedureName}: ${summary}`
           : `${procedure.procedureName}: implant details incomplete`;
       })
+      .join("; ");
+
+    // Breast-specific summary from breastAssessment
+    const breastParts: string[] = [];
+    const ba = (c.diagnosisGroups ?? []).find(
+      (g) => g.breastAssessment,
+    )?.breastAssessment;
+    if (ba) {
+      for (const side of ["left", "right"] as const) {
+        const sideData = ba.sides[side];
+        if (!sideData) continue;
+        const prefix = side === "left" ? "L" : "R";
+        const imp = getBreastImplantSummary(sideData.implantDetails);
+        if (imp) breastParts.push(`${prefix}: ${imp}`);
+        const flap = getBreastFlapSummary(sideData.flapDetails);
+        if (flap) breastParts.push(`${prefix}: ${flap}`);
+        const masc = getChestMascSummary(sideData.chestMasculinisation);
+        if (masc) breastParts.push(`${prefix}: ${masc}`);
+      }
+    }
+    const implantSummary = [jointImplantSummary, ...breastParts]
+      .filter(Boolean)
       .join("; ");
 
     const role = resolveOperativeRole(undefined, c.defaultOperativeRole);

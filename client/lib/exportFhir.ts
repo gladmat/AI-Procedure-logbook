@@ -36,6 +36,18 @@ import {
   IMPLANT_DIGIT_LABELS,
   IMPLANT_LATERALITY_LABELS,
 } from "@/lib/jointImplant";
+import type {
+  BreastAssessmentData,
+  ImplantDetailsData,
+  BreastLaterality,
+} from "@/types/breast";
+import {
+  IMPLANT_SURFACE_LABELS,
+  IMPLANT_FILL_LABELS,
+  IMPLANT_SHAPE_LABELS,
+  IMPLANT_PROFILE_LABELS,
+  IMPLANT_PLANE_LABELS,
+} from "@/types/breast";
 
 // ─── FHIR R4 Type Stubs ───────────────────────────────────────────────────
 
@@ -149,6 +161,41 @@ function buildEpisodeOfCare(episode: TreatmentEpisode): FhirResource {
       : undefined,
     patient: { reference: `Patient/${episode.patientIdentifier}` },
     period,
+    ...(episode.breastReconstructionMeta
+      ? {
+          extension: [
+            {
+              url: "urn:opus:breast-reconstruction-meta",
+              extension: [
+                {
+                  url: "laterality",
+                  valueString: episode.breastReconstructionMeta.laterality,
+                },
+                ...(episode.breastReconstructionMeta.primaryReconstructionType
+                  ? [
+                      {
+                        url: "primaryReconstructionType",
+                        valueString:
+                          episode.breastReconstructionMeta
+                            .primaryReconstructionType,
+                      },
+                    ]
+                  : []),
+                ...(episode.breastReconstructionMeta.timingClassification
+                  ? [
+                      {
+                        url: "timingClassification",
+                        valueString:
+                          episode.breastReconstructionMeta
+                            .timingClassification,
+                      },
+                    ]
+                  : []),
+              ],
+            },
+          ],
+        }
+      : {}),
   };
 }
 
@@ -404,6 +451,19 @@ function buildProcedure(
     })(),
   };
 
+  // Breast assessment laterality extension
+  if (group.breastAssessment?.laterality) {
+    const breastExt = {
+      url: "urn:opus:breast-laterality",
+      valueString: group.breastAssessment.laterality,
+    };
+    if (procedure.extension) {
+      procedure.extension.push(breastExt);
+    } else {
+      procedure.extension = [breastExt];
+    }
+  }
+
   // bodySite with implant-aware laterality and digit context
   const laterality = (proc.implantDetails?.laterality ??
     group.diagnosisClinicalDetails?.laterality) as Laterality | undefined;
@@ -499,6 +559,108 @@ function buildDevice(proc: CaseProcedure): FhirResource | undefined {
   return device;
 }
 
+// ─── Breast Device ────────────────────────────────────────────────────────
+
+function buildBreastDevice(
+  implant: ImplantDetailsData,
+  side: BreastLaterality,
+  procedureId: string,
+): FhirResource {
+  const device: FhirResource = {
+    resourceType: "Device",
+    id: `breast-device-${side}-${procedureId}`,
+    type: {
+      coding: [
+        {
+          system: "http://snomed.info/sct",
+          code: "303608005",
+          display: "Breast implant (physical object)",
+        },
+      ],
+      text: implant.productName ?? "Breast implant",
+    },
+    status: "active",
+  };
+
+  if (implant.manufacturer) device.manufacturer = implant.manufacturer;
+  if (implant.serialNumber) {
+    device.serialNumber = implant.serialNumber;
+  }
+  if (implant.udi) {
+    device.udiCarrier = [{ carrierHRF: implant.udi }];
+  }
+  if (implant.lotNumber) device.lotNumber = implant.lotNumber;
+  if (implant.catalogReference) device.modelNumber = implant.catalogReference;
+
+  const properties: Record<string, unknown>[] = [];
+  if (implant.volumeCc != null) {
+    properties.push({
+      type: { text: "volumeCc" },
+      valueQuantity: [{ value: implant.volumeCc, unit: "cc" }],
+    });
+  }
+  if (implant.shellSurface) {
+    properties.push({
+      type: { text: "surface" },
+      valueCode: [{ text: IMPLANT_SURFACE_LABELS[implant.shellSurface] }],
+    });
+  }
+  if (implant.shape) {
+    properties.push({
+      type: { text: "shape" },
+      valueCode: [{ text: IMPLANT_SHAPE_LABELS[implant.shape] }],
+    });
+  }
+  if (implant.profile) {
+    properties.push({
+      type: { text: "profile" },
+      valueCode: [{ text: IMPLANT_PROFILE_LABELS[implant.profile] }],
+    });
+  }
+  if (implant.implantPlane) {
+    properties.push({
+      type: { text: "plane" },
+      valueCode: [{ text: IMPLANT_PLANE_LABELS[implant.implantPlane] }],
+    });
+  }
+  if (implant.fillMaterial) {
+    properties.push({
+      type: { text: "fill" },
+      valueCode: [{ text: IMPLANT_FILL_LABELS[implant.fillMaterial] }],
+    });
+  }
+  properties.push({
+    type: { text: "side" },
+    valueCode: [{ text: side === "left" ? "Left" : "Right" }],
+  });
+  if (properties.length > 0) device.property = properties;
+
+  return device;
+}
+
+function getBreastDevicesForGroup(
+  group: DiagnosisGroup,
+): { device: FhirResource; side: BreastLaterality }[] {
+  const ba: BreastAssessmentData | undefined = group.breastAssessment;
+  if (!ba) return [];
+
+  const results: { device: FhirResource; side: BreastLaterality }[] = [];
+  for (const side of ["left", "right"] as BreastLaterality[]) {
+    const sideData = ba.sides[side];
+    if (sideData?.implantDetails?.deviceType) {
+      results.push({
+        device: buildBreastDevice(
+          sideData.implantDetails,
+          side,
+          group.id,
+        ),
+        side,
+      });
+    }
+  }
+  return results;
+}
+
 // ─── Patient ──────────────────────────────────────────────────────────────
 
 function buildPatient(c: Case): FhirResource | null {
@@ -569,7 +731,7 @@ function caseToFhirBundle(c: Case): FhirBundle {
         c,
       );
 
-      // Attach Device resource for implant tracking
+      // Attach Device resource for joint implant tracking
       const device = buildDevice(proc);
       if (device) {
         procedure.focalDevice = [
@@ -582,6 +744,12 @@ function caseToFhirBundle(c: Case): FhirBundle {
       } else {
         entries.push({ resource: procedure });
       }
+    }
+
+    // Breast implant Device resources (per-side)
+    const breastDevices = getBreastDevicesForGroup(group);
+    for (const { device: breastDevice } of breastDevices) {
+      entries.push({ resource: breastDevice });
     }
   }
 

@@ -198,12 +198,20 @@ export interface PersonalizationPreferences {
   hospitalAnswered?: boolean;
 }
 
+export interface BreastPreferences {
+  preferredImplantManufacturer?: string;
+  preferredImplantSurface?: import("./breast").ImplantSurface;
+  preferredAdmProduct?: string;
+  defaultPocketRinse?: import("./breast").PocketRinse;
+  always14PointPlan?: boolean;
+}
+
 export interface SurgicalPreferences {
   microsurgery?: MicrosurgeryPreferences;
   personalization?: PersonalizationPreferences;
+  breast?: BreastPreferences;
   // Future domains (zero schema changes):
   // skinCancer?: SkinCancerPreferences;
   // handSurgery?: HandSurgeryPreferences;
-  // breast?: BreastPreferences;
   // burns?: BurnsPreferences;
 }

@@ -7,7 +7,7 @@
  * - Tier 3 ("Advanced"): ADM, intraop technique, sizer, expander, device ID
  */
 
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { View, TextInput, LayoutAnimation, StyleSheet } from "react-native";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
@@ -150,6 +150,14 @@ const ADM_POSITIONS: readonly AdmPosition[] = [
 interface Props {
   value: ImplantDetailsData;
   onChange: (data: ImplantDetailsData) => void;
+  /** Auto-fill empty fields from saved breast preferences */
+  breastPreferences?: {
+    preferredImplantManufacturer?: string;
+    preferredImplantSurface?: ImplantSurface;
+    preferredAdmProduct?: string;
+    defaultPocketRinse?: PocketRinse;
+    always14PointPlan?: boolean;
+  };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -175,10 +183,56 @@ function getImplantSummaryText(d: ImplantDetailsData): string {
 export const ImplantDetailsCard = React.memo(function ImplantDetailsCard({
   value,
   onChange,
+  breastPreferences,
 }: Props) {
   const { theme } = useTheme();
   const [showDetails, setShowDetails] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const hasAppliedDefaults = useRef(false);
+
+  // Auto-fill from preferences on first render when value is empty
+  useEffect(() => {
+    if (hasAppliedDefaults.current || !breastPreferences) return;
+    hasAppliedDefaults.current = true;
+
+    const patch: Partial<ImplantDetailsData> = {};
+    let changed = false;
+
+    if (!value.manufacturer && breastPreferences.preferredImplantManufacturer) {
+      patch.manufacturer = breastPreferences.preferredImplantManufacturer;
+      changed = true;
+    }
+    if (!value.shellSurface && breastPreferences.preferredImplantSurface) {
+      patch.shellSurface = breastPreferences.preferredImplantSurface;
+      changed = true;
+    }
+    if (!value.pocketRinseSolution && breastPreferences.defaultPocketRinse) {
+      patch.pocketRinseSolution = breastPreferences.defaultPocketRinse;
+      changed = true;
+    }
+    if (
+      value.antibiotic14PointPlan == null &&
+      breastPreferences.always14PointPlan
+    ) {
+      patch.antibiotic14PointPlan = true;
+      changed = true;
+    }
+    if (
+      !value.admDetails?.productName &&
+      breastPreferences.preferredAdmProduct
+    ) {
+      patch.admUsed = true;
+      patch.admDetails = {
+        ...value.admDetails,
+        productName: breastPreferences.preferredAdmProduct,
+      } as AdmDetails;
+      changed = true;
+    }
+
+    if (changed) {
+      onChange({ ...value, ...patch });
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const update = useCallback(
     (patch: Partial<ImplantDetailsData>) => {

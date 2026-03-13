@@ -20,6 +20,13 @@ import type { WoundAssessment } from "@/types/wound";
 import { WOUND_BED_TISSUE_LABELS, HEALING_TREND_LABELS } from "@/types/wound";
 import type { HandInfectionDetails } from "@/types/handInfection";
 import { generateHandInfectionSummary as _generateHandInfectionSummary } from "@/types/handInfection";
+import type { BreastAssessmentData } from "@/types/breast";
+import {
+  getImplantSummary,
+  getFlapSummary,
+  getChestMascSummary,
+  getLipofillingSummary,
+} from "@/lib/breastConfig";
 
 /**
  * Flap Details summary — e.g. "DIEP, Left, ischaemia 42 min"
@@ -265,4 +272,47 @@ export function generateWoundSummary(
   }
 
   return parts.length > 0 ? parts.join(", ") : null;
+}
+
+/**
+ * Breast Assessment summary — e.g. "L: 350cc Allergan Round · R: Mastopexy"
+ * or "Bilat DIEP, 2 perf each" or "Chest masc — DI+FNG, L 320g R 310g"
+ */
+export function generateBreastSummary(
+  assessment: BreastAssessmentData | undefined,
+): string | null {
+  if (!assessment) return null;
+
+  const parts: string[] = [];
+
+  for (const side of ["left", "right"] as const) {
+    const sideData = assessment.sides[side];
+    if (!sideData) continue;
+    const prefix = side === "left" ? "L" : "R";
+
+    const imp = getImplantSummary(sideData.implantDetails);
+    if (imp) {
+      parts.push(`${prefix}: ${imp}`);
+      continue;
+    }
+
+    const flap = getFlapSummary(sideData.flapDetails);
+    if (flap) {
+      parts.push(`${prefix}: ${flap}`);
+      continue;
+    }
+
+    const masc = getChestMascSummary(sideData.chestMasculinisation);
+    if (masc) {
+      parts.push(`${prefix}: ${masc}`);
+      continue;
+    }
+
+    const lipo = getLipofillingSummary(sideData.lipofilling);
+    if (lipo) {
+      parts.push(`${prefix}: ${lipo}`);
+    }
+  }
+
+  return parts.length > 0 ? parts.join(" · ") : null;
 }

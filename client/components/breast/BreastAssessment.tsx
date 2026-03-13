@@ -39,6 +39,8 @@ interface Props {
   onCreateEpisode?: () => void;
   /** Called when user unlinks the episode */
   onUnlinkEpisode?: () => void;
+  /** Breast surgical preferences for auto-fill */
+  breastPreferences?: import("@/types/surgicalPreferences").BreastPreferences;
 }
 
 type LateralityOption = "left" | "right" | "bilateral";
@@ -62,6 +64,7 @@ export const BreastAssessment = React.memo(function BreastAssessment({
   linkedEpisodeTitle,
   onCreateEpisode,
   onUnlinkEpisode,
+  breastPreferences,
 }: Props) {
   const { theme } = useTheme();
 
@@ -220,6 +223,7 @@ export const BreastAssessment = React.memo(function BreastAssessment({
             linkedEpisodeTitle={linkedEpisodeTitle}
             onCreateEpisode={onCreateEpisode}
             onUnlinkEpisode={onUnlinkEpisode}
+            breastPreferences={breastPreferences}
           />
         );
       })}

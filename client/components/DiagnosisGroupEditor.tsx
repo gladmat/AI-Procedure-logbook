@@ -2189,6 +2189,7 @@ export function DiagnosisGroupEditor({
             }
             moduleFlags={breastModuleFlags}
             isTransmasculine={selectedDiagnosis?.id === "breast_dx_gender_dysphoria_transmasc"}
+            breastPreferences={profile?.surgicalPreferences?.breast}
           />
         )}
 

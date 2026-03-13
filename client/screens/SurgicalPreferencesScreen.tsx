@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef } from "react";
-import { View, StyleSheet, Pressable, ScrollView } from "react-native";
+import { View, StyleSheet, Pressable, ScrollView, Switch } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
@@ -14,53 +14,63 @@ import {
   type FlapMonitoringProtocolId,
   type AnticoagulationProtocol,
   type FlapMonitoringProtocol,
+  type BreastPreferences,
 } from "@/types/surgicalPreferences";
+import { IMPLANT_SURFACE_LABELS, POCKET_RINSE_LABELS } from "@/types/breast";
+import type { ImplantSurface, PocketRinse } from "@/types/breast";
+import { IMPLANT_MANUFACTURERS, ADM_PRODUCTS } from "@/lib/breastConfig";
 
 export default function SurgicalPreferencesScreen() {
   const { theme } = useTheme();
   const { profile, updateProfile } = useAuth();
   const insets = useSafeAreaInsets();
 
-  const prefs = profile?.surgicalPreferences?.microsurgery;
+  // ── Microsurgery state ──
+  const microPrefs = profile?.surgicalPreferences?.microsurgery;
   const [selectedAnticoag, setSelectedAnticoag] = useState<
     AnticoagulationProtocolId | undefined
-  >(prefs?.anticoagulationProtocol);
+  >(microPrefs?.anticoagulationProtocol);
   const [selectedMonitoring, setSelectedMonitoring] = useState<
     FlapMonitoringProtocolId | undefined
-  >(prefs?.monitoringProtocol);
+  >(microPrefs?.monitoringProtocol);
 
-  // Debounced save
-  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const debouncedSave = useCallback(
-    (
-      anticoag: AnticoagulationProtocolId | undefined,
-      monitoring: FlapMonitoringProtocolId | undefined,
-    ) => {
-      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-      saveTimerRef.current = setTimeout(() => {
-        updateProfile({
-          surgicalPreferences: {
-            ...profile?.surgicalPreferences,
-            microsurgery: {
-              anticoagulationProtocol: anticoag,
-              monitoringProtocol: monitoring,
-            },
-          },
-        });
-      }, 300);
-    },
-    [updateProfile, profile?.surgicalPreferences],
+  // ── Breast state ──
+  const breastPrefs = profile?.surgicalPreferences?.breast;
+  const [breastState, setBreastState] = useState<BreastPreferences>(
+    breastPrefs ?? {},
   );
+
+  // Debounced save — merges all preference domains
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const latestRef = useRef({ selectedAnticoag, selectedMonitoring, breastState });
+  latestRef.current = { selectedAnticoag, selectedMonitoring, breastState };
+
+  const debouncedSave = useCallback(() => {
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
+      const latest = latestRef.current;
+      updateProfile({
+        surgicalPreferences: {
+          ...profile?.surgicalPreferences,
+          microsurgery: {
+            anticoagulationProtocol: latest.selectedAnticoag,
+            monitoringProtocol: latest.selectedMonitoring,
+          },
+          breast: latest.breastState,
+        },
+      });
+    }, 300);
+  }, [updateProfile, profile?.surgicalPreferences]);
 
   const handleAnticoagSelect = useCallback(
     (id: AnticoagulationProtocolId) => {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       const newValue = selectedAnticoag === id ? undefined : id;
       setSelectedAnticoag(newValue);
-      debouncedSave(newValue, selectedMonitoring);
+      latestRef.current.selectedAnticoag = newValue;
+      debouncedSave();
     },
-    [selectedAnticoag, selectedMonitoring, debouncedSave],
+    [selectedAnticoag, debouncedSave],
   );
 
   const handleMonitoringSelect = useCallback(
@@ -68,9 +78,23 @@ export default function SurgicalPreferencesScreen() {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       const newValue = selectedMonitoring === id ? undefined : id;
       setSelectedMonitoring(newValue);
-      debouncedSave(selectedAnticoag, newValue);
+      latestRef.current.selectedMonitoring = newValue;
+      debouncedSave();
     },
-    [selectedAnticoag, selectedMonitoring, debouncedSave],
+    [selectedMonitoring, debouncedSave],
+  );
+
+  const updateBreast = useCallback(
+    (patch: Partial<BreastPreferences>) => {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      setBreastState((prev) => {
+        const next = { ...prev, ...patch };
+        latestRef.current.breastState = next;
+        return next;
+      });
+      debouncedSave();
+    },
+    [debouncedSave],
   );
 
   return (
@@ -86,11 +110,11 @@ export default function SurgicalPreferencesScreen() {
       <ThemedText
         style={[styles.headerDescription, { color: theme.textSecondary }]}
       >
-        Set your default protocols for microsurgery cases. These will auto-fill
-        when you create new free flap cases.
+        Set your default protocols and preferences. These will auto-fill when
+        you create new cases.
       </ThemedText>
 
-      {/* Microsurgery Section */}
+      {/* ════════ Microsurgery Section ════════ */}
       <View style={styles.sectionHeader}>
         <Feather name="activity" size={18} color={theme.link} />
         <ThemedText style={[styles.sectionTitle, { color: theme.text }]}>
@@ -135,6 +159,154 @@ export default function SurgicalPreferencesScreen() {
             theme={theme}
           />
         ))}
+      </View>
+
+      {/* ════════ Breast Surgery Section ════════ */}
+      <View style={[styles.sectionHeader, { marginTop: Spacing.xl }]}>
+        <Feather name="heart" size={18} color={theme.link} />
+        <ThemedText style={[styles.sectionTitle, { color: theme.text }]}>
+          Breast Surgery
+        </ThemedText>
+      </View>
+
+      {/* Preferred Implant Manufacturer */}
+      <ThemedText
+        style={[styles.subsectionTitle, { color: theme.textSecondary }]}
+      >
+        PREFERRED IMPLANT MANUFACTURER
+      </ThemedText>
+      <View style={styles.chipRow}>
+        {IMPLANT_MANUFACTURERS.map((mfr) => (
+          <OptionChip
+            key={mfr.id}
+            label={mfr.label.split(" (")[0]!}
+            isSelected={breastState.preferredImplantManufacturer === mfr.id}
+            onPress={() =>
+              updateBreast({
+                preferredImplantManufacturer:
+                  breastState.preferredImplantManufacturer === mfr.id
+                    ? undefined
+                    : mfr.id,
+              })
+            }
+            theme={theme}
+          />
+        ))}
+      </View>
+
+      {/* Preferred Implant Surface */}
+      <ThemedText
+        style={[
+          styles.subsectionTitle,
+          { color: theme.textSecondary, marginTop: Spacing.lg },
+        ]}
+      >
+        PREFERRED IMPLANT SURFACE
+      </ThemedText>
+      <View style={styles.chipRow}>
+        {(
+          Object.entries(IMPLANT_SURFACE_LABELS) as [ImplantSurface, string][]
+        ).map(([id, label]) => (
+          <OptionChip
+            key={id}
+            label={label}
+            isSelected={breastState.preferredImplantSurface === id}
+            onPress={() =>
+              updateBreast({
+                preferredImplantSurface:
+                  breastState.preferredImplantSurface === id ? undefined : id,
+              })
+            }
+            theme={theme}
+          />
+        ))}
+      </View>
+
+      {/* Default Pocket Rinse */}
+      <ThemedText
+        style={[
+          styles.subsectionTitle,
+          { color: theme.textSecondary, marginTop: Spacing.lg },
+        ]}
+      >
+        DEFAULT POCKET RINSE
+      </ThemedText>
+      <View style={styles.chipRow}>
+        {(Object.entries(POCKET_RINSE_LABELS) as [PocketRinse, string][]).map(
+          ([id, label]) => (
+            <OptionChip
+              key={id}
+              label={label}
+              isSelected={breastState.defaultPocketRinse === id}
+              onPress={() =>
+                updateBreast({
+                  defaultPocketRinse:
+                    breastState.defaultPocketRinse === id ? undefined : id,
+                })
+              }
+              theme={theme}
+            />
+          ),
+        )}
+      </View>
+
+      {/* Preferred ADM Product */}
+      <ThemedText
+        style={[
+          styles.subsectionTitle,
+          { color: theme.textSecondary, marginTop: Spacing.lg },
+        ]}
+      >
+        PREFERRED ADM PRODUCT
+      </ThemedText>
+      <View style={styles.chipRow}>
+        {ADM_PRODUCTS.map((adm) => (
+          <OptionChip
+            key={adm.id}
+            label={adm.label.split(" (")[0]!}
+            isSelected={breastState.preferredAdmProduct === adm.id}
+            onPress={() =>
+              updateBreast({
+                preferredAdmProduct:
+                  breastState.preferredAdmProduct === adm.id
+                    ? undefined
+                    : adm.id,
+              })
+            }
+            theme={theme}
+          />
+        ))}
+      </View>
+
+      {/* Always 14-point plan toggle */}
+      <View
+        style={[
+          styles.toggleRow,
+          {
+            backgroundColor: theme.backgroundElevated,
+            borderColor: theme.border,
+            marginTop: Spacing.lg,
+          },
+        ]}
+      >
+        <View style={styles.toggleTextBlock}>
+          <ThemedText style={[styles.toggleLabel, { color: theme.text }]}>
+            Always use 14-point plan
+          </ThemedText>
+          <ThemedText
+            style={[styles.toggleDescription, { color: theme.textSecondary }]}
+          >
+            Auto-enable the antibiotic 14-point plan for all breast implant
+            cases
+          </ThemedText>
+        </View>
+        <Switch
+          value={breastState.always14PointPlan ?? false}
+          onValueChange={(val) =>
+            updateBreast({ always14PointPlan: val })
+          }
+          trackColor={{ false: theme.border, true: theme.link }}
+        />
       </View>
 
       {/* Coming Soon placeholder */}
@@ -233,6 +405,45 @@ function ProtocolCard({
           ))}
         </View>
       )}
+    </Pressable>
+  );
+}
+
+// ── Option Chip Component ──────────────────────────────────────────────
+
+interface OptionChipProps {
+  label: string;
+  isSelected: boolean;
+  onPress: () => void;
+  theme: ReturnType<typeof useTheme>["theme"];
+}
+
+function OptionChip({ label, isSelected, onPress, theme }: OptionChipProps) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.chip,
+        {
+          backgroundColor: isSelected
+            ? theme.link
+            : theme.backgroundElevated,
+          borderColor: isSelected ? theme.link : theme.border,
+          opacity: pressed ? 0.85 : 1,
+        },
+      ]}
+    >
+      <ThemedText
+        style={[
+          styles.chipLabel,
+          {
+            color: isSelected ? theme.buttonText : theme.text,
+            fontWeight: isSelected ? "600" : "500",
+          },
+        ]}
+      >
+        {label}
+      </ThemedText>
     </Pressable>
   );
 }
@@ -336,5 +547,39 @@ const styles = StyleSheet.create({
   comingSoonText: {
     fontSize: 14,
     fontWeight: "500",
+  },
+  chipRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: Spacing.xs,
+  },
+  chip: {
+    borderWidth: 1,
+    borderRadius: BorderRadius.full,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 8,
+  },
+  chipLabel: {
+    fontSize: 14,
+  },
+  toggleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderRadius: BorderRadius.md,
+    padding: Spacing.md,
+  },
+  toggleTextBlock: {
+    flex: 1,
+    marginRight: Spacing.sm,
+  },
+  toggleLabel: {
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  toggleDescription: {
+    fontSize: 13,
+    lineHeight: 18,
+    marginTop: 2,
   },
 });

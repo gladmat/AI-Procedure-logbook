@@ -54,6 +54,8 @@ interface Props {
   onCreateEpisode?: () => void;
   /** Called when user unlinks the episode */
   onUnlinkEpisode?: () => void;
+  /** Breast surgical preferences for auto-fill */
+  breastPreferences?: import("@/types/surgicalPreferences").BreastPreferences;
 }
 
 const CONTEXT_OPTIONS: {
@@ -94,6 +96,7 @@ export const BreastSideCard = React.memo(function BreastSideCard({
   linkedEpisodeTitle,
   onCreateEpisode,
   onUnlinkEpisode,
+  breastPreferences,
 }: Props) {
   const { theme, isDark } = useTheme();
 
@@ -285,6 +288,7 @@ export const BreastSideCard = React.memo(function BreastSideCard({
         <ImplantDetailsCard
           value={value.implantDetails ?? {}}
           onChange={(implantDetails) => onChange({ ...value, implantDetails })}
+          breastPreferences={breastPreferences}
         />
       )}
 
