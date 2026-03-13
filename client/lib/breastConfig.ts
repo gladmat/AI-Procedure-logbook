@@ -102,6 +102,7 @@ export interface BreastCompletionStatus {
   implantComplete: boolean;
   flapComplete: boolean;
   lipofillingComplete: boolean;
+  chestMascComplete: boolean;
   overallPercentage: number;
 }
 
@@ -116,6 +117,7 @@ export function calculateBreastCompletion(
       implantComplete: false,
       flapComplete: false,
       lipofillingComplete: false,
+      chestMascComplete: false,
       overallPercentage: 0,
     };
   }
@@ -137,11 +139,15 @@ export function calculateBreastCompletion(
     (!!side.lipofilling?.injectionLeft?.volumeInjectedMl || !!side.lipofilling?.injectionRight?.volumeInjectedMl)
   );
 
-  const sections = [lateralityComplete, contextComplete, implantComplete, flapComplete, lipofillingComplete];
+  const chestMascComplete = !flags.showChestMasculinisation || (
+    !!side.chestMasculinisation?.technique
+  );
+
+  const sections = [lateralityComplete, contextComplete, implantComplete, flapComplete, lipofillingComplete, chestMascComplete];
   const complete = sections.filter(Boolean).length;
   const overallPercentage = Math.round((complete / sections.length) * 100);
 
-  return { lateralityComplete, contextComplete, implantComplete, flapComplete, lipofillingComplete, overallPercentage };
+  return { lateralityComplete, contextComplete, implantComplete, flapComplete, lipofillingComplete, chestMascComplete, overallPercentage };
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -153,12 +159,15 @@ import type {
   BreastFlapDetailsData,
   LipofillingData,
   LiposuctionData,
+  ChestMasculinisationData,
 } from "@/types/breast";
 import {
   IMPLANT_PLANE_LABELS,
   IMPLANT_SHAPE_LABELS,
   BREAST_RECIPIENT_ARTERY_LABELS,
   IMA_INTERSPACE_LABELS,
+  CHEST_MASC_TECHNIQUE_LABELS,
+  NAC_MANAGEMENT_LABELS,
 } from "@/types/breast";
 
 /**
@@ -236,6 +245,39 @@ export function getLiposuctionSummary(data: LiposuctionData | undefined): string
   const totalMl = data.totalAspirateMl ??
     (data.areas ?? []).reduce((sum, a) => sum + (a.volumeAspirateMl ?? 0), 0);
   if (totalMl > 0) parts.push(`${totalMl}ml`);
+  return parts.join(", ");
+}
+
+/**
+ * One-line chest masculinisation summary for card headers.
+ * e.g. "Double incision + FNG, L 320g R 310g"
+ */
+export function getChestMascSummary(data: ChestMasculinisationData | undefined): string {
+  if (!data) return "";
+  const parts: string[] = [];
+  if (data.technique) {
+    // Use a shorter label for the summary
+    const shortLabels: Partial<Record<string, string>> = {
+      double_incision_fng: "Double incision + FNG",
+      periareolar: "Periareolar",
+      keyhole: "Keyhole",
+      inverted_t: "Inverted-T",
+      buttonhole: "Buttonhole",
+    };
+    parts.push(shortLabels[data.technique] ?? CHEST_MASC_TECHNIQUE_LABELS[data.technique]);
+  }
+  if (data.nacManagement && data.nacManagement !== "not_applicable") {
+    parts.push(NAC_MANAGEMENT_LABELS[data.nacManagement]);
+  }
+  const leftW = data.specimenWeightLeftGrams;
+  const rightW = data.specimenWeightRightGrams;
+  if (leftW && rightW) {
+    parts.push(`L ${leftW}g R ${rightW}g`);
+  } else if (leftW) {
+    parts.push(`L ${leftW}g`);
+  } else if (rightW) {
+    parts.push(`R ${rightW}g`);
+  }
   return parts.join(", ");
 }
 

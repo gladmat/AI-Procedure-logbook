@@ -982,6 +982,9 @@ export function buildDuplicateState(
     skinCancerAssessment: g.skinCancerAssessment
       ? structuredClone(g.skinCancerAssessment)
       : undefined,
+    breastAssessment: g.breastAssessment
+      ? structuredClone(g.breastAssessment)
+      : undefined,
     fractures: g.fractures?.map((f) => ({ ...f, id: uuidv4() })) ?? [],
     lesionInstances:
       g.lesionInstances?.map((l) => ({

@@ -24,9 +24,14 @@ import {
   BREAST_RECON_TIMING_LABELS,
 } from "@/types/breast";
 import type { BreastModuleFlags } from "@/lib/breastConfig";
+import { calculateBreastCompletion } from "@/lib/breastConfig";
 import { ImplantDetailsCard } from "./ImplantDetailsCard";
 import { BreastFlapCard } from "./BreastFlapCard";
 import { LipofillingCard } from "./LipofillingCard";
+import { GenderAffirmingContextCard } from "./GenderAffirmingContextCard";
+import { ChestMasculinisationCard } from "./ChestMasculinisationCard";
+import { ReconstructionEpisodeCard } from "./ReconstructionEpisodeCard";
+import { BreastCompletionSummary } from "./BreastCompletionSummary";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -39,6 +44,16 @@ interface Props {
   moduleFlags: BreastModuleFlags;
   showCopyButton?: boolean;
   onCopy?: () => void;
+  /** Whether the diagnosis suggests transmasculine context (for binding history) */
+  isTransmasculine?: boolean;
+  /** Linked reconstruction episode ID, if any */
+  linkedEpisodeId?: string;
+  /** Linked episode title */
+  linkedEpisodeTitle?: string;
+  /** Called when user creates a new reconstruction episode */
+  onCreateEpisode?: () => void;
+  /** Called when user unlinks the episode */
+  onUnlinkEpisode?: () => void;
 }
 
 const CONTEXT_OPTIONS: {
@@ -74,6 +89,11 @@ export const BreastSideCard = React.memo(function BreastSideCard({
   moduleFlags,
   showCopyButton,
   onCopy,
+  isTransmasculine,
+  linkedEpisodeId,
+  linkedEpisodeTitle,
+  onCreateEpisode,
+  onUnlinkEpisode,
 }: Props) {
   const { theme, isDark } = useTheme();
 
@@ -129,6 +149,8 @@ export const BreastSideCard = React.memo(function BreastSideCard({
   // ── Render ──────────────────────────────────────────────────────────────
 
   const isReconstructive = value.clinicalContext === "reconstructive";
+  const isGenderAffirming = value.clinicalContext === "gender_affirming";
+  const completionStatus = calculateBreastCompletion(value, moduleFlags);
 
   return (
     <View
@@ -143,7 +165,10 @@ export const BreastSideCard = React.memo(function BreastSideCard({
     >
       {/* Header row */}
       <View style={styles.headerRow}>
-        <ThemedText type="h4">{sideLabel}</ThemedText>
+        <View style={styles.headerLeft}>
+          <ThemedText type="h4">{sideLabel}</ThemedText>
+          <BreastCompletionSummary status={completionStatus} />
+        </View>
         {showCopyButton && onCopy && (
           <Pressable onPress={onCopy} style={styles.copyButton}>
             <Feather name="copy" size={14} color={theme.link} />
@@ -200,6 +225,17 @@ export const BreastSideCard = React.memo(function BreastSideCard({
           );
         })}
       </View>
+
+      {/* Gender-affirming context — shown for gender_affirming */}
+      {isGenderAffirming && (
+        <GenderAffirmingContextCard
+          value={value.genderAffirmingContext ?? {}}
+          onChange={(genderAffirmingContext) =>
+            onChange({ ...value, genderAffirmingContext })
+          }
+          isTransmasculine={isTransmasculine}
+        />
+      )}
 
       {/* Reconstructive timing — shown only for reconstructive context */}
       {isReconstructive && (
@@ -266,6 +302,24 @@ export const BreastSideCard = React.memo(function BreastSideCard({
           onChange={(lipofilling) => onChange({ ...value, lipofilling })}
         />
       )}
+
+      {moduleFlags.showChestMasculinisation && (
+        <ChestMasculinisationCard
+          value={value.chestMasculinisation ?? {}}
+          onChange={(chestMasculinisation) =>
+            onChange({ ...value, chestMasculinisation })
+          }
+        />
+      )}
+
+      {moduleFlags.showReconstructionEpisode && onCreateEpisode && onUnlinkEpisode && (
+        <ReconstructionEpisodeCard
+          linkedEpisodeId={linkedEpisodeId}
+          linkedEpisodeTitle={linkedEpisodeTitle}
+          onCreateEpisode={onCreateEpisode}
+          onUnlinkEpisode={onUnlinkEpisode}
+        />
+      )}
     </View>
   );
 });
@@ -286,6 +340,11 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: Spacing.md,
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
   },
   copyButton: {
     flexDirection: "row",

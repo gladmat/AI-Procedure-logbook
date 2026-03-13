@@ -29,6 +29,16 @@ interface Props {
   value: BreastAssessmentData;
   onChange: (data: BreastAssessmentData) => void;
   moduleFlags: BreastModuleFlags;
+  /** Whether the diagnosis suggests transmasculine context */
+  isTransmasculine?: boolean;
+  /** Linked reconstruction episode ID, if any */
+  linkedEpisodeId?: string;
+  /** Linked episode title */
+  linkedEpisodeTitle?: string;
+  /** Called when user creates a new reconstruction episode */
+  onCreateEpisode?: () => void;
+  /** Called when user unlinks the episode */
+  onUnlinkEpisode?: () => void;
 }
 
 type LateralityOption = "left" | "right" | "bilateral";
@@ -47,6 +57,11 @@ export const BreastAssessment = React.memo(function BreastAssessment({
   value,
   onChange,
   moduleFlags,
+  isTransmasculine,
+  linkedEpisodeId,
+  linkedEpisodeTitle,
+  onCreateEpisode,
+  onUnlinkEpisode,
 }: Props) {
   const { theme } = useTheme();
 
@@ -200,6 +215,11 @@ export const BreastAssessment = React.memo(function BreastAssessment({
             moduleFlags={moduleFlags}
             showCopyButton={showCopy}
             onCopy={() => handleCopy(side)}
+            isTransmasculine={isTransmasculine}
+            linkedEpisodeId={linkedEpisodeId}
+            linkedEpisodeTitle={linkedEpisodeTitle}
+            onCreateEpisode={onCreateEpisode}
+            onUnlinkEpisode={onUnlinkEpisode}
           />
         );
       })}
