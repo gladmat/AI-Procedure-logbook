@@ -113,6 +113,7 @@ import {
 import { SkinCancerAssessment } from "@/components/skin-cancer/SkinCancerAssessment";
 import { AcuteHandAssessment } from "@/components/acute-hand/AcuteHandAssessment";
 import { HandElectivePicker } from "@/components/hand-elective/HandElectivePicker";
+import { HeadNeckDiagnosisPicker } from "@/components/head-neck/HeadNeckDiagnosisPicker";
 import {
   isBreastSpecialty,
   getBreastModuleFlags,
@@ -121,7 +122,7 @@ import {
   hasExistingBreastData,
 } from "@/lib/breastConfig";
 import { BreastAssessment } from "@/components/breast/BreastAssessment";
-import { BreastProcedureList } from "@/components/breast/BreastProcedureList";
+import { CompactProcedureList } from "@/components/CompactProcedureList";
 import type { BreastAssessmentData } from "@/types/breast";
 import { normalizeBreastAssessment } from "@/lib/breastState";
 import { JointImplantSection } from "@/components/joint-implant/JointImplantSection";
@@ -944,6 +945,7 @@ function DiagnosisGroupEditorInner({
   const isSkinCancerInlineFlow = groupSpecialty === "skin_cancer";
 
   const isBreastModule = isBreastSpecialty(groupSpecialty);
+  const isHeadNeck = groupSpecialty === "head_neck";
 
   const breastModuleFlags = useMemo(() => {
     if (!isBreastModule) return undefined;
@@ -2413,6 +2415,11 @@ function DiagnosisGroupEditorInner({
                         : undefined
                   }
                 />
+              ) : isHeadNeck ? (
+                <HeadNeckDiagnosisPicker
+                  selectedDiagnosisId={selectedDiagnosis?.id}
+                  onSelect={handleDiagnosisSelect}
+                />
               ) : isElectiveHand ? (
                 <HandElectivePicker
                   onSelect={handleDiagnosisSelect}
@@ -2980,10 +2987,10 @@ function DiagnosisGroupEditorInner({
                           Show all procedures
                         </ThemedText>
                       </Pressable>
-                    ) : isBreastModule ? (
+                    ) : isBreastModule || isHeadNeck ? (
                       <>
-                        {/* Breast: compact procedure list */}
-                        <BreastProcedureList
+                        {/* Compact procedure list (breast, head & neck) */}
+                        <CompactProcedureList
                           procedures={procedures}
                           onRemove={(proc) => {
                             if (proc.picklistEntryId && selectedSuggestionIds.has(proc.picklistEntryId)) {
