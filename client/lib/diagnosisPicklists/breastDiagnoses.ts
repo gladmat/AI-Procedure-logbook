@@ -382,6 +382,7 @@ const BREAST_DX_IMPLANT_COMPLICATIONS: DiagnosisPicklistEntry[] = [
     specialty: "breast",
     subcategory: "Implant Complications",
     clinicalGroup: "reconstructive",
+    crossContextVisible: true,
     hasStaging: true, // Baker classification — NEW staging config needed
     searchSynonyms: [
       "capsular contracture",
@@ -438,6 +439,7 @@ const BREAST_DX_IMPLANT_COMPLICATIONS: DiagnosisPicklistEntry[] = [
     specialty: "breast",
     subcategory: "Implant Complications",
     clinicalGroup: "reconstructive",
+    crossContextVisible: true,
     hasStaging: false,
     searchSynonyms: [
       "implant rupture",
@@ -471,6 +473,7 @@ const BREAST_DX_IMPLANT_COMPLICATIONS: DiagnosisPicklistEntry[] = [
     specialty: "breast",
     subcategory: "Implant Complications",
     clinicalGroup: "oncological",
+    crossContextVisible: true,
     hasStaging: false,
     searchSynonyms: ["BIA-ALCL", "ALCL", "lymphoma implant", "seroma late"],
     suggestedProcedures: [
@@ -498,6 +501,7 @@ const BREAST_DX_IMPLANT_COMPLICATIONS: DiagnosisPicklistEntry[] = [
     specialty: "breast",
     subcategory: "Implant Complications",
     clinicalGroup: "elective",
+    crossContextVisible: true,
     hasStaging: false,
     searchSynonyms: [
       "BII",
@@ -816,6 +820,7 @@ const BREAST_DX_IMPLANT_COMPLICATIONS_EXTENDED: DiagnosisPicklistEntry[] = [
     specialty: "breast",
     subcategory: "Implant Complications",
     clinicalGroup: "reconstructive",
+    crossContextVisible: true,
     hasStaging: false,
     searchSynonyms: [
       "implant malposition",
@@ -848,6 +853,7 @@ const BREAST_DX_IMPLANT_COMPLICATIONS_EXTENDED: DiagnosisPicklistEntry[] = [
     specialty: "breast",
     subcategory: "Implant Complications",
     clinicalGroup: "reconstructive",
+    crossContextVisible: true,
     hasStaging: false,
     searchSynonyms: [
       "animation deformity",
@@ -879,6 +885,7 @@ const BREAST_DX_IMPLANT_COMPLICATIONS_EXTENDED: DiagnosisPicklistEntry[] = [
     specialty: "breast",
     subcategory: "Implant Complications",
     clinicalGroup: "reconstructive",
+    crossContextVisible: true,
     hasStaging: false,
     searchSynonyms: [
       "symmastia",
@@ -911,6 +918,7 @@ const BREAST_DX_IMPLANT_COMPLICATIONS_EXTENDED: DiagnosisPicklistEntry[] = [
     specialty: "breast",
     subcategory: "Implant Complications",
     clinicalGroup: "reconstructive",
+    crossContextVisible: true,
     hasStaging: false,
     searchSynonyms: [
       "implant infection",
@@ -937,6 +945,7 @@ const BREAST_DX_IMPLANT_COMPLICATIONS_EXTENDED: DiagnosisPicklistEntry[] = [
     specialty: "breast",
     subcategory: "Implant Complications",
     clinicalGroup: "reconstructive",
+    crossContextVisible: true,
     hasStaging: false,
     searchSynonyms: [
       "capsule calcification",

@@ -1,13 +1,16 @@
 import { describe, expect, it } from "vitest";
 import type { ProcedurePicklistEntry } from "@/lib/procedurePicklist";
+import type { DiagnosisPicklistEntry } from "@/types/diagnosis";
 import type { BreastSideAssessment, LipofillingData } from "@/types/breast";
 import {
   calculateBreastCompletion,
   getBreastClinicalContext,
+  getBreastDiagnosesForContext,
   getBreastModuleFlags,
   getBreastSideVisibility,
   getLipofillingSummary,
 } from "@/lib/breastConfig";
+import { getDiagnosesForSpecialty } from "@/lib/diagnosisPicklists";
 
 function proc(id: string, tags?: string[]): ProcedurePicklistEntry {
   return {
@@ -185,5 +188,107 @@ describe("getLipofillingSummary", () => {
     expect(getLipofillingSummary(data)).toBe(
       "2 sites, 600ml harvested, 180ml (L), 200ml (R)",
     );
+  });
+});
+
+// ─── Cross-Context Visibility ────────────────────────────────────────────────
+
+function dx(
+  overrides: Partial<DiagnosisPicklistEntry>,
+): DiagnosisPicklistEntry {
+  return {
+    id: "test_dx",
+    displayName: "Test",
+    snomedCtCode: "0",
+    snomedCtDisplay: "Test",
+    specialty: "breast",
+    subcategory: "Test",
+    hasStaging: false,
+    suggestedProcedures: [],
+    sortOrder: 0,
+    ...overrides,
+  };
+}
+
+describe("getBreastDiagnosesForContext — crossContextVisible", () => {
+  it("includes crossContextVisible diagnoses in reconstructive context", () => {
+    const diagnoses = [
+      dx({ id: "a", clinicalGroup: "elective", crossContextVisible: true }),
+      dx({ id: "b", clinicalGroup: "elective" }),
+    ];
+    const result = getBreastDiagnosesForContext("reconstructive", diagnoses);
+    expect(result.map((d) => d.id)).toContain("a");
+    expect(result.map((d) => d.id)).not.toContain("b");
+  });
+
+  it("includes crossContextVisible diagnoses in aesthetic context", () => {
+    const diagnoses = [
+      dx({
+        id: "a",
+        clinicalGroup: "reconstructive",
+        crossContextVisible: true,
+      }),
+      dx({ id: "b", clinicalGroup: "reconstructive" }),
+    ];
+    const result = getBreastDiagnosesForContext("aesthetic", diagnoses);
+    expect(result.map((d) => d.id)).toContain("a");
+    expect(result.map((d) => d.id)).not.toContain("b");
+  });
+
+  it("excludes crossContextVisible diagnoses from gender_affirming context", () => {
+    const diagnoses = [
+      dx({
+        id: "a",
+        clinicalGroup: "reconstructive",
+        crossContextVisible: true,
+      }),
+      dx({ id: "b", clinicalGroup: "gender_affirming" }),
+    ];
+    const result = getBreastDiagnosesForContext("gender_affirming", diagnoses);
+    expect(result.map((d) => d.id)).not.toContain("a");
+    expect(result.map((d) => d.id)).toContain("b");
+  });
+
+  it("does not include non-crossContextVisible diagnoses across contexts", () => {
+    const diagnoses = [
+      dx({ id: "a", clinicalGroup: "elective" }),
+      dx({ id: "b", clinicalGroup: "reconstructive" }),
+    ];
+    const recon = getBreastDiagnosesForContext("reconstructive", diagnoses);
+    expect(recon.map((d) => d.id)).toContain("b");
+    expect(recon.map((d) => d.id)).not.toContain("a");
+
+    const aes = getBreastDiagnosesForContext("aesthetic", diagnoses);
+    expect(aes.map((d) => d.id)).toContain("a");
+    expect(aes.map((d) => d.id)).not.toContain("b");
+  });
+
+  it("all 9 implant complication entries appear in both reconstructive and aesthetic", () => {
+    const allBreast = getDiagnosesForSpecialty("breast");
+    const implantIds = [
+      "breast_dx_capsular_contracture",
+      "breast_dx_implant_rupture",
+      "breast_dx_bia_alcl",
+      "breast_dx_implant_illness",
+      "breast_dx_implant_malposition",
+      "breast_dx_animation_deformity",
+      "breast_dx_symmastia",
+      "breast_dx_implant_infection",
+      "breast_dx_capsule_calcification",
+    ];
+
+    const recon = getBreastDiagnosesForContext("reconstructive", allBreast);
+    const aesthetic = getBreastDiagnosesForContext("aesthetic", allBreast);
+    const ga = getBreastDiagnosesForContext("gender_affirming", allBreast);
+
+    const reconIds = recon.map((d) => d.id);
+    const aestheticIds = aesthetic.map((d) => d.id);
+    const gaIds = ga.map((d) => d.id);
+
+    for (const id of implantIds) {
+      expect(reconIds).toContain(id);
+      expect(aestheticIds).toContain(id);
+      expect(gaIds).not.toContain(id);
+    }
   });
 });

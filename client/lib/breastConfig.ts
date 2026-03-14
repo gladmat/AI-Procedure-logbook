@@ -73,14 +73,19 @@ const CONTEXT_TO_CLINICAL_GROUPS: Record<BreastClinicalContext, string[]> = {
 
 /**
  * Filter breast diagnoses by clinical context.
- * Returns only diagnoses whose clinicalGroup matches the selected context.
+ * Returns diagnoses whose clinicalGroup matches the selected context,
+ * plus any crossContextVisible diagnoses (except in gender_affirming context).
  */
 export function getBreastDiagnosesForContext(
   context: BreastClinicalContext,
   allDiagnoses: DiagnosisPicklistEntry[],
 ): DiagnosisPicklistEntry[] {
   const groups = CONTEXT_TO_CLINICAL_GROUPS[context];
-  return allDiagnoses.filter((d) => groups.includes(d.clinicalGroup ?? ""));
+  return allDiagnoses.filter(
+    (d) =>
+      groups.includes(d.clinicalGroup ?? "") ||
+      (d.crossContextVisible === true && context !== "gender_affirming"),
+  );
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
