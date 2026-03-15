@@ -317,12 +317,6 @@ const SelectedDiagnosisDetail = React.memo(function SelectedDiagnosisDetail({
       >
         {dx.displayName}
       </ThemedText>
-      <ThemedText
-        type="small"
-        style={{ color: theme.textTertiary, fontSize: 11 }}
-      >
-        {dx.snomedCtCode}
-      </ThemedText>
     </View>
   );
 });
@@ -395,6 +389,5 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.sm,
     borderRadius: BorderRadius.sm,
     borderWidth: 1,
-    gap: 2,
   },
 });

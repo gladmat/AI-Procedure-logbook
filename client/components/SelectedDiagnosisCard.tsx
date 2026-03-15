@@ -42,11 +42,6 @@ export function SelectedDiagnosisCard({
           <ThemedText style={[styles.diagnosisName, { color: theme.text }]}>
             {diagnosis.displayName}
           </ThemedText>
-          <ThemedText
-            style={[styles.snomedCode, { color: theme.textTertiary }]}
-          >
-            SNOMED CT: {diagnosis.snomedCtCode}
-          </ThemedText>
         </View>
         <Pressable
           onPress={onClear}
@@ -87,14 +82,9 @@ const styles = StyleSheet.create({
   },
   info: {
     flex: 1,
-    gap: 2,
   },
   diagnosisName: {
     fontSize: 14,
-    fontWeight: "500",
-  },
-  snomedCode: {
-    fontSize: 11,
     fontWeight: "500",
   },
 });

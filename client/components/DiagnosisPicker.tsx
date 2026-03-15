@@ -190,6 +190,15 @@ export function DiagnosisPicker({
     [recentDiagnoses, clinicalGroupFilter, filteredDiagnosisIds],
   );
 
+  // Resolve selected diagnosis entry for the detail panel below chips
+  const selectedDiagnosisEntry = useMemo(() => {
+    if (!selectedDiagnosisId) return undefined;
+    if (filteredDiagnoses) {
+      return filteredDiagnoses.find((d) => d.id === selectedDiagnosisId);
+    }
+    return findDiagnosisById(selectedDiagnosisId);
+  }, [selectedDiagnosisId, filteredDiagnoses]);
+
   if (!hasDiagnosisPicklist(specialty)) {
     return null;
   }
@@ -280,7 +289,7 @@ export function DiagnosisPicker({
         </View>
       ) : null}
 
-      <View style={styles.diagnosisList}>
+      <View style={styles.diagnosisChipGrid}>
         {diagnosesInSubcat.length > 0 ? (
           diagnosesInSubcat.map((dx) => {
             const isSelected = dx.id === selectedDiagnosisId;
@@ -292,55 +301,47 @@ export function DiagnosisPicker({
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   onSelect(dx);
                 }}
+                onLongPress={() => {
+                  Haptics.selectionAsync();
+                  toggleFavourite("diagnosis", dx.id);
+                }}
                 style={[
-                  styles.diagnosisRow,
+                  styles.diagnosisChip,
                   {
                     backgroundColor: isSelected
-                      ? theme.link + "15"
+                      ? theme.link
                       : theme.backgroundDefault,
                     borderColor: isSelected ? theme.link : theme.border,
                   },
                 ]}
                 testID={`button-diagnosis-${dx.id}`}
               >
-                <View style={styles.diagnosisRowLeft}>
-                  <ThemedText
-                    style={[
-                      styles.diagnosisName,
-                      {
-                        color: isSelected ? theme.link : theme.text,
-                        fontWeight: isSelected ? "600" : "400",
-                      },
-                    ]}
-                  >
-                    {dx.displayName}
-                  </ThemedText>
-                  <ThemedText
-                    style={[styles.snomedCode, { color: theme.textTertiary }]}
-                  >
-                    {dx.snomedCtCode}
-                  </ThemedText>
-                </View>
-                <View style={styles.diagnosisRowRight}>
-                  <Pressable
-                    onPress={(e) => {
-                      e.stopPropagation();
-                      Haptics.selectionAsync();
-                      toggleFavourite("diagnosis", dx.id);
-                    }}
-                    hitSlop={6}
-                    style={styles.starButton}
-                  >
-                    <Feather
-                      name="star"
-                      size={16}
-                      color={isFav ? theme.link : theme.textTertiary}
-                    />
-                  </Pressable>
-                  {isSelected ? (
-                    <Feather name="check" size={18} color={theme.link} />
-                  ) : null}
-                </View>
+                {isFav ? (
+                  <Feather
+                    name="star"
+                    size={12}
+                    color={isSelected ? theme.buttonText : theme.link}
+                  />
+                ) : null}
+                <ThemedText
+                  style={[
+                    styles.diagnosisChipText,
+                    {
+                      color: isSelected ? theme.buttonText : theme.text,
+                      fontWeight: isSelected ? "600" : "400",
+                    },
+                  ]}
+                  numberOfLines={1}
+                >
+                  {dx.shortName ?? dx.displayName}
+                </ThemedText>
+                {isSelected ? (
+                  <Feather
+                    name="check"
+                    size={14}
+                    color={theme.buttonText}
+                  />
+                ) : null}
               </Pressable>
             );
           })
@@ -352,9 +353,53 @@ export function DiagnosisPicker({
           </ThemedText>
         ) : null}
       </View>
+
+      {/* Full name detail for selected diagnosis (chips show shortName) */}
+      {selectedDiagnosisEntry ? (
+        <SelectedDiagnosisDetail
+          diagnosis={selectedDiagnosisEntry}
+          theme={theme}
+        />
+      ) : null}
     </View>
   );
 }
+
+// ═══════════════════════════════════════════════════════════════
+// Selected diagnosis detail (shows full name below chips)
+// ═══════════════════════════════════════════════════════════════
+
+const SelectedDiagnosisDetail = React.memo(function SelectedDiagnosisDetail({
+  diagnosis,
+  theme,
+}: {
+  diagnosis: DiagnosisPicklistEntry;
+  theme: ReturnType<typeof useTheme>["theme"];
+}) {
+  return (
+    <View
+      style={[
+        styles.selectedDetail,
+        {
+          backgroundColor: theme.link + "10",
+          borderColor: theme.link + "30",
+        },
+      ]}
+    >
+      <ThemedText
+        type="small"
+        style={{ color: theme.text, fontWeight: "500" }}
+        numberOfLines={2}
+      >
+        {diagnosis.displayName}
+      </ThemedText>
+    </View>
+  );
+});
+
+// ═══════════════════════════════════════════════════════════════
+// Styles
+// ═══════════════════════════════════════════════════════════════
 
 const styles = StyleSheet.create({
   container: {
@@ -391,40 +436,34 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "500",
   },
-  diagnosisList: {
+  diagnosisChipGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: Spacing.xs,
   },
-  diagnosisRow: {
+  diagnosisChip: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    gap: 4,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 6,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+  },
+  diagnosisChipText: {
+    fontSize: 13,
+  },
+  selectedDetail: {
+    marginTop: Spacing.sm,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
     borderRadius: BorderRadius.sm,
     borderWidth: 1,
   },
-  diagnosisRowLeft: {
-    flex: 1,
-    gap: 2,
-  },
-  diagnosisRowRight: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.sm,
-  },
-  starButton: {
-    padding: 4,
-  },
-  diagnosisName: {
-    fontSize: 14,
-  },
-  snomedCode: {
-    fontSize: 11,
-    fontWeight: "500",
-  },
   emptyText: {
     fontSize: 14,
     textAlign: "center",
     paddingVertical: Spacing.lg,
+    width: "100%",
   },
 });
