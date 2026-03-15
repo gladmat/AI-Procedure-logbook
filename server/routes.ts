@@ -108,6 +108,23 @@ const avatarUpload = multer({
   },
 });
 
+/**
+ * Safely resolve an avatar path, ensuring it's within the uploads directory.
+ * Prevents path traversal attacks from malformed stored URLs.
+ */
+function safeAvatarPath(storedUrl: string): string | null {
+  // Extract just the filename from the stored URL
+  const filename = path.basename(storedUrl);
+  if (!filename || filename === "." || filename === "..") return null;
+
+  const resolved = path.join(uploadsDir, filename);
+  // Verify the resolved path is still within uploadsDir
+  if (!resolved.startsWith(uploadsDir + path.sep) && resolved !== uploadsDir) {
+    return null;
+  }
+  return resolved;
+}
+
 // ── Facility validation schemas ──────────────────────────────────────────────
 
 const facilityCreateSchema = insertUserFacilitySchema
@@ -200,14 +217,34 @@ function serializeProfile(profile: Profile | undefined | null) {
 const authRateLimiter = new Map<string, { count: number; resetTime: number }>();
 const AUTH_RATE_LIMIT = 10;
 const AUTH_RATE_WINDOW_MS = 60 * 1000;
-const AUTH_RATE_LIMITER_MAX_ENTRIES = 1000;
+const AUTH_RATE_LIMITER_MAX_ENTRIES = 5000;
 
-function cleanupRateLimiter(): void {
-  if (authRateLimiter.size <= AUTH_RATE_LIMITER_MAX_ENTRIES) return;
+// Periodic cleanup: evict expired entries every 60 seconds
+setInterval(() => {
   const now = Date.now();
   for (const [ip, entry] of authRateLimiter) {
     if (now > entry.resetTime) {
       authRateLimiter.delete(ip);
+    }
+  }
+}, 60_000).unref();
+
+function cleanupRateLimiter(): void {
+  if (authRateLimiter.size <= AUTH_RATE_LIMITER_MAX_ENTRIES) return;
+  // Hard cap exceeded — evict oldest expired entries, then LRU if still over
+  const now = Date.now();
+  for (const [ip, entry] of authRateLimiter) {
+    if (now > entry.resetTime) {
+      authRateLimiter.delete(ip);
+    }
+  }
+  // If still over cap after expiry eviction, drop oldest entries
+  if (authRateLimiter.size > AUTH_RATE_LIMITER_MAX_ENTRIES) {
+    const excess = authRateLimiter.size - AUTH_RATE_LIMITER_MAX_ENTRIES;
+    const keys = authRateLimiter.keys();
+    for (let i = 0; i < excess; i++) {
+      const next = keys.next();
+      if (!next.done) authRateLimiter.delete(next.value);
     }
   }
 }
@@ -796,12 +833,9 @@ export async function registerRoutes(app: Express): Promise<void> {
           // Delete old avatar file if it exists
           const existingProfile = await storage.getProfile(req.userId!);
           if (existingProfile?.profilePictureUrl) {
-            const oldPath = path.resolve(
-              process.cwd(),
-              existingProfile.profilePictureUrl.replace(/^\//, ""),
-            );
-            if (fs.existsSync(oldPath)) {
-              fs.unlinkSync(oldPath);
+            const oldPath = safeAvatarPath(existingProfile.profilePictureUrl);
+            if (oldPath && fs.existsSync(oldPath)) {
+              await fs.promises.unlink(oldPath).catch(() => {});
             }
           }
 
@@ -828,12 +862,9 @@ export async function registerRoutes(app: Express): Promise<void> {
       try {
         const existingProfile = await storage.getProfile(req.userId!);
         if (existingProfile?.profilePictureUrl) {
-          const oldPath = path.resolve(
-            process.cwd(),
-            existingProfile.profilePictureUrl.replace(/^\//, ""),
-          );
-          if (fs.existsSync(oldPath)) {
-            fs.unlinkSync(oldPath);
+          const oldPath = safeAvatarPath(existingProfile.profilePictureUrl);
+          if (oldPath && fs.existsSync(oldPath)) {
+            await fs.promises.unlink(oldPath).catch(() => {});
           }
         }
         const profile = await storage.updateProfile(req.userId!, {

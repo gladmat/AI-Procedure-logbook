@@ -13,6 +13,7 @@ import { hashPatientIdentifier } from "@/lib/patientIdentifierHash";
 import { syncNativeInboxCount } from "@/lib/nativeExtensionBridge";
 
 const INBOX_STORAGE_KEY = "opus_inbox_state";
+const INBOX_BACKUP_KEY = "opus_inbox_state_backup";
 const INBOX_MMKV_ID = "opus-inbox";
 const INBOX_MMKV_KEY_ALIAS = "opus_inbox_mmkv_key";
 const INBOX_STATE_VERSION = 2;
@@ -123,6 +124,26 @@ function parseState(raw?: string | null): InboxState {
           : INBOX_STATE_VERSION - 1,
     };
   } catch {
+    // Primary state corrupted — attempt to restore from backup
+    const mmkv = getMMKV();
+    if (mmkv) {
+      const backup = mmkv.getString(INBOX_BACKUP_KEY);
+      if (backup) {
+        try {
+          const parsed = JSON.parse(backup) as InboxState;
+          const items = Array.isArray(parsed.items) ? parsed.items : [];
+          console.warn(
+            "Inbox state corrupted, restored from backup with",
+            items.length,
+            "items",
+          );
+          return { items: items as InboxItem[], version: parsed.version ?? INBOX_STATE_VERSION };
+        } catch {
+          // Backup also corrupted — fall through to empty state
+        }
+      }
+    }
+    console.warn("Inbox state corrupted and no backup available, resetting to empty");
     return baseState();
   }
 }
@@ -137,14 +158,16 @@ function writeState(state: InboxState): void {
   const mmkv = getMMKV();
   if (!mmkv) return;
   const sortedItems = sortItems(state.items);
-  mmkv.set(
-    INBOX_STORAGE_KEY,
-    JSON.stringify({
-      ...state,
-      version: INBOX_STATE_VERSION,
-      items: sortedItems,
-    }),
-  );
+  const serialized = JSON.stringify({
+    ...state,
+    version: INBOX_STATE_VERSION,
+    items: sortedItems,
+  });
+  mmkv.set(INBOX_STORAGE_KEY, serialized);
+
+  // Keep a backup copy for corruption recovery
+  mmkv.set(INBOX_BACKUP_KEY, serialized);
+
   syncNativeInboxCount(
     sortedItems.filter(
       (item) => item.status === "unassigned" || item.status === undefined,

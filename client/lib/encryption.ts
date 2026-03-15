@@ -181,3 +181,15 @@ export async function isEncrypted(data: string): Promise<boolean> {
 export async function getMasterKeyBytes(): Promise<Uint8Array> {
   return getKeyBytes();
 }
+
+/**
+ * Clear cached encryption keys from memory.
+ * Call on app background / lock to reduce key exposure window.
+ */
+export function clearEncryptionKeyCache(): void {
+  if (_cachedKeyBytes) {
+    _cachedKeyBytes.fill(0);
+    _cachedKeyBytes = null;
+  }
+  _cachedKeyHex = null;
+}
