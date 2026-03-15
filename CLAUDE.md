@@ -1324,3 +1324,130 @@ The `OperatingTeamRole`, `OperatingTeamMember` types and operating team UI (add/
 - **Client tests:** `client/lib/__tests__/` and `client/components/media/__tests__/` — handTraumaDiagnosis, handTraumaMapping, handTraumaUx, skinCancerConfig (89 tests), skinCancerPhase4 (11 tests), skinCancerPhase5 (18 tests), skinCancerDiagnoses (7 tests), dashboardSelectors (7 tests), handInfection (42 tests), handElective (52 tests), jointImplant (44 tests), mediaEncryption (7 tests), mediaFileStorage (3 tests), mediaMigration (4 tests), caseSpecialty (5 tests), storageCache (4 tests), storageSpecialtyRepair (2 tests), statisticsHelpers (3 tests), statistics (7 tests), dateValues (12 tests), dateFieldNormalization (4 tests), operativeMedia (19 tests), operativeMediaForm (4 tests), mediaAttachmentDefaults (4 tests), mediaContext (3 tests), mediaTagMigration (82 tests), mediaCaptureProtocols (41 tests), implantExport (3 tests), caseDraftPersistence (1 test), inboxStorage (13 tests), inboxAssignment (17 tests), smartImportPrefs (10 tests), plannedCase (18 tests), mediaOrganiser (15 tests), nhiValidation (12 tests), patientIdentity (11 tests), sharedCaptureIngress (2 tests), operativeRole (68 tests — migration, resolution, export mappings, role defaults), plus media UI coverage for `MediaTagPicker` resync and resolved `MediaTagBadge` rendering
 - **Server tests:** `server/__tests__/` — auth (17 tests), validation (7 tests), diagnosisStagingConfig (3 tests)
 - **Run:** `npm run test` (once) or `npm run test:watch` (watch mode)
+
+## Visual Verification (Expo MCP)
+
+The Expo MCP server is connected. When the dev server is running with `EXPO_UNSTABLE_MCP_SERVER=1 npx expo start --dev-client` and the iOS Simulator has the app loaded, you have access to visual feedback tools.
+
+### Available tools
+
+| Tool | Use for |
+| ---- | ------- |
+| `automation_take_screenshot` | Capture full device screenshot — use after ANY UI change |
+| `automation_find_view_by_testid` | Check if a specific element exists and get its properties |
+| `automation_tap_by_testid` | Tap an interactive element by its testID |
+| `automation_tap` | Tap at specific screen coordinates (fallback only) |
+| `automation_take_screenshot_by_testid` | Screenshot a specific view by its testID |
+
+**Fallback:** If expo-mcp tools fail, use `xcrun simctl io booted screenshot /tmp/screen.png` then read the file.
+
+### When to verify
+
+- Always after modifying any component that renders visible UI
+- Always after changing styles, spacing, layout, or theme tokens
+- Always after adding or reordering form fields
+- Never after pure logic changes (hooks, lib functions, API calls) that don't touch render output
+
+### Visual QA checklist
+
+After taking a screenshot, check for:
+
+1. **Spacing & alignment** — consistent with Spacing constants (4/8/12/16/20/24), no overlapping elements
+2. **Colour consistency** — using theme tokens from `constants/theme.ts`, no hardcoded colours
+3. **Touch targets** — all interactive elements ≥ 44pt height
+4. **Text truncation** — long text uses `numberOfLines` + ellipsis, not overflow
+5. **Dark mode** — all surfaces use `theme.backgroundRoot` / `theme.backgroundElevated` / `theme.backgroundSecondary`, never raw hex
+6. **Safe areas** — content respects `useSafeAreaInsets()` at top and bottom
+7. **Keyboard avoidance** — form inputs not obscured when keyboard is open
+8. **Section nav bar** — all 5 pills (Patient, Case, Operative, Media, Outcomes) visible without horizontal scrolling
+9. **Charcoal + Amber brand** — accent colour is `#E5A00D`, backgrounds are dark charcoal spectrum, no stray bright colours
+
+### testID naming conventions
+
+Use these patterns when adding `testID` props to components. Prefix by element type, suffix with semantic name.
+
+**Screens & containers:**
+- `screen-{name}` — e.g., `screen-dashboard`, `screen-case-form`, `screen-statistics`
+- `section-{name}` — e.g., `section-patient`, `section-case`, `section-operative`, `section-media`, `section-outcomes`
+
+**Navigation:**
+- `tab-{name}` — bottom tabs: `tab-dashboard`, `tab-statistics`, `tab-settings`
+- `nav-pill-{section}` — section nav bar pills: `nav-pill-patient`, `nav-pill-case`, `nav-pill-operative`, `nav-pill-media`, `nav-pill-outcomes`
+
+**Buttons & actions:**
+- `btn-{action}` — e.g., `btn-save-case`, `btn-review-case`, `btn-get-started`, `btn-sign-in`
+- `btn-add-{thing}` — e.g., `btn-add-diagnosis`, `btn-add-procedure`, `btn-add-media`
+- `btn-delete-{thing}` — e.g., `btn-delete-case`, `btn-delete-media`
+
+**Form inputs:**
+- `input-{field}` — e.g., `input-patient-identifier`, `input-nhi`, `input-procedure-date`
+- `picker-{field}` — e.g., `picker-specialty`, `picker-facility`, `picker-diagnosis`
+- `toggle-{field}` — e.g., `toggle-urgency`, `toggle-laterality`
+- `chip-{field}-{value}` — e.g., `chip-wound-risk-clean`, `chip-asa-2`
+
+**Lists & cards:**
+- `card-case-{id}` — dashboard case cards
+- `card-episode-{id}` — active episode cards
+- `card-attention-{type}` — needs attention carousel items
+- `list-{name}` — e.g., `list-recent-cases`, `list-search-results`
+- `item-{type}-{index}` — list items: `item-diagnosis-0`, `item-procedure-1`
+
+**Dashboard specific:**
+- `carousel-attention` — needs attention carousel
+- `row-practice-pulse` — practice pulse metrics row
+- `filter-specialty-{key}` — specialty filter chips
+
+**Media:**
+- `media-thumbnail-{id}` — media gallery items
+- `btn-capture-{protocol}` — guided capture buttons
+
+**Modals & sheets:**
+- `sheet-{name}` — e.g., `sheet-diagnosis-picker`, `sheet-procedure-picker`
+- `modal-{name}` — e.g., `modal-review-case`, `modal-delete-confirm`
+
+### Adding testIDs — priority order
+
+Add testIDs incrementally, starting with the most navigated screens:
+
+1. Onboarding flow — Get Started, Sign In, email/password inputs, PIN entry
+2. Dashboard — tab bar, case cards, specialty filters, FAB, attention carousel
+3. Case form — section nav pills, all inputs in Patient section, save/review buttons
+4. Case form sections — diagnosis picker, procedure picker, laterality, urgency
+5. Case detail — edit button, duplicate button, media gallery
+6. Statistics — tab, section headers, stat cards
+7. Settings — profile, preferences, facilities
+
+**Example: adding testID to an existing component**
+
+```tsx
+// Before
+<Pressable onPress={handleSave}>
+  <ThemedText>Save</ThemedText>
+</Pressable>
+
+// After
+<Pressable testID="btn-save-case" onPress={handleSave}>
+  <ThemedText>Save</ThemedText>
+</Pressable>
+```
+
+No functional change. The testID is only used by the MCP automation tools and accessibility inspector.
+
+### Workflow integration
+
+**When building a new UI feature:**
+
+1. Write/modify the component code
+2. Hot reload picks up changes
+3. Use `automation_take_screenshot` to capture the screen
+4. Analyse: does it match the spec? Any visual issues?
+5. If issues found → fix → repeat from step 2
+6. If clean → move to next component
+
+**When asked to "check the UI" or "verify how X looks":**
+
+1. Navigate to the relevant screen (tap tabs/buttons by testID)
+2. Take a screenshot
+3. Describe what you see: layout, spacing, colours, content
+4. Flag any issues against the Visual QA checklist above
+5. Propose fixes if problems are found
