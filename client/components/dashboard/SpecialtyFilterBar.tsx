@@ -80,6 +80,7 @@ function SpecialtyFilterBarInner({
           return (
             <Pressable
               key={chip.id ?? "all"}
+              testID={`filter-specialty-${chip.id ?? "all"}`}
               onPress={() => handlePress(chip.id)}
               accessibilityRole="button"
               accessibilityState={{ selected: isSelected }}

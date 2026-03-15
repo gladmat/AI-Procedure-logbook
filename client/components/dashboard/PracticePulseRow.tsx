@@ -20,7 +20,7 @@ function PracticePulseRowInner({
   if (totalCaseCount === 0) return null;
 
   return (
-    <View style={styles.container}>
+    <View testID="row-practice-pulse" style={styles.container}>
       <View style={styles.header}>
         <View style={styles.headerTitleRow}>
           <ThemedText
