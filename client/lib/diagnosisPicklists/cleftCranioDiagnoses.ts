@@ -1,98 +1,287 @@
 /**
  * Cleft & Craniofacial Diagnosis Picklist
  *
- * Re-maps 4 cleft entries from headNeckDiagnoses.ts (hn_dx_cleft_*)
- * and adds new entries for craniosynostosis, craniofacial microsomia,
- * Treacher Collins, Pierre Robin, VPI, and cleft nasal deformity.
+ * 38 structured diagnoses covering >95% of cleft/craniofacial cases.
+ * Organised in 9 subcategories.
  *
  * SNOMED CT codes are from the Clinical Finding hierarchy (<<404684003).
- * Procedure suggestion IDs reference ProcedurePicklistEntry.id values.
+ * International Edition only — no UK/AU extension codes.
+ *
+ * Procedure suggestion IDs reference ProcedurePicklistEntry.id values
+ * with `cc_` prefix in procedurePicklist.ts.
  */
 
 import type { DiagnosisPicklistEntry } from "@/types/diagnosis";
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// CLEFT LIP & PALATE — Re-mapped from head_neck with specialty: "cleft_cranio"
+// 1. CLEFT LIP
 // ═══════════════════════════════════════════════════════════════════════════════
 
-const CC_DX_CLEFT: DiagnosisPicklistEntry[] = [
+const CC_DX_CLEFT_LIP: DiagnosisPicklistEntry[] = [
   {
-    id: "cc_dx_cleft_lip_unilateral",
-    displayName: "Cleft lip — unilateral",
-    shortName: "Unilateral cleft lip",
-    snomedCtCode: "80281008",
-    snomedCtDisplay: "Cleft lip (disorder)",
+    id: "cc_dx_cleft_lip_unilateral_incomplete",
+    displayName: "Cleft lip — unilateral incomplete",
+    shortName: "UCL incomplete",
+    snomedCtCode: "65404009",
+    snomedCtDisplay: "Cleft lip, unilateral (disorder)",
     specialty: "cleft_cranio",
-    subcategory: "Cleft Lip & Palate",
+    subcategory: "Cleft Lip",
     clinicalGroup: "congenital",
     hasStaging: false,
     searchSynonyms: [
-      "unilateral cleft",
-      "cleft lip",
-      "CL",
-      "lip cleft",
-      "Millard",
-      "Mohler",
+      "incomplete cleft lip",
+      "partial cleft lip",
+      "unilateral lip",
+      "simonart band",
+      "UCL",
     ],
     suggestedProcedures: [
       {
-        procedurePicklistId: "hn_cleft_lip_unilateral",
+        procedurePicklistId: "cc_lip_repair_unilateral",
         displayName: "Unilateral cleft lip repair",
         isDefault: true,
         sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "cc_primary_rhinoplasty",
+        displayName: "Primary cleft rhinoplasty",
+        isDefault: false,
+        sortOrder: 2,
+      },
+      {
+        procedurePicklistId: "cc_grommets",
+        displayName: "Myringotomy with grommet insertion",
+        isDefault: false,
+        sortOrder: 3,
       },
     ],
     sortOrder: 1,
   },
   {
-    id: "cc_dx_cleft_lip_bilateral",
-    displayName: "Cleft lip — bilateral",
-    shortName: "Bilateral cleft lip",
-    snomedCtCode: "304068004",
-    snomedCtDisplay: "Bilateral cleft lip (disorder)",
+    id: "cc_dx_cleft_lip_unilateral_complete",
+    displayName: "Cleft lip — unilateral complete",
+    shortName: "UCL complete",
+    snomedCtCode: "65404009",
+    snomedCtDisplay: "Cleft lip, unilateral (disorder)",
     specialty: "cleft_cranio",
-    subcategory: "Cleft Lip & Palate",
+    subcategory: "Cleft Lip",
     clinicalGroup: "congenital",
     hasStaging: false,
-    searchSynonyms: ["bilateral cleft", "BCL", "bilateral CLP"],
+    searchSynonyms: [
+      "complete cleft lip",
+      "total cleft lip",
+      "full cleft lip",
+      "unilateral complete",
+      "UCL",
+    ],
     suggestedProcedures: [
       {
-        procedurePicklistId: "hn_cleft_lip_bilateral",
-        displayName: "Bilateral cleft lip repair",
+        procedurePicklistId: "cc_lip_repair_unilateral",
+        displayName: "Unilateral cleft lip repair",
         isDefault: true,
         sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "cc_primary_rhinoplasty",
+        displayName: "Primary cleft rhinoplasty",
+        isDefault: false,
+        sortOrder: 2,
+      },
+      {
+        procedurePicklistId: "cc_lip_adhesion",
+        displayName: "Lip adhesion",
+        isDefault: false,
+        sortOrder: 3,
+      },
+      {
+        procedurePicklistId: "cc_grommets",
+        displayName: "Myringotomy with grommet insertion",
+        isDefault: false,
+        sortOrder: 4,
       },
     ],
     sortOrder: 2,
   },
   {
-    id: "cc_dx_cleft_palate",
-    displayName: "Cleft palate",
-    shortName: "Cleft palate",
-    snomedCtCode: "87979003",
-    snomedCtDisplay: "Cleft palate (disorder)",
+    id: "cc_dx_cleft_lip_bilateral",
+    displayName: "Cleft lip — bilateral",
+    shortName: "BCL",
+    snomedCtCode: "29164008",
+    snomedCtDisplay: "Bilateral cleft lip (disorder)",
     specialty: "cleft_cranio",
-    subcategory: "Cleft Lip & Palate",
+    subcategory: "Cleft Lip",
     clinicalGroup: "congenital",
     hasStaging: false,
     searchSynonyms: [
-      "palate cleft",
-      "CP",
-      "palatoplasty",
-      "Veau",
-      "Furlow",
-      "von Langenbeck",
+      "bilateral cleft lip",
+      "BCL",
+      "double cleft lip",
+      "bilateral cheiloschisis",
     ],
     suggestedProcedures: [
       {
-        procedurePicklistId: "hn_cleft_palate",
-        displayName: "Cleft palate repair",
+        procedurePicklistId: "cc_lip_repair_bilateral",
+        displayName: "Bilateral cleft lip repair",
         isDefault: true,
         sortOrder: 1,
       },
       {
-        procedurePicklistId: "hn_cleft_velopharyngeal_insufficiency",
-        displayName: "VPI surgery (secondary)",
+        procedurePicklistId: "cc_primary_rhinoplasty",
+        displayName: "Primary cleft rhinoplasty",
+        isDefault: false,
+        sortOrder: 2,
+      },
+      {
+        procedurePicklistId: "cc_grommets",
+        displayName: "Myringotomy with grommet insertion",
+        isDefault: false,
+        sortOrder: 3,
+      },
+    ],
+    sortOrder: 3,
+  },
+  {
+    id: "cc_dx_cleft_lip_microform",
+    displayName: "Microform cleft lip",
+    shortName: "Microform CL",
+    snomedCtCode: "253983005", // VERIFY — may be UK extension
+    snomedCtDisplay: "Microform cleft lip (disorder)",
+    specialty: "cleft_cranio",
+    subcategory: "Cleft Lip",
+    clinicalGroup: "congenital",
+    hasStaging: false,
+    searchSynonyms: [
+      "microform",
+      "forme fruste",
+      "minor form cleft",
+      "mini microform",
+      "pseudocleft",
+    ],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "cc_lip_scar_revision",
+        displayName: "Cleft lip scar revision",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "cc_lip_repair_unilateral",
+        displayName: "Unilateral cleft lip repair",
+        isDefault: false,
+        sortOrder: 2,
+      },
+    ],
+    sortOrder: 4,
+  },
+];
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 2. CLEFT PALATE
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const CC_DX_CLEFT_PALATE: DiagnosisPicklistEntry[] = [
+  {
+    id: "cc_dx_cleft_soft_palate",
+    displayName: "Cleft soft palate",
+    shortName: "Soft palate cleft",
+    snomedCtCode: "47563007",
+    snomedCtDisplay: "Cleft palate, soft (disorder)",
+    specialty: "cleft_cranio",
+    subcategory: "Cleft Palate",
+    clinicalGroup: "congenital",
+    hasStaging: true, // Veau classification
+    searchSynonyms: [
+      "soft palate cleft",
+      "veau I",
+      "veau 1",
+      "posterior cleft palate",
+      "velar cleft",
+      "CP",
+    ],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "cc_palate_repair_soft",
+        displayName: "Repair of cleft soft palate",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "cc_grommets",
+        displayName: "Myringotomy with grommet insertion",
+        isDefault: false,
+        sortOrder: 2,
+      },
+    ],
+    sortOrder: 1,
+  },
+  {
+    id: "cc_dx_cleft_hard_soft_palate",
+    displayName: "Cleft hard and soft palate",
+    shortName: "Hard+soft palate cleft",
+    snomedCtCode: "63567004",
+    snomedCtDisplay: "Cleft hard palate with cleft soft palate (disorder)",
+    specialty: "cleft_cranio",
+    subcategory: "Cleft Palate",
+    clinicalGroup: "congenital",
+    hasStaging: true, // Veau classification
+    searchSynonyms: [
+      "complete cleft palate",
+      "veau II",
+      "veau 2",
+      "hard palate cleft",
+      "palatoschisis",
+      "CP",
+    ],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "cc_palatoplasty",
+        displayName: "Palatoplasty",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "cc_vomer_flap",
+        displayName: "Vomer flap",
+        isDefault: false,
+        sortOrder: 2,
+      },
+      {
+        procedurePicklistId: "cc_grommets",
+        displayName: "Myringotomy with grommet insertion",
+        isDefault: false,
+        sortOrder: 3,
+      },
+    ],
+    sortOrder: 2,
+  },
+  {
+    id: "cc_dx_submucous_cleft_palate",
+    displayName: "Submucous cleft palate",
+    shortName: "SMCP",
+    snomedCtCode: "253986002", // VERIFY
+    snomedCtDisplay: "Submucous cleft palate (disorder)",
+    specialty: "cleft_cranio",
+    subcategory: "Cleft Palate",
+    clinicalGroup: "congenital",
+    hasStaging: false,
+    searchSynonyms: [
+      "submucosal cleft",
+      "occult cleft",
+      "zona pellucida",
+      "muscular diastasis",
+      "SMCP",
+      "Calnan triad",
+    ],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "cc_palate_repair_soft",
+        displayName: "Repair of cleft soft palate",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "cc_sphincter_pharyngoplasty",
+        displayName: "Sphincter pharyngoplasty",
         isDefault: false,
         sortOrder: 2,
       },
@@ -100,13 +289,427 @@ const CC_DX_CLEFT: DiagnosisPicklistEntry[] = [
     sortOrder: 3,
   },
   {
+    id: "cc_dx_bifid_uvula",
+    displayName: "Bifid uvula",
+    shortName: "Bifid uvula",
+    snomedCtCode: "68570004",
+    snomedCtDisplay: "Bifid uvula (disorder)",
+    specialty: "cleft_cranio",
+    subcategory: "Cleft Palate",
+    clinicalGroup: "congenital",
+    hasStaging: false,
+    searchSynonyms: ["split uvula", "cleft uvula", "bifid uvula"],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "cc_palate_repair_soft",
+        displayName: "Repair of cleft soft palate",
+        isDefault: true,
+        sortOrder: 1,
+      },
+    ],
+    sortOrder: 4,
+  },
+];
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 3. CLEFT LIP & PALATE
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const CC_DX_CLEFT_LIP_PALATE: DiagnosisPicklistEntry[] = [
+  {
+    id: "cc_dx_uclp_complete",
+    displayName: "Unilateral cleft lip and palate — complete",
+    shortName: "UCLP complete",
+    snomedCtCode: "87979003",
+    snomedCtDisplay: "Cleft palate with cleft lip (disorder)",
+    specialty: "cleft_cranio",
+    subcategory: "Cleft Lip & Palate",
+    clinicalGroup: "congenital",
+    hasStaging: true, // Veau III
+    searchSynonyms: [
+      "UCLP",
+      "unilateral complete CLP",
+      "veau III",
+      "veau 3",
+      "complete unilateral",
+      "cheilognathopalatoscisis",
+    ],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "cc_lip_repair_unilateral",
+        displayName: "Unilateral cleft lip repair",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "cc_primary_rhinoplasty",
+        displayName: "Primary cleft rhinoplasty",
+        isDefault: false,
+        sortOrder: 2,
+      },
+      {
+        procedurePicklistId: "cc_palatoplasty",
+        displayName: "Palatoplasty",
+        isDefault: false,
+        sortOrder: 3,
+      },
+      {
+        procedurePicklistId: "cc_vomer_flap",
+        displayName: "Vomer flap",
+        isDefault: false,
+        sortOrder: 4,
+      },
+      {
+        procedurePicklistId: "cc_grommets",
+        displayName: "Myringotomy with grommet insertion",
+        isDefault: false,
+        sortOrder: 5,
+      },
+    ],
+    sortOrder: 1,
+  },
+  {
+    id: "cc_dx_uclp_incomplete",
+    displayName: "Unilateral cleft lip and palate — incomplete",
+    shortName: "UCLP incomplete",
+    snomedCtCode: "87979003",
+    snomedCtDisplay: "Cleft palate with cleft lip (disorder)",
+    specialty: "cleft_cranio",
+    subcategory: "Cleft Lip & Palate",
+    clinicalGroup: "congenital",
+    hasStaging: true,
+    searchSynonyms: [
+      "incomplete UCLP",
+      "partial unilateral CLP",
+      "UCLP",
+    ],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "cc_lip_repair_unilateral",
+        displayName: "Unilateral cleft lip repair",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "cc_primary_rhinoplasty",
+        displayName: "Primary cleft rhinoplasty",
+        isDefault: false,
+        sortOrder: 2,
+      },
+      {
+        procedurePicklistId: "cc_palatoplasty",
+        displayName: "Palatoplasty",
+        isDefault: false,
+        sortOrder: 3,
+      },
+      {
+        procedurePicklistId: "cc_grommets",
+        displayName: "Myringotomy with grommet insertion",
+        isDefault: false,
+        sortOrder: 4,
+      },
+    ],
+    sortOrder: 2,
+  },
+  {
+    id: "cc_dx_bclp_complete",
+    displayName: "Bilateral cleft lip and palate — complete",
+    shortName: "BCLP complete",
+    snomedCtCode: "70241007",
+    snomedCtDisplay: "Cleft palate with bilateral cleft lip (disorder)",
+    specialty: "cleft_cranio",
+    subcategory: "Cleft Lip & Palate",
+    clinicalGroup: "congenital",
+    hasStaging: true, // Veau IV
+    searchSynonyms: [
+      "BCLP",
+      "bilateral complete CLP",
+      "veau IV",
+      "veau 4",
+      "bilateral complete",
+    ],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "cc_lip_repair_bilateral",
+        displayName: "Bilateral cleft lip repair",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "cc_primary_rhinoplasty",
+        displayName: "Primary cleft rhinoplasty",
+        isDefault: false,
+        sortOrder: 2,
+      },
+      {
+        procedurePicklistId: "cc_palatoplasty",
+        displayName: "Palatoplasty",
+        isDefault: false,
+        sortOrder: 3,
+      },
+      {
+        procedurePicklistId: "cc_vomer_flap",
+        displayName: "Vomer flap",
+        isDefault: false,
+        sortOrder: 4,
+      },
+      {
+        procedurePicklistId: "cc_grommets",
+        displayName: "Myringotomy with grommet insertion",
+        isDefault: false,
+        sortOrder: 5,
+      },
+    ],
+    sortOrder: 3,
+  },
+  {
+    id: "cc_dx_bclp_incomplete",
+    displayName: "Bilateral cleft lip and palate — incomplete",
+    shortName: "BCLP incomplete",
+    snomedCtCode: "70241007",
+    snomedCtDisplay: "Cleft palate with bilateral cleft lip (disorder)",
+    specialty: "cleft_cranio",
+    subcategory: "Cleft Lip & Palate",
+    clinicalGroup: "congenital",
+    hasStaging: true,
+    searchSynonyms: [
+      "incomplete BCLP",
+      "partial bilateral CLP",
+      "BCLP",
+    ],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "cc_lip_repair_bilateral",
+        displayName: "Bilateral cleft lip repair",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "cc_primary_rhinoplasty",
+        displayName: "Primary cleft rhinoplasty",
+        isDefault: false,
+        sortOrder: 2,
+      },
+      {
+        procedurePicklistId: "cc_palatoplasty",
+        displayName: "Palatoplasty",
+        isDefault: false,
+        sortOrder: 3,
+      },
+      {
+        procedurePicklistId: "cc_grommets",
+        displayName: "Myringotomy with grommet insertion",
+        isDefault: false,
+        sortOrder: 4,
+      },
+    ],
+    sortOrder: 4,
+  },
+];
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 4. SECONDARY CLEFT DEFORMITY
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const CC_DX_SECONDARY: DiagnosisPicklistEntry[] = [
+  {
+    id: "cc_dx_cleft_nasal_deformity",
+    displayName: "Cleft nasal deformity",
+    shortName: "Cleft nose",
+    snomedCtCode: "95428003",
+    snomedCtDisplay: "Deformity of nose (disorder)",
+    specialty: "cleft_cranio",
+    subcategory: "Secondary Cleft Deformity",
+    clinicalGroup: "congenital",
+    hasStaging: false,
+    searchSynonyms: [
+      "cleft nose",
+      "nasal asymmetry",
+      "cleft rhinoplasty",
+      "nasal deformity",
+      "secondary nasal deformity",
+    ],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "cc_septorhinoplasty_definitive",
+        displayName: "Cleft septorhinoplasty — definitive",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "cc_rhinoplasty_intermediate",
+        displayName: "Cleft rhinoplasty — intermediate",
+        isDefault: false,
+        sortOrder: 2,
+      },
+      {
+        procedurePicklistId: "cc_septorhinoplasty_rib_graft",
+        displayName: "Septorhinoplasty with rib cartilage graft",
+        isDefault: false,
+        sortOrder: 3,
+      },
+      {
+        procedurePicklistId: "cc_columellar_lengthening",
+        displayName: "Columellar lengthening",
+        isDefault: false,
+        sortOrder: 4,
+      },
+    ],
+    sortOrder: 1,
+  },
+  {
+    id: "cc_dx_cleft_lip_scar",
+    displayName: "Cleft lip scar / secondary lip deformity",
+    shortName: "Cleft lip scar",
+    snomedCtCode: "275322007",
+    snomedCtDisplay: "Scar of skin (disorder)",
+    specialty: "cleft_cranio",
+    subcategory: "Secondary Cleft Deformity",
+    clinicalGroup: "congenital",
+    hasStaging: false,
+    searchSynonyms: [
+      "lip scar",
+      "cleft lip revision",
+      "lip asymmetry",
+      "secondary lip deformity",
+      "scar revision",
+    ],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "cc_lip_scar_revision",
+        displayName: "Cleft lip scar revision",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "cc_abbe_flap",
+        displayName: "Abbe flap",
+        isDefault: false,
+        sortOrder: 2,
+      },
+      {
+        procedurePicklistId: "cc_vermilion_advancement",
+        displayName: "Vermilion advancement",
+        isDefault: false,
+        sortOrder: 3,
+      },
+    ],
+    sortOrder: 2,
+  },
+  {
+    id: "cc_dx_oronasal_fistula",
+    displayName: "Oronasal fistula (post-palatoplasty)",
+    shortName: "Palatal fistula",
+    snomedCtCode: "118947004",
+    snomedCtDisplay: "Fistula of palate (disorder)",
+    specialty: "cleft_cranio",
+    subcategory: "Secondary Cleft Deformity",
+    clinicalGroup: "congenital",
+    hasStaging: true, // Pittsburgh fistula classification
+    searchSynonyms: [
+      "palatal fistula",
+      "oronasal fistula",
+      "ONF",
+      "post-palatoplasty fistula",
+      "fistula repair",
+    ],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "cc_fistula_repair_local",
+        displayName: "Oronasal fistula repair — local flaps",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "cc_tongue_flap_fistula",
+        displayName: "Tongue flap for fistula",
+        isDefault: false,
+        sortOrder: 2,
+      },
+      {
+        procedurePicklistId: "cc_buccal_fat_pad_flap",
+        displayName: "Buccal fat pad flap",
+        isDefault: false,
+        sortOrder: 3,
+      },
+    ],
+    sortOrder: 3,
+  },
+];
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 5. VELOPHARYNGEAL INSUFFICIENCY
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const CC_DX_VPI: DiagnosisPicklistEntry[] = [
+  {
+    id: "cc_dx_vpi",
+    displayName: "Velopharyngeal insufficiency (VPI)",
+    shortName: "VPI",
+    snomedCtCode: "232416001",
+    snomedCtDisplay: "Velopharyngeal incompetence (disorder)",
+    specialty: "cleft_cranio",
+    subcategory: "Velopharyngeal Insufficiency",
+    clinicalGroup: "congenital",
+    hasStaging: false,
+    searchSynonyms: [
+      "VPI",
+      "VPD",
+      "velopharyngeal incompetence",
+      "hypernasality",
+      "nasal emission",
+      "velopharyngeal dysfunction",
+      "speech surgery",
+    ],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "cc_sphincter_pharyngoplasty",
+        displayName: "Sphincter pharyngoplasty",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "cc_pharyngeal_flap",
+        displayName: "Pharyngeal flap",
+        isDefault: false,
+        sortOrder: 2,
+      },
+      {
+        procedurePicklistId: "cc_furlow_redo",
+        displayName: "Furlow re-do / palatal lengthening",
+        isDefault: false,
+        sortOrder: 3,
+      },
+      {
+        procedurePicklistId: "cc_palate_rere_pair_sommerlad",
+        displayName: "Palatal re-repair (Sommerlad)",
+        isDefault: false,
+        sortOrder: 4,
+      },
+      {
+        procedurePicklistId: "cc_fat_injection_pharynx",
+        displayName: "Fat injection to pharynx",
+        isDefault: false,
+        sortOrder: 5,
+      },
+    ],
+    sortOrder: 1,
+  },
+];
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 6. ALVEOLAR & MAXILLARY
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const CC_DX_ALVEOLAR: DiagnosisPicklistEntry[] = [
+  {
     id: "cc_dx_alveolar_cleft",
     displayName: "Alveolar cleft",
     shortName: "Alveolar cleft",
-    snomedCtCode: "445306000",
+    snomedCtCode: "253982000", // VERIFY — may be extension code
     snomedCtDisplay: "Cleft of alveolar ridge (disorder)",
     specialty: "cleft_cranio",
-    subcategory: "Cleft Lip & Palate",
+    subcategory: "Alveolar & Maxillary",
     clinicalGroup: "congenital",
     hasStaging: false,
     searchSynonyms: [
@@ -114,221 +717,224 @@ const CC_DX_CLEFT: DiagnosisPicklistEntry[] = [
       "ABG",
       "secondary bone graft",
       "alveolar cleft",
+      "alveolar ridge cleft",
     ],
     suggestedProcedures: [
       {
-        procedurePicklistId: "hn_cleft_alveolar_bone_graft",
-        displayName: "Alveolar bone graft",
+        procedurePicklistId: "cc_alveolar_bone_graft_secondary",
+        displayName: "Secondary alveolar bone graft",
         isDefault: true,
         sortOrder: 1,
       },
-    ],
-    sortOrder: 4,
-  },
-];
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// SECONDARY / REVISION
-// ═══════════════════════════════════════════════════════════════════════════════
-
-const CC_DX_SECONDARY: DiagnosisPicklistEntry[] = [
-  {
-    id: "cc_dx_cleft_rhinoplasty",
-    displayName: "Cleft nasal deformity (rhinoplasty)",
-    shortName: "Cleft rhinoplasty",
-    snomedCtCode: "253986002",
-    snomedCtDisplay: "Nasal deformity associated with cleft (disorder)",
-    specialty: "cleft_cranio",
-    subcategory: "Secondary / Revision",
-    clinicalGroup: "congenital",
-    hasStaging: false,
-    searchSynonyms: [
-      "cleft nose",
-      "cleft rhinoplasty",
-      "secondary rhinoplasty",
-      "nasal deformity cleft",
-    ],
-    suggestedProcedures: [
       {
-        procedurePicklistId: "cc_cleft_rhinoplasty",
-        displayName: "Cleft rhinoplasty",
-        isDefault: true,
-        sortOrder: 1,
+        procedurePicklistId: "cc_alveolar_bone_graft_tertiary",
+        displayName: "Tertiary alveolar bone graft",
+        isDefault: false,
+        sortOrder: 2,
+      },
+      {
+        procedurePicklistId: "cc_bone_graft_harvest_iliac",
+        displayName: "Bone graft harvest — iliac crest",
+        isDefault: false,
+        sortOrder: 3,
       },
     ],
     sortOrder: 1,
   },
   {
-    id: "cc_dx_oronasal_fistula",
-    displayName: "Oronasal fistula (post-palatoplasty)",
-    shortName: "Palatal fistula",
-    snomedCtCode: "370485008",
-    snomedCtDisplay: "Oronasal fistula (disorder)",
+    id: "cc_dx_cleft_maxillary_hypoplasia",
+    displayName: "Cleft maxillary hypoplasia",
+    shortName: "Midface hypoplasia",
+    snomedCtCode: "253985003", // VERIFY — may be extension code
+    snomedCtDisplay: "Maxillary hypoplasia associated with cleft (disorder)",
     specialty: "cleft_cranio",
-    subcategory: "Secondary / Revision",
+    subcategory: "Alveolar & Maxillary",
     clinicalGroup: "congenital",
     hasStaging: false,
     searchSynonyms: [
-      "palatal fistula",
-      "oronasal fistula",
-      "post-palatoplasty fistula",
-      "fistula repair",
+      "midface hypoplasia",
+      "maxillary retrusion",
+      "class III cleft",
+      "maxillary deficiency",
+      "Le Fort I cleft",
     ],
     suggestedProcedures: [
       {
-        procedurePicklistId: "cc_fistula_repair",
-        displayName: "Oronasal fistula repair",
+        procedurePicklistId: "cc_lefort_i_osteotomy",
+        displayName: "Le Fort I osteotomy",
         isDefault: true,
         sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "cc_lefort_i_distraction",
+        displayName: "Le Fort I distraction osteogenesis",
+        isDefault: false,
+        sortOrder: 2,
+      },
+      {
+        procedurePicklistId: "cc_anterior_maxillary_distraction",
+        displayName: "Anterior maxillary distraction",
+        isDefault: false,
+        sortOrder: 3,
       },
     ],
     sortOrder: 2,
   },
-  {
-    id: "cc_dx_vpi",
-    displayName: "Velopharyngeal insufficiency (VPI)",
-    shortName: "VPI",
-    snomedCtCode: "229726002",
-    snomedCtDisplay: "Structural velopharyngeal impairment (disorder)",
-    specialty: "cleft_cranio",
-    subcategory: "Secondary / Revision",
-    clinicalGroup: "congenital",
-    hasStaging: false,
-    searchSynonyms: [
-      "VPI",
-      "velopharyngeal",
-      "hypernasality",
-      "pharyngoplasty",
-      "speech surgery",
-    ],
-    suggestedProcedures: [
-      {
-        procedurePicklistId: "cc_pharyngoplasty",
-        displayName: "Pharyngoplasty (VPI surgery)",
-        isDefault: true,
-        sortOrder: 1,
-      },
-    ],
-    sortOrder: 3,
-  },
 ];
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// CRANIOFACIAL — Syndromic & craniosynostosis
+// 7. NON-SYNDROMIC CRANIOSYNOSTOSIS
 // ═══════════════════════════════════════════════════════════════════════════════
 
-const CC_DX_CRANIOFACIAL: DiagnosisPicklistEntry[] = [
+const CC_DX_CRANIOSYNOSTOSIS: DiagnosisPicklistEntry[] = [
   {
-    id: "cc_dx_craniosynostosis_sagittal",
+    id: "cc_dx_sagittal_synostosis",
     displayName: "Craniosynostosis — sagittal (scaphocephaly)",
     shortName: "Sagittal synostosis",
-    snomedCtCode: "57219006",
-    snomedCtDisplay: "Sagittal craniosynostosis (disorder)",
+    snomedCtCode: "48069004",
+    snomedCtDisplay: "Premature closure of sagittal suture (disorder)",
     specialty: "cleft_cranio",
-    subcategory: "Craniofacial",
+    subcategory: "Non-Syndromic Craniosynostosis",
     clinicalGroup: "congenital",
     hasStaging: false,
     searchSynonyms: [
       "sagittal synostosis",
       "scaphocephaly",
+      "dolichocephaly",
       "craniosynostosis",
       "strip craniectomy",
     ],
     suggestedProcedures: [
       {
-        procedurePicklistId: "cc_cranial_vault_remodel",
-        displayName: "Cranial vault remodelling",
+        procedurePicklistId: "cc_pi_plasty",
+        displayName: "Pi-plasty",
         isDefault: true,
         sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "cc_endoscopic_strip_craniectomy",
+        displayName: "Endoscopic strip craniectomy",
+        isDefault: false,
+        sortOrder: 2,
+      },
+      {
+        procedurePicklistId: "cc_cranial_vault_remodelling",
+        displayName: "Open cranial vault remodelling",
+        isDefault: false,
+        sortOrder: 3,
+      },
+      {
+        procedurePicklistId: "cc_spring_cranioplasty",
+        displayName: "Spring-assisted cranioplasty",
+        isDefault: false,
+        sortOrder: 4,
       },
     ],
     sortOrder: 1,
   },
   {
-    id: "cc_dx_craniosynostosis_metopic",
+    id: "cc_dx_metopic_synostosis",
     displayName: "Craniosynostosis — metopic (trigonocephaly)",
     shortName: "Metopic synostosis",
-    snomedCtCode: "57219006",
-    snomedCtDisplay: "Metopic craniosynostosis (disorder)",
+    snomedCtCode: "90145001",
+    snomedCtDisplay: "Premature closure of metopic suture (disorder)",
     specialty: "cleft_cranio",
-    subcategory: "Craniofacial",
+    subcategory: "Non-Syndromic Craniosynostosis",
     clinicalGroup: "congenital",
     hasStaging: false,
     searchSynonyms: [
       "metopic synostosis",
       "trigonocephaly",
+      "metopic ridge",
       "frontal synostosis",
     ],
     suggestedProcedures: [
       {
-        procedurePicklistId: "cc_fronto_orbital",
-        displayName: "Fronto-orbital advancement (FOA)",
+        procedurePicklistId: "cc_fronto_orbital_advancement",
+        displayName: "Fronto-orbital advancement",
         isDefault: true,
         sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "cc_endoscopic_strip_craniectomy",
+        displayName: "Endoscopic strip craniectomy",
+        isDefault: false,
+        sortOrder: 2,
+      },
+      {
+        procedurePicklistId: "cc_cranial_vault_remodelling",
+        displayName: "Open cranial vault remodelling",
+        isDefault: false,
+        sortOrder: 3,
       },
     ],
     sortOrder: 2,
   },
   {
-    id: "cc_dx_craniosynostosis_coronal",
-    displayName: "Craniosynostosis — coronal (plagiocephaly / brachycephaly)",
-    shortName: "Coronal synostosis",
-    snomedCtCode: "57219006",
-    snomedCtDisplay: "Coronal craniosynostosis (disorder)",
+    id: "cc_dx_unicoronal_synostosis",
+    displayName: "Craniosynostosis — unicoronal (anterior plagiocephaly)",
+    shortName: "Unicoronal synostosis",
+    snomedCtCode: "254020001", // VERIFY
+    snomedCtDisplay:
+      "Premature closure of coronal suture, unilateral (disorder)",
     specialty: "cleft_cranio",
-    subcategory: "Craniofacial",
+    subcategory: "Non-Syndromic Craniosynostosis",
     clinicalGroup: "congenital",
     hasStaging: false,
     searchSynonyms: [
+      "anterior plagiocephaly",
+      "unilateral coronal",
       "coronal synostosis",
-      "plagiocephaly",
-      "brachycephaly",
-      "unicoronal",
-      "bicoronal",
+      "harlequin deformity",
     ],
     suggestedProcedures: [
       {
-        procedurePicklistId: "cc_fronto_orbital",
-        displayName: "Fronto-orbital advancement (FOA)",
+        procedurePicklistId: "cc_fronto_orbital_advancement",
+        displayName: "Fronto-orbital advancement",
         isDefault: true,
         sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "cc_endoscopic_strip_craniectomy",
+        displayName: "Endoscopic strip craniectomy",
+        isDefault: false,
+        sortOrder: 2,
       },
     ],
     sortOrder: 3,
   },
   {
-    id: "cc_dx_crouzon",
-    displayName: "Crouzon / Apert syndrome (syndromic craniosynostosis)",
-    shortName: "Syndromic synostosis",
-    snomedCtCode: "28861008",
-    snomedCtDisplay: "Crouzon syndrome (disorder)",
+    id: "cc_dx_bicoronal_synostosis",
+    displayName: "Craniosynostosis — bicoronal (brachycephaly)",
+    shortName: "Bicoronal synostosis",
+    snomedCtCode: "60573004",
+    snomedCtDisplay: "Premature closure of coronal suture (disorder)",
     specialty: "cleft_cranio",
-    subcategory: "Craniofacial",
+    subcategory: "Non-Syndromic Craniosynostosis",
     clinicalGroup: "congenital",
     hasStaging: false,
     searchSynonyms: [
-      "Crouzon",
-      "Apert",
-      "Pfeiffer",
-      "Muenke",
-      "syndromic craniosynostosis",
+      "brachycephaly",
+      "bilateral coronal",
+      "turribrachycephaly",
+      "bicoronal synostosis",
     ],
     suggestedProcedures: [
       {
-        procedurePicklistId: "cc_fronto_orbital",
-        displayName: "Fronto-orbital advancement (FOA)",
-        isDefault: false,
+        procedurePicklistId: "cc_fronto_orbital_advancement",
+        displayName: "Fronto-orbital advancement",
+        isDefault: true,
         sortOrder: 1,
       },
       {
-        procedurePicklistId: "cc_monobloc",
-        displayName: "Monobloc / Le Fort III advancement",
+        procedurePicklistId: "cc_posterior_vault_distraction",
+        displayName: "Posterior cranial vault distraction",
         isDefault: false,
         sortOrder: 2,
       },
       {
-        procedurePicklistId: "cc_midface_advancement",
-        displayName: "Midface advancement / distraction",
+        procedurePicklistId: "cc_total_vault_remodelling",
+        displayName: "Total cranial vault remodelling",
         isDefault: false,
         sortOrder: 3,
       },
@@ -336,32 +942,30 @@ const CC_DX_CRANIOFACIAL: DiagnosisPicklistEntry[] = [
     sortOrder: 4,
   },
   {
-    id: "cc_dx_craniofacial_microsomia",
-    displayName: "Craniofacial microsomia (hemifacial microsomia)",
-    shortName: "CFM",
-    snomedCtCode: "254025006",
-    snomedCtDisplay: "Hemifacial microsomia (disorder)",
+    id: "cc_dx_lambdoid_synostosis",
+    displayName: "Craniosynostosis — lambdoid",
+    shortName: "Lambdoid synostosis",
+    snomedCtCode: "109418001",
+    snomedCtDisplay: "Premature closure of lambdoid suture (disorder)",
     specialty: "cleft_cranio",
-    subcategory: "Craniofacial",
+    subcategory: "Non-Syndromic Craniosynostosis",
     clinicalGroup: "congenital",
     hasStaging: false,
     searchSynonyms: [
-      "hemifacial microsomia",
-      "Goldenhar",
-      "OAV spectrum",
-      "CFM",
-      "mandibular hypoplasia",
+      "lambdoid synostosis",
+      "true posterior plagiocephaly",
+      "lambdoid craniosynostosis",
     ],
     suggestedProcedures: [
       {
-        procedurePicklistId: "cc_mandibular_distraction",
-        displayName: "Mandibular distraction osteogenesis",
-        isDefault: false,
+        procedurePicklistId: "cc_posterior_vault_remodelling",
+        displayName: "Posterior vault remodelling",
+        isDefault: true,
         sortOrder: 1,
       },
       {
-        procedurePicklistId: "cc_craniofacial_microsomia",
-        displayName: "Craniofacial microsomia reconstruction",
+        procedurePicklistId: "cc_cranial_vault_remodelling",
+        displayName: "Open cranial vault remodelling",
         isDefault: false,
         sortOrder: 2,
       },
@@ -369,105 +973,617 @@ const CC_DX_CRANIOFACIAL: DiagnosisPicklistEntry[] = [
     sortOrder: 5,
   },
   {
-    id: "cc_dx_treacher_collins",
-    displayName: "Treacher Collins syndrome",
-    shortName: "TCS",
-    snomedCtCode: "82203000",
-    snomedCtDisplay: "Treacher Collins syndrome (disorder)",
+    id: "cc_dx_multisuture_synostosis",
+    displayName: "Multi-suture craniosynostosis",
+    shortName: "Multi-suture",
+    snomedCtCode: "57219006",
+    snomedCtDisplay: "Craniosynostosis (disorder)",
     specialty: "cleft_cranio",
-    subcategory: "Craniofacial",
+    subcategory: "Non-Syndromic Craniosynostosis",
     clinicalGroup: "congenital",
     hasStaging: false,
     searchSynonyms: [
-      "Treacher Collins",
-      "TCS",
-      "mandibulofacial dysostosis",
-      "Franceschetti",
+      "pansynostosis",
+      "complex craniosynostosis",
+      "multi-sutural",
+      "multiple suture",
     ],
     suggestedProcedures: [
       {
-        procedurePicklistId: "cc_mandibular_distraction",
-        displayName: "Mandibular distraction osteogenesis",
-        isDefault: false,
+        procedurePicklistId: "cc_total_vault_remodelling",
+        displayName: "Total cranial vault remodelling",
+        isDefault: true,
         sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "cc_fronto_orbital_advancement",
+        displayName: "Fronto-orbital advancement",
+        isDefault: false,
+        sortOrder: 2,
+      },
+      {
+        procedurePicklistId: "cc_posterior_vault_distraction",
+        displayName: "Posterior cranial vault distraction",
+        isDefault: false,
+        sortOrder: 3,
       },
     ],
     sortOrder: 6,
   },
   {
-    id: "cc_dx_pierre_robin",
-    displayName: "Pierre Robin sequence",
-    shortName: "PRS",
-    snomedCtCode: "4602007",
-    snomedCtDisplay: "Robin sequence (disorder)",
+    id: "cc_dx_secondary_craniosynostosis",
+    displayName: "Secondary / revision craniosynostosis",
+    shortName: "Re-synostosis",
+    snomedCtCode: "57219006",
+    snomedCtDisplay: "Craniosynostosis (disorder)",
     specialty: "cleft_cranio",
-    subcategory: "Craniofacial",
+    subcategory: "Non-Syndromic Craniosynostosis",
     clinicalGroup: "congenital",
-    hasStaging: false,
+    hasStaging: true, // Whitaker classification
     searchSynonyms: [
-      "Pierre Robin",
-      "PRS",
-      "Robin sequence",
-      "micrognathia",
-      "airway obstruction neonatal",
+      "re-synostosis",
+      "recurrent craniosynostosis",
+      "revision craniosynostosis",
+      "secondary craniosynostosis",
     ],
     suggestedProcedures: [
       {
-        procedurePicklistId: "cc_mandibular_distraction",
-        displayName: "Mandibular distraction osteogenesis",
-        isDefault: false,
+        procedurePicklistId: "cc_cranial_vault_remodelling",
+        displayName: "Open cranial vault remodelling",
+        isDefault: true,
         sortOrder: 1,
       },
       {
-        procedurePicklistId: "hn_cleft_palate",
-        displayName: "Cleft palate repair",
+        procedurePicklistId: "cc_cranioplasty",
+        displayName: "Cranioplasty",
         isDefault: false,
         sortOrder: 2,
       },
     ],
     sortOrder: 7,
   },
+];
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 8. SYNDROMIC CRANIOSYNOSTOSIS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const CC_DX_SYNDROMIC: DiagnosisPicklistEntry[] = [
   {
-    id: "cc_dx_microtia",
-    displayName: "Microtia / anotia",
-    shortName: "Microtia",
-    snomedCtCode: "35045004",
-    snomedCtDisplay: "Microtia (disorder)",
+    id: "cc_dx_apert",
+    displayName: "Apert syndrome",
+    shortName: "Apert",
+    snomedCtCode: "205258009",
+    snomedCtDisplay: "Apert syndrome (disorder)",
     specialty: "cleft_cranio",
-    subcategory: "Congenital",
+    subcategory: "Syndromic Craniosynostosis",
     clinicalGroup: "congenital",
     hasStaging: false,
     searchSynonyms: [
-      "microtia",
-      "anotia",
-      "ear reconstruction",
-      "rib cartilage",
-      "Medpor",
+      "apert",
+      "acrocephalosyndactyly type I",
+      "FGFR2",
     ],
     suggestedProcedures: [
       {
-        procedurePicklistId: "hn_recon_ear_total",
-        displayName: "Total ear reconstruction (autologous)",
+        procedurePicklistId: "cc_fronto_orbital_advancement",
+        displayName: "Fronto-orbital advancement",
         isDefault: true,
         sortOrder: 1,
       },
       {
-        procedurePicklistId: "hn_recon_ear_prosthetic",
-        displayName: "Ear reconstruction — prosthetic (BAHA/Medpor)",
+        procedurePicklistId: "cc_posterior_vault_distraction",
+        displayName: "Posterior cranial vault distraction",
+        isDefault: false,
+        sortOrder: 2,
+      },
+      {
+        procedurePicklistId: "cc_monobloc_advancement",
+        displayName: "Monobloc advancement",
+        isDefault: false,
+        sortOrder: 3,
+      },
+      {
+        procedurePicklistId: "cc_monobloc_distraction",
+        displayName: "Monobloc distraction osteogenesis",
+        isDefault: false,
+        sortOrder: 4,
+      },
+      {
+        procedurePicklistId: "cc_lefort_iii_advancement",
+        displayName: "Le Fort III advancement",
+        isDefault: false,
+        sortOrder: 5,
+      },
+      {
+        procedurePicklistId: "cc_facial_bipartition",
+        displayName: "Facial bipartition",
+        isDefault: false,
+        sortOrder: 6,
+      },
+    ],
+    sortOrder: 1,
+  },
+  {
+    id: "cc_dx_crouzon",
+    displayName: "Crouzon syndrome",
+    shortName: "Crouzon",
+    snomedCtCode: "83015004",
+    snomedCtDisplay: "Crouzon syndrome (disorder)",
+    specialty: "cleft_cranio",
+    subcategory: "Syndromic Craniosynostosis",
+    clinicalGroup: "congenital",
+    hasStaging: false,
+    searchSynonyms: [
+      "crouzon",
+      "craniofacial dysostosis",
+      "FGFR2",
+    ],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "cc_fronto_orbital_advancement",
+        displayName: "Fronto-orbital advancement",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "cc_monobloc_advancement",
+        displayName: "Monobloc advancement",
+        isDefault: false,
+        sortOrder: 2,
+      },
+      {
+        procedurePicklistId: "cc_lefort_iii_advancement",
+        displayName: "Le Fort III advancement",
+        isDefault: false,
+        sortOrder: 3,
+      },
+      {
+        procedurePicklistId: "cc_lefort_iii_distraction",
+        displayName: "Le Fort III distraction osteogenesis",
+        isDefault: false,
+        sortOrder: 4,
+      },
+    ],
+    sortOrder: 2,
+  },
+  {
+    id: "cc_dx_pfeiffer",
+    displayName: "Pfeiffer syndrome",
+    shortName: "Pfeiffer",
+    snomedCtCode: "205259001",
+    snomedCtDisplay: "Pfeiffer syndrome (disorder)",
+    specialty: "cleft_cranio",
+    subcategory: "Syndromic Craniosynostosis",
+    clinicalGroup: "congenital",
+    hasStaging: false,
+    searchSynonyms: [
+      "pfeiffer",
+      "acrocephalosyndactyly type V",
+      "FGFR1",
+      "FGFR2",
+    ],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "cc_fronto_orbital_advancement",
+        displayName: "Fronto-orbital advancement",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "cc_monobloc_advancement",
+        displayName: "Monobloc advancement",
+        isDefault: false,
+        sortOrder: 2,
+      },
+      {
+        procedurePicklistId: "cc_posterior_vault_distraction",
+        displayName: "Posterior cranial vault distraction",
+        isDefault: false,
+        sortOrder: 3,
+      },
+      {
+        procedurePicklistId: "cc_tracheostomy",
+        displayName: "Tracheostomy",
+        isDefault: false,
+        sortOrder: 4,
+      },
+    ],
+    sortOrder: 3,
+  },
+  {
+    id: "cc_dx_muenke",
+    displayName: "Muenke syndrome",
+    shortName: "Muenke",
+    snomedCtCode: "367506006",
+    snomedCtDisplay: "Muenke syndrome (disorder)",
+    specialty: "cleft_cranio",
+    subcategory: "Syndromic Craniosynostosis",
+    clinicalGroup: "congenital",
+    hasStaging: false,
+    searchSynonyms: [
+      "muenke",
+      "FGFR3",
+      "Pro250Arg",
+      "coronal synostosis FGFR3",
+    ],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "cc_fronto_orbital_advancement",
+        displayName: "Fronto-orbital advancement",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "cc_cranial_vault_remodelling",
+        displayName: "Open cranial vault remodelling",
         isDefault: false,
         sortOrder: 2,
       },
     ],
-    sortOrder: 8,
+    sortOrder: 4,
+  },
+  {
+    id: "cc_dx_saethre_chotzen",
+    displayName: "Saethre-Chotzen syndrome",
+    shortName: "Saethre-Chotzen",
+    snomedCtCode: "403766005",
+    snomedCtDisplay: "Saethre-Chotzen syndrome (disorder)",
+    specialty: "cleft_cranio",
+    subcategory: "Syndromic Craniosynostosis",
+    clinicalGroup: "congenital",
+    hasStaging: false,
+    searchSynonyms: [
+      "saethre-chotzen",
+      "acrocephalosyndactyly type III",
+      "TWIST1",
+    ],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "cc_fronto_orbital_advancement",
+        displayName: "Fronto-orbital advancement",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "cc_posterior_vault_remodelling",
+        displayName: "Posterior vault remodelling",
+        isDefault: false,
+        sortOrder: 2,
+      },
+    ],
+    sortOrder: 5,
+  },
+  {
+    id: "cc_dx_carpenter",
+    displayName: "Carpenter syndrome",
+    shortName: "Carpenter",
+    snomedCtCode: "65920003",
+    snomedCtDisplay: "Carpenter syndrome (disorder)",
+    specialty: "cleft_cranio",
+    subcategory: "Syndromic Craniosynostosis",
+    clinicalGroup: "congenital",
+    hasStaging: false,
+    searchSynonyms: [
+      "carpenter",
+      "acrocephalopolysyndactyly type II",
+      "RAB23",
+    ],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "cc_fronto_orbital_advancement",
+        displayName: "Fronto-orbital advancement",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "cc_total_vault_remodelling",
+        displayName: "Total cranial vault remodelling",
+        isDefault: false,
+        sortOrder: 2,
+      },
+    ],
+    sortOrder: 6,
   },
 ];
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// EXPORT
+// 9. CRANIOFACIAL CONDITIONS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const CC_DX_CRANIOFACIAL: DiagnosisPicklistEntry[] = [
+  {
+    id: "cc_dx_craniofacial_microsomia",
+    displayName: "Craniofacial microsomia / hemifacial microsomia",
+    shortName: "HFM",
+    snomedCtCode: "15099001",
+    snomedCtDisplay: "Hemifacial microsomia (disorder)",
+    specialty: "cleft_cranio",
+    subcategory: "Craniofacial Conditions",
+    clinicalGroup: "congenital",
+    hasStaging: true, // OMENS+
+    searchSynonyms: [
+      "hemifacial microsomia",
+      "HFM",
+      "OAV spectrum",
+      "Goldenhar",
+      "craniofacial microsomia",
+      "first second branchial arch",
+    ],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "cc_mandibular_distraction",
+        displayName: "Mandibular distraction osteogenesis",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "cc_costochondral_rib_graft",
+        displayName: "Costochondral rib graft to mandible",
+        isDefault: false,
+        sortOrder: 2,
+      },
+      {
+        procedurePicklistId: "cc_fat_grafting_face",
+        displayName: "Fat grafting to face",
+        isDefault: false,
+        sortOrder: 3,
+      },
+      {
+        procedurePicklistId: "cc_ear_reconstruction_rib",
+        displayName: "Rib graft ear reconstruction",
+        isDefault: false,
+        sortOrder: 4,
+      },
+    ],
+    sortOrder: 1,
+  },
+  {
+    id: "cc_dx_treacher_collins",
+    displayName: "Treacher Collins syndrome",
+    shortName: "Treacher Collins",
+    snomedCtCode: "82203000",
+    snomedCtDisplay: "Treacher Collins syndrome (disorder)",
+    specialty: "cleft_cranio",
+    subcategory: "Craniofacial Conditions",
+    clinicalGroup: "congenital",
+    hasStaging: false,
+    searchSynonyms: [
+      "treacher collins",
+      "mandibulofacial dysostosis",
+      "TCOF1",
+      "Franceschetti",
+    ],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "cc_mandibular_distraction",
+        displayName: "Mandibular distraction osteogenesis",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "cc_orbital_box_osteotomy",
+        displayName: "Orbital box osteotomy",
+        isDefault: false,
+        sortOrder: 2,
+      },
+      {
+        procedurePicklistId: "cc_ear_reconstruction_rib",
+        displayName: "Rib graft ear reconstruction",
+        isDefault: false,
+        sortOrder: 3,
+      },
+      {
+        procedurePicklistId: "cc_fat_grafting_face",
+        displayName: "Fat grafting to face",
+        isDefault: false,
+        sortOrder: 4,
+      },
+    ],
+    sortOrder: 2,
+  },
+  {
+    id: "cc_dx_pierre_robin",
+    displayName: "Pierre Robin sequence",
+    shortName: "Pierre Robin",
+    snomedCtCode: "75989002",
+    snomedCtDisplay: "Pierre Robin syndrome (disorder)",
+    specialty: "cleft_cranio",
+    subcategory: "Craniofacial Conditions",
+    clinicalGroup: "congenital",
+    hasStaging: false,
+    searchSynonyms: [
+      "PRS",
+      "Robin sequence",
+      "micrognathia glossoptosis",
+      "Pierre Robin",
+    ],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "cc_mandibular_distraction",
+        displayName: "Mandibular distraction osteogenesis",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "cc_tongue_lip_adhesion",
+        displayName: "Tongue-lip adhesion",
+        isDefault: false,
+        sortOrder: 2,
+      },
+      {
+        procedurePicklistId: "cc_tracheostomy",
+        displayName: "Tracheostomy",
+        isDefault: false,
+        sortOrder: 3,
+      },
+      {
+        procedurePicklistId: "cc_palatoplasty",
+        displayName: "Palatoplasty",
+        isDefault: false,
+        sortOrder: 4,
+      },
+    ],
+    sortOrder: 3,
+  },
+  {
+    id: "cc_dx_positional_plagiocephaly",
+    displayName: "Positional plagiocephaly (non-synostotic)",
+    shortName: "Positional plagio",
+    snomedCtCode: "21232002",
+    snomedCtDisplay: "Deformity of skull (disorder)",
+    specialty: "cleft_cranio",
+    subcategory: "Craniofacial Conditions",
+    clinicalGroup: "congenital",
+    hasStaging: false,
+    searchSynonyms: [
+      "deformational plagiocephaly",
+      "flat head",
+      "non-synostotic plagiocephaly",
+      "positional moulding",
+    ],
+    suggestedProcedures: [], // Consultation only — no surgical procedures
+    sortOrder: 4,
+  },
+  {
+    id: "cc_dx_encephalocele",
+    displayName: "Encephalocele",
+    shortName: "Encephalocele",
+    snomedCtCode: "55999004",
+    snomedCtDisplay: "Encephalocele (disorder)",
+    specialty: "cleft_cranio",
+    subcategory: "Craniofacial Conditions",
+    clinicalGroup: "congenital",
+    hasStaging: false,
+    searchSynonyms: [
+      "meningoencephalocele",
+      "frontal encephalocele",
+      "occipital encephalocele",
+      "sincipital encephalocele",
+    ],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "cc_encephalocele_repair",
+        displayName: "Encephalocele repair",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "cc_cranioplasty",
+        displayName: "Cranioplasty",
+        isDefault: false,
+        sortOrder: 2,
+      },
+    ],
+    sortOrder: 5,
+  },
+  {
+    id: "cc_dx_fibrous_dysplasia_craniofacial",
+    displayName: "Fibrous dysplasia — craniofacial",
+    shortName: "Craniofacial FD",
+    snomedCtCode: "52438003",
+    snomedCtDisplay: "Fibrous dysplasia of bone (disorder)",
+    specialty: "cleft_cranio",
+    subcategory: "Craniofacial Conditions",
+    clinicalGroup: "congenital",
+    hasStaging: false,
+    searchSynonyms: [
+      "craniofacial FD",
+      "McCune-Albright",
+      "monostotic",
+      "polyostotic",
+      "fibrous dysplasia",
+    ],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "cc_orbital_box_osteotomy",
+        displayName: "Orbital box osteotomy",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "cc_cranioplasty",
+        displayName: "Cranioplasty",
+        isDefault: false,
+        sortOrder: 2,
+      },
+      {
+        procedurePicklistId: "cc_custom_implant",
+        displayName: "Custom craniofacial implant",
+        isDefault: false,
+        sortOrder: 3,
+      },
+    ],
+    sortOrder: 6,
+  },
+  {
+    id: "cc_dx_orbital_hypertelorism",
+    displayName: "Orbital hypertelorism",
+    shortName: "Hypertelorism",
+    snomedCtCode: "22006008",
+    snomedCtDisplay: "Hypertelorism (disorder)",
+    specialty: "cleft_cranio",
+    subcategory: "Craniofacial Conditions",
+    clinicalGroup: "congenital",
+    hasStaging: false,
+    searchSynonyms: [
+      "wide-set eyes",
+      "increased interorbital distance",
+      "hypertelorism",
+      "orbital translocation",
+    ],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "cc_hypertelorism_correction",
+        displayName: "Orbital hypertelorism correction",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "cc_facial_bipartition",
+        displayName: "Facial bipartition",
+        isDefault: false,
+        sortOrder: 2,
+      },
+    ],
+    sortOrder: 7,
+  },
+];
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// EXPORT — Master array + helper functions
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export const CLEFT_CRANIO_DIAGNOSES: DiagnosisPicklistEntry[] = [
-  ...CC_DX_CLEFT,
+  ...CC_DX_CLEFT_LIP,
+  ...CC_DX_CLEFT_PALATE,
+  ...CC_DX_CLEFT_LIP_PALATE,
   ...CC_DX_SECONDARY,
+  ...CC_DX_VPI,
+  ...CC_DX_ALVEOLAR,
+  ...CC_DX_CRANIOSYNOSTOSIS,
+  ...CC_DX_SYNDROMIC,
   ...CC_DX_CRANIOFACIAL,
 ];
+
+/** Get all subcategories in display order */
+export function getCleftCranioSubcategories(): string[] {
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const dx of CLEFT_CRANIO_DIAGNOSES) {
+    if (!seen.has(dx.subcategory)) {
+      seen.add(dx.subcategory);
+      result.push(dx.subcategory);
+    }
+  }
+  return result;
+}
+
+/** Get diagnoses for a specific subcategory */
+export function getCleftCranioDiagnosesForSubcategory(
+  subcategory: string,
+): DiagnosisPicklistEntry[] {
+  return CLEFT_CRANIO_DIAGNOSES.filter(
+    (dx) => dx.subcategory === subcategory,
+  );
+}

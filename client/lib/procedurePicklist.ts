@@ -2889,100 +2889,6 @@ const HEAD_NECK_FACIAL_REANIMATION: ProcedurePicklistEntry[] = [
   },
 ];
 
-const HEAD_NECK_CLEFT_CRANIOFACIAL: ProcedurePicklistEntry[] = [
-  {
-    id: "hn_cleft_lip_unilateral",
-    displayName: "Cleft lip repair — unilateral",
-    snomedCtCode: "234647001",
-    snomedCtDisplay: "Repair of cleft lip (procedure)",
-    specialties: ["cleft_cranio", "head_neck"],
-    subcategory: "Cleft & Craniofacial",
-    tags: ["elective"],
-    sortOrder: 1,
-  },
-  {
-    id: "hn_cleft_lip_bilateral",
-    displayName: "Cleft lip repair — bilateral",
-    snomedCtCode: "234647001",
-    snomedCtDisplay: "Repair of cleft lip (procedure)",
-    specialties: ["cleft_cranio", "head_neck"],
-    subcategory: "Cleft & Craniofacial",
-    tags: ["elective"],
-    sortOrder: 2,
-  },
-  {
-    id: "hn_cleft_palate",
-    displayName: "Cleft palate repair",
-    snomedCtCode: "234890003",
-    snomedCtDisplay: "Repair of cleft palate (procedure)",
-    specialties: ["cleft_cranio", "head_neck"],
-    subcategory: "Cleft & Craniofacial",
-    tags: ["elective"],
-    sortOrder: 3,
-  },
-  {
-    id: "hn_cleft_alveolar_bone_graft",
-    displayName: "Alveolar bone graft",
-    snomedCtCode: "178493006",
-    snomedCtDisplay: "Alveolar bone graft (procedure)",
-    specialties: ["cleft_cranio", "head_neck"],
-    subcategory: "Cleft & Craniofacial",
-    tags: ["elective"],
-    sortOrder: 4,
-  },
-  {
-    id: "hn_cleft_lip_revision",
-    displayName: "Cleft lip / nose revision",
-    snomedCtCode: "234647001",
-    snomedCtDisplay: "Repair of cleft lip (procedure)",
-    specialties: ["cleft_cranio", "head_neck"],
-    subcategory: "Cleft & Craniofacial",
-    tags: ["revision"],
-    sortOrder: 5,
-  },
-  {
-    id: "hn_cleft_velopharyngeal_insufficiency",
-    displayName: "VPI surgery (pharyngoplasty / pharyngeal flap)",
-    snomedCtCode: "389059002",
-    snomedCtDisplay: "Pharyngoplasty (procedure)",
-    specialties: ["cleft_cranio", "head_neck"],
-    subcategory: "Cleft & Craniofacial",
-    tags: ["elective"],
-    sortOrder: 6,
-  },
-  {
-    id: "hn_craniosynostosis",
-    displayName: "Craniosynostosis surgery (cranial vault remodelling)",
-    snomedCtCode: "1053351000168108",
-    snomedCtDisplay: "Cranial vault remodelling for scaphocephaly (procedure)",
-    specialties: ["cleft_cranio", "head_neck"],
-    subcategory: "Cleft & Craniofacial",
-    tags: ["elective"],
-    sortOrder: 7,
-  },
-  {
-    id: "hn_lefort_osteotomy",
-    displayName: "Le Fort osteotomy (I / II / III)",
-    snomedCtCode: "239299006",
-    snomedCtDisplay: "Le Fort I osteotomy (procedure)",
-    specialties: ["cleft_cranio", "head_neck"],
-    subcategory: "Cleft & Craniofacial",
-    tags: ["elective"],
-    sortOrder: 8,
-  },
-  {
-    id: "hn_distraction_osteogenesis",
-    displayName: "Distraction osteogenesis — craniofacial",
-    snomedCtCode: "1222491000168105",
-    snomedCtDisplay:
-      "Osteotomy of mandible with distraction osteogenesis (procedure)",
-    specialties: ["cleft_cranio", "head_neck"],
-    subcategory: "Cleft & Craniofacial",
-    tags: ["elective"],
-    sortOrder: 9,
-  },
-];
-
 const HEAD_NECK_FACIAL_FRACTURES: ProcedurePicklistEntry[] = [
   {
     id: "hn_fx_mandible_orif",
@@ -6188,100 +6094,124 @@ const BODY_CONTOUR_OTHER: ProcedurePicklistEntry[] = [
 ];
 
 // ═══════════════════════════════════════════════════════════════════════════
-// CLEFT & CRANIOFACIAL — additional procedures beyond moved hn_cleft_* entries
+// CLEFT & CRANIOFACIAL — 72 procedures across 9 subcategories
 // ═══════════════════════════════════════════════════════════════════════════
 
-const CLEFT_CRANIO_ADDITIONAL: ProcedurePicklistEntry[] = [
-  {
-    id: "cc_cleft_rhinoplasty",
-    displayName: "Cleft rhinoplasty (primary / secondary)",
-    snomedCtCode: "172523009", // VERIFY
-    snomedCtDisplay: "Rhinoplasty (procedure)",
-    specialties: ["cleft_cranio"],
-    subcategory: "Cleft Lip & Palate",
-    tags: ["elective"],
-    sortOrder: 20,
-  },
-  {
-    id: "cc_fistula_repair",
-    displayName: "Palatal fistula repair",
-    snomedCtCode: "122465003", // VERIFY
-    snomedCtDisplay: "Repair of palatal fistula (procedure)",
-    specialties: ["cleft_cranio"],
-    subcategory: "Cleft Lip & Palate",
-    tags: ["elective"],
-    sortOrder: 21,
-  },
-  {
-    id: "cc_pharyngoplasty",
-    displayName: "Pharyngoplasty (sphincter / pharyngeal flap)",
-    snomedCtCode: "122465003", // VERIFY
-    snomedCtDisplay: "Pharyngoplasty (procedure)",
-    specialties: ["cleft_cranio"],
-    subcategory: "Cleft Lip & Palate",
-    tags: ["elective"],
-    sortOrder: 22,
-  },
-  {
-    id: "cc_cranial_vault_remodel",
-    displayName: "Cranial vault remodelling",
-    snomedCtCode: "34713006", // VERIFY
-    snomedCtDisplay: "Cranial vault remodeling (procedure)",
-    specialties: ["cleft_cranio"],
-    subcategory: "Craniofacial",
-    tags: ["elective"],
-    sortOrder: 30,
-  },
-  {
-    id: "cc_fronto_orbital",
-    displayName: "Fronto-orbital advancement",
-    snomedCtCode: "34713006", // VERIFY
-    snomedCtDisplay: "Fronto-orbital advancement (procedure)",
-    specialties: ["cleft_cranio"],
-    subcategory: "Craniofacial",
-    tags: ["elective"],
-    sortOrder: 31,
-  },
-  {
-    id: "cc_midface_advancement",
-    displayName: "Midface advancement / Le Fort III",
-    snomedCtCode: "34713006", // VERIFY
-    snomedCtDisplay: "Le Fort III osteotomy (procedure)",
-    specialties: ["cleft_cranio"],
-    subcategory: "Craniofacial",
-    tags: ["elective"],
-    sortOrder: 32,
-  },
-  {
-    id: "cc_monobloc",
-    displayName: "Monobloc advancement",
-    snomedCtCode: "34713006", // VERIFY
-    snomedCtDisplay: "Monobloc advancement (procedure)",
-    specialties: ["cleft_cranio"],
-    subcategory: "Craniofacial",
-    tags: ["elective"],
-    sortOrder: 33,
-  },
-  {
-    id: "cc_mandibular_distraction",
-    displayName: "Mandibular distraction osteogenesis",
-    snomedCtCode: "122465003", // VERIFY
-    snomedCtDisplay: "Mandibular distraction osteogenesis (procedure)",
-    specialties: ["cleft_cranio"],
-    subcategory: "Craniofacial",
-    tags: ["elective"],
-    sortOrder: 34,
-  },
-  {
-    id: "cc_craniofacial_microsomia",
-    displayName: "Craniofacial microsomia reconstruction",
-    snomedCtCode: "122465003", // VERIFY
-    snomedCtDisplay: "Reconstruction for craniofacial microsomia (procedure)",
-    specialties: ["cleft_cranio"],
-    subcategory: "Craniofacial",
-    tags: ["elective"],
-    sortOrder: 35,
-  },
+// --- Cleft Lip Repair (8) ---
+const CC_LIP_REPAIR: ProcedurePicklistEntry[] = [
+  { id: "cc_lip_repair_unilateral", displayName: "Repair of unilateral cleft lip", snomedCtCode: "172901003", snomedCtDisplay: "Repair of unilateral cleft lip (procedure)", specialties: ["cleft_cranio"], subcategory: "Cleft Lip Repair", tags: ["cleft"], sortOrder: 1 },
+  { id: "cc_lip_repair_bilateral", displayName: "Repair of bilateral cleft lip", snomedCtCode: "172902005", snomedCtDisplay: "Repair of bilateral cleft lip (procedure)", specialties: ["cleft_cranio"], subcategory: "Cleft Lip Repair", tags: ["cleft"], sortOrder: 2 },
+  { id: "cc_lip_adhesion", displayName: "Lip adhesion", snomedCtCode: "278578005", snomedCtDisplay: "Lip adhesion (procedure)", specialties: ["cleft_cranio"], subcategory: "Cleft Lip Repair", tags: ["cleft"], sortOrder: 3 }, // VERIFY code
+  { id: "cc_primary_rhinoplasty", displayName: "Primary cleft rhinoplasty", snomedCtCode: "10347003", snomedCtDisplay: "Rhinoplasty (procedure)", specialties: ["cleft_cranio"], subcategory: "Cleft Lip Repair", tags: ["cleft", "rhinoplasty"], sortOrder: 4 },
+  { id: "cc_abbe_flap", displayName: "Abbe flap (cross-lip)", snomedCtCode: "82061003", snomedCtDisplay: "Abbe flap (procedure)", specialties: ["cleft_cranio"], subcategory: "Cleft Lip Repair", tags: ["cleft", "local_flap"], sortOrder: 5 },
+  { id: "cc_lip_scar_revision", displayName: "Cleft lip scar revision", snomedCtCode: "234014001", snomedCtDisplay: "Scar revision (procedure)", specialties: ["cleft_cranio"], subcategory: "Cleft Lip Repair", tags: ["cleft", "revision"], sortOrder: 6 },
+  { id: "cc_vermilion_advancement", displayName: "Vermilion advancement", snomedCtCode: "82371002", snomedCtDisplay: "Vermilion advancement (procedure)", specialties: ["cleft_cranio"], subcategory: "Cleft Lip Repair", tags: ["cleft"], sortOrder: 7 }, // VERIFY code
+  { id: "cc_columellar_lengthening", displayName: "Columellar lengthening", snomedCtCode: "10347003", snomedCtDisplay: "Rhinoplasty (procedure)", specialties: ["cleft_cranio"], subcategory: "Cleft Lip Repair", tags: ["cleft", "rhinoplasty"], sortOrder: 8 },
+];
+
+// --- Cleft Palate Repair (8) ---
+const CC_PALATE_REPAIR: ProcedurePicklistEntry[] = [
+  { id: "cc_palatoplasty", displayName: "Palatoplasty", snomedCtCode: "174578005", snomedCtDisplay: "Palatoplasty (procedure)", specialties: ["cleft_cranio"], subcategory: "Cleft Palate Repair", tags: ["cleft"], sortOrder: 1 },
+  { id: "cc_palate_repair_soft", displayName: "Repair of cleft soft palate", snomedCtCode: "172893007", snomedCtDisplay: "Repair of cleft soft palate (procedure)", specialties: ["cleft_cranio"], subcategory: "Cleft Palate Repair", tags: ["cleft"], sortOrder: 2 },
+  { id: "cc_palate_repair_hard", displayName: "Repair of cleft hard palate", snomedCtCode: "172889006", snomedCtDisplay: "Repair of cleft hard palate (procedure)", specialties: ["cleft_cranio"], subcategory: "Cleft Palate Repair", tags: ["cleft"], sortOrder: 3 },
+  { id: "cc_von_langenbeck", displayName: "Von Langenbeck palatoplasty", snomedCtCode: "12132004", snomedCtDisplay: "Von Langenbeck palatoplasty (procedure)", specialties: ["cleft_cranio"], subcategory: "Cleft Palate Repair", tags: ["cleft"], sortOrder: 4 }, // VERIFY code
+  { id: "cc_vomer_flap", displayName: "Vomer flap", snomedCtCode: "73682005", snomedCtDisplay: "Vomer flap (procedure)", specialties: ["cleft_cranio"], subcategory: "Cleft Palate Repair", tags: ["cleft"], sortOrder: 5 }, // VERIFY code
+  { id: "cc_two_stage_palate", displayName: "Two-stage palate repair", snomedCtCode: "174578005", snomedCtDisplay: "Palatoplasty (procedure)", specialties: ["cleft_cranio"], subcategory: "Cleft Palate Repair", tags: ["cleft"], sortOrder: 6 },
+  { id: "cc_revision_palatoplasty", displayName: "Revision palatoplasty", snomedCtCode: "174578005", snomedCtDisplay: "Palatoplasty (procedure)", specialties: ["cleft_cranio"], subcategory: "Cleft Palate Repair", tags: ["cleft", "revision"], sortOrder: 7 },
+  { id: "cc_gingivoperiosteoplasty", displayName: "Gingivoperiosteoplasty", snomedCtCode: "441790007", snomedCtDisplay: "Gingivoperiosteoplasty (procedure)", specialties: ["cleft_cranio"], subcategory: "Cleft Palate Repair", tags: ["cleft"], sortOrder: 8 }, // VERIFY code
+];
+
+// --- VPI Surgery (6) ---
+const CC_VPI_SURGERY: ProcedurePicklistEntry[] = [
+  { id: "cc_pharyngeal_flap", displayName: "Pharyngeal flap", snomedCtCode: "172898003", snomedCtDisplay: "Pharyngeal flap (procedure)", specialties: ["cleft_cranio"], subcategory: "VPI Surgery", tags: ["cleft", "vpi"], sortOrder: 1 },
+  { id: "cc_sphincter_pharyngoplasty", displayName: "Sphincter pharyngoplasty", snomedCtCode: "35876005", snomedCtDisplay: "Sphincter pharyngoplasty (procedure)", specialties: ["cleft_cranio"], subcategory: "VPI Surgery", tags: ["cleft", "vpi"], sortOrder: 2 },
+  { id: "cc_furlow_redo", displayName: "Furlow re-do / palatal lengthening", snomedCtCode: "174578005", snomedCtDisplay: "Palatoplasty (procedure)", specialties: ["cleft_cranio"], subcategory: "VPI Surgery", tags: ["cleft", "vpi", "revision"], sortOrder: 3 },
+  { id: "cc_fat_injection_pharynx", displayName: "Fat injection to pharynx", snomedCtCode: "69888009", snomedCtDisplay: "Fat injection (procedure)", specialties: ["cleft_cranio"], subcategory: "VPI Surgery", tags: ["cleft", "vpi"], sortOrder: 4 }, // VERIFY code
+  { id: "cc_pharyngeal_wall_augmentation", displayName: "Posterior pharyngeal wall augmentation", snomedCtCode: "69888009", snomedCtDisplay: "Fat injection (procedure)", specialties: ["cleft_cranio"], subcategory: "VPI Surgery", tags: ["cleft", "vpi"], sortOrder: 5 }, // VERIFY
+  { id: "cc_palate_rere_pair_sommerlad", displayName: "Palatal re-repair (Sommerlad)", snomedCtCode: "172893007", snomedCtDisplay: "Repair of cleft soft palate (procedure)", specialties: ["cleft_cranio"], subcategory: "VPI Surgery", tags: ["cleft", "vpi", "revision"], sortOrder: 6 },
+];
+
+// --- Alveolar & Maxillary (7) ---
+const CC_ALVEOLAR_MAXILLARY: ProcedurePicklistEntry[] = [
+  { id: "cc_alveolar_bone_graft_secondary", displayName: "Secondary alveolar bone graft", snomedCtCode: "239404006", snomedCtDisplay: "Secondary alveolar bone graft (procedure)", specialties: ["cleft_cranio"], subcategory: "Alveolar & Maxillary", tags: ["cleft", "bone_graft"], sortOrder: 1 }, // VERIFY code
+  { id: "cc_alveolar_bone_graft_tertiary", displayName: "Tertiary alveolar bone graft", snomedCtCode: "239404006", snomedCtDisplay: "Secondary alveolar bone graft (procedure)", specialties: ["cleft_cranio"], subcategory: "Alveolar & Maxillary", tags: ["cleft", "bone_graft", "revision"], sortOrder: 2 }, // VERIFY
+  { id: "cc_lefort_i_osteotomy", displayName: "Le Fort I osteotomy", snomedCtCode: "58544004", snomedCtDisplay: "Le Fort I osteotomy (procedure)", specialties: ["cleft_cranio"], subcategory: "Alveolar & Maxillary", tags: ["cleft", "orthognathic", "osteotomy"], sortOrder: 3 },
+  { id: "cc_lefort_i_distraction", displayName: "Le Fort I distraction osteogenesis", snomedCtCode: "58544004", snomedCtDisplay: "Le Fort I osteotomy (procedure)", specialties: ["cleft_cranio"], subcategory: "Alveolar & Maxillary", tags: ["cleft", "orthognathic", "distraction"], sortOrder: 4 },
+  { id: "cc_segmental_lefort_i", displayName: "Segmental Le Fort I osteotomy", snomedCtCode: "58544004", snomedCtDisplay: "Le Fort I osteotomy (procedure)", specialties: ["cleft_cranio"], subcategory: "Alveolar & Maxillary", tags: ["cleft", "orthognathic", "osteotomy"], sortOrder: 5 },
+  { id: "cc_anterior_maxillary_distraction", displayName: "Anterior maxillary distraction", snomedCtCode: "360820005", snomedCtDisplay: "Distraction osteogenesis (procedure)", specialties: ["cleft_cranio"], subcategory: "Alveolar & Maxillary", tags: ["cleft", "distraction"], sortOrder: 6 }, // VERIFY code
+  { id: "cc_bone_graft_harvest_iliac", displayName: "Bone graft harvest — iliac crest", snomedCtCode: "58714001", snomedCtDisplay: "Bone graft from iliac crest (procedure)", specialties: ["cleft_cranio"], subcategory: "Alveolar & Maxillary", tags: ["bone_graft", "donor_site"], sortOrder: 7 },
+];
+
+// --- Fistula Repair (3) ---
+const CC_FISTULA_REPAIR: ProcedurePicklistEntry[] = [
+  { id: "cc_fistula_repair_local", displayName: "Oronasal fistula repair — local flaps", snomedCtCode: "174580009", snomedCtDisplay: "Repair of fistula of palate (procedure)", specialties: ["cleft_cranio"], subcategory: "Fistula Repair", tags: ["cleft", "revision"], sortOrder: 1 }, // VERIFY code
+  { id: "cc_tongue_flap_fistula", displayName: "Tongue flap for fistula", snomedCtCode: "275023003", snomedCtDisplay: "Tongue flap (procedure)", specialties: ["cleft_cranio"], subcategory: "Fistula Repair", tags: ["cleft", "local_flap", "revision"], sortOrder: 2 }, // VERIFY code
+  { id: "cc_buccal_fat_pad_flap", displayName: "Buccal fat pad flap", snomedCtCode: "36936005", snomedCtDisplay: "Buccal fat pad flap (procedure)", specialties: ["cleft_cranio"], subcategory: "Fistula Repair", tags: ["cleft", "local_flap"], sortOrder: 3 }, // VERIFY code
+];
+
+// --- Cleft Rhinoplasty (3) ---
+const CC_CLEFT_RHINOPLASTY: ProcedurePicklistEntry[] = [
+  { id: "cc_rhinoplasty_intermediate", displayName: "Cleft rhinoplasty — intermediate", snomedCtCode: "10347003", snomedCtDisplay: "Rhinoplasty (procedure)", specialties: ["cleft_cranio"], subcategory: "Cleft Rhinoplasty", tags: ["cleft", "rhinoplasty"], sortOrder: 1 },
+  { id: "cc_septorhinoplasty_definitive", displayName: "Cleft septorhinoplasty — definitive", snomedCtCode: "33200004", snomedCtDisplay: "Septorhinoplasty (procedure)", specialties: ["cleft_cranio"], subcategory: "Cleft Rhinoplasty", tags: ["cleft", "rhinoplasty"], sortOrder: 2 },
+  { id: "cc_septorhinoplasty_rib_graft", displayName: "Septorhinoplasty with rib cartilage graft", snomedCtCode: "33200004", snomedCtDisplay: "Septorhinoplasty (procedure)", specialties: ["cleft_cranio"], subcategory: "Cleft Rhinoplasty", tags: ["cleft", "rhinoplasty", "bone_graft"], sortOrder: 3 },
+];
+
+// --- Craniosynostosis Surgery (16) ---
+const CC_CRANIOSYNOSTOSIS: ProcedurePicklistEntry[] = [
+  { id: "cc_fronto_orbital_advancement", displayName: "Fronto-orbital advancement", snomedCtCode: "25353009", snomedCtDisplay: "Fronto-orbital advancement (procedure)", specialties: ["cleft_cranio"], subcategory: "Craniosynostosis Surgery", tags: ["craniosynostosis", "osteotomy"], sortOrder: 1 },
+  { id: "cc_cranial_vault_remodelling", displayName: "Open cranial vault remodelling", snomedCtCode: "27337003", snomedCtDisplay: "Cranial vault remodeling (procedure)", specialties: ["cleft_cranio"], subcategory: "Craniosynostosis Surgery", tags: ["craniosynostosis"], sortOrder: 2 },
+  { id: "cc_posterior_vault_distraction", displayName: "Posterior cranial vault distraction", snomedCtCode: "360820005", snomedCtDisplay: "Distraction osteogenesis (procedure)", specialties: ["cleft_cranio"], subcategory: "Craniosynostosis Surgery", tags: ["craniosynostosis", "distraction"], sortOrder: 3 },
+  { id: "cc_posterior_vault_remodelling", displayName: "Posterior vault remodelling", snomedCtCode: "27337003", snomedCtDisplay: "Cranial vault remodeling (procedure)", specialties: ["cleft_cranio"], subcategory: "Craniosynostosis Surgery", tags: ["craniosynostosis"], sortOrder: 4 },
+  { id: "cc_total_vault_remodelling", displayName: "Total cranial vault remodelling", snomedCtCode: "27337003", snomedCtDisplay: "Cranial vault remodeling (procedure)", specialties: ["cleft_cranio"], subcategory: "Craniosynostosis Surgery", tags: ["craniosynostosis"], sortOrder: 5 },
+  { id: "cc_endoscopic_strip_craniectomy", displayName: "Endoscopic strip craniectomy", snomedCtCode: "25353009", snomedCtDisplay: "Fronto-orbital advancement (procedure)", specialties: ["cleft_cranio"], subcategory: "Craniosynostosis Surgery", tags: ["craniosynostosis", "endoscopic"], sortOrder: 6 },
+  { id: "cc_spring_cranioplasty", displayName: "Spring-assisted cranioplasty", snomedCtCode: "27337003", snomedCtDisplay: "Cranial vault remodeling (procedure)", specialties: ["cleft_cranio"], subcategory: "Craniosynostosis Surgery", tags: ["craniosynostosis"], sortOrder: 7 },
+  { id: "cc_pi_plasty", displayName: "Pi-plasty", snomedCtCode: "25353009", snomedCtDisplay: "Fronto-orbital advancement (procedure)", specialties: ["cleft_cranio"], subcategory: "Craniosynostosis Surgery", tags: ["craniosynostosis", "osteotomy"], sortOrder: 8 },
+  { id: "cc_monobloc_advancement", displayName: "Monobloc advancement", snomedCtCode: "429376006", snomedCtDisplay: "Monobloc advancement (procedure)", specialties: ["cleft_cranio"], subcategory: "Craniosynostosis Surgery", tags: ["craniosynostosis", "osteotomy"], sortOrder: 9 }, // VERIFY code
+  { id: "cc_monobloc_distraction", displayName: "Monobloc distraction osteogenesis", snomedCtCode: "360820005", snomedCtDisplay: "Distraction osteogenesis (procedure)", specialties: ["cleft_cranio"], subcategory: "Craniosynostosis Surgery", tags: ["craniosynostosis", "distraction"], sortOrder: 10 },
+  { id: "cc_lefort_iii_advancement", displayName: "Le Fort III advancement", snomedCtCode: "25714004", snomedCtDisplay: "Le Fort III osteotomy (procedure)", specialties: ["cleft_cranio"], subcategory: "Craniosynostosis Surgery", tags: ["craniosynostosis", "osteotomy"], sortOrder: 11 },
+  { id: "cc_lefort_iii_distraction", displayName: "Le Fort III distraction osteogenesis", snomedCtCode: "25714004", snomedCtDisplay: "Le Fort III osteotomy (procedure)", specialties: ["cleft_cranio"], subcategory: "Craniosynostosis Surgery", tags: ["craniosynostosis", "distraction"], sortOrder: 12 },
+  { id: "cc_facial_bipartition", displayName: "Facial bipartition", snomedCtCode: "429376006", snomedCtDisplay: "Monobloc advancement (procedure)", specialties: ["cleft_cranio"], subcategory: "Craniosynostosis Surgery", tags: ["craniosynostosis", "osteotomy"], sortOrder: 13 }, // VERIFY code
+  { id: "cc_distraction_device_placement", displayName: "Distraction device placement", snomedCtCode: "360820005", snomedCtDisplay: "Distraction osteogenesis (procedure)", specialties: ["cleft_cranio"], subcategory: "Craniosynostosis Surgery", tags: ["craniosynostosis", "distraction"], sortOrder: 14 },
+  { id: "cc_distraction_device_removal", displayName: "Distraction device removal", snomedCtCode: "68526003", snomedCtDisplay: "Removal of device (procedure)", specialties: ["cleft_cranio"], subcategory: "Craniosynostosis Surgery", tags: ["craniosynostosis"], sortOrder: 15 },
+  { id: "cc_cranioplasty", displayName: "Cranioplasty", snomedCtCode: "27337003", snomedCtDisplay: "Cranial vault remodeling (procedure)", specialties: ["cleft_cranio"], subcategory: "Craniosynostosis Surgery", tags: ["craniosynostosis"], sortOrder: 16 },
+];
+
+// --- Craniofacial Procedures (14) ---
+const CC_CRANIOFACIAL_PROCEDURES: ProcedurePicklistEntry[] = [
+  { id: "cc_mandibular_distraction", displayName: "Mandibular distraction osteogenesis", snomedCtCode: "360820005", snomedCtDisplay: "Distraction osteogenesis (procedure)", specialties: ["cleft_cranio"], subcategory: "Craniofacial Procedures", tags: ["craniofacial", "distraction"], sortOrder: 1 },
+  { id: "cc_mandibular_distractor_placement", displayName: "Mandibular distraction device placement", snomedCtCode: "360820005", snomedCtDisplay: "Distraction osteogenesis (procedure)", specialties: ["cleft_cranio"], subcategory: "Craniofacial Procedures", tags: ["craniofacial", "distraction"], sortOrder: 2 },
+  { id: "cc_mandibular_distractor_removal", displayName: "Mandibular distraction device removal", snomedCtCode: "68526003", snomedCtDisplay: "Removal of device (procedure)", specialties: ["cleft_cranio"], subcategory: "Craniofacial Procedures", tags: ["craniofacial"], sortOrder: 3 },
+  { id: "cc_costochondral_rib_graft", displayName: "Costochondral rib graft to mandible", snomedCtCode: "89655001", snomedCtDisplay: "Costochondral rib graft (procedure)", specialties: ["cleft_cranio"], subcategory: "Craniofacial Procedures", tags: ["craniofacial", "bone_graft"], sortOrder: 4 }, // VERIFY code
+  { id: "cc_orbital_box_osteotomy", displayName: "Orbital box osteotomy", snomedCtCode: "31611004", snomedCtDisplay: "Osteotomy of orbit (procedure)", specialties: ["cleft_cranio"], subcategory: "Craniofacial Procedures", tags: ["craniofacial", "osteotomy"], sortOrder: 5 }, // VERIFY code
+  { id: "cc_hypertelorism_correction", displayName: "Orbital hypertelorism correction", snomedCtCode: "63961008", snomedCtDisplay: "Correction of orbital hypertelorism (procedure)", specialties: ["cleft_cranio"], subcategory: "Craniofacial Procedures", tags: ["craniofacial", "osteotomy"], sortOrder: 6 }, // VERIFY code
+  { id: "cc_cranial_bone_graft_harvest", displayName: "Cranial bone graft harvest", snomedCtCode: "48962002", snomedCtDisplay: "Bone graft from cranium (procedure)", specialties: ["cleft_cranio"], subcategory: "Craniofacial Procedures", tags: ["bone_graft", "donor_site"], sortOrder: 7 }, // VERIFY code
+  { id: "cc_encephalocele_repair", displayName: "Encephalocele repair", snomedCtCode: "8761006", snomedCtDisplay: "Repair of encephalocele (procedure)", specialties: ["cleft_cranio"], subcategory: "Craniofacial Procedures", tags: ["craniofacial"], sortOrder: 8 },
+  { id: "cc_fat_grafting_face", displayName: "Fat grafting to face", snomedCtCode: "440810009", snomedCtDisplay: "Fat grafting (procedure)", specialties: ["cleft_cranio"], subcategory: "Craniofacial Procedures", tags: ["craniofacial", "lipofilling"], sortOrder: 9 },
+  { id: "cc_tissue_expansion_craniofacial", displayName: "Tissue expansion — craniofacial", snomedCtCode: "70955005", snomedCtDisplay: "Insertion of tissue expander (procedure)", specialties: ["cleft_cranio"], subcategory: "Craniofacial Procedures", tags: ["craniofacial", "tissue_expansion"], sortOrder: 10 },
+  { id: "cc_custom_implant", displayName: "Custom craniofacial implant (PEEK/titanium)", snomedCtCode: "27337003", snomedCtDisplay: "Cranial vault remodeling (procedure)", specialties: ["cleft_cranio"], subcategory: "Craniofacial Procedures", tags: ["craniofacial"], sortOrder: 11 },
+  { id: "cc_ear_reconstruction_rib", displayName: "Rib graft ear reconstruction (microtia)", snomedCtCode: "302301003", snomedCtDisplay: "Reconstruction of external ear (procedure)", specialties: ["cleft_cranio"], subcategory: "Craniofacial Procedures", tags: ["craniofacial"], sortOrder: 12 }, // VERIFY code
+  { id: "cc_tongue_lip_adhesion", displayName: "Tongue-lip adhesion (glossopexy)", snomedCtCode: "173422003", snomedCtDisplay: "Tongue-lip adhesion (procedure)", specialties: ["cleft_cranio"], subcategory: "Craniofacial Procedures", tags: ["craniofacial"], sortOrder: 13 }, // VERIFY code
+  { id: "cc_tracheostomy", displayName: "Tracheostomy", snomedCtCode: "48387007", snomedCtDisplay: "Tracheostomy (procedure)", specialties: ["cleft_cranio"], subcategory: "Craniofacial Procedures", tags: ["craniofacial"], sortOrder: 14 },
+];
+
+// --- Associated / Concurrent (4) ---
+const CC_ASSOCIATED: ProcedurePicklistEntry[] = [
+  { id: "cc_grommets", displayName: "Myringotomy with grommet insertion", snomedCtCode: "172676009", snomedCtDisplay: "Myringotomy and insertion of ventilation tube (procedure)", specialties: ["cleft_cranio"], subcategory: "Associated / Concurrent", tags: ["concurrent"], sortOrder: 1 },
+  { id: "cc_z_plasty", displayName: "Z-plasty", snomedCtCode: "35025002", snomedCtDisplay: "Z-plasty (procedure)", specialties: ["cleft_cranio"], subcategory: "Associated / Concurrent", tags: ["local_flap"], sortOrder: 2 },
+  { id: "cc_scar_revision", displayName: "Scar revision", snomedCtCode: "234014001", snomedCtDisplay: "Scar revision (procedure)", specialties: ["cleft_cranio"], subcategory: "Associated / Concurrent", tags: ["revision"], sortOrder: 3 },
+  { id: "cc_presurgical_nam", displayName: "Presurgical nasoalveolar molding (NAM)", snomedCtCode: "", snomedCtDisplay: "Presurgical nasoalveolar molding", specialties: ["cleft_cranio"], subcategory: "Associated / Concurrent", tags: ["presurgical"], sortOrder: 4 },
+];
+
+const CLEFT_CRANIO_PROCEDURES: ProcedurePicklistEntry[] = [
+  ...CC_LIP_REPAIR,
+  ...CC_PALATE_REPAIR,
+  ...CC_VPI_SURGERY,
+  ...CC_ALVEOLAR_MAXILLARY,
+  ...CC_FISTULA_REPAIR,
+  ...CC_CLEFT_RHINOPLASTY,
+  ...CC_CRANIOSYNOSTOSIS,
+  ...CC_CRANIOFACIAL_PROCEDURES,
+  ...CC_ASSOCIATED,
 ];
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -6697,7 +6627,6 @@ export const PROCEDURE_PICKLIST: ProcedurePicklistEntry[] = [
   ...HEAD_NECK_EYELID_RECON,
   ...HEAD_NECK_FACIAL_NERVE,
   ...HEAD_NECK_FACIAL_REANIMATION,
-  ...HEAD_NECK_CLEFT_CRANIOFACIAL,
   ...HEAD_NECK_FACIAL_FRACTURES,
   ...HEAD_NECK_FRACTURE_SUBTYPES,
   ...HEAD_NECK_FACIAL_SOFT_TISSUE_TRAUMA,
@@ -6750,7 +6679,7 @@ export const PROCEDURE_PICKLIST: ProcedurePicklistEntry[] = [
   ...BODY_CONTOUR_POST_BARIATRIC,
   ...BODY_CONTOUR_OTHER,
   // Cleft & Craniofacial (new)
-  ...CLEFT_CRANIO_ADDITIONAL,
+  ...CLEFT_CRANIO_PROCEDURES,
   // Skin Cancer (new)
   ...SKIN_CANCER_ADDITIONAL,
   // Lymphoedema (new)

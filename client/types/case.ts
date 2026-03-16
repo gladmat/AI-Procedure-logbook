@@ -235,7 +235,21 @@ export type ProcedureTag =
   | "revision"
   | "complex_wound"
   | "lipofilling"
-  | "gender_affirming";
+  | "gender_affirming"
+  | "cleft"
+  | "craniosynostosis"
+  | "craniofacial"
+  | "bone_graft"
+  | "vpi"
+  | "rhinoplasty"
+  | "osteotomy"
+  | "orthognathic"
+  | "distraction"
+  | "endoscopic"
+  | "donor_site"
+  | "tissue_expansion"
+  | "concurrent"
+  | "presurgical";
 
 export type ASAScore = 1 | 2 | 3 | 4 | 5 | 6;
 
@@ -1840,6 +1854,8 @@ export interface DiagnosisGroup {
   dupuytrenAssessment?: import("./dupuytren").DupuytrenAssessment;
   /** Transient hint for auto-selecting hand case type on new groups. Not persisted. */
   handCaseTypeHint?: "trauma" | "acute" | "elective";
+  /** Craniofacial assessment data (cleft classification, craniosynostosis, OMENS+) */
+  craniofacialAssessment?: import("./craniofacial").CraniofacialAssessmentData;
 }
 
 export type GeneralHistologyCategory =
@@ -2210,6 +2226,20 @@ export const PROCEDURE_TAG_LABELS: Record<ProcedureTag, string> = {
   complex_wound: "Complex Wound",
   lipofilling: "Lipofilling",
   gender_affirming: "Gender-Affirming",
+  cleft: "Cleft",
+  craniosynostosis: "Craniosynostosis",
+  craniofacial: "Craniofacial",
+  bone_graft: "Bone Graft",
+  vpi: "VPI",
+  rhinoplasty: "Rhinoplasty",
+  osteotomy: "Osteotomy",
+  orthognathic: "Orthognathic",
+  distraction: "Distraction",
+  endoscopic: "Endoscopic",
+  donor_site: "Donor Site",
+  tissue_expansion: "Tissue Expansion",
+  concurrent: "Concurrent",
+  presurgical: "Presurgical",
 };
 
 // RACS MALT Supervision Level Labels
