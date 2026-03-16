@@ -6,14 +6,22 @@
  *
  * Layout:
  *   Finger chip row (multi-select → adds ray cards)
- *   Per-finger cards (MCP/PIP steppers + auto Tubiana)
+ *   Per-finger cards (MCP/PIP/DIP steppers + auto Tubiana + progress bar)
+ *   Summary card (auto-calculated, visible when ≥1 ray)
  *   First web space toggle
  *   Previous treatment (recurrent only, collapsible)
  *   Diathesis features (Tier 3, collapsible)
  */
 
-import React, { useState, useCallback } from "react";
-import { View, Pressable, LayoutAnimation, StyleSheet } from "react-native";
+import React, { useState, useCallback, useRef, useEffect } from "react";
+import {
+  View,
+  Pressable,
+  TextInput,
+  LayoutAnimation,
+  StyleSheet,
+  ScrollView,
+} from "react-native";
 import * as Haptics from "expo-haptics";
 import { Feather } from "@/components/FeatherIcon";
 import { ThemedText } from "@/components/ThemedText";
@@ -24,6 +32,7 @@ import {
   updateRayJointDeficit,
   calculateDupuytrenSummary,
   calculateDiathesisScore,
+  generateDupuytrenSummaryText,
   FINGER_ORDER,
   COMMON_DUPUYTREN_FINGERS,
   getFingerLabel,
@@ -47,6 +56,35 @@ interface DupuytrenAssessmentProps {
   isRevision: boolean;
 }
 
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+const PATTERN_LABELS: Record<
+  NonNullable<DupuytrenAssessmentType["dominantPattern"]>,
+  string
+> = {
+  mcp_predominant: "MCP-predominant",
+  pip_predominant: "PIP-predominant",
+  mixed: "Mixed",
+};
+
+function tubianaBarColor(
+  stage: TubianaStage,
+  theme: { success: string; warning: string; error: string; textTertiary: string },
+): string {
+  switch (stage) {
+    case "N":
+      return theme.textTertiary;
+    case "I":
+      return theme.success;
+    case "II":
+      return theme.warning;
+    case "III":
+      return theme.warning;
+    case "IV":
+      return theme.error;
+  }
+}
+
 // ── Stepper Component ────────────────────────────────────────────────────────
 
 function DegreeStepper({
@@ -65,6 +103,58 @@ function DegreeStepper({
   max?: number;
 }) {
   const { theme } = useTheme();
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const tickCountRef = useRef(0);
+  const valueRef = useRef(value);
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState("");
+
+  useEffect(() => {
+    valueRef.current = value;
+  }, [value]);
+
+  const stopRepeat = useCallback(() => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+    tickCountRef.current = 0;
+  }, []);
+
+  const startRepeat = useCallback(
+    (direction: 1 | -1) => {
+      stopRepeat();
+      tickCountRef.current = 0;
+      const tick = () => {
+        tickCountRef.current++;
+        const next =
+          direction === 1
+            ? Math.min(max, valueRef.current + step)
+            : Math.max(min, valueRef.current - step);
+        if (next !== valueRef.current) {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          valueRef.current = next;
+          onChange(next);
+        }
+        // Accelerate: after 5 ticks switch to faster interval
+        if (tickCountRef.current === 5 || tickCountRef.current === 15) {
+          stopRepeat();
+          const speed = tickCountRef.current >= 15 ? 50 : 100;
+          const savedCount = tickCountRef.current;
+          intervalRef.current = setInterval(() => {
+            tickCountRef.current = savedCount + 1;
+            tick();
+          }, speed);
+        }
+      };
+      intervalRef.current = setInterval(tick, 200);
+    },
+    [max, min, step, onChange, stopRepeat],
+  );
+
+  useEffect(() => {
+    return stopRepeat;
+  }, [stopRepeat]);
 
   const decrement = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -73,6 +163,16 @@ function DegreeStepper({
   const increment = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onChange(Math.min(max, value + step));
+  };
+
+  const commitDraft = () => {
+    const parsed = parseInt(draft, 10);
+    if (!isNaN(parsed)) {
+      const clamped = Math.min(max, Math.max(min, parsed));
+      const rounded = Math.round(clamped / step) * step;
+      onChange(rounded);
+    }
+    setEditing(false);
   };
 
   return (
@@ -86,6 +186,9 @@ function DegreeStepper({
       <View style={styles.stepperControls}>
         <Pressable
           onPress={decrement}
+          onLongPress={() => startRepeat(-1)}
+          onPressOut={stopRepeat}
+          delayLongPress={400}
           style={[
             styles.stepperButton,
             { backgroundColor: theme.backgroundTertiary },
@@ -102,25 +205,56 @@ function DegreeStepper({
             −
           </ThemedText>
         </Pressable>
-        <View
-          style={[
-            styles.stepperValue,
-            { backgroundColor: theme.backgroundSecondary },
-          ]}
-        >
-          <ThemedText
-            style={{
-              color: theme.text,
-              fontSize: 15,
-              fontWeight: "600",
-              fontVariant: ["tabular-nums"],
+        {editing ? (
+          <TextInput
+            style={[
+              styles.stepperValue,
+              {
+                backgroundColor: theme.backgroundSecondary,
+                color: theme.text,
+                fontSize: 15,
+                fontWeight: "600",
+                textAlign: "center",
+                fontVariant: ["tabular-nums"],
+              },
+            ]}
+            value={draft}
+            onChangeText={setDraft}
+            onBlur={commitDraft}
+            onSubmitEditing={commitDraft}
+            keyboardType="number-pad"
+            autoFocus
+            selectTextOnFocus
+            maxLength={3}
+          />
+        ) : (
+          <Pressable
+            onPress={() => {
+              setDraft(String(value));
+              setEditing(true);
             }}
+            style={[
+              styles.stepperValue,
+              { backgroundColor: theme.backgroundSecondary },
+            ]}
           >
-            {value}°
-          </ThemedText>
-        </View>
+            <ThemedText
+              style={{
+                color: theme.text,
+                fontSize: 15,
+                fontWeight: "600",
+                fontVariant: ["tabular-nums"],
+              }}
+            >
+              {value}°
+            </ThemedText>
+          </Pressable>
+        )}
         <Pressable
           onPress={increment}
+          onLongPress={() => startRepeat(1)}
+          onPressOut={stopRepeat}
+          delayLongPress={400}
           style={[
             styles.stepperButton,
             { backgroundColor: theme.backgroundTertiary },
@@ -182,6 +316,12 @@ function RayCard({
   onUpdate: (updated: DupuytrenRayAssessment) => void;
 }) {
   const { theme } = useTheme();
+  const [showDip, setShowDip] = useState(!!ray.dipExtensionDeficit);
+
+  const barColor = tubianaBarColor(ray.tubianaStage, theme);
+  const barWidth = ray.totalExtensionDeficit > 0
+    ? Math.min(1, ray.totalExtensionDeficit / 180)
+    : 0;
 
   return (
     <View
@@ -212,6 +352,207 @@ function RayCard({
         value={ray.pipExtensionDeficit}
         onChange={(v) => onUpdate(updateRayJointDeficit(ray, "pip", v))}
       />
+      {/* DIP toggle (rare) */}
+      <Pressable
+        onPress={() => {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+          if (showDip) {
+            setShowDip(false);
+            onUpdate(updateRayJointDeficit(ray, "dip", 0));
+          } else {
+            setShowDip(true);
+          }
+        }}
+        style={styles.toggleRow}
+      >
+        <Feather
+          name={showDip ? "check-square" : "square"}
+          size={16}
+          color={showDip ? theme.link : theme.textTertiary}
+        />
+        <ThemedText
+          style={{ fontSize: 12, color: theme.textTertiary }}
+        >
+          DIP involved (rare)
+        </ThemedText>
+      </Pressable>
+      {showDip ? (
+        <DegreeStepper
+          label="DIP deficit"
+          value={ray.dipExtensionDeficit ?? 0}
+          onChange={(v) => onUpdate(updateRayJointDeficit(ray, "dip", v))}
+        />
+      ) : null}
+      {/* Tubiana progress bar */}
+      {ray.tubianaStage !== "N" ? (
+        <View
+          style={[
+            styles.progressTrack,
+            { backgroundColor: theme.backgroundTertiary },
+          ]}
+        >
+          <View
+            style={[
+              styles.progressFill,
+              {
+                backgroundColor: barColor,
+                width: `${barWidth * 100}%`,
+              },
+            ]}
+          />
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+// ── Summary Card ─────────────────────────────────────────────────────────────
+
+function SummaryCard({
+  assessment,
+}: {
+  assessment: DupuytrenAssessmentType;
+}) {
+  const { theme } = useTheme();
+
+  if (assessment.rays.length === 0) return null;
+
+  const summaryText = generateDupuytrenSummaryText(assessment);
+  const patternLabel = assessment.dominantPattern
+    ? PATTERN_LABELS[assessment.dominantPattern]
+    : undefined;
+
+  return (
+    <View
+      style={[
+        styles.summaryCard,
+        { backgroundColor: theme.backgroundTertiary },
+      ]}
+    >
+      <ThemedText
+        style={[styles.summaryTitle, { color: theme.textSecondary }]}
+      >
+        ASSESSMENT SUMMARY
+      </ThemedText>
+      <ThemedText style={{ fontSize: 14, color: theme.text }}>
+        {summaryText}
+      </ThemedText>
+      <View style={styles.summaryRow}>
+        <ThemedText style={{ fontSize: 13, color: theme.textSecondary }}>
+          Total hand score
+        </ThemedText>
+        <ThemedText
+          style={{
+            fontSize: 13,
+            fontWeight: "600",
+            color: theme.text,
+            fontVariant: ["tabular-nums"],
+          }}
+        >
+          {assessment.totalHandScore ?? 0} / 20
+        </ThemedText>
+      </View>
+      {patternLabel ? (
+        <View style={styles.summaryRow}>
+          <ThemedText style={{ fontSize: 13, color: theme.textSecondary }}>
+            Pattern
+          </ThemedText>
+          <ThemedText
+            style={{ fontSize: 13, fontWeight: "600", color: theme.text }}
+          >
+            {patternLabel}
+          </ThemedText>
+        </View>
+      ) : null}
+      {assessment.firstWebSpace?.isAffected ? (
+        <View style={styles.summaryRow}>
+          <ThemedText style={{ fontSize: 13, color: theme.textSecondary }}>
+            First web space
+          </ThemedText>
+          <ThemedText
+            style={{ fontSize: 13, fontWeight: "600", color: theme.text }}
+          >
+            Involved
+          </ThemedText>
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+// ── Year Picker ──────────────────────────────────────────────────────────────
+
+const CURRENT_YEAR = new Date().getFullYear();
+
+function YearPicker({
+  value,
+  onChange,
+}: {
+  value: string | undefined;
+  onChange: (year: string | undefined) => void;
+}) {
+  const { theme } = useTheme();
+  const [showEarlier, setShowEarlier] = useState(false);
+  const startYear = showEarlier ? 1990 : CURRENT_YEAR - 14;
+  const years: number[] = [];
+  for (let y = CURRENT_YEAR; y >= startYear; y--) {
+    years.push(y);
+  }
+
+  return (
+    <View style={{ gap: Spacing.xs }}>
+      <ThemedText
+        style={[styles.fieldLabel, { color: theme.textSecondary }]}
+      >
+        Approximate year
+      </ThemedText>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{ gap: Spacing.xs, paddingRight: Spacing.sm }}
+      >
+        {years.map((y) => {
+          const isSelected = value === String(y);
+          return (
+            <Pressable
+              key={y}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                onChange(isSelected ? undefined : String(y));
+              }}
+              style={[
+                styles.smallChip,
+                {
+                  backgroundColor: isSelected
+                    ? `${theme.link}18`
+                    : theme.backgroundTertiary,
+                  borderColor: isSelected ? theme.link : theme.border,
+                },
+              ]}
+            >
+              <ThemedText
+                style={{
+                  fontSize: 12,
+                  fontWeight: isSelected ? "600" : "400",
+                  color: isSelected ? theme.link : theme.text,
+                }}
+              >
+                {y}
+              </ThemedText>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
+      {!showEarlier ? (
+        <Pressable onPress={() => setShowEarlier(true)}>
+          <ThemedText
+            style={{ fontSize: 12, color: theme.link }}
+          >
+            Show earlier years
+          </ThemedText>
+        </Pressable>
+      ) : null}
     </View>
   );
 }
@@ -226,7 +567,7 @@ export const DupuytrenAssessment = React.memo(function DupuytrenAssessment({
 }: DupuytrenAssessmentProps) {
   const { theme } = useTheme();
   const [showPreviousTreatment, setShowPreviousTreatment] = useState(
-    !!(value?.previousTreatment?.procedureType),
+    !!(value?.previousTreatment?.procedureType || value?.previousTreatment?.approximateDate),
   );
   const [showDiathesis, setShowDiathesis] = useState(
     !!(
@@ -369,6 +710,9 @@ export const DupuytrenAssessment = React.memo(function DupuytrenAssessment({
         <RayCard key={ray.fingerId} ray={ray} onUpdate={updateRay} />
       ))}
 
+      {/* Summary card (visible when ≥1 ray) */}
+      <SummaryCard assessment={assessment} />
+
       {/* First web space toggle */}
       <Pressable onPress={toggleWebSpace} style={styles.toggleRow}>
         <Feather
@@ -475,6 +819,16 @@ export const DupuytrenAssessment = React.memo(function DupuytrenAssessment({
                   );
                 })}
               </View>
+              {/* Approximate year */}
+              <YearPicker
+                value={assessment.previousTreatment?.approximateDate}
+                onChange={(year) =>
+                  updatePreviousTreatment({
+                    ...assessment.previousTreatment,
+                    approximateDate: year,
+                  })
+                }
+              />
             </View>
           ) : null}
         </View>
@@ -661,6 +1015,32 @@ const styles = StyleSheet.create({
     height: 36,
     borderRadius: BorderRadius.xs,
     justifyContent: "center",
+    alignItems: "center",
+  },
+  progressTrack: {
+    height: 4,
+    borderRadius: 2,
+    marginTop: 2,
+    overflow: "hidden",
+  },
+  progressFill: {
+    height: 4,
+    borderRadius: 2,
+  },
+  summaryCard: {
+    borderRadius: BorderRadius.md,
+    padding: Spacing.sm,
+    gap: Spacing.xs,
+  },
+  summaryTitle: {
+    fontSize: 11,
+    fontWeight: "600",
+    letterSpacing: 0.5,
+    marginBottom: 2,
+  },
+  summaryRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
   },
   toggleRow: {

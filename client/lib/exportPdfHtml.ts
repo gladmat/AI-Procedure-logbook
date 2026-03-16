@@ -27,6 +27,10 @@ import {
   getLipofillingSummary,
 } from "@/lib/breastConfig";
 import { getBreastExportData } from "@/lib/breastExport";
+import {
+  generateDupuytrenSummaryText,
+  calculateDiathesisScore,
+} from "@/lib/dupuytrenHelpers";
 
 export interface PdfExportOptions {
   includePatientId?: boolean;
@@ -190,6 +194,24 @@ export function buildPdfHtml(cases: Case[], options: PdfExportOptions): string {
       }
     }
     const headNeckFlapSummary = getHeadNeckFlapSummary(c);
+
+    // Dupuytren assessment summary
+    let dupuytrenSummary = "";
+    const primaryGroup = c.diagnosisGroups?.[0];
+    if (primaryGroup?.dupuytrenAssessment?.rays?.length) {
+      const da = primaryGroup.dupuytrenAssessment;
+      const parts = [`Dupuytren: ${generateDupuytrenSummaryText(da)}`];
+      if (da.totalHandScore != null) parts.push(`score ${da.totalHandScore}/20`);
+      if (da.dominantPattern) {
+        const patternMap = { mcp_predominant: "MCP", pip_predominant: "PIP", mixed: "Mixed" };
+        parts.push(patternMap[da.dominantPattern]);
+      }
+      if (da.diathesis && calculateDiathesisScore(da.diathesis) > 0) {
+        parts.push(`diathesis ${calculateDiathesisScore(da.diathesis)}/4`);
+      }
+      dupuytrenSummary = parts.join(", ");
+    }
+
     const implantSummary = [jointImplantSummary, ...breastParts]
       .filter(Boolean)
       .join("; ");
@@ -241,7 +263,7 @@ export function buildPdfHtml(cases: Case[], options: PdfExportOptions): string {
       escapeHtml(primary?.diagnosis?.displayName || ""),
       escapeHtml(primaryProc?.procedureName || ""),
       escapeHtml(
-        [implantSummary, headNeckFlapSummary].filter(Boolean).join("; "),
+        [implantSummary, headNeckFlapSummary, dupuytrenSummary].filter(Boolean).join("; "),
       ),
       escapeHtml(complications),
       escapeHtml(c.outcome || ""),
