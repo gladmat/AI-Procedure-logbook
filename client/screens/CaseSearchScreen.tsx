@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import {
   View,
   TextInput,
@@ -24,8 +24,22 @@ export default function CaseSearchScreen() {
   const navigation = useNavigation<Nav>();
   const { theme } = useTheme();
   const [query, setQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
   const [cases, setCases] = useState<CaseSummary[]>([]);
   const [loading, setLoading] = useState(true);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleQueryChange = useCallback((text: string) => {
+    setQuery(text);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => setDebouncedQuery(text), 250);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     getCaseSummaries()
@@ -33,12 +47,21 @@ export default function CaseSearchScreen() {
       .finally(() => setLoading(false));
   }, []);
 
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return cases;
+  const MAX_RESULTS = 50;
 
-    return cases.filter((c) => c.searchableText.includes(q));
-  }, [cases, query]);
+  const filtered = useMemo(() => {
+    const q = debouncedQuery.trim().toLowerCase();
+    if (!q) return cases.slice(0, MAX_RESULTS);
+
+    const results: CaseSummary[] = [];
+    for (const c of cases) {
+      if (c.searchableText.includes(q)) {
+        results.push(c);
+        if (results.length >= MAX_RESULTS) break;
+      }
+    }
+    return results;
+  }, [cases, debouncedQuery]);
 
   const handleCasePress = useCallback(
     (c: CaseSummary) => {
@@ -78,7 +101,7 @@ export default function CaseSearchScreen() {
           placeholder="Search by patient, diagnosis, procedure..."
           placeholderTextColor={theme.textTertiary}
           value={query}
-          onChangeText={setQuery}
+          onChangeText={handleQueryChange}
           autoFocus
           autoCapitalize="none"
           autoCorrect={false}
@@ -86,7 +109,7 @@ export default function CaseSearchScreen() {
         />
         {query.length > 0 ? (
           <Pressable
-            onPress={() => setQuery("")}
+            onPress={() => { setQuery(""); setDebouncedQuery(""); if (debounceRef.current) clearTimeout(debounceRef.current); }}
             accessibilityRole="button"
             accessibilityLabel="Clear search"
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}

@@ -14,7 +14,7 @@
       "buildNumber": "5",
       "appleTeamId": "8CQ38RR2W4",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false,
+        "ITSAppUsesNonExemptEncryption": true,
         "NSFaceIDUsageDescription": "Opus uses Face ID to protect your surgical case data."
       }
     },

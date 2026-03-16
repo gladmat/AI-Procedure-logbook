@@ -19,6 +19,7 @@ import {
 } from "@/lib/appLockStorage";
 import { isFaceIdUnsupportedInCurrentRuntime } from "@/lib/biometrics";
 import { clearDecryptedCache } from "@/components/EncryptedImage";
+import { clearEncryptionKeyCache } from "@/lib/encryption";
 
 interface AppLockContextType {
   isLocked: boolean;
@@ -77,6 +78,8 @@ export function AppLockProvider({ children }: { children: ReactNode }) {
         // regardless of app lock configuration — clinical photos should
         // never persist as plaintext in the cache directory.
         clearDecryptedCache();
+        // Clear cached encryption keys from RAM to reduce exposure window
+        clearEncryptionKeyCache();
       }
 
       if (!isAppLockConfigured) return;

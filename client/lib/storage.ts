@@ -722,11 +722,12 @@ export async function saveCase(caseData: Case): Promise<void> {
     );
 
     const encrypted = await encryptData(JSON.stringify(updatedCase));
-    await AsyncStorage.setItem(`${CASE_PREFIX}${caseData.id}`, encrypted);
     const patientIdentifierHash = await hashPatientIdentifier(
       caseData.patientIdentifier,
     );
 
+    // Invalidate cache before read-modify-write to avoid stale reads
+    caseIndexCache = null;
     const index = await getCaseIndex();
     const existingIdx = index.findIndex((e) => e.id === caseData.id);
 
@@ -752,9 +753,8 @@ export async function saveCase(caseData: Case): Promise<void> {
         new Date(b.procedureDate).getTime() -
         new Date(a.procedureDate).getTime(),
     );
-    await saveCaseIndex(index);
-    const cachedCase = cacheCase(updatedCase);
 
+    const cachedCase = cacheCase(updatedCase);
     const summaries = await getCaseSummaries();
     const summary = buildCaseSummary(cachedCase);
     const existingSummaryIndex = summaries.findIndex(
@@ -771,7 +771,24 @@ export async function saveCase(caseData: Case): Promise<void> {
         new Date(right.procedureDate).getTime() -
         new Date(left.procedureDate).getTime(),
     );
-    await saveCaseSummaries(nextSummaries);
+
+    const encryptedSummaries = await encryptData(
+      JSON.stringify({
+        version: CASE_SUMMARY_STORE_VERSION,
+        summaries: nextSummaries,
+      }),
+    );
+
+    // Atomic write: case data + index + summaries in a single multiSet call
+    await AsyncStorage.multiSet([
+      [`${CASE_PREFIX}${caseData.id}`, encrypted],
+      [CASE_INDEX_KEY, JSON.stringify(index)],
+      [CASE_SUMMARIES_KEY, encryptedSummaries],
+    ]);
+
+    // Update in-memory caches after successful write
+    caseIndexCache = index;
+    caseSummaryCache = nextSummaries;
   } catch (error) {
     console.error("Error saving case:", error);
     throw error;
@@ -950,30 +967,53 @@ export async function recordComplications(
 export async function deleteCase(id: string): Promise<void> {
   try {
     const caseData = await getCase(id);
+
+    // Delete media FIRST — if this fails, case data is still intact
     if (caseData?.operativeMedia) {
       const mediaUris = caseData.operativeMedia.map((m) => m.localUri);
-      await deleteMultipleEncryptedMedia(mediaUris);
+      try {
+        await deleteMultipleEncryptedMedia(mediaUris);
+      } catch (mediaErr) {
+        console.warn("Failed to delete some case media (orphaned):", mediaErr);
+      }
     }
 
-    await AsyncStorage.removeItem(`${CASE_PREFIX}${id}`);
-
-    const index = await getCaseIndex();
-    const filtered = index.filter((e) => e.id !== id);
-    await saveCaseIndex(filtered);
-    caseCache.delete(id);
-    allCasesCache = null;
-
-    const summaries = await getCaseSummaries();
-    await saveCaseSummaries(summaries.filter((summary) => summary.id !== id));
-
+    // Delete timeline event media before removing events
     const events = await getTimelineEvents(id);
     for (const event of events) {
       if (event.mediaAttachments) {
         const eventMediaUris = event.mediaAttachments.map((m) => m.localUri);
-        await deleteMultipleEncryptedMedia(eventMediaUris);
+        try {
+          await deleteMultipleEncryptedMedia(eventMediaUris);
+        } catch (mediaErr) {
+          console.warn("Failed to delete some event media (orphaned):", mediaErr);
+        }
       }
       await deleteTimelineEvent(event.id);
     }
+
+    // Now remove case data, index entry, and summary atomically
+    caseIndexCache = null; // Invalidate before read-modify-write
+    const index = await getCaseIndex();
+    const filtered = index.filter((e) => e.id !== id);
+
+    const summaries = await getCaseSummaries();
+    const filteredSummaries = summaries.filter((summary) => summary.id !== id);
+    const encryptedSummaries = await encryptData(
+      serializeCaseSummaryStore(filteredSummaries),
+    );
+
+    await AsyncStorage.multiSet([
+      [CASE_INDEX_KEY, JSON.stringify(filtered)],
+      [CASE_SUMMARIES_KEY, encryptedSummaries],
+    ]);
+    await AsyncStorage.removeItem(`${CASE_PREFIX}${id}`);
+
+    // Update in-memory caches
+    caseIndexCache = filtered;
+    caseSummaryCache = filteredSummaries;
+    caseCache.delete(id);
+    allCasesCache = null;
   } catch (error) {
     console.error("Error deleting case:", error);
     throw error;
