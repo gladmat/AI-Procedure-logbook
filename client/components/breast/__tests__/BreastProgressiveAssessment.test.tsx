@@ -123,7 +123,7 @@ vi.mock("@/components/SnomedSearchPicker", () => ({
     React.createElement("SnomedSearchPicker", props),
 }));
 
-vi.mock("@/components/skin-cancer/SectionWrapper", () => ({
+vi.mock("@/components/shared/SectionWrapper", () => ({
   SectionWrapper: ({ children, isCollapsed, ...props }: any) =>
     React.createElement(
       "SectionWrapper",

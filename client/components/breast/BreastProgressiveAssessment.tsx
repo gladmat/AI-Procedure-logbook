@@ -10,7 +10,7 @@ import { CompactProcedureList } from "@/components/CompactProcedureList";
 import { ProcedureEntryCard } from "@/components/ProcedureEntryCard";
 import { ProcedureSubcategoryPicker } from "@/components/ProcedureSubcategoryPicker";
 import { SnomedSearchPicker } from "@/components/SnomedSearchPicker";
-import { SectionWrapper } from "@/components/skin-cancer/SectionWrapper";
+import { SectionWrapper } from "@/components/shared/SectionWrapper";
 import { useTheme } from "@/hooks/useTheme";
 import { useFavouritesRecents } from "@/hooks/useFavouritesRecents";
 import { BorderRadius, Spacing } from "@/constants/theme";

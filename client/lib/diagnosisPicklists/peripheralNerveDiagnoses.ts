@@ -258,7 +258,7 @@ const PN_DX_TRAUMA: DiagnosisPicklistEntry[] = [
 ];
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// COMPRESSION NEUROPATHIES — non-hand
+// COMPRESSION NEUROPATHIES
 // ═══════════════════════════════════════════════════════════════════════════════
 
 const PN_DX_COMPRESSION: DiagnosisPicklistEntry[] = [
@@ -288,6 +288,91 @@ const PN_DX_COMPRESSION: DiagnosisPicklistEntry[] = [
       },
     ],
     sortOrder: 1,
+  },
+  {
+    id: "pn_dx_carpal_tunnel",
+    displayName: "Carpal tunnel syndrome",
+    shortName: "CTS",
+    snomedCtCode: "57406009",
+    snomedCtDisplay: "Carpal tunnel syndrome (disorder)",
+    specialty: "peripheral_nerve",
+    subcategory: "Compression Neuropathy",
+    clinicalGroup: "elective",
+    hasStaging: true, // Severity + EMG grade in diagnosisStagingConfig
+    searchSynonyms: [
+      "CTS",
+      "median nerve compression",
+      "carpal tunnel",
+      "tingling fingers",
+    ],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hand_comp_ctr_open",
+        displayName: "Carpal tunnel release — open",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "hand_comp_ctr_endoscopic",
+        displayName: "Carpal tunnel release — endoscopic",
+        isDefault: false,
+        sortOrder: 2,
+      },
+    ],
+    sortOrder: 2,
+  },
+  {
+    id: "pn_dx_cubital_tunnel",
+    displayName: "Cubital tunnel syndrome",
+    shortName: "CuTS",
+    snomedCtCode: "230631009",
+    snomedCtDisplay: "Ulnar nerve entrapment at elbow (disorder)",
+    specialty: "peripheral_nerve",
+    subcategory: "Compression Neuropathy",
+    clinicalGroup: "elective",
+    hasStaging: false,
+    searchSynonyms: [
+      "cubital tunnel",
+      "ulnar nerve elbow",
+      "ulnar neuropathy",
+      "CuTS",
+    ],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hand_comp_cubital_insitu",
+        displayName: "Cubital tunnel decompression — in situ",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "hand_comp_cubital_transposition",
+        displayName: "Cubital tunnel — anterior transposition",
+        isDefault: false,
+        sortOrder: 2,
+      },
+    ],
+    sortOrder: 3,
+  },
+  {
+    id: "pn_dx_guyon_canal",
+    displayName: "Guyon's canal syndrome",
+    shortName: "Guyon's",
+    snomedCtCode: "230632002",
+    snomedCtDisplay: "Ulnar nerve entrapment at wrist (disorder)",
+    specialty: "peripheral_nerve",
+    subcategory: "Compression Neuropathy",
+    clinicalGroup: "elective",
+    hasStaging: false,
+    searchSynonyms: ["Guyon", "ulnar tunnel", "ulnar nerve wrist"],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hand_comp_guyon",
+        displayName: "Guyon's canal release",
+        isDefault: true,
+        sortOrder: 1,
+      },
+    ],
+    sortOrder: 4,
   },
 ];
 

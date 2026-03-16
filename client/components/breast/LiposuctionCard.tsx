@@ -16,7 +16,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { BreastChipRow, BreastNumericField } from "./BreastCardHelpers";
-import { SectionWrapper } from "@/components/skin-cancer/SectionWrapper";
+import { SectionWrapper } from "@/components/shared/SectionWrapper";
 import type {
   LiposuctionData,
   LiposuctionArea,

@@ -68,7 +68,7 @@ import {
   generateLesionCaption,
   LesionDetailsSection,
 } from "./LesionDetailsSection";
-import { SectionWrapper } from "./SectionWrapper";
+import { SectionWrapper } from "@/components/shared/SectionWrapper";
 import { PathologySection } from "./PathologySection";
 import { HistologySection } from "./HistologySection";
 import { MarginRecommendationBadge } from "./MarginRecommendationBadge";

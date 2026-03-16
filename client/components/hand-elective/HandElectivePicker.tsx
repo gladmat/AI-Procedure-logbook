@@ -26,6 +26,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { SnomedSearchPicker } from "@/components/SnomedSearchPicker";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { HAND_SURGERY_DIAGNOSES } from "@/lib/diagnosisPicklists/handSurgeryDiagnoses";
+import { PERIPHERAL_NERVE_DIAGNOSES } from "@/lib/diagnosisPicklists/peripheralNerveDiagnoses";
 import type { DiagnosisPicklistEntry } from "@/types/diagnosis";
 
 // ═══════════════════════════════════════════════════════════════
@@ -38,9 +39,9 @@ const ELECTIVE_SUBCATEGORIES: {
   label: string;
 }[] = [
   {
-    key: "Compression Neuropathies",
+    key: "Stenosing Tenosynovitis",
     icon: "zap",
-    label: "Compression Neuropathies",
+    label: "Stenosing Tenosynovitis",
   },
   { key: "Dupuytren's Disease", icon: "layers", label: "Dupuytren's Disease" },
   { key: "Joint & Degenerative", icon: "disc", label: "Joint & Degenerative" },
@@ -49,6 +50,18 @@ const ELECTIVE_SUBCATEGORIES: {
   { key: "Tumours & Other", icon: "target", label: "Tumours & Masses" },
   { key: "Congenital", icon: "star", label: "Congenital" },
 ];
+
+// IDs of nerve compression diagnoses moved to Peripheral Nerve — shown as
+// cross-references in search results so hand surgeons can still find them.
+const PN_CROSS_REF_IDS = new Set([
+  "pn_dx_carpal_tunnel",
+  "pn_dx_cubital_tunnel",
+  "pn_dx_guyon_canal",
+]);
+
+const PN_CROSS_REFS = PERIPHERAL_NERVE_DIAGNOSES.filter((d) =>
+  PN_CROSS_REF_IDS.has(d.id),
+);
 
 // ═══════════════════════════════════════════════════════════════
 // Props
@@ -93,16 +106,20 @@ export function HandElectivePicker({
 
   const isSearching = searchQuery.length >= 2;
 
+  // Cross-reference IDs for checking if a result is a PN cross-ref
+  const crossRefIdSet = PN_CROSS_REF_IDS;
+
   // Visible diagnoses based on search or subcategory selection
   const visibleDiagnoses = useMemo(() => {
     if (isSearching) {
       const q = searchQuery.toLowerCase();
-      return allElective.filter(
-        (d) =>
-          d.displayName.toLowerCase().includes(q) ||
-          d.shortName?.toLowerCase().includes(q) ||
-          d.searchSynonyms?.some((s) => s.toLowerCase().includes(q)),
-      );
+      const matchFn = (d: DiagnosisPicklistEntry) =>
+        d.displayName.toLowerCase().includes(q) ||
+        d.shortName?.toLowerCase().includes(q) ||
+        d.searchSynonyms?.some((s) => s.toLowerCase().includes(q));
+      const handResults = allElective.filter(matchFn);
+      const crossRefResults = PN_CROSS_REFS.filter(matchFn);
+      return [...handResults, ...crossRefResults];
     }
     if (selectedSubcategory) {
       return allElective.filter((d) => d.subcategory === selectedSubcategory);
@@ -257,7 +274,18 @@ export function HandElectivePicker({
                 >
                   {dx.displayName}
                 </ThemedText>
-                {isSearching ? (
+                {isSearching && crossRefIdSet.has(dx.id) ? (
+                  <View style={styles.crossRefRow}>
+                    <ThemedText
+                      style={[
+                        styles.crossRefText,
+                        { color: theme.textTertiary },
+                      ]}
+                    >
+                      ↳ Listed under Peripheral Nerve
+                    </ThemedText>
+                  </View>
+                ) : isSearching ? (
                   <ThemedText
                     style={[styles.subcatLabel, { color: theme.textTertiary }]}
                   >
@@ -468,5 +496,15 @@ const styles = StyleSheet.create({
   snomedToggleText: {
     fontSize: 13,
     fontWeight: "500",
+  },
+  crossRefRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginTop: 1,
+  },
+  crossRefText: {
+    fontSize: 11,
+    fontWeight: "400",
   },
 });

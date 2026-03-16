@@ -44,6 +44,7 @@ import { PickerField } from "@/components/FormField";
 import { SnomedSearchPicker } from "@/components/SnomedSearchPicker";
 import { getDiagnosisStaging, DiagnosisStagingConfig } from "@/lib/snomedApi";
 import { DiagnosisClinicalFields } from "@/components/DiagnosisClinicalFields";
+import { InlineStagingButtons } from "@/components/staging/InlineStagingButtons";
 import { ProcedureEntryCard } from "@/components/ProcedureEntryCard";
 import { DiagnosisPicker } from "@/components/DiagnosisPicker";
 import { ProcedureSuggestions } from "@/components/ProcedureSuggestions";
@@ -113,7 +114,7 @@ import {
 } from "@/lib/skinCancerConfig";
 import { SkinCancerAssessment } from "@/components/skin-cancer/SkinCancerAssessment";
 import { AcuteHandAssessment } from "@/components/acute-hand/AcuteHandAssessment";
-import { HandElectivePicker } from "@/components/hand-elective/HandElectivePicker";
+import { HandElectiveAssessment } from "@/components/hand-elective/HandElectiveAssessment";
 import { HeadNeckDiagnosisPicker } from "@/components/head-neck/HeadNeckDiagnosisPicker";
 import {
   isBreastSpecialty,
@@ -2538,11 +2539,30 @@ function DiagnosisGroupEditorInner({
 
             {/* Feature 1: collapsed card OR full picker */}
             {hasDiagnosisPicklist(groupSpecialty) ? (
-              isDiagnosisPickerCollapsed &&
+              isElectiveHand ? (
+                <HandElectiveAssessment
+                  selectedDiagnosis={selectedDiagnosis}
+                  primaryDiagnosis={primaryDiagnosis}
+                  onDiagnosisSelect={handleDiagnosisSelect}
+                  onSnomedSelect={handleElectiveSnomedSelect}
+                  onDiagnosisClear={clearDiagnosis}
+                  diagnosisStaging={diagnosisStaging}
+                  stagingValues={stagingValues}
+                  onStagingChange={handleStagingChangeForSuggestions}
+                  laterality={diagnosisClinicalDetails.laterality}
+                  onLateralityChange={(value) =>
+                    setDiagnosisClinicalDetails((prev) => ({
+                      ...prev,
+                      laterality: value,
+                    }))
+                  }
+                  selectedSuggestionIds={selectedSuggestionIds}
+                  onToggleProcedureSuggestion={handleToggleProcedureSuggestion}
+                  onShowAllProcedures={() => setShowAllProcedures(true)}
+                />
+              ) : isDiagnosisPickerCollapsed &&
               (selectedDiagnosis ||
-                (groupSpecialty === "hand_wrist" &&
-                  handCaseType === "elective" &&
-                  primaryDiagnosis)) ? (
+                primaryDiagnosis) ? (
                 <SelectedDiagnosisCard
                   diagnosis={
                     selectedDiagnosis ??
@@ -2569,11 +2589,6 @@ function DiagnosisGroupEditorInner({
                 <HeadNeckDiagnosisPicker
                   selectedDiagnosisId={selectedDiagnosis?.id}
                   onSelect={handleDiagnosisSelect}
-                />
-              ) : isElectiveHand ? (
-                <HandElectivePicker
-                  onSelect={handleDiagnosisSelect}
-                  onSnomedSelect={handleElectiveSnomedSelect}
                 />
               ) : (
                 <DiagnosisPicker
@@ -2689,37 +2704,55 @@ function DiagnosisGroupEditorInner({
               />
             ) : null}
 
-            {diagnosisStaging && diagnosisStaging.stagingSystems.length > 0 ? (
+            {!isElectiveHand && diagnosisStaging && diagnosisStaging.stagingSystems.length > 0 ? (
               <View style={styles.stagingContainer}>
                 <ThemedText
                   style={[styles.stagingTitle, { color: theme.textSecondary }]}
                 >
                   Classification / Staging
                 </ThemedText>
-                {diagnosisStaging.stagingSystems.map((system) => (
-                  <PickerField
-                    key={system.name}
-                    label={system.name}
-                    value={stagingValues[system.name] || ""}
-                    options={system.options.map((opt) => ({
-                      value: opt.value,
-                      label: opt.description
-                        ? `${opt.label} - ${opt.description}`
-                        : opt.label,
-                    }))}
-                    onSelect={(value) => {
-                      if (selectedDiagnosis) {
-                        handleStagingChangeForSuggestions(system.name, value);
-                      } else {
-                        setStagingValues((prev) => ({
-                          ...prev,
-                          [system.name]: value,
-                        }));
-                      }
-                    }}
-                    placeholder={`Select ${system.name.toLowerCase()}...`}
-                  />
-                ))}
+                {diagnosisStaging.stagingSystems.map((system) => {
+                  const handleStagingSelect = (value: string) => {
+                    if (selectedDiagnosis) {
+                      handleStagingChangeForSuggestions(system.name, value);
+                    } else {
+                      setStagingValues((prev) => ({
+                        ...prev,
+                        [system.name]: value,
+                      }));
+                    }
+                  };
+                  if (system.options.length <= 5) {
+                    return (
+                      <InlineStagingButtons
+                        key={system.name}
+                        label={system.name}
+                        options={system.options.map((opt) => ({
+                          value: opt.value,
+                          label: opt.label,
+                          description: opt.description,
+                        }))}
+                        selectedValue={stagingValues[system.name] || ""}
+                        onSelect={handleStagingSelect}
+                      />
+                    );
+                  }
+                  return (
+                    <PickerField
+                      key={system.name}
+                      label={system.name}
+                      value={stagingValues[system.name] || ""}
+                      options={system.options.map((opt) => ({
+                        value: opt.value,
+                        label: opt.description
+                          ? `${opt.label} - ${opt.description}`
+                          : opt.label,
+                      }))}
+                      onSelect={handleStagingSelect}
+                      placeholder={`Select ${system.name.toLowerCase()}...`}
+                    />
+                  );
+                })}
               </View>
             ) : null}
 
@@ -2801,7 +2834,7 @@ function DiagnosisGroupEditorInner({
               />
             ) : null}
 
-            {primaryDiagnosis && !isSkinCancerModule ? (
+            {primaryDiagnosis && !isSkinCancerModule && !isElectiveHand ? (
               <DiagnosisClinicalFields
                 diagnosis={{
                   snomedCtCode: primaryDiagnosis.conceptId,
@@ -2850,17 +2883,18 @@ function DiagnosisGroupEditorInner({
         {hasSelectedHandCaseType &&
         showTraumaDiagnosisEditor &&
         !isAcuteHandFlow &&
+        !isElectiveHand &&
         !isBreastModule ? (
           <View style={styles.connector}>
             <Feather name="arrow-down" size={16} color={theme.textTertiary} />
           </View>
         ) : null}
 
-        {hasSelectedHandCaseType && !isAcuteHandFlow && !isBreastModule ? (
+        {hasSelectedHandCaseType && !isAcuteHandFlow && (!isElectiveHand || showAllProcedures) && !isBreastModule ? (
           <SectionHeader title="Procedures Performed" />
         ) : null}
 
-        {hasSelectedHandCaseType && !isAcuteHandFlow && !isBreastModule ? (
+        {hasSelectedHandCaseType && !isAcuteHandFlow && (!isElectiveHand || showAllProcedures) && !isBreastModule ? (
           <ThemedText
             style={[styles.sectionDescription, { color: theme.textSecondary }]}
           >
@@ -2955,6 +2989,7 @@ function DiagnosisGroupEditorInner({
         {hasSelectedHandCaseType &&
         skinCancerHasDiagnosis &&
         acuteHandAllowsProcedures &&
+        (!isElectiveHand || showAllProcedures) &&
         !isBreastModule &&
         !showTraumaProcedureSummary ? (
           <>

@@ -1,6 +1,6 @@
 import React, { useCallback } from "react";
 import { View, StyleSheet } from "react-native";
-import { SectionWrapper } from "@/components/skin-cancer/SectionWrapper";
+import { SectionWrapper } from "@/components/shared/SectionWrapper";
 import { BreastChipRow, BreastNumericField } from "./BreastCardHelpers";
 import type { NippleDetailsData, NippleReconTechnique } from "@/types/breast";
 import { NIPPLE_RECON_TECHNIQUE_LABELS } from "@/types/breast";

@@ -25,7 +25,7 @@ import * as Haptics from "expo-haptics";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
-import { SectionWrapper } from "@/components/skin-cancer/SectionWrapper";
+import { SectionWrapper } from "@/components/shared/SectionWrapper";
 import { HandInfectionCard } from "@/components/hand-infection/HandInfectionCard";
 import { AcuteHandSummaryPanel } from "./AcuteHandSummaryPanel";
 import { DiagnosisPicker } from "@/components/DiagnosisPicker";

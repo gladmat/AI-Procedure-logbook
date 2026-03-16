@@ -1065,71 +1065,7 @@ const HAND_DX_SOFT_TISSUE: DiagnosisPicklistEntry[] = [
 // COMPRESSION NEUROPATHIES
 // ═══════════════════════════════════════════════════════════════════════════════
 
-const HAND_DX_COMPRESSION: DiagnosisPicklistEntry[] = [
-  {
-    id: "hand_dx_carpal_tunnel",
-    displayName: "Carpal tunnel syndrome",
-    shortName: "CTS",
-    snomedCtCode: "57406009",
-    snomedCtDisplay: "Carpal tunnel syndrome (disorder)",
-    specialty: "hand_wrist",
-    subcategory: "Compression Neuropathies",
-    clinicalGroup: "elective",
-    hasStaging: true, // Severity + EMG grade in diagnosisStagingConfig
-    searchSynonyms: [
-      "CTS",
-      "median nerve compression",
-      "carpal tunnel",
-      "tingling fingers",
-    ],
-    suggestedProcedures: [
-      {
-        procedurePicklistId: "hand_comp_ctr_open",
-        displayName: "Carpal tunnel release — open",
-        isDefault: true,
-        sortOrder: 1,
-      },
-      {
-        procedurePicklistId: "hand_comp_ctr_endoscopic",
-        displayName: "Carpal tunnel release — endoscopic",
-        isDefault: false,
-        sortOrder: 2,
-      },
-    ],
-    sortOrder: 1,
-  },
-  {
-    id: "hand_dx_cubital_tunnel",
-    displayName: "Cubital tunnel syndrome",
-    shortName: "CuTS",
-    snomedCtCode: "230631009",
-    snomedCtDisplay: "Ulnar nerve entrapment at elbow (disorder)",
-    specialty: "hand_wrist",
-    subcategory: "Compression Neuropathies",
-    clinicalGroup: "elective",
-    hasStaging: false,
-    searchSynonyms: [
-      "cubital tunnel",
-      "ulnar nerve elbow",
-      "ulnar neuropathy",
-      "CuTS",
-    ],
-    suggestedProcedures: [
-      {
-        procedurePicklistId: "hand_comp_cubital_insitu",
-        displayName: "Cubital tunnel decompression — in situ",
-        isDefault: true,
-        sortOrder: 1,
-      },
-      {
-        procedurePicklistId: "hand_comp_cubital_transposition",
-        displayName: "Cubital tunnel — anterior transposition",
-        isDefault: false,
-        sortOrder: 2,
-      },
-    ],
-    sortOrder: 2,
-  },
+const HAND_DX_STENOSING_TENOSYNOVITIS: DiagnosisPicklistEntry[] = [
   {
     id: "hand_dx_dequervain",
     displayName: "De Quervain's tenosynovitis",
@@ -1137,7 +1073,7 @@ const HAND_DX_COMPRESSION: DiagnosisPicklistEntry[] = [
     snomedCtCode: "21794005",
     snomedCtDisplay: "Radial styloid tenosynovitis (disorder)",
     specialty: "hand_wrist",
-    subcategory: "Compression Neuropathies",
+    subcategory: "Stenosing Tenosynovitis",
     clinicalGroup: "elective",
     hasStaging: false,
     searchSynonyms: [
@@ -1154,7 +1090,7 @@ const HAND_DX_COMPRESSION: DiagnosisPicklistEntry[] = [
         sortOrder: 1,
       },
     ],
-    sortOrder: 3,
+    sortOrder: 1,
   },
   {
     id: "hand_dx_trigger_finger",
@@ -1162,7 +1098,7 @@ const HAND_DX_COMPRESSION: DiagnosisPicklistEntry[] = [
     snomedCtCode: "1539003",
     snomedCtDisplay: "Trigger finger (disorder)",
     specialty: "hand_wrist",
-    subcategory: "Compression Neuropathies",
+    subcategory: "Stenosing Tenosynovitis",
     clinicalGroup: "elective",
     hasStaging: true, // Quinnell grade in diagnosisStagingConfig
     searchSynonyms: [
@@ -1179,7 +1115,7 @@ const HAND_DX_COMPRESSION: DiagnosisPicklistEntry[] = [
         sortOrder: 1,
       },
     ],
-    sortOrder: 4,
+    sortOrder: 2,
   },
   {
     id: "hand_dx_trigger_thumb",
@@ -1187,7 +1123,7 @@ const HAND_DX_COMPRESSION: DiagnosisPicklistEntry[] = [
     snomedCtCode: "42786005",
     snomedCtDisplay: "Snapping thumb syndrome (disorder)",
     specialty: "hand_wrist",
-    subcategory: "Compression Neuropathies",
+    subcategory: "Stenosing Tenosynovitis",
     clinicalGroup: "elective",
     hasStaging: true, // Quinnell grade
     searchSynonyms: ["trigger thumb", "locked thumb"],
@@ -1199,27 +1135,7 @@ const HAND_DX_COMPRESSION: DiagnosisPicklistEntry[] = [
         sortOrder: 1,
       },
     ],
-    sortOrder: 5,
-  },
-  {
-    id: "hand_dx_guyon",
-    displayName: "Guyon's canal syndrome",
-    snomedCtCode: "35455005",
-    snomedCtDisplay: "Ulnar nerve entrapment at wrist (disorder)",
-    specialty: "hand_wrist",
-    subcategory: "Compression Neuropathies",
-    clinicalGroup: "elective",
-    hasStaging: false,
-    searchSynonyms: ["Guyon's canal", "ulnar tunnel", "ulnar nerve wrist"],
-    suggestedProcedures: [
-      {
-        procedurePicklistId: "hand_comp_guyon",
-        displayName: "Guyon's canal release",
-        isDefault: true,
-        sortOrder: 1,
-      },
-    ],
-    sortOrder: 6,
+    sortOrder: 3,
   },
 ];
 
@@ -3076,7 +2992,7 @@ export const HAND_SURGERY_DIAGNOSES: DiagnosisPicklistEntry[] = [
   ...HAND_DX_TENDON_INJURIES,
   ...HAND_DX_NERVE_INJURIES,
   ...HAND_DX_SOFT_TISSUE,
-  ...HAND_DX_COMPRESSION,
+  ...HAND_DX_STENOSING_TENOSYNOVITIS,
   ...HAND_DX_DUPUYTREN,
   ...HAND_DX_JOINT,
   ...HAND_DX_ELECTIVE_TENDON,

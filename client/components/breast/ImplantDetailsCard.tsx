@@ -18,7 +18,7 @@ import {
   BreastNumericField,
   BreastSectionToggle,
 } from "./BreastCardHelpers";
-import { SectionWrapper } from "@/components/skin-cancer/SectionWrapper";
+import { SectionWrapper } from "@/components/shared/SectionWrapper";
 import { IMPLANT_MANUFACTURERS, ADM_PRODUCTS } from "@/lib/breastConfig";
 import type {
   ImplantDetailsData,

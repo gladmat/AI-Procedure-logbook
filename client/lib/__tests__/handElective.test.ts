@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { HAND_SURGERY_DIAGNOSES } from "@/lib/diagnosisPicklists/handSurgeryDiagnoses";
+import { PERIPHERAL_NERVE_DIAGNOSES } from "@/lib/diagnosisPicklists/peripheralNerveDiagnoses";
 import { PROCEDURE_PICKLIST } from "@/lib/procedurePicklist";
 import {
   buildElectiveSnomedFallbackState,
@@ -26,7 +27,7 @@ function getDiagnosesForSubcategory(subcategory: string) {
 
 describe("Elective subcategory coverage", () => {
   const expectedSubcategories = [
-    "Compression Neuropathies",
+    "Stenosing Tenosynovitis",
     "Dupuytren's Disease",
     "Joint & Degenerative",
     "Elective Tendon",
@@ -315,6 +316,98 @@ describe("Procedure reclassifications", () => {
     expect(proc).toBeDefined();
     expect(proc!.subcategory).toBe("Compression Neuropathies");
   });
+});
+
+// ═══════════════════════════════════════════════════════════
+// 11. Nerve compressions moved to peripheral nerve
+// ═══════════════════════════════════════════════════════════
+
+describe("Nerve compression reclassification", () => {
+  it("CTS, CuTS, Guyon's removed from hand surgery diagnoses", () => {
+    const handIds = HAND_SURGERY_DIAGNOSES.map((d) => d.id);
+    expect(handIds).not.toContain("hand_dx_carpal_tunnel");
+    expect(handIds).not.toContain("hand_dx_cubital_tunnel");
+    expect(handIds).not.toContain("hand_dx_guyon");
+  });
+
+  it("Stenosing Tenosynovitis subcategory has exactly 3 diagnoses", () => {
+    const stenosingDx = allElective.filter(
+      (d) => d.subcategory === "Stenosing Tenosynovitis",
+    );
+    expect(stenosingDx.length).toBe(3);
+    const ids = stenosingDx.map((d) => d.id);
+    expect(ids).toContain("hand_dx_dequervain");
+    expect(ids).toContain("hand_dx_trigger_finger");
+    expect(ids).toContain("hand_dx_trigger_thumb");
+  });
+
+  it("CTS, CuTS, Guyon's exist in peripheral nerve diagnoses", () => {
+    const pnIds = PERIPHERAL_NERVE_DIAGNOSES.map((d) => d.id);
+    expect(pnIds).toContain("pn_dx_carpal_tunnel");
+    expect(pnIds).toContain("pn_dx_cubital_tunnel");
+    expect(pnIds).toContain("pn_dx_guyon_canal");
+  });
+
+  it("peripheral nerve compression entries have correct specialty and clinical group", () => {
+    const compressionIds = [
+      "pn_dx_carpal_tunnel",
+      "pn_dx_cubital_tunnel",
+      "pn_dx_guyon_canal",
+    ];
+    for (const id of compressionIds) {
+      const dx = PERIPHERAL_NERVE_DIAGNOSES.find((d) => d.id === id);
+      expect(dx).toBeDefined();
+      expect(dx!.specialty).toBe("peripheral_nerve");
+      expect(dx!.clinicalGroup).toBe("elective");
+      expect(dx!.subcategory).toBe("Compression Neuropathy");
+    }
+  });
+
+  it("CTS has hasStaging: true", () => {
+    const dx = PERIPHERAL_NERVE_DIAGNOSES.find(
+      (d) => d.id === "pn_dx_carpal_tunnel",
+    );
+    expect(dx).toBeDefined();
+    expect(dx!.hasStaging).toBe(true);
+  });
+
+  it("peripheral nerve compression diagnoses reference valid procedures", () => {
+    const compressionIds = [
+      "pn_dx_carpal_tunnel",
+      "pn_dx_cubital_tunnel",
+      "pn_dx_guyon_canal",
+    ];
+    for (const id of compressionIds) {
+      const dx = PERIPHERAL_NERVE_DIAGNOSES.find((d) => d.id === id)!;
+      for (const sp of dx.suggestedProcedures) {
+        expect(procedureIds.has(sp.procedurePicklistId)).toBe(true);
+      }
+    }
+  });
+});
+
+// ═══════════════════════════════════════════════════════════
+// 12. Compression procedures have peripheral_nerve specialty
+// ═══════════════════════════════════════════════════════════
+
+describe("Compression procedure dual-specialty", () => {
+  const compressionProcIds = [
+    "hand_comp_ctr_open",
+    "hand_comp_ctr_endoscopic",
+    "hand_comp_cubital_insitu",
+    "hand_comp_cubital_transposition",
+    "hand_comp_guyon",
+  ];
+
+  it.each(compressionProcIds)(
+    "procedure '%s' has both hand_wrist and peripheral_nerve specialties",
+    (id) => {
+      const proc = PROCEDURE_PICKLIST.find((p) => p.id === id);
+      expect(proc).toBeDefined();
+      expect(proc!.specialties).toContain("hand_wrist");
+      expect(proc!.specialties).toContain("peripheral_nerve");
+    },
+  );
 });
 
 describe("Elective SNOMED fallback helpers", () => {

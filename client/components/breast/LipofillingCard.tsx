@@ -19,7 +19,7 @@ import {
   BreastNumericField,
   BreastSectionToggle,
 } from "./BreastCardHelpers";
-import { SectionWrapper } from "@/components/skin-cancer/SectionWrapper";
+import { SectionWrapper } from "@/components/shared/SectionWrapper";
 import { ThemedText } from "@/components/ThemedText";
 import type {
   BreastLaterality,

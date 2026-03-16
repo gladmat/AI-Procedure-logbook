@@ -22,7 +22,7 @@ import {
   BreastNumericField,
   BreastSectionToggle,
 } from "./BreastCardHelpers";
-import { SectionWrapper } from "@/components/skin-cancer/SectionWrapper";
+import { SectionWrapper } from "@/components/shared/SectionWrapper";
 import type {
   BreastFlapDetailsData,
   PerforatorEntry,
