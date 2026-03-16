@@ -216,6 +216,11 @@ export function useAttentionItems(
         pendingAction: episode.pendingAction
           ? PENDING_ACTION_LABELS[episode.pendingAction]
           : undefined,
+        pendingActions: episode.pendingActions?.length
+          ? episode.pendingActions.map((a) => PENDING_ACTION_LABELS[a])
+          : episode.pendingAction
+            ? [PENDING_ACTION_LABELS[episode.pendingAction]]
+            : undefined,
         caseCount: linkedCases.length,
         lastProcedureSummary,
         lastCaseDate,

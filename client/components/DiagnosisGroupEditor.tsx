@@ -2526,16 +2526,19 @@ function DiagnosisGroupEditorInner({
               </View>
             ) : null}
 
-            <SectionHeader
-              title="Primary Diagnosis"
-              subtitle={
-                isInlineHandTraumaFlow && showManualTraumaDiagnosisPicker
-                  ? "Override the coded diagnosis if the auto-mapped trauma diagnosis needs correction."
-                  : hasDiagnosisPicklist(groupSpecialty)
-                    ? "Select from structured list"
-                    : "SNOMED CT coded diagnosis"
-              }
-            />
+            {/* Hide redundant header when elective hand picker provides its own structure */}
+            {!isElectiveHand ? (
+              <SectionHeader
+                title="Primary Diagnosis"
+                subtitle={
+                  isInlineHandTraumaFlow && showManualTraumaDiagnosisPicker
+                    ? "Override the coded diagnosis if the auto-mapped trauma diagnosis needs correction."
+                    : hasDiagnosisPicklist(groupSpecialty)
+                      ? "Select from structured list"
+                      : "SNOMED CT coded diagnosis"
+                }
+              />
+            ) : null}
 
             {/* Feature 1: collapsed card OR full picker */}
             {hasDiagnosisPicklist(groupSpecialty) ? (

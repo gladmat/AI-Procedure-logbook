@@ -136,6 +136,80 @@ describe("date field normalization", () => {
     );
   });
 
+  it("normalizes legacy single pendingAction to pendingActions array", () => {
+    const episode: TreatmentEpisode = {
+      id: "episode-pa-1",
+      patientIdentifier: "NHI123",
+      title: "L Breast reconstruction",
+      primaryDiagnosisCode: "",
+      primaryDiagnosisDisplay: "Breast recon",
+      type: "staged_reconstruction",
+      specialty: "breast",
+      status: "active",
+      onsetDate: "2026-03-01",
+      ownerId: "user-1",
+      createdAt: "2026-03-01T00:00:00.000Z",
+      updatedAt: "2026-03-01T00:00:00.000Z",
+      pendingAction: "awaiting_nipple_recon",
+    };
+
+    const normalized = normalizeEpisodeDateOnlyFields(episode);
+
+    expect(normalized.pendingActions).toEqual(["awaiting_nipple_recon"]);
+    expect(normalized.pendingAction).toBe("awaiting_nipple_recon");
+  });
+
+  it("reconciles pendingAction from pendingActions[0] when mismatched", () => {
+    const episode: TreatmentEpisode = {
+      id: "episode-pa-2",
+      patientIdentifier: "NHI456",
+      title: "L Breast reconstruction",
+      primaryDiagnosisCode: "",
+      primaryDiagnosisDisplay: "Breast recon",
+      type: "staged_reconstruction",
+      specialty: "breast",
+      status: "active",
+      onsetDate: "2026-03-01",
+      ownerId: "user-1",
+      createdAt: "2026-03-01T00:00:00.000Z",
+      updatedAt: "2026-03-01T00:00:00.000Z",
+      pendingAction: "awaiting_fat_grafting",
+      pendingActions: ["awaiting_nipple_recon", "awaiting_tattoo"],
+    };
+
+    const normalized = normalizeEpisodeDateOnlyFields(episode);
+
+    expect(normalized.pendingActions).toEqual([
+      "awaiting_nipple_recon",
+      "awaiting_tattoo",
+    ]);
+    expect(normalized.pendingAction).toBe("awaiting_nipple_recon");
+  });
+
+  it("preserves consistent pendingActions without mutation", () => {
+    const episode: TreatmentEpisode = {
+      id: "episode-pa-3",
+      patientIdentifier: "NHI789",
+      title: "L Breast reconstruction",
+      primaryDiagnosisCode: "",
+      primaryDiagnosisDisplay: "Breast recon",
+      type: "staged_reconstruction",
+      specialty: "breast",
+      status: "active",
+      onsetDate: "2026-03-01",
+      ownerId: "user-1",
+      createdAt: "2026-03-01T00:00:00.000Z",
+      updatedAt: "2026-03-01T00:00:00.000Z",
+      pendingAction: "awaiting_nipple_recon",
+      pendingActions: ["awaiting_nipple_recon", "awaiting_tattoo"],
+    };
+
+    const normalized = normalizeEpisodeDateOnlyFields(episode);
+
+    // No date change + pendingAction already matches pendingActions[0] → same reference
+    expect(normalized).toBe(episode);
+  });
+
   it("leaves already-canonical cases unchanged", () => {
     const currentCase = {
       id: "case-2",

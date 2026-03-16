@@ -379,6 +379,140 @@ describe("buildBreastEpisodeCreatePlan with overrides", () => {
   });
 });
 
+describe("multi-select pending actions", () => {
+  const caseDataForMultiSelect: Case = {
+    id: "case-ms",
+    patientIdentifier: "PAT-MS",
+    procedureDate: "2026-03-10",
+    facility: "Test Hospital",
+    specialty: "breast",
+    procedureType: "Breast reconstruction",
+    diagnosisGroups: [
+      {
+        id: "group-ms",
+        specialty: "breast",
+        diagnosis: {
+          displayName: "Delayed breast reconstruction",
+          snomedCtCode: "123",
+        },
+        procedures: [],
+        breastAssessment: {
+          laterality: "left",
+          sides: {
+            left: {
+              side: "left",
+              clinicalContext: "reconstructive",
+            },
+          },
+        },
+      },
+    ],
+    teamMembers: [],
+    ownerId: "user-1",
+    createdAt: "2026-03-10T10:00:00.000Z",
+    updatedAt: "2026-03-10T10:00:00.000Z",
+  };
+
+  it("respects multi-select pendingActions override", () => {
+    const plan = buildBreastEpisodeCreatePlan(
+      caseDataForMultiSelect,
+      [],
+      "2026-03-10T10:00:00.000Z",
+      "episode-ms-1",
+      {
+        pendingActions: ["awaiting_nipple_recon", "awaiting_tattoo"],
+      },
+    );
+    expect(plan?.episodeToCreate?.pendingActions).toEqual([
+      "awaiting_nipple_recon",
+      "awaiting_tattoo",
+    ]);
+    expect(plan?.episodeToCreate?.pendingAction).toBe("awaiting_nipple_recon");
+  });
+
+  it("falls back single pendingAction to pendingActions array", () => {
+    const plan = buildBreastEpisodeCreatePlan(
+      caseDataForMultiSelect,
+      [],
+      "2026-03-10T10:00:00.000Z",
+      "episode-ms-2",
+      {
+        pendingAction: "awaiting_fat_grafting",
+      },
+    );
+    expect(plan?.episodeToCreate?.pendingActions).toEqual([
+      "awaiting_fat_grafting",
+    ]);
+    expect(plan?.episodeToCreate?.pendingAction).toBe("awaiting_fat_grafting");
+  });
+
+  it("auto-derived pending action populates both fields", () => {
+    const plan = buildBreastEpisodeCreatePlan(
+      caseDataForMultiSelect,
+      [],
+      "2026-03-10T10:00:00.000Z",
+      "episode-ms-3",
+    );
+    // Auto-derives "awaiting_reconstruction" for basic reconstructive case
+    expect(plan?.episodeToCreate?.pendingAction).toBe(
+      "awaiting_reconstruction",
+    );
+    expect(plan?.episodeToCreate?.pendingActions).toEqual([
+      "awaiting_reconstruction",
+    ]);
+  });
+
+  it("buildBreastEpisodeUpdatePlan sets both fields from auto-suggestion", () => {
+    const episode: TreatmentEpisode = {
+      id: "episode-ms-update",
+      patientIdentifier: "PAT-MS",
+      title: "L Breast reconstruction",
+      primaryDiagnosisCode: "123",
+      primaryDiagnosisDisplay: "Delayed breast reconstruction",
+      type: "staged_reconstruction",
+      specialty: "breast",
+      status: "planned",
+      pendingAction: "awaiting_reconstruction",
+      pendingActions: ["awaiting_reconstruction"],
+      onsetDate: "2026-03-10",
+      ownerId: "user-1",
+      createdAt: "2026-03-10T10:00:00.000Z",
+      updatedAt: "2026-03-10T10:00:00.000Z",
+    };
+
+    // Case with a flap done → should suggest "awaiting_fat_grafting"
+    const caseWithFlap: Case = {
+      ...caseDataForMultiSelect,
+      diagnosisGroups: [
+        {
+          id: "group-ms",
+          specialty: "breast",
+          diagnosis: {
+            displayName: "Delayed breast reconstruction",
+            snomedCtCode: "123",
+          },
+          procedures: [],
+          breastAssessment: {
+            laterality: "left",
+            reconstructionEpisodeId: "episode-ms-update",
+            sides: {
+              left: {
+                side: "left",
+                clinicalContext: "reconstructive",
+                flapDetails: { flapType: "DIEP" } as any,
+              },
+            },
+          },
+        },
+      ],
+    };
+
+    const update = buildBreastEpisodeUpdatePlan(caseWithFlap, episode);
+    expect(update?.pendingAction).toBe("awaiting_fat_grafting");
+    expect(update?.pendingActions).toEqual(["awaiting_fat_grafting"]);
+  });
+});
+
 describe("broadened getBreastEpisodeTarget", () => {
   it("finds aesthetic breast groups (not just reconstructive)", () => {
     const aestheticCase: Case = {

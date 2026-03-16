@@ -14,6 +14,7 @@ export interface BreastEpisodeOverrides {
   episodeType?: EpisodeType;
   onsetDate?: string;
   pendingAction?: PendingAction;
+  pendingActions?: PendingAction[];
 }
 
 interface BreastEpisodeTarget {
@@ -215,6 +216,7 @@ export function buildBreastEpisodeCreatePlan(
           specialty: caseData.specialty,
           status: "planned",
           pendingAction: "awaiting_reconstruction",
+          pendingActions: ["awaiting_reconstruction"],
           onsetDate: caseData.procedureDate,
           notes: "Breast reconstruction pathway",
           ownerId: caseData.ownerId,
@@ -287,7 +289,17 @@ export function buildBreastEpisodeCreatePlan(
       type: overrides?.episodeType ?? "staged_reconstruction",
       specialty: caseData.specialty,
       status: "planned",
-      pendingAction: overrides?.pendingAction ?? autoPendingAction,
+      pendingActions:
+        overrides?.pendingActions ??
+        (overrides?.pendingAction
+          ? [overrides.pendingAction]
+          : autoPendingAction
+            ? [autoPendingAction]
+            : undefined),
+      pendingAction:
+        overrides?.pendingActions?.[0] ??
+        overrides?.pendingAction ??
+        autoPendingAction,
       onsetDate: overrides?.onsetDate ?? caseData.procedureDate,
       notes: "Breast reconstruction pathway",
       ownerId: caseData.ownerId,
@@ -392,13 +404,16 @@ export function buildBreastEpisodeUpdatePlan(
   if (!target.assessment.reconstructionEpisodeId) return null;
   if (episode.id !== target.assessment.reconstructionEpisodeId) return null;
 
+  const suggestedAction = suggestNextBreastPendingAction(target.assessment);
+
   return {
     title: buildBreastEpisodeTitle(target.assessment, target.diagnosisDisplay),
     laterality: target.assessment.laterality,
     status: episode.status === "planned" ? "active" : episode.status,
     breastReconstructionMeta: deriveBreastReconstructionMeta(target.assessment),
-    pendingAction:
-      suggestNextBreastPendingAction(target.assessment) ??
-      episode.pendingAction,
+    pendingAction: suggestedAction ?? episode.pendingAction,
+    pendingActions: suggestedAction
+      ? [suggestedAction]
+      : episode.pendingActions,
   };
 }

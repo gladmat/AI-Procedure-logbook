@@ -136,9 +136,12 @@ function AttentionCardInner({
             {secondaryInfo}
           </ThemedText>
         ) : null}
-        {item.type === "episode" && item.pendingAction ? (
-          <ThemedText style={[styles.pendingAction, { color: theme.accent }]}>
-            {item.pendingAction}
+        {item.type === "episode" && item.pendingActions?.length ? (
+          <ThemedText
+            style={[styles.pendingAction, { color: theme.accent }]}
+            numberOfLines={2}
+          >
+            {item.pendingActions.join(" · ")}
           </ThemedText>
         ) : null}
       </View>

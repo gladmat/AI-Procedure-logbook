@@ -66,7 +66,7 @@ export const ReconstructionEpisodeCard = React.memo(
         normalizeDateOnlyValue(suggestedOnsetDate) ??
         toIsoDateValue(new Date()),
     );
-    const [pendingAction, setPendingAction] = useState<PendingAction | "">("");
+    const [pendingActions, setPendingActions] = useState<PendingAction[]>([]);
     const [saving, setSaving] = useState(false);
 
     const [heightAnim] = useState(new Animated.Value(0));
@@ -111,12 +111,13 @@ export const ReconstructionEpisodeCard = React.memo(
           title: title.trim(),
           episodeType: "staged_reconstruction",
           onsetDate,
-          pendingAction: pendingAction || undefined,
+          pendingActions: pendingActions.length > 0 ? pendingActions : undefined,
+          pendingAction: pendingActions[0] || undefined,
         });
       } finally {
         setSaving(false);
       }
-    }, [title, onsetDate, pendingAction, onCreateEpisode]);
+    }, [title, onsetDate, pendingActions, onCreateEpisode]);
 
     // ── Linked state ────────────────────────────────────────────────────────
 
@@ -161,7 +162,7 @@ export const ReconstructionEpisodeCard = React.memo(
 
     const formHeight = heightAnim.interpolate({
       inputRange: [0, 1],
-      outputRange: [0, 380],
+      outputRange: [0, 420],
     });
 
     const formOpacity = heightAnim.interpolate({
@@ -237,13 +238,17 @@ export const ReconstructionEpisodeCard = React.memo(
                 </ThemedText>
                 <View style={styles.chipGrid}>
                   {BREAST_NEXT_STEPS.map((step) => {
-                    const isSelected = pendingAction === step.value;
+                    const isSelected = pendingActions.includes(step.value);
                     return (
                       <Pressable
                         key={step.value}
                         onPress={() => {
                           Haptics.selectionAsync();
-                          setPendingAction(isSelected ? "" : step.value);
+                          setPendingActions((prev) =>
+                            prev.includes(step.value)
+                              ? prev.filter((a) => a !== step.value)
+                              : [...prev, step.value],
+                          );
                         }}
                         style={[
                           styles.nextStepChip,

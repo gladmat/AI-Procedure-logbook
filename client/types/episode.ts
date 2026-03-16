@@ -118,6 +118,8 @@ export interface TreatmentEpisode {
   specialty: Specialty;
   status: EpisodeStatus;
   pendingAction?: PendingAction;
+  /** Multi-select pending actions. Takes precedence over pendingAction; pendingAction is derived from pendingActions[0]. */
+  pendingActions?: PendingAction[];
   onsetDate: string;
   resolvedDate?: string;
   notes?: string;

@@ -378,11 +378,12 @@ export default function NeedsAttentionListScreen() {
             >
               {item.diagnosisTitle}
             </ThemedText>
-            {item.type === "episode" && item.pendingAction ? (
+            {item.type === "episode" && item.pendingActions?.length ? (
               <ThemedText
                 style={[styles.pendingAction, { color: theme.accent }]}
+                numberOfLines={2}
               >
-                {item.pendingAction}
+                {item.pendingActions.join(" · ")}
               </ThemedText>
             ) : null}
           </View>

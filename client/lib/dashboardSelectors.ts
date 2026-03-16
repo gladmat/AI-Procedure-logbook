@@ -26,6 +26,7 @@ export interface AttentionItem {
   episodeStatus?: "active" | "on_hold" | "planned";
   daysSinceLastEncounter?: number;
   pendingAction?: string;
+  pendingActions?: string[];
   caseCount?: number;
   lastProcedureSummary?: string;
   lastCaseDate?: string;
@@ -366,6 +367,11 @@ export function buildAttentionItems<T extends Case | CaseSummary>(
       pendingAction: episode.pendingAction
         ? PENDING_ACTION_LABELS[episode.pendingAction]
         : undefined,
+      pendingActions: episode.pendingActions?.length
+        ? episode.pendingActions.map((a) => PENDING_ACTION_LABELS[a])
+        : episode.pendingAction
+          ? [PENDING_ACTION_LABELS[episode.pendingAction]]
+          : undefined,
       caseCount: linkedCases.length,
       lastProcedureSummary,
       lastCaseDate,

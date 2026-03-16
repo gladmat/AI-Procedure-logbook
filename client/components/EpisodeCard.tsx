@@ -104,20 +104,35 @@ export function EpisodeCard({
         ) : null}
       </View>
 
-      {/* Pending action pill */}
-      {episode.pendingAction ? (
-        <View
-          style={[
-            styles.pendingPill,
-            { backgroundColor: theme.warning + "15" },
-          ]}
-        >
-          <Feather name="clock" size={12} color={theme.warning} />
-          <ThemedText style={[styles.pendingText, { color: theme.warning }]}>
-            {PENDING_ACTION_LABELS[episode.pendingAction]}
-          </ThemedText>
-        </View>
-      ) : null}
+      {/* Pending action pills */}
+      {(() => {
+        const actions =
+          episode.pendingActions?.length
+            ? episode.pendingActions
+            : episode.pendingAction
+              ? [episode.pendingAction]
+              : [];
+        return actions.length > 0 ? (
+          <View style={styles.pendingRow}>
+            {actions.map((action) => (
+              <View
+                key={action}
+                style={[
+                  styles.pendingPill,
+                  { backgroundColor: theme.warning + "15" },
+                ]}
+              >
+                <Feather name="clock" size={12} color={theme.warning} />
+                <ThemedText
+                  style={[styles.pendingText, { color: theme.warning }]}
+                >
+                  {PENDING_ACTION_LABELS[action]}
+                </ThemedText>
+              </View>
+            ))}
+          </View>
+        ) : null;
+      })()}
 
       {/* Case count + days since last */}
       <View style={styles.footerRow}>
@@ -214,6 +229,11 @@ const styles = StyleSheet.create({
   patientId: {
     fontSize: 13,
     fontFamily: Platform.select({ ios: "Menlo", default: "monospace" }),
+  },
+  pendingRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
   },
   pendingPill: {
     flexDirection: "row",

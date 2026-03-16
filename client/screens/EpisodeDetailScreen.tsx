@@ -227,21 +227,34 @@ export default function EpisodeDetailScreen() {
             </ThemedText>
           </View>
 
-          {episode.pendingAction ? (
-            <View
-              style={[
-                styles.pendingPill,
-                { backgroundColor: theme.warning + "15" },
-              ]}
-            >
-              <Feather name="clock" size={13} color={theme.warning} />
-              <ThemedText
-                style={[styles.pendingText, { color: theme.warning }]}
-              >
-                {PENDING_ACTION_LABELS[episode.pendingAction]}
-              </ThemedText>
-            </View>
-          ) : null}
+          {(() => {
+            const actions =
+              episode.pendingActions?.length
+                ? episode.pendingActions
+                : episode.pendingAction
+                  ? [episode.pendingAction]
+                  : [];
+            return actions.length > 0 ? (
+              <View style={styles.pendingRow}>
+                {actions.map((action) => (
+                  <View
+                    key={action}
+                    style={[
+                      styles.pendingPill,
+                      { backgroundColor: theme.warning + "15" },
+                    ]}
+                  >
+                    <Feather name="clock" size={13} color={theme.warning} />
+                    <ThemedText
+                      style={[styles.pendingText, { color: theme.warning }]}
+                    >
+                      {PENDING_ACTION_LABELS[action]}
+                    </ThemedText>
+                  </View>
+                ))}
+              </View>
+            ) : null;
+          })()}
         </View>
 
         {/* ── Summary Stats ────────────────────────────────────────── */}
@@ -510,6 +523,11 @@ const styles = StyleSheet.create({
   },
   detailText: {
     fontSize: 13,
+  },
+  pendingRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
   },
   pendingPill: {
     flexDirection: "row",
