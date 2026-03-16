@@ -820,6 +820,41 @@ Following established patterns:
 - Implant complication diagnoses have `crossContextVisible: true` and appear under both Reconstructive and Aesthetic contexts
 - Gender-affirming context still only shows gender-affirming diagnoses
 
+## Craniofacial & Cleft Module — Locked Decisions
+
+### Architecture
+- CraniofacialAssessment renders INLINE in DiagnosisGroupEditor (like HandTraumaAssessment)
+- Specialty-gated: activates when `specialty === "cleft_cranio"` (unlike skin cancer which is diagnosis-driven)
+- Conditional section visibility based on diagnosis subcategory
+- Age-at-surgery auto-computed from DOB + surgery date, displayed in smart units
+- LAHSHAL is a 6-position structured input, NOT a text field
+- Named technique is a structured picker per procedure, NOT free text
+
+### Anti-Patterns — DO NOT
+- DO NOT create modal sheets for the assessment
+- DO NOT create a new specialty value — use existing "cleft_cranio"
+- DO NOT duplicate FreeFlapDetails fields
+- DO NOT put LAHSHAL in the staging config — it's a structured input in CraniofacialAssessment
+- DO NOT create separate TypeScript files per classification — all in craniofacial.ts
+- DO NOT import from headNeckDiagnoses for cleft entries — they live in cleftCranioDiagnoses.ts
+
+### Component Registry
+- `CraniofacialAssessment` → `client/components/craniofacial/CraniofacialAssessment.tsx`
+- `LAHSHALInput` → `client/components/craniofacial/LAHSHALInput.tsx`
+- `CraniosynostosisDetails` → `client/components/craniofacial/CraniosynostosisDetails.tsx`
+- `OMENSInput` → `client/components/craniofacial/OMENSInput.tsx`
+- Config: `client/lib/craniofacialConfig.ts`
+- Types: `client/types/craniofacial.ts`
+- Diagnoses: `client/lib/diagnosisPicklists/cleftCranioDiagnoses.ts`
+- Procedures: entries in `client/lib/procedurePicklist.ts`
+
+### Data Flow
+- CraniofacialAssessment data: DiagnosisGroup.craniofacialAssessment (optional field)
+- Cleft classification: craniofacialAssessment.cleftClassification
+- Operative details: craniofacialAssessment.operativeDetails (always present)
+- Craniosynostosis: craniofacialAssessment.craniosynostosisDetails (conditional)
+- OMENS+: craniofacialAssessment.omensClassification (conditional, CF01 only)
+
 ## Design system: Charcoal + Amber
 
 All tokens in `client/constants/theme.ts` (single source of truth, 273 lines).

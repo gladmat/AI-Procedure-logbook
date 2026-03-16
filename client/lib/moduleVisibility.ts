@@ -30,6 +30,8 @@ export interface ModuleVisibility {
   implant: boolean;
   /** Breast surgery assessment module — specialty-gated */
   breast: boolean;
+  /** Craniofacial assessment module — specialty-gated */
+  craniofacialAssessment: boolean;
 }
 
 /**
@@ -162,6 +164,9 @@ export function getModuleVisibility(
   // Breast: specialty-gated (soft clinical context, not diagnosis-driven)
   const breast = isBreastSpecialty(group.specialty);
 
+  // Craniofacial: specialty-gated
+  const craniofacialAssessment = group.specialty === "cleft_cranio";
+
   return {
     flapDetails,
     flapOutcome,
@@ -171,5 +176,6 @@ export function getModuleVisibility(
     skinCancerAssessment,
     implant,
     breast,
+    craniofacialAssessment,
   };
 }

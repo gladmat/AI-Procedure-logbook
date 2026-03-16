@@ -212,8 +212,58 @@ export const PROCEDURE_CONFIGS: Record<Specialty, ProcedureModuleConfig> = {
     id: "cleft_cranio",
     displayName: "Cleft & Craniofacial",
     icon: "smile",
-    aiPrompt: "Extract cleft and craniofacial surgery details...",
-    fields: [],
+    aiPrompt: `You are a medical data extraction assistant specialized in cleft and craniofacial surgery.
+Extract the following information from the operation note:
+- Cleft type and laterality
+- Named surgical technique used
+- Age at surgery
+- Weight at surgery (if infant procedure)
+- Concurrent procedures (e.g., grommets)
+- Bone graft donor site (if applicable)
+- Estimated blood loss
+- Distraction details (if applicable)
+
+Return the data as JSON.`,
+    fields: [
+      {
+        key: "cleftType",
+        label: "Cleft Type",
+        type: "select",
+        options: [
+          { value: "ucl", label: "Unilateral cleft lip" },
+          { value: "bcl", label: "Bilateral cleft lip" },
+          { value: "cp", label: "Cleft palate" },
+          { value: "uclp", label: "UCLP" },
+          { value: "bclp", label: "BCLP" },
+          { value: "craniosynostosis", label: "Craniosynostosis" },
+          { value: "craniofacial", label: "Other craniofacial" },
+        ],
+      },
+      {
+        key: "laterality",
+        label: "Laterality",
+        type: "select",
+        options: [
+          { value: "left", label: "Left" },
+          { value: "right", label: "Right" },
+          { value: "bilateral", label: "Bilateral" },
+          { value: "midline", label: "Midline" },
+        ],
+      },
+      {
+        key: "namedTechnique",
+        label: "Named Technique",
+        type: "text",
+        placeholder: "e.g., Fisher, Millard, Furlow, Bardach",
+      },
+      {
+        key: "estimatedBloodLossMl",
+        label: "Estimated Blood Loss",
+        type: "number",
+        unit: "mL",
+        keyboardType: "numeric",
+      },
+    ],
   },
   skin_cancer: {
     id: "skin_cancer",
