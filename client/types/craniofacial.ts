@@ -193,6 +193,58 @@ export interface CraniofacialAssessmentData {
   operativeDetails: CraniofacialOperativeDetails;
   craniosynostosisDetails?: CraniosynostosisDetails;
   omensClassification?: OMENSClassification;
+  outcomes?: CraniofacialOutcomes;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// OUTCOMES (optional, audit-ready)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export interface CraniofacialOutcomes {
+  speech?: SpeechOutcome;
+  dental?: DentalOutcome;
+  hearing?: HearingOutcome;
+  feeding?: FeedingOutcome;
+  complications?: CraniofacialComplications;
+}
+
+export interface SpeechOutcome {
+  vpcRating?: 0 | 1 | 2; // 0=Competent, 1=Borderline, 2=Incompetent
+  hypernasality?: "none" | "mild" | "moderate" | "severe";
+  audibleNasalEmission?: boolean;
+  secondarySpeechSurgeryNeeded?: boolean;
+  assessmentAgeMonths?: number;
+}
+
+export interface DentalOutcome {
+  fiveYearOldIndex?: 1 | 2 | 3 | 4 | 5;
+  goslonScore?: 1 | 2 | 3 | 4 | 5;
+  assessmentAgeMonths?: number;
+}
+
+export interface HearingOutcome {
+  grommetsInserted?: boolean;
+  grommetSets?: number;
+  hearingAidUse?: boolean;
+}
+
+export interface FeedingOutcome {
+  method?:
+    | "breast"
+    | "bottle_standard"
+    | "bottle_specialist"
+    | "ng_tube"
+    | "mixed";
+  weightPercentileAt3mo?: number;
+}
+
+export interface CraniofacialComplications {
+  bleedingRequiringOR?: boolean;
+  infectionRequiringOR?: boolean;
+  oronasalFistula?: boolean;
+  completeDehiscence?: boolean;
+  respiratoryDistress?: boolean;
+  readmissionWithin30d?: boolean;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -216,6 +268,10 @@ export function getCraniofacialSections(subcategory: CraniofacialSubcategory): {
   showCraniosynostosis: boolean;
   showOMENS: boolean;
   showFistula: boolean;
+  showSpeechOutcome: boolean;
+  showDentalOutcome: boolean;
+  showHearingOutcome: boolean;
+  showFeedingOutcome: boolean;
 } {
   const cleftSubs: CraniofacialSubcategory[] = [
     "Cleft Lip",
@@ -227,10 +283,18 @@ export function getCraniofacialSections(subcategory: CraniofacialSubcategory): {
     "Syndromic Craniosynostosis",
   ];
 
+  const isCleft = cleftSubs.includes(subcategory);
+
   return {
-    showCleftClassification: cleftSubs.includes(subcategory),
+    showCleftClassification: isCleft,
     showCraniosynostosis: cranioSubs.includes(subcategory),
     showOMENS: subcategory === "Craniofacial Conditions", // Narrowed to CF01 in UI
     showFistula: subcategory === "Secondary Cleft Deformity", // Narrowed to SC03 in UI
+    showSpeechOutcome:
+      isCleft || subcategory === "Velopharyngeal Insufficiency",
+    showDentalOutcome:
+      isCleft || subcategory === "Alveolar & Maxillary",
+    showHearingOutcome: isCleft,
+    showFeedingOutcome: isCleft,
   };
 }

@@ -5,7 +5,11 @@
  * and section visibility logic.
  */
 
-import type { CraniofacialSubcategory } from "@/types/craniofacial";
+import type {
+  CraniofacialSubcategory,
+  CraniofacialAssessmentData,
+  LAHSHALClassification,
+} from "@/types/craniofacial";
 import { getCraniofacialSections } from "@/types/craniofacial";
 import { parseDateOnlyValue } from "@/lib/dateValues";
 
@@ -281,6 +285,150 @@ export function getNamedTechniques(
  */
 export function shouldShowBoneGraftDonor(procedureIds: string[]): boolean {
   return procedureIds.some((id) => BONE_GRAFT_PROCEDURE_IDS.has(id));
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// COMPLETION CALCULATOR
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function hasLahshalData(lahshal?: LAHSHALClassification): boolean {
+  if (!lahshal) return false;
+  const positions = [
+    lahshal.rightLip,
+    lahshal.rightAlveolus,
+    lahshal.hardPalate,
+    lahshal.softPalate,
+    lahshal.leftAlveolus,
+    lahshal.leftLip,
+  ];
+  return positions.some((p) => p !== "none");
+}
+
+export function calculateCraniofacialCompleteness(
+  assessment: CraniofacialAssessmentData,
+  subcategory: CraniofacialSubcategory | undefined,
+): { percentage: number; filled: number; total: number; missingSections: string[] } {
+  const missing: string[] = [];
+  let total = 0;
+  let filled = 0;
+
+  // Operative details (always counted)
+  total++;
+  if (assessment.operativeDetails.pathwayStage) {
+    filled++;
+  } else {
+    missing.push("Pathway stage");
+  }
+
+  if (subcategory) {
+    const sections = getCraniofacialSections(subcategory);
+
+    // Cleft classification
+    if (sections.showCleftClassification) {
+      total++;
+      if (hasLahshalData(assessment.cleftClassification?.lahshal)) {
+        filled++;
+      } else {
+        missing.push("LAHSHAL classification");
+      }
+    }
+
+    // Craniosynostosis
+    if (sections.showCraniosynostosis) {
+      total++;
+      if (
+        assessment.craniosynostosisDetails?.suturesInvolved &&
+        assessment.craniosynostosisDetails.suturesInvolved.length > 0
+      ) {
+        filled++;
+      } else {
+        missing.push("Sutures involved");
+      }
+    }
+
+    // OMENS
+    if (sections.showOMENS) {
+      total++;
+      if (assessment.omensClassification) {
+        filled++;
+      } else {
+        missing.push("OMENS+ classification");
+      }
+    }
+  }
+
+  const percentage = total > 0 ? Math.round((filled / total) * 100) : 100;
+  return { percentage, filled, total, missingSections: missing };
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// OUTCOME SECTION VISIBILITY
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export function getOutcomeSectionVisibility(
+  subcategory: CraniofacialSubcategory | undefined,
+  associatedSyndrome?: string,
+): {
+  showSpeech: boolean;
+  showDental: boolean;
+  showHearing: boolean;
+  showFeeding: boolean;
+  showGeneticTesting: boolean;
+} {
+  if (!subcategory) {
+    return {
+      showSpeech: false,
+      showDental: false,
+      showHearing: false,
+      showFeeding: false,
+      showGeneticTesting: !!associatedSyndrome,
+    };
+  }
+
+  const sections = getCraniofacialSections(subcategory);
+
+  return {
+    showSpeech: sections.showSpeechOutcome,
+    showDental: sections.showDentalOutcome,
+    showHearing: sections.showHearingOutcome,
+    showFeeding: sections.showFeedingOutcome,
+    showGeneticTesting:
+      subcategory === "Syndromic Craniosynostosis" ||
+      !!associatedSyndrome,
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// EDGE CASE NOTES
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const POSITIONAL_PLAGIOCEPHALY_ID = "cc_dx_positional_plagiocephaly";
+const PRESURGICAL_NAM_ID = "cc_presurgical_nam";
+
+export function getEdgeCaseNote(
+  diagnosisId: string | undefined,
+  selectedProcedureIds: string[],
+): { message: string; icon: string } | null {
+  if (
+    diagnosisId === POSITIONAL_PLAGIOCEPHALY_ID &&
+    selectedProcedureIds.length === 0
+  ) {
+    return {
+      message:
+        "Consultation only — no surgical procedure. Document assessment findings in case notes.",
+      icon: "info",
+    };
+  }
+
+  if (selectedProcedureIds.includes(PRESURGICAL_NAM_ID)) {
+    return {
+      message:
+        "Non-surgical procedure — documented for longitudinal care pathway tracking.",
+      icon: "info",
+    };
+  }
+
+  return null;
 }
 
 // Re-export section visibility
