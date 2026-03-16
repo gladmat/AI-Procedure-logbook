@@ -34,6 +34,7 @@ import {
   generateDupuytrenSummaryText,
   getFingerLabel,
   calculateDiathesisScore,
+  getDominantPatternLabel,
 } from "@/lib/dupuytrenHelpers";
 import {
   TreatmentEpisode,
@@ -482,6 +483,18 @@ function buildCondition(
       dupuytrenExtensions.push({
         url: "firstWebSpaceAffected",
         valueString: "true",
+      });
+    }
+    if (da.totalHandScore != null) {
+      dupuytrenExtensions.push({
+        url: "totalHandScore",
+        valueString: String(da.totalHandScore),
+      });
+    }
+    if (da.dominantPattern) {
+      dupuytrenExtensions.push({
+        url: "dominantPattern",
+        valueString: getDominantPatternLabel(da.dominantPattern),
       });
     }
     if (da.diathesis && calculateDiathesisScore(da.diathesis) > 0) {
