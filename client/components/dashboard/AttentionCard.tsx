@@ -13,6 +13,7 @@ interface AttentionCardProps {
   onCardPress: (item: AttentionItem) => void;
   onAddEvent?: (caseId: string) => void;
   onAddHistology?: (caseId: string) => void;
+  onViewEpisode?: (episodeId: string) => void;
 }
 
 function getStatusBadge(
@@ -53,6 +54,7 @@ function AttentionCardInner({
   onCardPress,
   onAddEvent,
   onAddHistology,
+  onViewEpisode,
 }: AttentionCardProps) {
   const { theme, isDark } = useTheme();
   const badge = getStatusBadge(
@@ -136,7 +138,7 @@ function AttentionCardInner({
             {secondaryInfo}
           </ThemedText>
         ) : null}
-        {item.type === "episode" && item.pendingActions?.length ? (
+        {item.pendingActions?.length ? (
           <ThemedText
             style={[styles.pendingAction, { color: theme.accent }]}
             numberOfLines={2}
@@ -195,6 +197,31 @@ function AttentionCardInner({
               style={[styles.actionChipText, { color: theme.textSecondary }]}
             >
               Event
+            </ThemedText>
+          </Pressable>
+        ) : null}
+        {item.hasEpisodeLink && item.episodeId && onViewEpisode ? (
+          <Pressable
+            style={[
+              styles.actionChip,
+              {
+                backgroundColor: theme.backgroundDefault,
+                borderColor: theme.border,
+              },
+            ]}
+            onPress={(e) => {
+              e.stopPropagation();
+              onViewEpisode(item.episodeId!);
+            }}
+            accessibilityRole="button"
+            accessibilityLabel={`View episode for ${item.patientIdentifier}`}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Feather name="layers" size={13} color={theme.textSecondary} />
+            <ThemedText
+              style={[styles.actionChipText, { color: theme.textSecondary }]}
+            >
+              Episode
             </ThemedText>
           </Pressable>
         ) : null}

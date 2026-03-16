@@ -304,4 +304,114 @@ describe("dashboard selectors", () => {
     expect(pulse.completion.totalCount).toBe(5);
     expect(pulse.completion.percentage).toBe(80);
   });
+
+  describe("episode-inpatient deduplication", () => {
+    it("suppresses episode card when its most-recent case is an active inpatient", () => {
+      const inpatientCase = makeCase({
+        id: "case-inpatient",
+        patientIdentifier: "HHH",
+        specialty: "breast",
+        stayType: "inpatient",
+        procedureDate: "2026-03-14",
+        episodeId: "ep-breast",
+      });
+      const episode = makeEpisode({
+        id: "ep-breast",
+        patientIdentifier: "HHH",
+        specialty: "breast",
+        status: "active",
+        pendingAction: "awaiting_fat_grafting",
+      });
+
+      const items = buildAttentionItems(
+        [inpatientCase],
+        [{ episode, cases: [inpatientCase] }],
+        null,
+      );
+
+      // Should only have 1 item (inpatient), not 2 (inpatient + episode)
+      expect(items).toHaveLength(1);
+      expect(items[0]!.type).toBe("inpatient");
+      expect(items[0]!.patientIdentifier).toBe("HHH");
+    });
+
+    it("merges episode pendingAction onto the inpatient card", () => {
+      const inpatientCase = makeCase({
+        id: "case-inpatient",
+        patientIdentifier: "HHH",
+        specialty: "breast",
+        stayType: "inpatient",
+        procedureDate: "2026-03-14",
+        episodeId: "ep-breast",
+      });
+      const episode = makeEpisode({
+        id: "ep-breast",
+        patientIdentifier: "HHH",
+        specialty: "breast",
+        status: "active",
+        pendingAction: "awaiting_fat_grafting",
+      });
+
+      const items = buildAttentionItems(
+        [inpatientCase],
+        [{ episode, cases: [inpatientCase] }],
+        null,
+      );
+
+      expect(items[0]!.pendingAction).toBe("Awaiting fat grafting");
+      expect(items[0]!.pendingActions).toEqual(["Awaiting fat grafting"]);
+      expect(items[0]!.episodeId).toBe("ep-breast");
+      expect(items[0]!.hasEpisodeLink).toBe(true);
+    });
+
+    it("preserves episode card when most-recent case is discharged", () => {
+      const dischargedCase = makeCase({
+        id: "case-discharged",
+        patientIdentifier: "DDD",
+        specialty: "breast",
+        stayType: "inpatient",
+        procedureDate: "2026-03-10",
+        dischargeDate: "2026-03-12",
+        episodeId: "ep-breast-2",
+      });
+      const episode = makeEpisode({
+        id: "ep-breast-2",
+        patientIdentifier: "DDD",
+        specialty: "breast",
+        status: "active",
+        pendingAction: "awaiting_fat_grafting",
+      });
+
+      const items = buildAttentionItems(
+        [dischargedCase],
+        [{ episode, cases: [dischargedCase] }],
+        null,
+      );
+
+      // Discharged case is not an inpatient, so episode card should appear
+      expect(items).toHaveLength(1);
+      expect(items[0]!.type).toBe("episode");
+      expect(items[0]!.pendingAction).toBe("Awaiting fat grafting");
+    });
+
+    it("handles episode with no linked cases (not suppressed)", () => {
+      const episode = makeEpisode({
+        id: "ep-orphan",
+        patientIdentifier: "OOO",
+        specialty: "general",
+        status: "active",
+        pendingAction: "awaiting_mdt",
+      });
+
+      const items = buildAttentionItems(
+        [],
+        [{ episode, cases: [] }],
+        null,
+      );
+
+      expect(items).toHaveLength(1);
+      expect(items[0]!.type).toBe("episode");
+      expect(items[0]!.pendingAction).toBe("Awaiting MDT discussion");
+    });
+  });
 });

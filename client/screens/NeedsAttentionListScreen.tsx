@@ -378,7 +378,7 @@ export default function NeedsAttentionListScreen() {
             >
               {item.diagnosisTitle}
             </ThemedText>
-            {item.type === "episode" && item.pendingActions?.length ? (
+            {item.pendingActions?.length ? (
               <ThemedText
                 style={[styles.pendingAction, { color: theme.accent }]}
                 numberOfLines={2}
@@ -421,6 +421,24 @@ export default function NeedsAttentionListScreen() {
                   style={[styles.eventText, { color: theme.textSecondary }]}
                 >
                   + Event
+                </ThemedText>
+              </Pressable>
+            ) : null}
+            {item.hasEpisodeLink && item.episodeId ? (
+              <Pressable
+                onPress={(e) => {
+                  e.stopPropagation();
+                  navigation.navigate("EpisodeDetail", {
+                    episodeId: item.episodeId!,
+                  });
+                }}
+                accessibilityRole="button"
+                accessibilityLabel={`View episode for ${item.patientIdentifier}`}
+              >
+                <ThemedText
+                  style={[styles.eventText, { color: theme.textSecondary }]}
+                >
+                  Episode
                 </ThemedText>
               </Pressable>
             ) : null}

@@ -321,15 +321,23 @@ export const ADM_POSITION_LABELS: Record<AdmPosition, string> = {
 
 export interface BreastFlapDetailsData {
   perforators?: PerforatorEntry[];
+  /** @deprecated Use FreeFlapDetails.anastomoses instead (migrated in v2.5) */
   recipientArtery?: BreastRecipientArtery;
+  /** @deprecated Use FreeFlapDetails.anastomoses instead (migrated in v2.5) */
   recipientVein?: BreastRecipientVein;
   imaInterspace?: ImaInterspace;
   ribManagement?: RibManagement;
+  /** @deprecated Use FreeFlapDetails.anastomoses[].couplingMethod instead */
   arterialTechnique?: AnastomosisTechnique;
+  /** @deprecated Use FreeFlapDetails.anastomoses[].couplingMethod instead */
   venousTechnique?: AnastomosisTechnique;
+  /** @deprecated Derived from FreeFlapDetails.anastomoses coupler entries */
   venousCouplerUsed?: boolean;
+  /** @deprecated Use FreeFlapDetails.anastomoses[].couplerSizeMm instead */
   venousCouplerSizeMm?: number;
+  /** @deprecated Use multiple AnastomosisEntry items in FreeFlapDetails */
   numberOfVenousAnastomoses?: 1 | 2;
+  /** @deprecated Model as additional venous AnastomosisEntry */
   sievSupercharging?: boolean;
   flapWeightGrams?: number;
   skinPaddleDimensions?: { lengthCm?: number; widthCm?: number };
@@ -340,6 +348,71 @@ export interface BreastFlapDetailsData {
   umbilicoplasty?: boolean;
   thoracodorsalNerve?: ThoracodorsalNerveManagement;
   quiltingSutures?: boolean;
+}
+
+/**
+ * Breast-specific flap extension data — fields with NO equivalent in generic FreeFlapDetails.
+ * Used alongside FreeFlapDetails when documenting breast free flap procedures.
+ * Rendered by BreastFlapExtensionSection inside the FreeFlapSheet.
+ */
+export interface BreastFlapExtensionData {
+  perforators?: PerforatorEntry[];
+  imaInterspace?: ImaInterspace;
+  ribManagement?: RibManagement;
+  dieaBranchingPattern?: DieaBranchingPattern;
+  flapWeightGrams?: number;
+  skinPaddleDimensions?: { lengthCm?: number; widthCm?: number };
+  fascialClosureMethod?: FascialClosureMethod;
+  meshReinforcement?: boolean;
+  meshType?: string;
+  umbilicoplasty?: boolean;
+  thoracodorsalNerve?: ThoracodorsalNerveManagement;
+  quiltingSutures?: boolean;
+}
+
+/** Maps BreastRecipientArtery enum to generic vessel display name */
+export const BREAST_ARTERY_TO_VESSEL_NAME: Record<
+  BreastRecipientArtery,
+  string
+> = {
+  ima: "Internal mammary artery (IMA)",
+  ima_perforator: "IMA perforator",
+  thoracodorsal: "Thoracodorsal artery",
+  circumflex_scapular: "Circumflex scapular artery",
+  lateral_thoracic: "Lateral thoracic artery",
+  other: "Other artery",
+};
+
+/** Maps BreastRecipientVein enum to generic vessel display name */
+export const BREAST_VEIN_TO_VESSEL_NAME: Record<BreastRecipientVein, string> = {
+  imv: "Internal mammary vein (IMV)",
+  imv_perforator: "IMV perforator",
+  thoracodorsal: "Thoracodorsal vein",
+  cephalic: "Cephalic vein",
+  other: "Other vein",
+};
+
+/**
+ * Extract the breast-specific extension fields from a legacy BreastFlapDetailsData.
+ * Used during migration and when bridging from old data to the new split model.
+ */
+export function extractBreastFlapExtension(
+  data: BreastFlapDetailsData,
+): BreastFlapExtensionData {
+  return {
+    perforators: data.perforators,
+    imaInterspace: data.imaInterspace,
+    ribManagement: data.ribManagement,
+    dieaBranchingPattern: data.dieaBranchingPattern,
+    flapWeightGrams: data.flapWeightGrams,
+    skinPaddleDimensions: data.skinPaddleDimensions,
+    fascialClosureMethod: data.fascialClosureMethod,
+    meshReinforcement: data.meshReinforcement,
+    meshType: data.meshType,
+    umbilicoplasty: data.umbilicoplasty,
+    thoracodorsalNerve: data.thoracodorsalNerve,
+    quiltingSutures: data.quiltingSutures,
+  };
 }
 
 export interface PerforatorEntry {

@@ -1,4 +1,4 @@
-import { Case, DiagnosisGroup, CaseProcedure } from "@/types/case";
+import { Case, DiagnosisGroup, CaseProcedure, type AnastomosisEntry, type FreeFlapDetails } from "@/types/case";
 import { v4 as uuidv4 } from "uuid";
 import { migrateSnomedCode } from "@/lib/snomedCodeMigration";
 import { resolveSkinCancerDiagnosis } from "@/lib/skinCancerConfig";
@@ -6,6 +6,13 @@ import { repairCaseSpecialty } from "@/lib/caseSpecialty";
 import { normalizeDateOnlyValue } from "@/lib/dateValues";
 import type { SkinCancerHistology } from "@/types/skinCancer";
 import { normalizeBreastAssessment } from "@/lib/breastState";
+import {
+  BREAST_ARTERY_TO_VESSEL_NAME,
+  BREAST_VEIN_TO_VESSEL_NAME,
+  type BreastFlapDetailsData,
+  type AnastomosisTechnique,
+} from "@/types/breast";
+import { isBreastSpecialty } from "@/lib/breastConfig";
 
 const CURRENT_CASE_SCHEMA_VERSION = 5;
 
@@ -264,6 +271,138 @@ export function normalizeCaseDateOnlyFields(c: Case): Case {
   };
 }
 
+/**
+ * Map breast AnastomosisTechnique enum to generic CouplingMethod + AnastomosisType.
+ */
+function mapBreastTechnique(
+  technique: AnastomosisTechnique | undefined,
+): { couplingMethod?: "hand_sewn" | "coupler"; configuration?: "end_to_end" | "end_to_side" } {
+  switch (technique) {
+    case "end_to_end_handsewn":
+      return { couplingMethod: "hand_sewn", configuration: "end_to_end" };
+    case "end_to_side_handsewn":
+      return { couplingMethod: "hand_sewn", configuration: "end_to_side" };
+    case "coupler":
+    case "end_to_end_coupler":
+      return { couplingMethod: "coupler", configuration: "end_to_end" };
+    default:
+      return {};
+  }
+}
+
+/**
+ * Migrate overlapping breast flap fields (recipientArtery, venousTechnique, etc.)
+ * from BreastFlapDetailsData into the procedure's FreeFlapDetails.anastomoses.
+ * Only runs when the procedure has no anastomoses but breast data has vessel info.
+ * Idempotent: skips if anastomoses already populated.
+ */
+export function migrateBreastFlapToAnastomoses(c: Case): Case {
+  let changed = false;
+  const diagnosisGroups = c.diagnosisGroups.map((group) => {
+    if (!isBreastSpecialty(group.specialty)) return group;
+    if (!group.breastAssessment) return group;
+
+    // Find free flap procedures in this group
+    const freeFlapProcedureIds = new Set(
+      group.procedures
+        .filter((p) => {
+          const cd = p.clinicalDetails as FreeFlapDetails | undefined;
+          return cd?.flapType;
+        })
+        .map((p) => p.id),
+    );
+    if (freeFlapProcedureIds.size === 0) return group;
+
+    // Process each side's flapDetails
+    const sides = group.breastAssessment.sides;
+    const allSides = ["left", "right"] as const;
+
+    for (const side of allSides) {
+      const sideData = sides[side];
+      if (!sideData?.flapDetails) continue;
+      const bf = sideData.flapDetails as BreastFlapDetailsData;
+
+      // Skip if no overlapping vessel data
+      if (!bf.recipientArtery && !bf.recipientVein) continue;
+
+      // Find the first free flap procedure with empty anastomoses
+      const targetProc = group.procedures.find((p) => {
+        if (!freeFlapProcedureIds.has(p.id)) return false;
+        const cd = p.clinicalDetails as FreeFlapDetails | undefined;
+        return !cd?.anastomoses?.length;
+      });
+      if (!targetProc) continue;
+
+      const anastomoses: AnastomosisEntry[] = [];
+
+      // Artery
+      if (bf.recipientArtery) {
+        const arteryName = BREAST_ARTERY_TO_VESSEL_NAME[bf.recipientArtery] || bf.recipientArtery;
+        const arteryTech = mapBreastTechnique(bf.arterialTechnique);
+        anastomoses.push({
+          id: uuidv4(),
+          vesselType: "artery",
+          recipientVesselName: arteryName,
+          couplingMethod: arteryTech.couplingMethod ?? "hand_sewn",
+          configuration: arteryTech.configuration ?? "end_to_end",
+        });
+      }
+
+      // Vein
+      if (bf.recipientVein) {
+        const veinName = BREAST_VEIN_TO_VESSEL_NAME[bf.recipientVein] || bf.recipientVein;
+        const veinTech = mapBreastTechnique(bf.venousTechnique);
+        anastomoses.push({
+          id: uuidv4(),
+          vesselType: "vein",
+          recipientVesselName: veinName,
+          couplingMethod: veinTech.couplingMethod ?? "coupler",
+          configuration: veinTech.configuration ?? "end_to_end",
+          couplerSizeMm: bf.venousCouplerUsed ? bf.venousCouplerSizeMm : undefined,
+        });
+      }
+
+      // Second venous anastomosis or SIEV supercharging
+      if (bf.numberOfVenousAnastomoses === 2 || bf.sievSupercharging) {
+        anastomoses.push({
+          id: uuidv4(),
+          vesselType: "vein",
+          recipientVesselName: bf.sievSupercharging
+            ? "SIEV (superficial inferior epigastric vein)"
+            : "Secondary vein",
+          couplingMethod: "coupler",
+          configuration: "end_to_end",
+        });
+      }
+
+      // Update the procedure's clinicalDetails
+      const updatedProcedures = group.procedures.map((p) => {
+        if (p.id !== targetProc.id) return p;
+        const cd = (p.clinicalDetails as FreeFlapDetails) || {};
+        return {
+          ...p,
+          clinicalDetails: {
+            ...cd,
+            anastomoses,
+            recipientSiteRegion: cd.recipientSiteRegion ?? "breast_chest",
+          } as FreeFlapDetails,
+        };
+      });
+
+      changed = true;
+      return {
+        ...group,
+        procedures: updatedProcedures,
+      };
+    }
+
+    return group;
+  });
+
+  if (!changed) return c;
+  return { ...c, diagnosisGroups };
+}
+
 export function normalizeCaseBreastFields(c: Case): Case {
   const diagnosisGroups = c.diagnosisGroups.map((group) => {
     if (!group.breastAssessment) return group;
@@ -296,6 +435,7 @@ export function migrateCase(raw: unknown): Case {
       migrated = migrateSkinCancerDiagnosisConsistency(migrated);
       migrated = normalizeCaseDateOnlyFields(migrated);
       migrated = normalizeCaseBreastFields(migrated);
+      migrated = migrateBreastFlapToAnastomoses(migrated);
       migrated = repairCaseSpecialty(migrated);
       if (
         !migrated.schemaVersion ||

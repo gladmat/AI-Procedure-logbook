@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { View, StyleSheet, Pressable, Animated } from "react-native";
 import { Feather } from "@/components/FeatherIcon";
 import * as Haptics from "expo-haptics";
@@ -63,6 +63,8 @@ import {
   normalizeVesselName,
   resolveConcomitantVeinName,
 } from "@/data/autoFillMappings";
+import type { BreastFlapExtensionData } from "@/types/breast";
+import { BreastFlapExtensionSection } from "@/components/breast/BreastFlapExtensionSection";
 
 function getLegacyRecipientVesselQuality(
   clinicalDetails: FreeFlapDetails,
@@ -93,6 +95,12 @@ function getLegacyRecipientVesselQuality(
   return undefined;
 }
 
+export interface BreastFlapContext {
+  side: "left" | "right";
+  breastFlapExtension?: BreastFlapExtensionData;
+  onBreastFlapExtensionChange?: (data: BreastFlapExtensionData) => void;
+}
+
 interface FreeFlapClinicalFieldsProps {
   clinicalDetails: FreeFlapDetails;
   procedureType: string;
@@ -100,6 +108,8 @@ interface FreeFlapClinicalFieldsProps {
   onUpdate: (details: FreeFlapDetails) => void;
   /** Case-level priorRadiotherapy — enables irradiated vessel fields for H&N */
   priorRadiotherapy?: boolean;
+  /** When set, hides recipient site (auto-breast_chest), auto-fills IMA/IMV, renders extension section */
+  breastContext?: BreastFlapContext;
 }
 
 const DEFAULT_DONOR_VESSELS: Record<
@@ -192,12 +202,17 @@ const DEFAULT_DONOR_VESSELS: Record<
   },
 };
 
+/** Default IMA/IMV vessel names for breast auto-fill */
+const BREAST_DEFAULT_IMA = "Internal mammary artery (IMA)";
+const BREAST_DEFAULT_IMV = "Internal mammary vein (IMV)";
+
 export function FreeFlapClinicalFields({
   clinicalDetails,
   procedureType,
   picklistEntryId,
   onUpdate,
   priorRadiotherapy,
+  breastContext,
 }: FreeFlapClinicalFieldsProps) {
   const { theme } = useTheme();
 
@@ -207,12 +222,44 @@ export function FreeFlapClinicalFields({
   const flapIsLocked = !!presetFlapType;
 
   const anastomoses = clinicalDetails.anastomoses || [];
-  const recipientSiteRegion = clinicalDetails.recipientSiteRegion;
+  // Auto-set recipient site for breast context
+  const recipientSiteRegion =
+    breastContext ? "breast_chest" as const : clinicalDetails.recipientSiteRegion;
   const recipientVesselQuality =
     getLegacyRecipientVesselQuality(clinicalDetails);
   const veinGraftUsed =
     clinicalDetails.veinGraftUsed ??
     clinicalDetails.irradiatedVesselPreference === "vein_graft_required";
+
+  // Auto-fill IMA/IMV default anastomosis entries for breast context
+  const breastAutoFillDone = useRef(false);
+  useEffect(() => {
+    if (!breastContext || breastAutoFillDone.current) return;
+    if (anastomoses.length > 0) {
+      breastAutoFillDone.current = true;
+      return;
+    }
+    breastAutoFillDone.current = true;
+    const defaultArtery: AnastomosisEntry = {
+      id: uuidv4(),
+      vesselType: "artery",
+      recipientVesselName: BREAST_DEFAULT_IMA,
+      couplingMethod: "hand_sewn",
+      configuration: "end_to_end",
+    };
+    const defaultVein: AnastomosisEntry = {
+      id: uuidv4(),
+      vesselType: "vein",
+      recipientVesselName: BREAST_DEFAULT_IMV,
+      couplingMethod: "coupler",
+      configuration: "end_to_end",
+    };
+    onUpdate({
+      ...clinicalDetails,
+      recipientSiteRegion: "breast_chest",
+      anastomoses: [defaultArtery, defaultVein],
+    });
+  }, [breastContext]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const addAnastomosis = (vesselType: VesselType) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -493,11 +540,37 @@ export function FreeFlapClinicalFields({
         />
       ) : null}
 
-      <RecipientSiteSelector
-        value={clinicalDetails.recipientSiteRegion}
-        onSelect={handleRecipientSiteChange}
-        required
-      />
+      {breastContext ? (
+        <View style={styles.lockedFlapSection}>
+          <View style={styles.labelRow}>
+            <ThemedText
+              style={[styles.fieldLabel, { color: theme.textSecondary }]}
+            >
+              Recipient Site
+            </ThemedText>
+          </View>
+          <View
+            style={[
+              styles.lockedFlapBadge,
+              {
+                backgroundColor: theme.link + "15",
+                borderColor: theme.link,
+              },
+            ]}
+          >
+            <Feather name="check-circle" size={16} color={theme.link} />
+            <ThemedText style={[styles.lockedFlapText, { color: theme.link }]}>
+              Breast / Chest Wall ({breastContext.side === "left" ? "Left" : "Right"})
+            </ThemedText>
+          </View>
+        </View>
+      ) : (
+        <RecipientSiteSelector
+          value={clinicalDetails.recipientSiteRegion}
+          onSelect={handleRecipientSiteChange}
+          required
+        />
+      )}
 
       <ThemedText style={[styles.subsectionTitle, { color: theme.text }]}>
         Anastomoses
@@ -908,6 +981,19 @@ export function FreeFlapClinicalFields({
           onUpdate={(fsd: FlapSpecificDetails) =>
             onUpdate({ ...clinicalDetails, flapSpecificDetails: fsd })
           }
+        />
+      ) : null}
+
+      {breastContext?.onBreastFlapExtensionChange ? (
+        <BreastFlapExtensionSection
+          value={breastContext.breastFlapExtension ?? {}}
+          onChange={breastContext.onBreastFlapExtensionChange}
+          flapType={flapType}
+          isImaRecipient={anastomoses.some(
+            (a) =>
+              a.vesselType === "artery" &&
+              a.recipientVesselName?.toLowerCase().includes("mammary"),
+          )}
         />
       ) : null}
     </View>

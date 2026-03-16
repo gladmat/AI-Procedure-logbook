@@ -123,8 +123,10 @@ import {
 import { BreastProgressiveAssessment } from "@/components/breast/BreastProgressiveAssessment";
 import { ReconstructionEpisodeCard } from "@/components/breast/ReconstructionEpisodeCard";
 import { CompactProcedureList } from "@/components/CompactProcedureList";
-import type { BreastAssessmentData } from "@/types/breast";
+import type { BreastAssessmentData, BreastFlapExtensionData } from "@/types/breast";
+import { extractBreastFlapExtension } from "@/types/breast";
 import { normalizeBreastAssessment } from "@/lib/breastState";
+import type { BreastFlapContext } from "@/components/ProcedureClinicalDetails";
 import { JointImplantSection } from "@/components/joint-implant/JointImplantSection";
 import type {
   SkinCancerLesionAssessment,
@@ -1284,6 +1286,47 @@ function DiagnosisGroupEditorInner({
         : null,
     [activeFlapOutcomeProcedureId, freeFlapProcedures],
   );
+
+  // Compute breast context for FreeFlapSheet when in breast module
+  const breastFlapContext = useMemo((): BreastFlapContext | undefined => {
+    if (!isBreastModule || !normalizedBreastAssessment) return undefined;
+    // Derive side: for unilateral use the laterality, for bilateral default to "left"
+    const side =
+      normalizedBreastAssessment.laterality === "bilateral"
+        ? "left"
+        : (normalizedBreastAssessment.laterality as "left" | "right");
+    const sideData = normalizedBreastAssessment.sides[side];
+    // Extract extension data from existing breast flapDetails (legacy BreastFlapDetailsData)
+    const extension = sideData?.flapDetails
+      ? extractBreastFlapExtension(sideData.flapDetails)
+      : {};
+    return {
+      side,
+      breastFlapExtension: extension,
+      onBreastFlapExtensionChange: (updated: BreastFlapExtensionData) => {
+        if (!normalizedBreastAssessment) return;
+        const currentSide = normalizedBreastAssessment.sides[side];
+        if (!currentSide) return;
+        const updatedFlapDetails = {
+          ...(currentSide.flapDetails ?? {}),
+          ...updated,
+        };
+        onChange({
+          ...group,
+          breastAssessment: {
+            ...normalizedBreastAssessment,
+            sides: {
+              ...normalizedBreastAssessment.sides,
+              [side]: {
+                ...currentSide,
+                flapDetails: updatedFlapDetails,
+              },
+            },
+          },
+        });
+      },
+    };
+  }, [isBreastModule, normalizedBreastAssessment, group, onChange]);
 
   useEffect(() => {
     if (
@@ -2515,6 +2558,7 @@ function DiagnosisGroupEditorInner({
               !isSkinCancerModule &&
               !isExcisionBiopsyDiagnosis(selectedDiagnosis?.id)
             }
+            suppressFreeFlap={moduleVisibility.flapDetails}
           />
         ) : null}
 
@@ -3497,7 +3541,7 @@ function DiagnosisGroupEditorInner({
         ) : null}
 
         {/* Hub-and-spoke: Clinical Details module rows */}
-        {hasSelectedHandCaseType && hasAnyModule && !isBreastModule ? (
+        {hasSelectedHandCaseType && hasAnyModule ? (
           <View style={styles.hubSection}>
             <ThemedText
               style={[styles.hubSectionTitle, { color: theme.textSecondary }]}
@@ -3601,6 +3645,7 @@ function DiagnosisGroupEditorInner({
             procedureType={activeFlapSheetProcedure.procedureName}
             picklistEntryId={activeFlapSheetProcedure.picklistEntryId}
             priorRadiotherapy={priorRadiotherapy}
+            breastContext={breastFlapContext}
           />
         ) : null}
 

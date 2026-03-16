@@ -55,6 +55,8 @@ interface Props {
   breastPreferences?: import("@/types/surgicalPreferences").BreastPreferences;
   /** Controls which sections render */
   renderMode?: RenderMode;
+  /** When true, suppresses inline BreastFlapCard for free flap cases (handled by hub row FreeFlapSheet) */
+  suppressFreeFlap?: boolean;
 }
 
 const CONTEXT_OPTIONS: {
@@ -94,6 +96,7 @@ export const BreastSideCard = React.memo(function BreastSideCard({
   isTransmasculine,
   breastPreferences,
   renderMode = "full",
+  suppressFreeFlap,
 }: Props) {
   const { theme, isDark } = useTheme();
   const [showTimingInfo, setShowTimingInfo] = useState(false);
@@ -343,7 +346,7 @@ export const BreastSideCard = React.memo(function BreastSideCard({
             />
           )}
 
-          {visibility.showBreastFlapDetails && (
+          {visibility.showBreastFlapDetails && !suppressFreeFlap && (
             <BreastFlapCard
               value={value.flapDetails ?? {}}
               onChange={(flapDetails) => onChange({ ...value, flapDetails })}

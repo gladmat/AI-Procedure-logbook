@@ -299,6 +299,13 @@ export default function DashboardScreen() {
     [navigation],
   );
 
+  const handleViewEpisode = useCallback(
+    (episodeId: string) => {
+      navigation.navigate("EpisodeDetail", { episodeId });
+    },
+    [navigation],
+  );
+
   const handleViewAllAttention = useCallback(() => {
     navigation.navigate("NeedsAttentionList", {
       selectedSpecialty: selectedDashboardSpecialty,
@@ -394,6 +401,7 @@ export default function DashboardScreen() {
           onViewAll={handleViewAllAttention}
           onAddEvent={handleAddEvent}
           onAddHistology={handleAddHistology}
+          onViewEpisode={handleViewEpisode}
         />
 
         {/* Zone 2 — Practice Pulse */}

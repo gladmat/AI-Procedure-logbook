@@ -5,7 +5,10 @@
 
 import React, { useState, useEffect } from "react";
 import { DetailModuleSheet } from "./DetailModuleSheet";
-import { FreeFlapClinicalFields } from "@/components/ProcedureClinicalDetails";
+import {
+  FreeFlapClinicalFields,
+  type BreastFlapContext,
+} from "@/components/ProcedureClinicalDetails";
 import type { FreeFlapDetails } from "@/types/case";
 
 interface FreeFlapSheetProps {
@@ -16,6 +19,8 @@ interface FreeFlapSheetProps {
   procedureType: string;
   picklistEntryId?: string;
   priorRadiotherapy?: boolean;
+  /** When set, configures breast-specific behavior (locked recipient site, IMA/IMV auto-fill, extension section) */
+  breastContext?: BreastFlapContext;
 }
 
 export function FreeFlapSheet({
@@ -26,6 +31,7 @@ export function FreeFlapSheet({
   procedureType,
   picklistEntryId,
   priorRadiotherapy,
+  breastContext,
 }: FreeFlapSheetProps) {
   const [localDetails, setLocalDetails] =
     useState<FreeFlapDetails>(initialDetails);
@@ -46,7 +52,7 @@ export function FreeFlapSheet({
     <DetailModuleSheet
       visible={visible}
       title="Flap Details"
-      subtitle="Free flap documentation"
+      subtitle={breastContext ? `Breast free flap (${breastContext.side})` : "Free flap documentation"}
       onSave={handleSave}
       onCancel={onClose}
     >
@@ -56,6 +62,7 @@ export function FreeFlapSheet({
         picklistEntryId={picklistEntryId}
         onUpdate={setLocalDetails}
         priorRadiotherapy={priorRadiotherapy}
+        breastContext={breastContext}
       />
     </DetailModuleSheet>
   );

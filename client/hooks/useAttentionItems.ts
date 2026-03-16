@@ -22,6 +22,7 @@ export interface AttentionItem {
   episodeStatus?: "active" | "on_hold" | "planned";
   daysSinceLastEncounter?: number;
   pendingAction?: string;
+  pendingActions?: string[];
   caseCount?: number;
   lastProcedureSummary?: string;
   lastCaseDate?: string;
@@ -106,8 +107,63 @@ export function useAttentionItems(
         caseId: c.id,
         postOpDay,
         hasEpisodeLink: !!c.episodeId,
+        episodeId: c.episodeId,
         canAddHistology: getAttentionCanAddHistology(c),
       });
+    }
+
+    // --- Episode-inpatient dedup ---
+    // If an episode's most-recent case is currently an active inpatient,
+    // suppress the episode card and merge its pending action onto the inpatient card.
+    const activeStatuses = new Set(["active", "on_hold", "planned"]);
+    const suppressedEpisodeIds = new Set<string>();
+    const episodePendingByInpatientCaseId = new Map<
+      string,
+      {
+        pendingAction?: string;
+        pendingActions?: string[];
+        episodeId: string;
+      }
+    >();
+
+    for (const { episode, cases: linkedCases } of episodesWithCases) {
+      if (!activeStatuses.has(episode.status)) continue;
+      const sorted = [...linkedCases].sort(
+        (a, b) =>
+          new Date(b.procedureDate).getTime() -
+          new Date(a.procedureDate).getTime(),
+      );
+      const mostRecent = sorted[0];
+      if (mostRecent && inpatientCaseIds.has(mostRecent.id)) {
+        suppressedEpisodeIds.add(episode.id);
+        const pending = episode.pendingAction
+          ? PENDING_ACTION_LABELS[episode.pendingAction]
+          : undefined;
+        const pendingAll = episode.pendingActions?.length
+          ? episode.pendingActions.map((a) => PENDING_ACTION_LABELS[a])
+          : pending
+            ? [pending]
+            : undefined;
+        episodePendingByInpatientCaseId.set(mostRecent.id, {
+          pendingAction: pending,
+          pendingActions: pendingAll,
+          episodeId: episode.id,
+        });
+      }
+    }
+
+    // Enrich inpatient items with episode pending actions
+    for (const item of inpatientItems) {
+      if (item.caseId) {
+        const episodeInfo = episodePendingByInpatientCaseId.get(item.caseId);
+        if (episodeInfo) {
+          item.pendingAction = item.pendingAction ?? episodeInfo.pendingAction;
+          item.pendingActions =
+            item.pendingActions ?? episodeInfo.pendingActions;
+          item.episodeId = item.episodeId ?? episodeInfo.episodeId;
+          item.hasEpisodeLink = true;
+        }
+      }
     }
 
     // Sort inpatients: longest stay first
@@ -164,11 +220,13 @@ export function useAttentionItems(
     }
 
     // --- Episodes ---
-    const activeStatuses = new Set(["active", "on_hold", "planned"]);
     const episodeItems: AttentionItem[] = [];
 
     for (const { episode, cases: linkedCases } of episodesWithCases) {
       if (!activeStatuses.has(episode.status)) continue;
+
+      // Skip episodes already represented by an inpatient card
+      if (suppressedEpisodeIds.has(episode.id)) continue;
 
       if (selectedSpecialty && episode.specialty !== selectedSpecialty)
         continue;

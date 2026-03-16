@@ -75,6 +75,8 @@ interface BreastProgressiveAssessmentProps {
   histologyPending?: boolean;
   onHistologyPendingChange?: (pending: boolean) => void;
   showHistologyToggle?: boolean;
+  /** When true, suppresses inline BreastFlapCard for free flap cases (handled by hub row FreeFlapSheet) */
+  suppressFreeFlap?: boolean;
 }
 
 const EMPTY_MODULE_FLAGS: BreastModuleFlags = {
@@ -170,6 +172,7 @@ export function BreastProgressiveAssessment({
   histologyPending,
   onHistologyPendingChange,
   showHistologyToggle,
+  suppressFreeFlap,
 }: BreastProgressiveAssessmentProps) {
   const { theme } = useTheme();
   const assessment = useMemo(
@@ -680,8 +683,9 @@ export function BreastProgressiveAssessment({
       });
     }
 
+    const showInlineFreeFlap = committedModuleFlags.showBreastFlapDetails && !suppressFreeFlap;
     if (
-      committedModuleFlags.showBreastFlapDetails ||
+      showInlineFreeFlap ||
       committedModuleFlags.showPedicledFlapDetails
     ) {
       sections.push({
@@ -700,7 +704,7 @@ export function BreastProgressiveAssessment({
               renderSideGroup(
                 "flap",
                 <View style={styles.moduleStack}>
-                  {committedModuleFlags.showBreastFlapDetails ? (
+                  {committedModuleFlags.showBreastFlapDetails && !suppressFreeFlap ? (
                     <BreastFlapCard
                       value={assessment.sides[side]?.flapDetails ?? {}}
                       onChange={(flapDetails) =>

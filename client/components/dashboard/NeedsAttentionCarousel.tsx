@@ -24,6 +24,7 @@ interface NeedsAttentionCarouselProps {
   onViewAll: () => void;
   onAddEvent?: (caseId: string) => void;
   onAddHistology?: (caseId: string) => void;
+  onViewEpisode?: (episodeId: string) => void;
 }
 
 const Separator = () => <View style={{ width: CARD_GAP }} />;
@@ -36,6 +37,7 @@ function NeedsAttentionCarouselInner({
   onViewAll,
   onAddEvent,
   onAddHistology,
+  onViewEpisode,
 }: NeedsAttentionCarouselProps) {
   const { theme } = useTheme();
 
@@ -91,6 +93,7 @@ function NeedsAttentionCarouselInner({
             onCardPress={onCardPress}
             onAddEvent={onAddEvent}
             onAddHistology={onAddHistology}
+            onViewEpisode={onViewEpisode}
           />
         )}
       />

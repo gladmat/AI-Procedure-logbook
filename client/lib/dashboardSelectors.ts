@@ -266,6 +266,51 @@ export function buildAttentionItems<T extends Case | CaseSummary>(
     });
   }
 
+  // --- Episode-inpatient dedup ---
+  // If an episode's most-recent case is currently an active inpatient,
+  // suppress the episode card and merge its pending action onto the inpatient card.
+  const activeStatuses = new Set(["active", "on_hold", "planned"]);
+  const suppressedEpisodeIds = new Set<string>();
+  const episodePendingByInpatientCaseId = new Map<
+    string,
+    { pendingAction?: string; pendingActions?: string[]; episodeId: string }
+  >();
+
+  for (const { episode, cases: linkedCases } of episodesWithCases) {
+    if (!activeStatuses.has(episode.status)) continue;
+    const sortedLinked = sortCasesByProcedureDateDesc(linkedCases);
+    const mostRecent = sortedLinked[0];
+    if (mostRecent && inpatientCaseIds.has(mostRecent.id)) {
+      suppressedEpisodeIds.add(episode.id);
+      const pending = episode.pendingAction
+        ? PENDING_ACTION_LABELS[episode.pendingAction]
+        : undefined;
+      const pendingAll = episode.pendingActions?.length
+        ? episode.pendingActions.map((a) => PENDING_ACTION_LABELS[a])
+        : pending
+          ? [pending]
+          : undefined;
+      episodePendingByInpatientCaseId.set(mostRecent.id, {
+        pendingAction: pending,
+        pendingActions: pendingAll,
+        episodeId: episode.id,
+      });
+    }
+  }
+
+  // Enrich inpatient items with episode pending actions
+  for (const item of inpatientItems) {
+    if (item.caseId) {
+      const episodeInfo = episodePendingByInpatientCaseId.get(item.caseId);
+      if (episodeInfo) {
+        item.pendingAction = item.pendingAction ?? episodeInfo.pendingAction;
+        item.pendingActions = item.pendingActions ?? episodeInfo.pendingActions;
+        item.episodeId = item.episodeId ?? episodeInfo.episodeId;
+        item.hasEpisodeLink = true;
+      }
+    }
+  }
+
   inpatientItems.sort(
     (left, right) => (right.postOpDay ?? 0) - (left.postOpDay ?? 0),
   );
@@ -317,11 +362,15 @@ export function buildAttentionItems<T extends Case | CaseSummary>(
     });
   }
 
-  const activeStatuses = new Set(["active", "on_hold", "planned"]);
   const episodeItems: AttentionItem[] = [];
 
   for (const { episode, cases: linkedCases } of episodesWithCases) {
     if (!activeStatuses.has(episode.status)) {
+      continue;
+    }
+
+    // Skip episodes already represented by an inpatient card
+    if (suppressedEpisodeIds.has(episode.id)) {
       continue;
     }
 
@@ -479,19 +528,19 @@ export function buildEpisodeCaseFormParams(
     patientIdentifier: episodeWithCases.episode.patientIdentifier,
     facility: lastCase?.facility,
     specialty: episodeWithCases.episode.specialty,
-    diagnosisGroups: isCaseSummaryLike(lastCase)
-      ? undefined
-      : lastCase?.diagnosisGroups,
-    encounterClass: lastCase?.encounterClass,
-    reconstructionTiming: isCaseSummaryLike(lastCase)
-      ? undefined
-      : lastCase?.reconstructionTiming,
-    priorRadiotherapy: isCaseSummaryLike(lastCase)
-      ? undefined
-      : lastCase?.priorRadiotherapy,
-    priorChemotherapy: isCaseSummaryLike(lastCase)
-      ? undefined
-      : lastCase?.priorChemotherapy,
+    diagnosisGroups: lastCase && !isCaseSummaryLike(lastCase)
+      ? lastCase.diagnosisGroups
+      : undefined,
+    encounterClass: lastCase?.encounterClass as EpisodePrefillData["encounterClass"],
+    reconstructionTiming: lastCase && !isCaseSummaryLike(lastCase)
+      ? lastCase.reconstructionTiming
+      : undefined,
+    priorRadiotherapy: lastCase && !isCaseSummaryLike(lastCase)
+      ? lastCase.priorRadiotherapy
+      : undefined,
+    priorChemotherapy: lastCase && !isCaseSummaryLike(lastCase)
+      ? lastCase.priorChemotherapy
+      : undefined,
     episodeSequence: linkedCases.length + 1,
   };
 
