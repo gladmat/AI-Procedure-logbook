@@ -1015,6 +1015,10 @@ export function buildDuplicateState(
     breastAssessment: g.breastAssessment
       ? structuredClone(g.breastAssessment)
       : undefined,
+    affectedFingers: g.affectedFingers ? [...g.affectedFingers] : undefined,
+    dupuytrenAssessment: g.dupuytrenAssessment
+      ? structuredClone(g.dupuytrenAssessment)
+      : undefined,
     fractures: g.fractures?.map((f) => ({ ...f, id: uuidv4() })) ?? [],
     lesionInstances:
       g.lesionInstances?.map((l) => ({

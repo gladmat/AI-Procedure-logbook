@@ -100,6 +100,12 @@ export interface DiagnosisPicklistEntry {
   /** Whether this diagnosis has enhanced histology capture (skin cancer) */
   hasEnhancedHistology?: boolean;
 
+  /** Whether this diagnosis activates the Dupuytren inline assessment */
+  hasDupuytrenAssessment?: boolean;
+
+  /** Whether this diagnosis represents a revision/recurrent case */
+  isRevision?: boolean;
+
   /** If true, this diagnosis appears in all non-gender-affirming clinical contexts */
   crossContextVisible?: boolean;
 

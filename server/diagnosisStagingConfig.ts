@@ -28,59 +28,8 @@ export interface DiagnosisStagingConfig {
  * Add new configurations here as you encounter cases
  */
 export const diagnosisStagingConfigs: DiagnosisStagingConfig[] = [
-  // Dupuytren's Contracture
-  {
-    snomedCtCodes: [
-      "274142002", // Dupuytren's contracture
-      "240078005", // Dupuytren's disease of palm
-    ],
-    keywords: ["dupuytren"],
-    stagingSystems: [
-      {
-        name: "Tubiana Stage",
-        description: "Total passive extension deficit across all joints",
-        options: [
-          {
-            value: "0",
-            label: "Stage 0",
-            description: "Nodule or cord, no contracture",
-          },
-          { value: "N", label: "Stage N", description: "Nodule only" },
-          {
-            value: "1",
-            label: "Stage 1",
-            description: "0-45° total extension deficit",
-          },
-          {
-            value: "2",
-            label: "Stage 2",
-            description: "45-90° total extension deficit",
-          },
-          {
-            value: "3",
-            label: "Stage 3",
-            description: "90-135° total extension deficit",
-          },
-          {
-            value: "4",
-            label: "Stage 4",
-            description: ">135° total extension deficit",
-          },
-        ],
-      },
-      {
-        name: "Affected Fingers",
-        description: "Number of fingers involved",
-        options: [
-          { value: "1", label: "1 finger" },
-          { value: "2", label: "2 fingers" },
-          { value: "3", label: "3 fingers" },
-          { value: "4", label: "4 fingers" },
-          { value: "5", label: "5 fingers" },
-        ],
-      },
-    ],
-  },
+  // NOTE: Dupuytren's staging (Tubiana) removed — now auto-calculated
+  // client-side via DupuytrenAssessment per-ray joint measurements.
 
   // Open Fractures (Gustilo-Anderson Classification)
   {

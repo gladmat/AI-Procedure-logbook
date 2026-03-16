@@ -33,6 +33,10 @@ import {
   getImplantDisplayFields,
 } from "@/lib/jointImplant";
 import { getBreastExportData } from "@/lib/breastExport";
+import {
+  generateDupuytrenSummaryText,
+  calculateDiathesisScore,
+} from "@/lib/dupuytrenHelpers";
 
 export interface CsvExportOptions {
   includePatientId: boolean;
@@ -96,6 +100,12 @@ const CSV_HEADERS = [
   "hand_infection_antibiotic",
   "hand_infection_severity",
   "hand_infection_kanavel",
+  // ── Dupuytren / elective hand columns ──
+  "affected_fingers",
+  "dupuytren_rays",
+  "dupuytren_revision",
+  "dupuytren_web_space",
+  "dupuytren_diathesis_score",
   "implant_system",
   "implant_size",
   "implant_fixation",
@@ -466,6 +476,20 @@ function caseToRow(c: Case, options: CsvExportOptions): string {
     handInfection ? HAND_SEVERITY_LABELS[handInfection.severity] : "",
     handInfection?.kanavelSigns
       ? `${countKanavelSigns(handInfection.kanavelSigns)}/4`
+      : "",
+    // ── Dupuytren / elective hand ──
+    primaryGroup?.affectedFingers?.join("; ") ?? "",
+    primaryGroup?.dupuytrenAssessment?.rays?.length
+      ? generateDupuytrenSummaryText(primaryGroup.dupuytrenAssessment)
+      : "",
+    primaryGroup?.dupuytrenAssessment?.isRevision ? "Yes" : "",
+    primaryGroup?.dupuytrenAssessment?.firstWebSpace?.isAffected
+      ? "Yes"
+      : "",
+    primaryGroup?.dupuytrenAssessment?.diathesis
+      ? String(
+          calculateDiathesisScore(primaryGroup.dupuytrenAssessment.diathesis),
+        )
       : "",
     implantFields.system,
     implantFields.size,

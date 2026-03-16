@@ -99,6 +99,22 @@ function migrateSnomedCodes(c: Case): Case {
   return c;
 }
 
+/**
+ * Migrate old `hand_dx_dupuytren` picklist ID → `hand_dx_dupuytren_primary`.
+ * Ensures edit-mode can resolve the picklist entry after the diagnosis split.
+ */
+function migrateDupuytrenPicklistId(c: Case): Case {
+  let changed = false;
+  const updatedGroups = c.diagnosisGroups.map((group) => {
+    if (group.diagnosisPicklistId === "hand_dx_dupuytren") {
+      changed = true;
+      return { ...group, diagnosisPicklistId: "hand_dx_dupuytren_primary" };
+    }
+    return group;
+  });
+  return changed ? { ...c, diagnosisGroups: updatedGroups } : c;
+}
+
 function migrateSkinCancerDiagnosisConsistency(c: Case): Case {
   let changed = false;
 
@@ -276,6 +292,7 @@ export function migrateCase(raw: unknown): Case {
     if (Array.isArray(obj.diagnosisGroups) && obj.diagnosisGroups.length > 0) {
       let migrated = migrateSpecialty(raw as Case);
       migrated = migrateSnomedCodes(migrated);
+      migrated = migrateDupuytrenPicklistId(migrated);
       migrated = migrateSkinCancerDiagnosisConsistency(migrated);
       migrated = normalizeCaseDateOnlyFields(migrated);
       migrated = normalizeCaseBreastFields(migrated);
@@ -332,7 +349,9 @@ export function migrateCase(raw: unknown): Case {
       normalizeCaseBreastFields(
         normalizeCaseDateOnlyFields(
           migrateSkinCancerDiagnosisConsistency(
-            migrateSnomedCodes(migrated as Case),
+            migrateDupuytrenPicklistId(
+              migrateSnomedCodes(migrated as Case),
+            ),
           ),
         ),
       ),

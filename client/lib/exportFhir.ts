@@ -31,6 +31,11 @@ import {
   countKanavelSigns,
 } from "@/types/handInfection";
 import {
+  generateDupuytrenSummaryText,
+  getFingerLabel,
+  calculateDiathesisScore,
+} from "@/lib/dupuytrenHelpers";
+import {
   TreatmentEpisode,
   EpisodeStatus,
   EncounterClass,
@@ -433,9 +438,63 @@ function buildCondition(
       });
     }
     condition.extension = [
+      ...(condition.extension ?? []),
       {
         url: "opus:handInfectionDetails",
         extension: extensions,
+      },
+    ];
+  }
+
+  // Affected fingers extension
+  if (group.affectedFingers && group.affectedFingers.length > 0) {
+    condition.extension = [
+      ...(condition.extension ?? []),
+      {
+        url: "opus:affectedFingers",
+        extension: group.affectedFingers.map((f) => ({
+          url: "finger",
+          valueString: f,
+        })),
+      },
+    ];
+  }
+
+  // Dupuytren assessment extension
+  if (group.dupuytrenAssessment && group.dupuytrenAssessment.rays.length > 0) {
+    const da = group.dupuytrenAssessment;
+    const dupuytrenExtensions: { url: string; valueString: string }[] = [
+      {
+        url: "summary",
+        valueString: generateDupuytrenSummaryText(da),
+      },
+    ];
+    for (const ray of da.rays) {
+      dupuytrenExtensions.push({
+        url: "ray",
+        valueString: `${getFingerLabel(ray.fingerId)}: MCP ${ray.mcpExtensionDeficit}° PIP ${ray.pipExtensionDeficit}°${ray.dipExtensionDeficit ? ` DIP ${ray.dipExtensionDeficit}°` : ""} total ${ray.totalExtensionDeficit}° Tubiana ${ray.tubianaStage}`,
+      });
+    }
+    if (da.isRevision) {
+      dupuytrenExtensions.push({ url: "isRevision", valueString: "true" });
+    }
+    if (da.firstWebSpace?.isAffected) {
+      dupuytrenExtensions.push({
+        url: "firstWebSpaceAffected",
+        valueString: "true",
+      });
+    }
+    if (da.diathesis && calculateDiathesisScore(da.diathesis) > 0) {
+      dupuytrenExtensions.push({
+        url: "diathesisScore",
+        valueString: `${calculateDiathesisScore(da.diathesis)}/4`,
+      });
+    }
+    condition.extension = [
+      ...(condition.extension ?? []),
+      {
+        url: "opus:dupuytrenAssessment",
+        extension: dupuytrenExtensions,
       },
     ];
   }

@@ -270,6 +270,12 @@ function DiagnosisGroupEditorInner({
   const [fractures, setFractures] = useState<FractureEntry[]>(
     group.fractures || [],
   );
+  const [affectedFingers, setAffectedFingers] = useState<string[]>(
+    group.affectedFingers ?? [],
+  );
+  const [dupuytrenAssessment, setDupuytrenAssessment] = useState<
+    import("@/types/dupuytren").DupuytrenAssessment | undefined
+  >(group.dupuytrenAssessment);
   const [showFractureWizard, setShowFractureWizard] = useState(false); // kept for standalone fracture wizard (non-trauma)
   const [isDiagnosisFromTrauma, setIsDiagnosisFromTrauma] = useState(false);
   const [traumaSourceLabel, setTraumaSourceLabel] = useState<
@@ -507,6 +513,14 @@ function DiagnosisGroupEditorInner({
           : undefined,
       handInfectionDetails:
         handCaseType === "acute" ? handInfectionDetails : undefined,
+      affectedFingers:
+        handCaseType === "elective" && affectedFingers.length > 0
+          ? affectedFingers
+          : undefined,
+      dupuytrenAssessment:
+        handCaseType === "elective" && dupuytrenAssessment
+          ? dupuytrenAssessment
+          : undefined,
     };
   }, [
     groupSpecialty,
@@ -526,6 +540,8 @@ function DiagnosisGroupEditorInner({
     acuteProceduresAccepted,
     handCaseType,
     handInfectionDetails,
+    affectedFingers,
+    dupuytrenAssessment,
   ]);
 
   useEffect(() => {
@@ -1631,6 +1647,8 @@ function DiagnosisGroupEditorInner({
     setAcuteProceduresAccepted(false);
     setShowAcuteFullProcedurePicker(false);
     setHandInfectionDetails(undefined);
+    setAffectedFingers([]);
+    setDupuytrenAssessment(undefined);
   }, [handCaseType]);
 
   const handleBreastDiagnosisClear = useCallback(() => {
@@ -2559,6 +2577,10 @@ function DiagnosisGroupEditorInner({
                       laterality: value,
                     }))
                   }
+                  affectedFingers={affectedFingers}
+                  onAffectedFingersChange={setAffectedFingers}
+                  dupuytrenAssessment={dupuytrenAssessment}
+                  onDupuytrenAssessmentChange={setDupuytrenAssessment}
                   selectedSuggestionIds={selectedSuggestionIds}
                   onToggleProcedureSuggestion={handleToggleProcedureSuggestion}
                   onShowAllProcedures={() => setShowAllProcedures(true)}

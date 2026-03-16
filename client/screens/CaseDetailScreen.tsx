@@ -116,6 +116,12 @@ import {
   formatImplantSize,
 } from "@/lib/jointImplant";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
+import {
+  generateDupuytrenSummaryText,
+  getFingerLabel,
+  calculateDiathesisScore,
+} from "@/lib/dupuytrenHelpers";
+import { PREVIOUS_TREATMENT_LABELS } from "@/types/dupuytren";
 
 type RouteParams = RouteProp<RootStackParamList, "CaseDetail">;
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -1527,6 +1533,111 @@ export default function CaseDetailScreen() {
                       )}
                     </View>
                   ) : null}
+                  {/* Affected fingers (trigger finger, etc.) */}
+                  {group.affectedFingers && group.affectedFingers.length > 0 ? (
+                    <View style={styles.diagnosisItem}>
+                      <ThemedText
+                        style={[
+                          styles.diagnosisLabel,
+                          { color: theme.textSecondary },
+                        ]}
+                      >
+                        Affected Fingers
+                      </ThemedText>
+                      <ThemedText style={styles.diagnosisValue}>
+                        {group.affectedFingers
+                          .map(
+                            (f) =>
+                              f.charAt(0).toUpperCase() + f.slice(1),
+                          )
+                          .join(", ")}
+                      </ThemedText>
+                    </View>
+                  ) : null}
+
+                  {/* Dupuytren assessment */}
+                  {group.dupuytrenAssessment &&
+                  group.dupuytrenAssessment.rays.length > 0 ? (
+                    <View style={styles.diagnosisItem}>
+                      <ThemedText
+                        style={[
+                          styles.diagnosisLabel,
+                          { color: theme.textSecondary },
+                        ]}
+                      >
+                        Dupuytren Assessment
+                      </ThemedText>
+                      <ThemedText style={styles.diagnosisValue}>
+                        {generateDupuytrenSummaryText(
+                          group.dupuytrenAssessment,
+                        )}
+                      </ThemedText>
+                      {group.dupuytrenAssessment.rays.map((ray) => (
+                        <ThemedText
+                          key={ray.fingerId}
+                          style={[
+                            styles.snomedCode,
+                            { color: theme.textTertiary },
+                          ]}
+                        >
+                          {getFingerLabel(ray.fingerId)}: MCP{" "}
+                          {ray.mcpExtensionDeficit}° / PIP{" "}
+                          {ray.pipExtensionDeficit}°
+                          {ray.dipExtensionDeficit
+                            ? ` / DIP ${ray.dipExtensionDeficit}°`
+                            : ""}{" "}
+                          → Tubiana {ray.tubianaStage}
+                        </ThemedText>
+                      ))}
+                      {group.dupuytrenAssessment.firstWebSpace
+                        ?.isAffected ? (
+                        <ThemedText
+                          style={[
+                            styles.snomedCode,
+                            { color: theme.textTertiary },
+                          ]}
+                        >
+                          1st web space affected
+                        </ThemedText>
+                      ) : null}
+                      {group.dupuytrenAssessment.isRevision &&
+                      group.dupuytrenAssessment.previousTreatment
+                        ?.procedureType ? (
+                        <ThemedText
+                          style={[
+                            styles.snomedCode,
+                            { color: theme.textTertiary },
+                          ]}
+                        >
+                          Previous:{" "}
+                          {PREVIOUS_TREATMENT_LABELS[
+                            group.dupuytrenAssessment.previousTreatment
+                              .procedureType
+                          ] ??
+                            group.dupuytrenAssessment.previousTreatment
+                              .procedureType}
+                        </ThemedText>
+                      ) : null}
+                      {group.dupuytrenAssessment.diathesis &&
+                      calculateDiathesisScore(
+                        group.dupuytrenAssessment.diathesis,
+                      ) > 0 ? (
+                        <ThemedText
+                          style={[
+                            styles.snomedCode,
+                            { color: theme.textTertiary },
+                          ]}
+                        >
+                          Diathesis score:{" "}
+                          {calculateDiathesisScore(
+                            group.dupuytrenAssessment.diathesis,
+                          )}
+                          /4
+                        </ThemedText>
+                      ) : null}
+                    </View>
+                  ) : null}
+
                   {group.fractures && group.fractures.length > 0 ? (
                     <View style={styles.diagnosisItem}>
                       <ThemedText

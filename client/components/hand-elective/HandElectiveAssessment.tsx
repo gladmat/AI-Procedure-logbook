@@ -25,8 +25,13 @@ import { SelectedDiagnosisCard } from "@/components/SelectedDiagnosisCard";
 import { InlineStagingButtons } from "@/components/staging/InlineStagingButtons";
 import { PickerField } from "@/components/FormField";
 import { ProcedureSuggestions } from "@/components/ProcedureSuggestions";
+import { FingerSelectionChips } from "./FingerSelectionChips";
+import { getFingerConfigForDiagnosis, FINGER_OPTIONS } from "@/lib/handElectiveFieldConfig";
+import { generateDupuytrenSummaryText } from "@/lib/dupuytrenHelpers";
+import { DupuytrenAssessment as DupuytrenAssessmentUI } from "@/components/dupuytren/DupuytrenAssessment";
 import type { DiagnosisPicklistEntry } from "@/types/diagnosis";
 import type { Laterality } from "@/types/case";
+import type { DupuytrenAssessment as DupuytrenAssessmentType } from "@/types/dupuytren";
 import type { DiagnosisStagingConfig } from "@/lib/snomedApi";
 
 // ═══════════════════════════════════════════════════════════════
@@ -36,8 +41,6 @@ import type { DiagnosisStagingConfig } from "@/lib/snomedApi";
 const LATERALITY_OPTIONS: { value: Laterality; label: string }[] = [
   { value: "left", label: "Left" },
   { value: "right", label: "Right" },
-  { value: "bilateral", label: "Bilateral" },
-  { value: "not_applicable", label: "N/A" },
 ];
 
 // ═══════════════════════════════════════════════════════════════
@@ -67,6 +70,14 @@ interface HandElectiveAssessmentProps {
   laterality: Laterality | undefined;
   /** Called when laterality changes */
   onLateralityChange: (value: Laterality | undefined) => void;
+  /** Affected fingers for per-finger conditions (trigger finger) */
+  affectedFingers?: string[];
+  /** Called when affected fingers change */
+  onAffectedFingersChange?: (fingers: string[]) => void;
+  /** Dupuytren assessment data */
+  dupuytrenAssessment?: DupuytrenAssessmentType;
+  /** Called when Dupuytren assessment changes */
+  onDupuytrenAssessmentChange?: (assessment: DupuytrenAssessmentType) => void;
   /** Currently selected suggestion procedure IDs */
   selectedSuggestionIds: Set<string>;
   /** Called when a procedure suggestion is toggled */
@@ -93,6 +104,10 @@ export function HandElectiveAssessment({
   onStagingChange,
   laterality,
   onLateralityChange,
+  affectedFingers,
+  onAffectedFingersChange,
+  dupuytrenAssessment,
+  onDupuytrenAssessmentChange,
   selectedSuggestionIds,
   onToggleProcedureSuggestion,
   onShowAllProcedures,
@@ -122,6 +137,8 @@ export function HandElectiveAssessment({
   const hasDiagnosis = !!(selectedDiagnosis || primaryDiagnosis);
   const hasStaging =
     (diagnosisStaging?.stagingSystems?.length ?? 0) > 0;
+  const hasDupuytren = selectedDiagnosis?.hasDupuytrenAssessment === true;
+  const fingerConfig = getFingerConfigForDiagnosis(selectedDiagnosis?.id);
   const showClassificationSection = hasDiagnosis;
 
   // Auto-progression: collapse diagnosis, expand next section
@@ -130,10 +147,11 @@ export function HandElectiveAssessment({
       onDiagnosisSelect(dx);
       // Auto-collapse diagnosis section, expand classification or procedures
       setSectionCollapsed("diagnosis", true);
-      if (dx.hasStaging) {
+      if (dx.hasStaging || dx.hasDupuytrenAssessment) {
         setSectionCollapsed("classification", false);
         setSectionCollapsed("procedures", true);
       } else {
+        setSectionCollapsed("classification", false);
         setSectionCollapsed("procedures", false);
       }
     },
@@ -173,6 +191,15 @@ export function HandElectiveAssessment({
     stagingSummaryParts.push(
       laterality.charAt(0).toUpperCase() + laterality.slice(1),
     );
+  }
+  if (affectedFingers && affectedFingers.length > 0) {
+    const fingerLabels = affectedFingers
+      .map((id) => FINGER_OPTIONS.find((f) => f.id === id)?.label ?? id)
+      .join(", ");
+    stagingSummaryParts.push(fingerLabels);
+  }
+  if (hasDupuytren && dupuytrenAssessment && dupuytrenAssessment.rays.length > 0) {
+    stagingSummaryParts.push(generateDupuytrenSummaryText(dupuytrenAssessment));
   }
   if (hasStaging) {
     for (const system of diagnosisStaging!.stagingSystems) {
@@ -269,6 +296,25 @@ export function HandElectiveAssessment({
               })}
             </View>
           </View>
+
+          {/* Per-finger selection (trigger finger, etc.) */}
+          {fingerConfig && onAffectedFingersChange ? (
+            <FingerSelectionChips
+              config={fingerConfig}
+              selectedFingers={affectedFingers ?? []}
+              onChange={onAffectedFingersChange}
+            />
+          ) : null}
+
+          {/* Dupuytren per-ray assessment */}
+          {hasDupuytren && onDupuytrenAssessmentChange ? (
+            <DupuytrenAssessmentUI
+              value={dupuytrenAssessment}
+              onChange={onDupuytrenAssessmentChange}
+              laterality={laterality as "left" | "right" | undefined}
+              isRevision={selectedDiagnosis?.isRevision ?? false}
+            />
+          ) : null}
 
           {/* Staging systems */}
           {hasStaging
@@ -433,15 +479,17 @@ const styles = StyleSheet.create({
     gap: Spacing.xs,
   },
   lateralityChip: {
+    flex: 1,
     paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.xs,
+    paddingVertical: Spacing.sm,
     borderRadius: BorderRadius.sm,
     borderWidth: 1,
-    minHeight: 36,
+    minHeight: 44,
     justifyContent: "center",
+    alignItems: "center",
   },
   lateralityChipText: {
-    fontSize: 13,
+    fontSize: 15,
     fontWeight: "600",
   },
   summaryCard: {

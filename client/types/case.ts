@@ -1830,6 +1830,10 @@ export interface DiagnosisGroup {
   handInfectionDetails?: import("./handInfection").HandInfectionDetails;
   /** Breast surgery assessment data (per-side details, implants, flaps, lipofilling) */
   breastAssessment?: import("./breast").BreastAssessmentData;
+  /** Affected fingers for per-finger conditions (trigger finger, Dupuytren's) */
+  affectedFingers?: string[];
+  /** Dupuytren's disease assessment data (per-ray contracture measurements) */
+  dupuytrenAssessment?: import("./dupuytren").DupuytrenAssessment;
 }
 
 export type GeneralHistologyCategory =
