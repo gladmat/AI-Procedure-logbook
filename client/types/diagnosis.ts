@@ -103,6 +103,9 @@ export interface DiagnosisPicklistEntry {
   /** Whether this diagnosis activates the Dupuytren inline assessment */
   hasDupuytrenAssessment?: boolean;
 
+  /** Whether this diagnosis activates the digit multi-select (e.g., trigger finger/thumb) */
+  hasDigitMultiSelect?: boolean;
+
   /** Whether this diagnosis represents a revision/recurrent case */
   isRevision?: boolean;
 

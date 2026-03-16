@@ -330,15 +330,14 @@ describe("Nerve compression reclassification", () => {
     expect(handIds).not.toContain("hand_dx_guyon");
   });
 
-  it("Stenosing Tenosynovitis subcategory has exactly 3 diagnoses", () => {
+  it("Stenosing Tenosynovitis subcategory has exactly 2 diagnoses (unified trigger digit)", () => {
     const stenosingDx = allElective.filter(
       (d) => d.subcategory === "Stenosing Tenosynovitis",
     );
-    expect(stenosingDx.length).toBe(3);
+    expect(stenosingDx.length).toBe(2);
     const ids = stenosingDx.map((d) => d.id);
     expect(ids).toContain("hand_dx_dequervain");
-    expect(ids).toContain("hand_dx_trigger_finger");
-    expect(ids).toContain("hand_dx_trigger_thumb");
+    expect(ids).toContain("hand_dx_trigger_digit");
   });
 
   it("CTS, CuTS, Guyon's exist in peripheral nerve diagnoses", () => {

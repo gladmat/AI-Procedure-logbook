@@ -1,4 +1,4 @@
-import { Case, DiagnosisGroup, CaseProcedure, type AnastomosisEntry, type FreeFlapDetails } from "@/types/case";
+import { Case, DiagnosisGroup, CaseProcedure, type AnastomosisEntry, type FreeFlapDetails, type DigitId } from "@/types/case";
 import { v4 as uuidv4 } from "uuid";
 import { migrateSnomedCode } from "@/lib/snomedCodeMigration";
 import { resolveSkinCancerDiagnosis } from "@/lib/skinCancerConfig";
@@ -118,6 +118,46 @@ function migrateDupuytrenPicklistId(c: Case): Case {
       return { ...group, diagnosisPicklistId: "hand_dx_dupuytren_primary" };
     }
     return group;
+  });
+  return changed ? { ...c, diagnosisGroups: updatedGroups } : c;
+}
+
+/**
+ * Migrate legacy `hand_dx_trigger_finger` / `hand_dx_trigger_thumb` → unified `hand_dx_trigger_digit`.
+ * Converts `affectedFingers` (string IDs) → `affectedDigits` (DigitId I-V).
+ */
+const FINGER_TO_DIGIT: Record<string, DigitId> = {
+  thumb: "I",
+  index: "II",
+  middle: "III",
+  ring: "IV",
+  little: "V",
+};
+
+function migrateTriggerDigitPicklistId(c: Case): Case {
+  let changed = false;
+  const updatedGroups = c.diagnosisGroups.map((group) => {
+    const id = group.diagnosisPicklistId;
+    if (id !== "hand_dx_trigger_finger" && id !== "hand_dx_trigger_thumb") {
+      return group;
+    }
+
+    changed = true;
+    const updates: Partial<DiagnosisGroup> = {
+      diagnosisPicklistId: "hand_dx_trigger_digit",
+    };
+
+    // Convert affectedFingers → affectedDigits
+    if (group.affectedFingers && group.affectedFingers.length > 0) {
+      updates.affectedDigits = group.affectedFingers
+        .map((f) => FINGER_TO_DIGIT[f])
+        .filter(Boolean) as DigitId[];
+    } else if (id === "hand_dx_trigger_thumb") {
+      // Trigger thumb with no affectedFingers → default digit I
+      updates.affectedDigits = ["I"];
+    }
+
+    return { ...group, ...updates };
   });
   return changed ? { ...c, diagnosisGroups: updatedGroups } : c;
 }
@@ -432,6 +472,7 @@ export function migrateCase(raw: unknown): Case {
       let migrated = migrateSpecialty(raw as Case);
       migrated = migrateSnomedCodes(migrated);
       migrated = migrateDupuytrenPicklistId(migrated);
+      migrated = migrateTriggerDigitPicklistId(migrated);
       migrated = migrateSkinCancerDiagnosisConsistency(migrated);
       migrated = normalizeCaseDateOnlyFields(migrated);
       migrated = normalizeCaseBreastFields(migrated);
@@ -489,8 +530,10 @@ export function migrateCase(raw: unknown): Case {
       normalizeCaseBreastFields(
         normalizeCaseDateOnlyFields(
           migrateSkinCancerDiagnosisConsistency(
-            migrateDupuytrenPicklistId(
-              migrateSnomedCodes(migrated as Case),
+            migrateTriggerDigitPicklistId(
+              migrateDupuytrenPicklistId(
+                migrateSnomedCodes(migrated as Case),
+              ),
             ),
           ),
         ),

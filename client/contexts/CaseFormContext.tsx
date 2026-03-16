@@ -97,7 +97,7 @@ export interface CaseFormActionsContextValue {
     scrollPositionRef?: React.MutableRefObject<number>,
   ) => void;
   handleDeleteDiagnosisGroup: (index: number) => void;
-  addDiagnosisGroup: () => void;
+  addDiagnosisGroup: (overrides?: Partial<DiagnosisGroup>) => void;
   reorderDiagnosisGroups: (groups: DiagnosisGroup[]) => void;
   updateClinicalDetail: (key: string, value: any) => void;
 }

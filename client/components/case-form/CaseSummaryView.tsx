@@ -23,6 +23,7 @@ import {
   type BodyContouringDetails,
 } from "@/types/case";
 import { getDiagnosisGroupTitle } from "@/lib/caseDiagnosisSummary";
+import { DIGIT_LABELS } from "@/lib/diagnosisPicklists/multiDigitConfig";
 import { Button } from "@/components/Button";
 import { validateRequiredFields } from "@/hooks/useCaseForm";
 
@@ -311,6 +312,12 @@ export function CaseSummaryView({
                     .join(" · ")}
                 />
               )}
+            {group.affectedDigits && group.affectedDigits.length > 0 && (
+              <SummaryRow
+                label="Affected digits"
+                value={group.affectedDigits.map((d) => DIGIT_LABELS[d]).join(", ")}
+              />
+            )}
             {group.isMultiLesion &&
               group.lesionInstances &&
               group.lesionInstances.length > 0 && (

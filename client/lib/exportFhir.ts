@@ -37,6 +37,10 @@ import {
   getDominantPatternLabel,
 } from "@/lib/dupuytrenHelpers";
 import {
+  DIGIT_LABELS,
+  DIGIT_BODY_STRUCTURE_SNOMED,
+} from "@/lib/diagnosisPicklists/multiDigitConfig";
+import {
   TreatmentEpisode,
   EpisodeStatus,
   EncounterClass,
@@ -461,6 +465,20 @@ function buildCondition(
     ];
   }
 
+  // Affected digits extension (multi-digit diagnoses like trigger digit)
+  if (group.affectedDigits && group.affectedDigits.length > 0) {
+    condition.extension = [
+      ...(condition.extension ?? []),
+      {
+        url: "opus:affectedDigits",
+        extension: group.affectedDigits.map((d) => ({
+          url: "digit",
+          valueString: DIGIT_LABELS[d],
+        })),
+      },
+    ];
+  }
+
   // Dupuytren assessment extension
   if (group.dupuytrenAssessment && group.dupuytrenAssessment.rays.length > 0) {
     const da = group.dupuytrenAssessment;
@@ -729,6 +747,26 @@ function buildProcedure(
         text: IMPLANT_DIGIT_LABELS[digit],
       },
     ];
+  }
+
+  // Per-digit bodySite for multi-digit procedures (e.g., trigger finger release per digit)
+  if (proc.digitId && DIGIT_BODY_STRUCTURE_SNOMED[proc.digitId] && !procedure.bodySite) {
+    const digitSnomed = DIGIT_BODY_STRUCTURE_SNOMED[proc.digitId];
+    const bodySiteEntry: Record<string, unknown> = {
+      coding: [
+        {
+          system: "http://snomed.info/sct",
+          code: digitSnomed.code,
+          display: digitSnomed.display,
+        },
+      ],
+      text: DIGIT_LABELS[proc.digitId],
+    };
+    // Add laterality qualifier if available
+    if (laterality && LATERALITY_SNOMED[laterality]) {
+      (bodySiteEntry.coding as FhirCoding[]).push(LATERALITY_SNOMED[laterality]);
+    }
+    procedure.bodySite = [bodySiteEntry];
   }
 
   return procedure;

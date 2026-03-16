@@ -157,6 +157,9 @@ let _idIndex: Map<string, DiagnosisPicklistEntry> | null = null;
 const DIAGNOSIS_ID_ALIASES: Record<string, string> = {
   hand_dx_sl_tear_acute: "hand_dx_sl_injury",
   hand_dx_tfcc_tear_acute: "hand_dx_tfcc_tear",
+  // Unified trigger digit: merged from separate finger/thumb entries
+  hand_dx_trigger_finger: "hand_dx_trigger_digit",
+  hand_dx_trigger_thumb: "hand_dx_trigger_digit",
 };
 
 function getIdIndex(): Map<string, DiagnosisPicklistEntry> {

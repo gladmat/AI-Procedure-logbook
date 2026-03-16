@@ -26,11 +26,13 @@ import { InlineStagingButtons } from "@/components/staging/InlineStagingButtons"
 import { PickerField } from "@/components/FormField";
 import { ProcedureSuggestions } from "@/components/ProcedureSuggestions";
 import { FingerSelectionChips } from "./FingerSelectionChips";
+import { DigitMultiSelect } from "./DigitMultiSelect";
 import { getFingerConfigForDiagnosis, FINGER_OPTIONS } from "@/lib/handElectiveFieldConfig";
+import { DIGIT_LABELS } from "@/lib/diagnosisPicklists/multiDigitConfig";
 import { generateDupuytrenSummaryText } from "@/lib/dupuytrenHelpers";
 import { DupuytrenAssessment as DupuytrenAssessmentUI } from "@/components/dupuytren/DupuytrenAssessment";
 import type { DiagnosisPicklistEntry } from "@/types/diagnosis";
-import type { Laterality } from "@/types/case";
+import type { Laterality, DigitId } from "@/types/case";
 import type { DupuytrenAssessment as DupuytrenAssessmentType } from "@/types/dupuytren";
 import type { DiagnosisStagingConfig } from "@/lib/snomedApi";
 
@@ -70,10 +72,22 @@ interface HandElectiveAssessmentProps {
   laterality: Laterality | undefined;
   /** Called when laterality changes */
   onLateralityChange: (value: Laterality | undefined) => void;
-  /** Affected fingers for per-finger conditions (trigger finger) */
+  /** Affected fingers for per-finger conditions (legacy) */
   affectedFingers?: string[];
   /** Called when affected fingers change */
   onAffectedFingersChange?: (fingers: string[]) => void;
+  /** Affected digits for multi-digit diagnoses (trigger digit unified entry) */
+  affectedDigits?: DigitId[];
+  /** Called when affected digits change */
+  onAffectedDigitsChange?: (digits: DigitId[]) => void;
+  /** Multi-digit diagnosis awaiting digit selection (null when confirmed or not applicable) */
+  pendingMultiDigitDiagnosis?: DiagnosisPicklistEntry | null;
+  /** Currently selected digits for pending multi-digit diagnosis */
+  selectedDigits?: DigitId[];
+  /** Called when selected digits change */
+  onDigitsChange?: (digits: DigitId[]) => void;
+  /** Called when multi-digit selection is confirmed */
+  onMultiDigitConfirm?: () => void;
   /** Dupuytren assessment data */
   dupuytrenAssessment?: DupuytrenAssessmentType;
   /** Called when Dupuytren assessment changes */
@@ -106,6 +120,12 @@ export function HandElectiveAssessment({
   onLateralityChange,
   affectedFingers,
   onAffectedFingersChange,
+  affectedDigits,
+  onAffectedDigitsChange,
+  pendingMultiDigitDiagnosis,
+  selectedDigits,
+  onDigitsChange,
+  onMultiDigitConfirm,
   dupuytrenAssessment,
   onDupuytrenAssessmentChange,
   selectedSuggestionIds,
@@ -139,7 +159,8 @@ export function HandElectiveAssessment({
     (diagnosisStaging?.stagingSystems?.length ?? 0) > 0;
   const hasDupuytren = selectedDiagnosis?.hasDupuytrenAssessment === true;
   const fingerConfig = getFingerConfigForDiagnosis(selectedDiagnosis?.id);
-  const showClassificationSection = hasDiagnosis;
+  const isPendingMultiDigit = !!pendingMultiDigitDiagnosis;
+  const showClassificationSection = hasDiagnosis && !isPendingMultiDigit;
 
   // Auto-progression: collapse diagnosis, expand next section
   const handleDiagnosisSelect = useCallback(
@@ -192,7 +213,12 @@ export function HandElectiveAssessment({
       laterality.charAt(0).toUpperCase() + laterality.slice(1),
     );
   }
-  if (affectedFingers && affectedFingers.length > 0) {
+  if (affectedDigits && affectedDigits.length > 0) {
+    const digitLabels = affectedDigits
+      .map((d) => DIGIT_LABELS[d])
+      .join(", ");
+    stagingSummaryParts.push(digitLabels);
+  } else if (affectedFingers && affectedFingers.length > 0) {
     const fingerLabels = affectedFingers
       .map((id) => FINGER_OPTIONS.find((f) => f.id === id)?.label ?? id)
       .join(", ");
@@ -227,15 +253,29 @@ export function HandElectiveAssessment({
         subtitle={diagnosisSubtitle}
       >
         {hasDiagnosis ? (
-          <SelectedDiagnosisCard
-            diagnosis={
-              selectedDiagnosis ?? {
-                displayName: primaryDiagnosis?.term ?? "",
-                snomedCtCode: primaryDiagnosis?.conceptId ?? "",
+          <>
+            <SelectedDiagnosisCard
+              diagnosis={
+                selectedDiagnosis ?? {
+                  displayName: primaryDiagnosis?.term ?? "",
+                  snomedCtCode: primaryDiagnosis?.conceptId ?? "",
+                }
               }
-            }
-            onClear={handleDiagnosisClear}
-          />
+              onClear={handleDiagnosisClear}
+            />
+
+            {/* Digit multi-select for unified trigger digit */}
+            {isPendingMultiDigit &&
+              selectedDigits &&
+              onDigitsChange &&
+              onMultiDigitConfirm && (
+                <DigitMultiSelect
+                  selectedDigits={selectedDigits}
+                  onDigitsChange={onDigitsChange}
+                  onConfirm={onMultiDigitConfirm}
+                />
+              )}
+          </>
         ) : (
           <HandElectivePicker
             onSelect={handleDiagnosisSelect}
@@ -297,14 +337,32 @@ export function HandElectiveAssessment({
             </View>
           </View>
 
-          {/* Per-finger selection (trigger finger, etc.) */}
-          {fingerConfig && onAffectedFingersChange ? (
-            <FingerSelectionChips
-              config={fingerConfig}
-              selectedFingers={affectedFingers ?? []}
-              onChange={onAffectedFingersChange}
-            />
-          ) : null}
+          {/* Confirmed digit summary (read-only after multi-digit confirm) */}
+          {affectedDigits &&
+            affectedDigits.length > 0 &&
+            selectedDiagnosis?.hasDigitMultiSelect === true && (
+              <View style={styles.fieldGroup}>
+                <ThemedText
+                  style={[styles.fieldLabel, { color: theme.textSecondary }]}
+                >
+                  Affected Digits
+                </ThemedText>
+                <ThemedText style={{ fontSize: 14, color: theme.text }}>
+                  {affectedDigits.map((d) => DIGIT_LABELS[d]).join(", ")}
+                </ThemedText>
+              </View>
+            )}
+
+          {/* Per-finger selection (legacy, non-multi-digit diagnoses) */}
+          {fingerConfig &&
+            !selectedDiagnosis?.hasDigitMultiSelect &&
+            onAffectedFingersChange ? (
+              <FingerSelectionChips
+                config={fingerConfig}
+                selectedFingers={affectedFingers ?? []}
+                onChange={onAffectedFingersChange}
+              />
+            ) : null}
 
           {/* Dupuytren per-ray assessment */}
           {hasDupuytren && onDupuytrenAssessmentChange ? (
@@ -358,7 +416,7 @@ export function HandElectiveAssessment({
       ) : null}
 
       {/* ── Section 3: Summary & Procedures ────────────────── */}
-      {hasDiagnosis ? (
+      {hasDiagnosis && !isPendingMultiDigit ? (
         <SectionWrapper
           title="3. Summary & Procedures"
           icon="check-circle"

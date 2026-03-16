@@ -153,6 +153,10 @@ import {
   isElectiveHandFlow,
   shouldRenderGenericDiagnosisSnomedPicker,
 } from "@/lib/handElectiveFlow";
+import {
+  resolveDigitConfig,
+  DIGIT_LABELS,
+} from "@/lib/diagnosisPicklists/multiDigitConfig";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 import {
   applyBreastEpisodeLinkToGroup,
@@ -189,6 +193,8 @@ interface DiagnosisGroupEditorProps {
   scrollViewRef?: React.RefObject<any>;
   /** Current scroll Y position (tracked by parent scroll handler) */
   scrollPositionRef?: React.MutableRefObject<number>;
+  /** Callback to create a new elective hand DiagnosisGroup inheriting laterality from this group. */
+  onAddElectiveHandGroup?: () => void;
 }
 
 interface HandTraumaDiagnosisResolution {
@@ -215,6 +221,7 @@ function DiagnosisGroupEditorInner({
   returnToTheatre,
   scrollViewRef,
   scrollPositionRef,
+  onAddElectiveHandGroup,
 }: DiagnosisGroupEditorProps) {
   const { theme } = useTheme();
   const navigation =
@@ -275,9 +282,18 @@ function DiagnosisGroupEditorInner({
   const [affectedFingers, setAffectedFingers] = useState<string[]>(
     group.affectedFingers ?? [],
   );
+  const [affectedDigits, setAffectedDigits] = useState<
+    import("@/types/case").DigitId[]
+  >(group.affectedDigits ?? []);
   const [dupuytrenAssessment, setDupuytrenAssessment] = useState<
     import("@/types/dupuytren").DupuytrenAssessment | undefined
   >(group.dupuytrenAssessment);
+  // Multi-digit diagnosis state (unified trigger digit)
+  const [pendingMultiDigitDiagnosis, setPendingMultiDigitDiagnosis] =
+    useState<DiagnosisPicklistEntry | null>(null);
+  const [selectedDigits, setSelectedDigits] = useState<
+    import("@/types/case").DigitId[]
+  >([]);
   const [showFractureWizard, setShowFractureWizard] = useState(false); // kept for standalone fracture wizard (non-trauma)
   const [isDiagnosisFromTrauma, setIsDiagnosisFromTrauma] = useState(false);
   const [traumaSourceLabel, setTraumaSourceLabel] = useState<
@@ -428,6 +444,16 @@ function DiagnosisGroupEditorInner({
       return;
     }
 
+    // Transient hint from fast-path group creation (not persisted)
+    if (
+      group.handCaseTypeHint &&
+      !selectedDiagnosis &&
+      !diagnosisClinicalDetails.handTrauma
+    ) {
+      setHandCaseType(group.handCaseTypeHint);
+      return;
+    }
+
     if (selectedDiagnosis?.clinicalGroup) {
       setHandCaseType(
         selectedDiagnosis.clinicalGroup === "trauma"
@@ -444,6 +470,8 @@ function DiagnosisGroupEditorInner({
     }
   }, [
     groupSpecialty,
+    group.handCaseTypeHint,
+    selectedDiagnosis,
     selectedDiagnosis?.clinicalGroup,
     diagnosisClinicalDetails.handTrauma,
   ]);
@@ -475,8 +503,11 @@ function DiagnosisGroupEditorInner({
 
   const buildCurrentDiagnosisGroup = useCallback((): DiagnosisGroup => {
     const isExcBiopsy = isExcisionBiopsyDiagnosis(selectedDiagnosis?.id);
+    // Strip transient handCaseTypeHint — it must not be persisted
+    const { handCaseTypeHint: _hint, ...persistedGroup } =
+      latestGroupRef.current;
     return {
-      ...latestGroupRef.current,
+      ...persistedGroup,
       specialty: groupSpecialty,
       diagnosis: primaryDiagnosis
         ? {
@@ -519,6 +550,10 @@ function DiagnosisGroupEditorInner({
         handCaseType === "elective" && affectedFingers.length > 0
           ? affectedFingers
           : undefined,
+      affectedDigits:
+        handCaseType === "elective" && affectedDigits.length > 0
+          ? affectedDigits
+          : undefined,
       dupuytrenAssessment:
         handCaseType === "elective" && dupuytrenAssessment
           ? dupuytrenAssessment
@@ -543,6 +578,7 @@ function DiagnosisGroupEditorInner({
     handCaseType,
     handInfectionDetails,
     affectedFingers,
+    affectedDigits,
     dupuytrenAssessment,
   ]);
 
@@ -678,6 +714,16 @@ function DiagnosisGroupEditorInner({
         setHandInfectionDetails(createDefaultHandInfectionDetails(dx.id));
       } else {
         setHandInfectionDetails(undefined);
+      }
+
+      // Multi-digit diagnoses: defer procedure creation until digits confirmed
+      if (dx.hasDigitMultiSelect) {
+        setPendingMultiDigitDiagnosis(dx);
+        setSelectedDigits([]);
+        setAffectedDigits([]);
+        setProcedures(buildDefaultProcedures());
+        setSelectedSuggestionIds(new Set());
+        return;
       }
 
       // Apply AO procedure hints if provided (promote/demote defaults)
@@ -1782,6 +1828,55 @@ function DiagnosisGroupEditorInner({
   );
 
   // Acute hand accept-mapping handler
+  // Multi-digit confirm: create per-digit procedures from resolution map
+  const handleMultiDigitConfirm = useCallback(() => {
+    if (!pendingMultiDigitDiagnosis || selectedDigits.length === 0) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+    const dx = pendingMultiDigitDiagnosis;
+    const newProcedures: CaseProcedure[] = [];
+
+    for (const digit of selectedDigits) {
+      const resolution = resolveDigitConfig(dx.id, digit);
+      if (!resolution) continue;
+
+      const entry = findPicklistEntry(resolution.procedurePicklistId);
+      if (!entry) continue;
+
+      newProcedures.push({
+        id: uuidv4(),
+        sequenceOrder: newProcedures.length + 1,
+        procedureName: `${resolution.procedureDisplayName} — ${DIGIT_LABELS[digit]}`,
+        specialty: groupSpecialty,
+        surgeonRole: "PS" as Role,
+        picklistEntryId: resolution.procedurePicklistId,
+        snomedCtCode: entry.snomedCtCode,
+        snomedCtDisplay: entry.snomedCtDisplay,
+        subcategory: entry.subcategory,
+        tags: entry.tags,
+        digitId: digit,
+      });
+    }
+
+    const usedIds = new Set(
+      newProcedures
+        .map((p) => p.picklistEntryId)
+        .filter(Boolean) as string[],
+    );
+    setSelectedSuggestionIds(usedIds);
+    setProcedures(
+      newProcedures.length > 0 ? newProcedures : buildDefaultProcedures(),
+    );
+    setAffectedDigits([...selectedDigits]);
+    setPendingMultiDigitDiagnosis(null);
+    setSelectedDigits([]);
+  }, [
+    pendingMultiDigitDiagnosis,
+    selectedDigits,
+    groupSpecialty,
+    buildDefaultProcedures,
+  ]);
+
   const handleAcuteAcceptMapping = useCallback(
     (procedurePicklistIds: string[]) => {
       const newProcedures: CaseProcedure[] = procedurePicklistIds
@@ -2464,6 +2559,38 @@ function DiagnosisGroupEditorInner({
               }}
               onReviewProcedures={handleTraumaProcedureReview}
             />
+
+            {/* Cross-flow bridge: trauma → elective */}
+            {procedures.some((p) => p.procedureName.trim()) &&
+              onAddElectiveHandGroup && (
+                <Pressable
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    onAddElectiveHandGroup();
+                  }}
+                  style={styles.addElectiveRow}
+                >
+                  <Feather name="plus-circle" size={16} color={theme.link} />
+                  <View>
+                    <ThemedText
+                      style={[
+                        styles.addElectiveRowText,
+                        { color: theme.link },
+                      ]}
+                    >
+                      Add elective procedure
+                    </ThemedText>
+                    <ThemedText
+                      style={[
+                        styles.addElectiveRowHint,
+                        { color: theme.textTertiary },
+                      ]}
+                    >
+                      e.g., CTR, trigger finger release
+                    </ThemedText>
+                  </View>
+                </Pressable>
+              )}
           </>
         ) : null}
 
@@ -2503,29 +2630,62 @@ function DiagnosisGroupEditorInner({
 
         {/* Inline acute hand flow — replaces DiagnosisPicker + HandInfectionCard + procedure picker */}
         {isAcuteHandFlow ? (
-          <AcuteHandAssessment
-            selectedDiagnosis={selectedDiagnosis}
-            onDiagnosisSelect={(dx) => handleDiagnosisSelect(dx)}
-            onDiagnosisClear={clearDiagnosis}
-            handInfectionDetails={handInfectionDetails}
-            onHandInfectionChange={setHandInfectionDetails}
-            laterality={
-              diagnosisClinicalDetails.laterality as
-                | "left"
-                | "right"
-                | undefined
-            }
-            infectionOverlay={infectionOverlay}
-            onInfectionChange={onInfectionChange}
-            onShowInfectionSheet={() => setShowInfectionSheet(true)}
-            isAccepted={acuteProceduresAccepted}
-            acceptedProcedureIds={procedures
-              .map((proc) => proc.picklistEntryId)
-              .filter((id): id is string => !!id)}
-            onAcceptMapping={handleAcuteAcceptMapping}
-            onEditMapping={() => setAcuteProceduresAccepted(false)}
-            onBrowseFullPicker={() => setShowAcuteFullProcedurePicker(true)}
-          />
+          <>
+            <AcuteHandAssessment
+              selectedDiagnosis={selectedDiagnosis}
+              onDiagnosisSelect={(dx) => handleDiagnosisSelect(dx)}
+              onDiagnosisClear={clearDiagnosis}
+              handInfectionDetails={handInfectionDetails}
+              onHandInfectionChange={setHandInfectionDetails}
+              laterality={
+                diagnosisClinicalDetails.laterality as
+                  | "left"
+                  | "right"
+                  | undefined
+              }
+              infectionOverlay={infectionOverlay}
+              onInfectionChange={onInfectionChange}
+              onShowInfectionSheet={() => setShowInfectionSheet(true)}
+              isAccepted={acuteProceduresAccepted}
+              acceptedProcedureIds={procedures
+                .map((proc) => proc.picklistEntryId)
+                .filter((id): id is string => !!id)}
+              onAcceptMapping={handleAcuteAcceptMapping}
+              onEditMapping={() => setAcuteProceduresAccepted(false)}
+              onBrowseFullPicker={() => setShowAcuteFullProcedurePicker(true)}
+            />
+
+            {/* Cross-flow bridge: acute → elective */}
+            {acuteProceduresAccepted && onAddElectiveHandGroup && (
+              <Pressable
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  onAddElectiveHandGroup();
+                }}
+                style={styles.addElectiveRow}
+              >
+                <Feather name="plus-circle" size={16} color={theme.link} />
+                <View>
+                  <ThemedText
+                    style={[
+                      styles.addElectiveRowText,
+                      { color: theme.link },
+                    ]}
+                  >
+                    Add elective procedure
+                  </ThemedText>
+                  <ThemedText
+                    style={[
+                      styles.addElectiveRowHint,
+                      { color: theme.textTertiary },
+                    ]}
+                  >
+                    e.g., CTR, trigger finger release
+                  </ThemedText>
+                </View>
+              </Pressable>
+            )}
+          </>
         ) : null}
 
         {isBreastModule && hasSelectedHandCaseType ? (
@@ -2605,30 +2765,62 @@ function DiagnosisGroupEditorInner({
             {/* Feature 1: collapsed card OR full picker */}
             {hasDiagnosisPicklist(groupSpecialty) ? (
               isElectiveHand ? (
-                <HandElectiveAssessment
-                  selectedDiagnosis={selectedDiagnosis}
-                  primaryDiagnosis={primaryDiagnosis}
-                  onDiagnosisSelect={handleDiagnosisSelect}
-                  onSnomedSelect={handleElectiveSnomedSelect}
-                  onDiagnosisClear={clearDiagnosis}
-                  diagnosisStaging={diagnosisStaging}
-                  stagingValues={stagingValues}
-                  onStagingChange={handleStagingChangeForSuggestions}
-                  laterality={diagnosisClinicalDetails.laterality}
-                  onLateralityChange={(value) =>
-                    setDiagnosisClinicalDetails((prev) => ({
-                      ...prev,
-                      laterality: value,
-                    }))
-                  }
-                  affectedFingers={affectedFingers}
-                  onAffectedFingersChange={setAffectedFingers}
-                  dupuytrenAssessment={dupuytrenAssessment}
-                  onDupuytrenAssessmentChange={setDupuytrenAssessment}
-                  selectedSuggestionIds={selectedSuggestionIds}
-                  onToggleProcedureSuggestion={handleToggleProcedureSuggestion}
-                  onShowAllProcedures={() => setShowAllProcedures(true)}
-                />
+                <>
+                  <HandElectiveAssessment
+                    selectedDiagnosis={selectedDiagnosis}
+                    primaryDiagnosis={primaryDiagnosis}
+                    onDiagnosisSelect={handleDiagnosisSelect}
+                    onSnomedSelect={handleElectiveSnomedSelect}
+                    onDiagnosisClear={clearDiagnosis}
+                    diagnosisStaging={diagnosisStaging}
+                    stagingValues={stagingValues}
+                    onStagingChange={handleStagingChangeForSuggestions}
+                    laterality={diagnosisClinicalDetails.laterality}
+                    onLateralityChange={(value) =>
+                      setDiagnosisClinicalDetails((prev) => ({
+                        ...prev,
+                        laterality: value,
+                      }))
+                    }
+                    affectedFingers={affectedFingers}
+                    onAffectedFingersChange={setAffectedFingers}
+                    affectedDigits={affectedDigits}
+                    onAffectedDigitsChange={setAffectedDigits}
+                    dupuytrenAssessment={dupuytrenAssessment}
+                    onDupuytrenAssessmentChange={setDupuytrenAssessment}
+                    selectedSuggestionIds={selectedSuggestionIds}
+                    onToggleProcedureSuggestion={handleToggleProcedureSuggestion}
+                    onShowAllProcedures={() => setShowAllProcedures(true)}
+                  />
+
+                  {/* Fast path: add another elective hand diagnosis */}
+                  {(selectedDiagnosis || primaryDiagnosis) &&
+                    onAddElectiveHandGroup && (
+                      <Pressable
+                        onPress={() => {
+                          Haptics.impactAsync(
+                            Haptics.ImpactFeedbackStyle.Light,
+                          );
+                          onAddElectiveHandGroup();
+                        }}
+                        style={styles.addElectiveRow}
+                      >
+                        <Feather
+                          name="plus-circle"
+                          size={16}
+                          color={theme.link}
+                        />
+                        <ThemedText
+                          style={[
+                            styles.addElectiveRowText,
+                            { color: theme.link },
+                          ]}
+                        >
+                          Add another elective diagnosis
+                        </ThemedText>
+                      </Pressable>
+                    )}
+                </>
               ) : isDiagnosisPickerCollapsed &&
               (selectedDiagnosis ||
                 primaryDiagnosis) ? (
@@ -3696,7 +3888,8 @@ function areDiagnosisGroupEditorPropsEqual(
     prev.episodeType === next.episodeType &&
     prev.returnToTheatre === next.returnToTheatre &&
     prev.scrollViewRef === next.scrollViewRef &&
-    prev.scrollPositionRef === next.scrollPositionRef
+    prev.scrollPositionRef === next.scrollPositionRef &&
+    prev.onAddElectiveHandGroup === next.onAddElectiveHandGroup
   );
 }
 
@@ -3966,5 +4159,21 @@ const styles = StyleSheet.create({
   showAllLinkText: {
     fontSize: 13,
     fontWeight: "500",
+  },
+  addElectiveRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.sm,
+    marginTop: Spacing.sm,
+  },
+  addElectiveRowText: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  addElectiveRowHint: {
+    fontSize: 12,
+    marginTop: 2,
   },
 });

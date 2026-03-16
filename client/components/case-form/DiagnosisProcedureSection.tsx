@@ -120,6 +120,22 @@ export const DiagnosisProcedureSection = React.memo(
       [diagnosisGroups, reorderDiagnosisGroups],
     );
 
+    const handleAddElectiveHandGroup = useCallback(
+      (sourceGroupIndex: number) => {
+        const sourceGroup = diagnosisGroups[sourceGroupIndex];
+        const inheritedLaterality =
+          sourceGroup?.diagnosisClinicalDetails?.laterality;
+        addDiagnosisGroup({
+          specialty: "hand_wrist",
+          handCaseTypeHint: "elective",
+          ...(inheritedLaterality
+            ? { diagnosisClinicalDetails: { laterality: inheritedLaterality } }
+            : {}),
+        });
+      },
+      [diagnosisGroups, addDiagnosisGroup],
+    );
+
     return (
       <>
         {diagnosisGroups.map((group, idx) => (
@@ -140,6 +156,11 @@ export const DiagnosisProcedureSection = React.memo(
             returnToTheatre={returnToTheatre}
             scrollViewRef={scrollViewRef}
             scrollPositionRef={scrollPositionRef}
+            onAddElectiveHandGroup={
+              group.specialty === "hand_wrist"
+                ? () => handleAddElectiveHandGroup(idx)
+                : undefined
+            }
           />
         ))}
 
@@ -183,7 +204,7 @@ export const DiagnosisProcedureSection = React.memo(
               backgroundColor: theme.backgroundSecondary,
             },
           ]}
-          onPress={addDiagnosisGroup}
+          onPress={() => addDiagnosisGroup()}
         >
           <Feather name="plus-circle" size={18} color={theme.link} />
           <ThemedText

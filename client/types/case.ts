@@ -1759,6 +1759,8 @@ export interface CaseProcedure {
   clinicalDetails?: ClinicalDetails;
   implantDetails?: JointImplantDetails;
   notes?: string;
+  /** Which specific digit this procedure targets (for multi-digit cases like trigger finger). */
+  digitId?: DigitId;
 }
 
 // ─── Diagnosis Certainty ─────────────────────────────────────────────────────
@@ -1832,8 +1834,12 @@ export interface DiagnosisGroup {
   breastAssessment?: import("./breast").BreastAssessmentData;
   /** Affected fingers for per-finger conditions (trigger finger, Dupuytren's) */
   affectedFingers?: string[];
+  /** Affected digits using DigitId (I-V) for multi-digit diagnoses (trigger digit). */
+  affectedDigits?: DigitId[];
   /** Dupuytren's disease assessment data (per-ray contracture measurements) */
   dupuytrenAssessment?: import("./dupuytren").DupuytrenAssessment;
+  /** Transient hint for auto-selecting hand case type on new groups. Not persisted. */
+  handCaseTypeHint?: "trauma" | "acute" | "elective";
 }
 
 export type GeneralHistologyCategory =

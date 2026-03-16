@@ -38,6 +38,7 @@ import {
   calculateDiathesisScore,
   getDominantPatternLabel,
 } from "@/lib/dupuytrenHelpers";
+import { formatAffectedDigits } from "@/lib/diagnosisPicklists/multiDigitConfig";
 
 export interface CsvExportOptions {
   includePatientId: boolean;
@@ -481,7 +482,9 @@ function caseToRow(c: Case, options: CsvExportOptions): string {
       ? `${countKanavelSigns(handInfection.kanavelSigns)}/4`
       : "",
     // ── Dupuytren / elective hand ──
-    primaryGroup?.affectedFingers?.join("; ") ?? "",
+    primaryGroup?.affectedDigits?.length
+      ? formatAffectedDigits(primaryGroup.affectedDigits)
+      : (primaryGroup?.affectedFingers?.join("; ") ?? ""),
     primaryGroup?.dupuytrenAssessment?.rays?.length
       ? generateDupuytrenCsvRayDetail(primaryGroup.dupuytrenAssessment)
       : "",

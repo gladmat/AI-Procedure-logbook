@@ -27,18 +27,9 @@ export interface DiagnosisFingerConfig {
  * Map of diagnosis IDs → finger selection config.
  * Only diagnoses that need per-finger selection appear here.
  */
-const DIAGNOSIS_FINGER_CONFIG: Record<string, DiagnosisFingerConfig> = {
-  hand_dx_trigger_finger: {
-    fingerOptions: FINGER_OPTIONS.filter((f) => f.id !== "thumb"),
-    multiSelect: true,
-    label: "AFFECTED FINGER(S)",
-  },
-  hand_dx_trigger_thumb: {
-    fingerOptions: FINGER_OPTIONS.filter((f) => f.id === "thumb"),
-    multiSelect: false,
-    label: "AFFECTED DIGIT",
-  },
-};
+// Trigger finger/thumb entries removed — unified trigger digit uses DigitMultiSelect.
+// Config kept for potential future per-finger diagnoses.
+const DIAGNOSIS_FINGER_CONFIG: Record<string, DiagnosisFingerConfig> = {};
 
 /**
  * Get finger selection config for a diagnosis, if applicable.

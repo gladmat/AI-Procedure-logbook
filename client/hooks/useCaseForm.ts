@@ -1580,30 +1580,35 @@ export function useCaseForm({
     });
   }, []);
 
-  const addDiagnosisGroup = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    const currentGroups = stateRef.current.diagnosisGroups;
-    dispatch({
-      type: "SET_DIAGNOSIS_GROUPS",
-      groups: [
-        ...currentGroups,
-        {
-          id: uuidv4(),
-          sequenceOrder: currentGroups.length + 1,
-          specialty,
-          procedures: [
-            {
-              id: uuidv4(),
-              sequenceOrder: 1,
-              procedureName: "",
-              specialty,
-              surgeonRole: "PS" as Role,
-            },
-          ],
-        },
-      ],
-    });
-  }, [specialty]);
+  const addDiagnosisGroup = useCallback(
+    (overrides?: Partial<DiagnosisGroup>) => {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      const currentGroups = stateRef.current.diagnosisGroups;
+      const effectiveSpecialty = overrides?.specialty ?? specialty;
+      dispatch({
+        type: "SET_DIAGNOSIS_GROUPS",
+        groups: [
+          ...currentGroups,
+          {
+            id: uuidv4(),
+            sequenceOrder: currentGroups.length + 1,
+            specialty: effectiveSpecialty,
+            procedures: [
+              {
+                id: uuidv4(),
+                sequenceOrder: 1,
+                procedureName: "",
+                specialty: effectiveSpecialty,
+                surgeonRole: "PS" as Role,
+              },
+            ],
+            ...overrides,
+          },
+        ],
+      });
+    },
+    [specialty],
+  );
 
   const reorderDiagnosisGroups = useCallback((groups: DiagnosisGroup[]) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
