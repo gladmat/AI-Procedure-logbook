@@ -34,8 +34,9 @@ import {
 } from "@/lib/jointImplant";
 import { getBreastExportData } from "@/lib/breastExport";
 import {
-  generateDupuytrenSummaryText,
+  generateDupuytrenCsvRayDetail,
   calculateDiathesisScore,
+  getDominantPatternLabel,
 } from "@/lib/dupuytrenHelpers";
 
 export interface CsvExportOptions {
@@ -102,7 +103,9 @@ const CSV_HEADERS = [
   "hand_infection_kanavel",
   // ── Dupuytren / elective hand columns ──
   "affected_fingers",
-  "dupuytren_rays",
+  "dupuytren_ray_detail",
+  "dupuytren_total_score",
+  "dupuytren_dominant_pattern",
   "dupuytren_revision",
   "dupuytren_web_space",
   "dupuytren_diathesis_score",
@@ -480,7 +483,15 @@ function caseToRow(c: Case, options: CsvExportOptions): string {
     // ── Dupuytren / elective hand ──
     primaryGroup?.affectedFingers?.join("; ") ?? "",
     primaryGroup?.dupuytrenAssessment?.rays?.length
-      ? generateDupuytrenSummaryText(primaryGroup.dupuytrenAssessment)
+      ? generateDupuytrenCsvRayDetail(primaryGroup.dupuytrenAssessment)
+      : "",
+    primaryGroup?.dupuytrenAssessment?.totalHandScore != null
+      ? String(primaryGroup.dupuytrenAssessment.totalHandScore)
+      : "",
+    primaryGroup?.dupuytrenAssessment?.dominantPattern
+      ? getDominantPatternLabel(
+          primaryGroup.dupuytrenAssessment.dominantPattern,
+        )
       : "",
     primaryGroup?.dupuytrenAssessment?.isRevision ? "Yes" : "",
     primaryGroup?.dupuytrenAssessment?.firstWebSpace?.isAffected

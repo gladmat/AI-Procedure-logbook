@@ -170,3 +170,39 @@ export function generateDupuytrenSummaryText(
 export function getFingerLabel(fingerId: DupuytrenFingerId): string {
   return FINGER_LABELS[fingerId];
 }
+
+// ── Export Helpers ───────────────────────────────────────────────────────────
+
+const DOMINANT_PATTERN_LABELS: Record<
+  NonNullable<DupuytrenAssessment["dominantPattern"]>,
+  string
+> = {
+  mcp_predominant: "MCP-predominant",
+  pip_predominant: "PIP-predominant",
+  mixed: "Mixed",
+};
+
+/**
+ * Structured per-ray detail for CSV export.
+ * e.g., "Ring: MCP 30° PIP 45° total 75° Tubiana II; Little: MCP 20° PIP 60° total 80° Tubiana II"
+ */
+export function generateDupuytrenCsvRayDetail(
+  assessment: DupuytrenAssessment,
+): string {
+  if (assessment.rays.length === 0) return "";
+  return assessment.rays
+    .map(
+      (r) =>
+        `${FINGER_LABELS[r.fingerId]}: MCP ${r.mcpExtensionDeficit}° PIP ${r.pipExtensionDeficit}°${r.dipExtensionDeficit ? ` DIP ${r.dipExtensionDeficit}°` : ""} total ${r.totalExtensionDeficit}° Tubiana ${r.tubianaStage}`,
+    )
+    .join("; ");
+}
+
+/**
+ * Dominant pattern label for CSV export.
+ */
+export function getDominantPatternLabel(
+  pattern: DupuytrenAssessment["dominantPattern"],
+): string {
+  return pattern ? DOMINANT_PATTERN_LABELS[pattern] : "";
+}

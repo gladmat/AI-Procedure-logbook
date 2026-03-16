@@ -6,6 +6,8 @@ import {
   calculateDupuytrenSummary,
   calculateDiathesisScore,
   generateDupuytrenSummaryText,
+  generateDupuytrenCsvRayDetail,
+  getDominantPatternLabel,
   FINGER_ORDER,
   COMMON_DUPUYTREN_FINGERS,
 } from "../dupuytrenHelpers";
@@ -241,6 +243,66 @@ describe("generateDupuytrenSummaryText", () => {
     };
     const text = generateDupuytrenSummaryText(assessment);
     expect(text).toContain("Ring (II)");
+  });
+});
+
+// ── generateDupuytrenCsvRayDetail ─────────────────────────────────────────────
+
+describe("generateDupuytrenCsvRayDetail", () => {
+  it("returns empty string for no rays", () => {
+    const assessment: DupuytrenAssessment = { rays: [], isRevision: false };
+    expect(generateDupuytrenCsvRayDetail(assessment)).toBe("");
+  });
+
+  it("outputs per-ray joint-level detail", () => {
+    const assessment: DupuytrenAssessment = {
+      rays: [buildRayAssessment("ring", 30, 45)],
+      isRevision: false,
+    };
+    const detail = generateDupuytrenCsvRayDetail(assessment);
+    expect(detail).toBe("Ring: MCP 30° PIP 45° total 75° Tubiana II");
+  });
+
+  it("includes DIP when present", () => {
+    const assessment: DupuytrenAssessment = {
+      rays: [buildRayAssessment("little", 30, 45, 10)],
+      isRevision: false,
+    };
+    const detail = generateDupuytrenCsvRayDetail(assessment);
+    expect(detail).toContain("DIP 10°");
+    expect(detail).toContain("total 85°");
+  });
+
+  it("semicolon-separates multiple rays", () => {
+    const assessment: DupuytrenAssessment = {
+      rays: [
+        buildRayAssessment("ring", 30, 45),
+        buildRayAssessment("little", 20, 60),
+      ],
+      isRevision: false,
+    };
+    const detail = generateDupuytrenCsvRayDetail(assessment);
+    expect(detail).toContain("; Little:");
+  });
+});
+
+// ── getDominantPatternLabel ──────────────────────────────────────────────────
+
+describe("getDominantPatternLabel", () => {
+  it("returns MCP-predominant", () => {
+    expect(getDominantPatternLabel("mcp_predominant")).toBe("MCP-predominant");
+  });
+
+  it("returns PIP-predominant", () => {
+    expect(getDominantPatternLabel("pip_predominant")).toBe("PIP-predominant");
+  });
+
+  it("returns Mixed", () => {
+    expect(getDominantPatternLabel("mixed")).toBe("Mixed");
+  });
+
+  it("returns empty for undefined", () => {
+    expect(getDominantPatternLabel(undefined)).toBe("");
   });
 });
 
