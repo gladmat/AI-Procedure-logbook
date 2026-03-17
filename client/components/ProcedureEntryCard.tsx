@@ -92,6 +92,9 @@ function ProcedureEntryCardInner({
   const [showRoleOverride, setShowRoleOverride] = useState(
     hasRoleOverride(procedure),
   );
+  const [showTags, setShowTags] = useState(
+    (procedure.tags?.length ?? 0) > 0,
+  );
 
   const handleSpecialtyChange = (value: string) => {
     onUpdate({
@@ -436,45 +439,63 @@ function ProcedureEntryCardInner({
       ) : null}
 
       <View style={styles.tagsSection}>
-        <ThemedText style={[styles.fieldLabel, { color: theme.textSecondary }]}>
-          Procedure Tags
-        </ThemedText>
-        <View style={styles.tagsContainer}>
-          {(Object.keys(PROCEDURE_TAG_LABELS) as ProcedureTag[]).map((tag) => {
-            const isSelected = procedure.tags?.includes(tag) || false;
-            return (
-              <Pressable
-                key={tag}
-                onPress={() => {
-                  Haptics.selectionAsync();
-                  handleTagToggle(tag);
-                }}
-                style={[
-                  styles.tagChip,
-                  {
-                    backgroundColor: isSelected
-                      ? theme.link
-                      : theme.backgroundDefault,
-                    borderColor: isSelected ? theme.link : theme.border,
-                  },
-                ]}
-              >
-                <ThemedText
+        <Pressable
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            setShowTags((v) => !v);
+          }}
+          style={styles.tagsToggle}
+        >
+          <ThemedText style={[styles.fieldLabel, { color: theme.textSecondary }]}>
+            Procedure Tags
+            {(procedure.tags?.length ?? 0) > 0
+              ? ` (${procedure.tags!.length})`
+              : ""}
+          </ThemedText>
+          <Feather
+            name={showTags ? "chevron-up" : "chevron-down"}
+            size={14}
+            color={theme.textTertiary}
+          />
+        </Pressable>
+        {showTags ? (
+          <View style={styles.tagsContainer}>
+            {(Object.keys(PROCEDURE_TAG_LABELS) as ProcedureTag[]).map((tag) => {
+              const isSelected = procedure.tags?.includes(tag) || false;
+              return (
+                <Pressable
+                  key={tag}
+                  onPress={() => {
+                    Haptics.selectionAsync();
+                    handleTagToggle(tag);
+                  }}
                   style={[
-                    styles.tagText,
+                    styles.tagChip,
                     {
-                      color: isSelected
-                        ? theme.buttonText
-                        : theme.textSecondary,
+                      backgroundColor: isSelected
+                        ? theme.link
+                        : theme.backgroundDefault,
+                      borderColor: isSelected ? theme.link : theme.border,
                     },
                   ]}
                 >
-                  {PROCEDURE_TAG_LABELS[tag]}
-                </ThemedText>
-              </Pressable>
-            );
-          })}
-        </View>
+                  <ThemedText
+                    style={[
+                      styles.tagText,
+                      {
+                        color: isSelected
+                          ? theme.buttonText
+                          : theme.textSecondary,
+                      },
+                    ]}
+                  >
+                    {PROCEDURE_TAG_LABELS[tag]}
+                  </ThemedText>
+                </Pressable>
+              );
+            })}
+          </View>
+        ) : null}
       </View>
 
       {/* ── Role inheritance display ────────────────────────────── */}
@@ -767,6 +788,12 @@ const styles = StyleSheet.create({
   tagsSection: {
     marginTop: Spacing.xs,
     marginBottom: Spacing.md,
+  },
+  tagsToggle: {
+    flexDirection: "row" as const,
+    justifyContent: "space-between" as const,
+    alignItems: "center" as const,
+    paddingVertical: Spacing.xs,
   },
   tagsContainer: {
     flexDirection: "row",

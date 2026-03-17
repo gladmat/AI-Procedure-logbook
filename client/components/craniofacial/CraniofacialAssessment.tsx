@@ -454,324 +454,6 @@ export function CraniofacialAssessment({
       ) : null}
 
       {/* ────────────────────────────────────────────────────────────────────
-       * OPERATIVE DETAILS — always visible
-       * ──────────────────────────────────────────────────────────────────── */}
-      <SectionWrapper title="Operative Details" icon="clipboard">
-        {/* Age at surgery */}
-        {computedAge ? (
-          <View
-            style={[
-              styles.ageBadge,
-              { backgroundColor: theme.link + "15" },
-            ]}
-          >
-            <Feather name="calendar" size={14} color={theme.link} />
-            <ThemedText style={[styles.ageText, { color: theme.text }]}>
-              Age at surgery:{" "}
-              <ThemedText style={{ fontWeight: "700", color: theme.link }}>
-                {formatAgeAtSurgery(computedAge)}
-              </ThemedText>
-            </ThemedText>
-          </View>
-        ) : (
-          <ThemedText
-            style={[styles.hintText, { color: theme.textTertiary }]}
-          >
-            Add date of birth and procedure date for auto-computed age
-          </ThemedText>
-        )}
-
-        {/* Age CDS warning */}
-        {ageWarning ? (
-          <View
-            style={[
-              styles.warningBanner,
-              {
-                backgroundColor:
-                  ageWarning.severity === "red"
-                    ? theme.error + "15"
-                    : theme.warning + "15",
-                borderColor:
-                  ageWarning.severity === "red"
-                    ? theme.error + "40"
-                    : theme.warning + "40",
-              },
-            ]}
-          >
-            <Feather
-              name="alert-triangle"
-              size={14}
-              color={
-                ageWarning.severity === "red" ? theme.error : theme.warning
-              }
-            />
-            <ThemedText
-              style={[
-                styles.warningText,
-                {
-                  color:
-                    ageWarning.severity === "red"
-                      ? theme.error
-                      : theme.warning,
-                },
-              ]}
-            >
-              {ageWarning.message}
-            </ThemedText>
-          </View>
-        ) : null}
-
-        {/* Weight */}
-        <View style={styles.inlineField}>
-          <ThemedText
-            style={[styles.fieldLabel, { color: theme.textSecondary }]}
-          >
-            Weight (kg)
-          </ThemedText>
-          <TextInput
-            style={[
-              styles.numericInput,
-              {
-                backgroundColor: theme.backgroundTertiary,
-                borderColor: theme.border,
-                color: theme.text,
-              },
-            ]}
-            keyboardType="decimal-pad"
-            placeholder="—"
-            placeholderTextColor={theme.textTertiary}
-            value={ops.weightKg !== undefined ? String(ops.weightKg) : ""}
-            onChangeText={(t) => {
-              const n = parseFloat(t);
-              updateOperativeDetails({ weightKg: isNaN(n) ? undefined : n });
-            }}
-          />
-        </View>
-
-        {/* Pathway stage */}
-        <ThemedText
-          style={[styles.fieldLabel, { color: theme.textSecondary }]}
-        >
-          Pathway stage
-        </ThemedText>
-        <View style={styles.chipGrid}>
-          {PATHWAY_STAGES.map((opt) => {
-            const sel = ops.pathwayStage === opt.value;
-            return (
-              <Pressable
-                key={opt.value}
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  updateOperativeDetails({
-                    pathwayStage: sel ? undefined : opt.value,
-                  });
-                }}
-                style={[
-                  styles.chip,
-                  {
-                    backgroundColor: sel
-                      ? theme.link
-                      : theme.backgroundTertiary,
-                    borderColor: sel ? theme.link : theme.border,
-                  },
-                ]}
-              >
-                <ThemedText
-                  style={[
-                    styles.chipText,
-                    { color: sel ? theme.buttonText : theme.text },
-                  ]}
-                >
-                  {opt.label}
-                </ThemedText>
-              </Pressable>
-            );
-          })}
-        </View>
-
-        {/* Named technique — conditional on procedure type */}
-        {techniques ? (
-          <>
-            <ThemedText
-              style={[styles.fieldLabel, { color: theme.textSecondary }]}
-            >
-              Named technique
-            </ThemedText>
-            <View style={styles.chipGrid}>
-              {techniques.map((tech) => {
-                const sel = ops.namedTechnique === tech.value;
-                return (
-                  <Pressable
-                    key={tech.value}
-                    onPress={() => {
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      updateOperativeDetails({
-                        namedTechnique: sel ? undefined : tech.value,
-                      });
-                    }}
-                    style={[
-                      styles.chip,
-                      {
-                        backgroundColor: sel
-                          ? theme.link
-                          : theme.backgroundTertiary,
-                        borderColor: sel ? theme.link : theme.border,
-                      },
-                    ]}
-                  >
-                    <ThemedText
-                      style={[
-                        styles.chipText,
-                        { color: sel ? theme.buttonText : theme.text },
-                      ]}
-                    >
-                      {tech.label}
-                    </ThemedText>
-                  </Pressable>
-                );
-              })}
-            </View>
-          </>
-        ) : null}
-
-        {/* Bone graft donor — conditional on procedure */}
-        {showBoneGraft ? (
-          <>
-            <ThemedText
-              style={[styles.fieldLabel, { color: theme.textSecondary }]}
-            >
-              Bone graft donor site
-            </ThemedText>
-            <View style={styles.chipGrid}>
-              {BONE_GRAFT_DONORS.map((donor) => {
-                const sel = ops.boneGraftDonor === donor.value;
-                return (
-                  <Pressable
-                    key={donor.value}
-                    onPress={() => {
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      updateOperativeDetails({
-                        boneGraftDonor: sel ? undefined : donor.value,
-                      });
-                    }}
-                    style={[
-                      styles.chip,
-                      {
-                        backgroundColor: sel
-                          ? theme.link
-                          : theme.backgroundTertiary,
-                        borderColor: sel ? theme.link : theme.border,
-                      },
-                    ]}
-                  >
-                    <ThemedText
-                      style={[
-                        styles.chipText,
-                        { color: sel ? theme.buttonText : theme.text },
-                      ]}
-                    >
-                      {donor.label}
-                    </ThemedText>
-                  </Pressable>
-                );
-              })}
-            </View>
-          </>
-        ) : null}
-
-        {/* Blood loss */}
-        <View style={styles.inlineField}>
-          <ThemedText
-            style={[styles.fieldLabel, { color: theme.textSecondary }]}
-          >
-            Estimated blood loss (mL)
-          </ThemedText>
-          <TextInput
-            style={[
-              styles.numericInput,
-              {
-                backgroundColor: theme.backgroundTertiary,
-                borderColor: theme.border,
-                color: theme.text,
-              },
-            ]}
-            keyboardType="numeric"
-            placeholder="—"
-            placeholderTextColor={theme.textTertiary}
-            value={
-              ops.estimatedBloodLossMl !== undefined
-                ? String(ops.estimatedBloodLossMl)
-                : ""
-            }
-            onChangeText={(t) => {
-              const n = parseInt(t, 10);
-              updateOperativeDetails({
-                estimatedBloodLossMl: isNaN(n) ? undefined : n,
-              });
-            }}
-          />
-        </View>
-
-        {/* Transfusion */}
-        {(ops.estimatedBloodLossMl ?? 0) > 0 ? (
-          <>
-            <View style={styles.switchRow}>
-              <ThemedText style={[styles.switchLabel, { color: theme.text }]}>
-                Transfusion required
-              </ThemedText>
-              <Switch
-                value={ops.transfusionRequired ?? false}
-                onValueChange={(v) => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  updateOperativeDetails({
-                    transfusionRequired: v,
-                    transfusionVolumeMl: v
-                      ? ops.transfusionVolumeMl
-                      : undefined,
-                  });
-                }}
-                trackColor={{ false: theme.border, true: theme.link }}
-                thumbColor={Platform.OS === "android" ? "#fff" : undefined}
-              />
-            </View>
-            {ops.transfusionRequired ? (
-              <View style={styles.inlineField}>
-                <ThemedText
-                  style={[styles.fieldLabel, { color: theme.textSecondary }]}
-                >
-                  Transfusion volume (mL)
-                </ThemedText>
-                <TextInput
-                  style={[
-                    styles.numericInput,
-                    {
-                      backgroundColor: theme.backgroundTertiary,
-                      borderColor: theme.border,
-                      color: theme.text,
-                    },
-                  ]}
-                  keyboardType="numeric"
-                  placeholder="—"
-                  placeholderTextColor={theme.textTertiary}
-                  value={
-                    ops.transfusionVolumeMl !== undefined
-                      ? String(ops.transfusionVolumeMl)
-                      : ""
-                  }
-                  onChangeText={(t) => {
-                    const n = parseInt(t, 10);
-                    updateOperativeDetails({
-                      transfusionVolumeMl: isNaN(n) ? undefined : n,
-                    });
-                  }}
-                />
-              </View>
-            ) : null}
-          </>
-        ) : null}
-      </SectionWrapper>
-
-      {/* ────────────────────────────────────────────────────────────────────
        * CLEFT CLASSIFICATION — cleft lip/palate/CLP diagnoses
        * ──────────────────────────────────────────────────────────────────── */}
       {sections.showCleftClassification ? (
@@ -1198,6 +880,324 @@ export function CraniofacialAssessment({
           }
         />
       ) : null}
+
+      {/* ────────────────────────────────────────────────────────────────────
+       * OPERATIVE DETAILS — always visible
+       * ──────────────────────────────────────────────────────────────────── */}
+      <SectionWrapper title="Operative Details" icon="clipboard">
+        {/* Age at surgery */}
+        {computedAge ? (
+          <View
+            style={[
+              styles.ageBadge,
+              { backgroundColor: theme.link + "15" },
+            ]}
+          >
+            <Feather name="calendar" size={14} color={theme.link} />
+            <ThemedText style={[styles.ageText, { color: theme.text }]}>
+              Age at surgery:{" "}
+              <ThemedText style={{ fontWeight: "700", color: theme.link }}>
+                {formatAgeAtSurgery(computedAge)}
+              </ThemedText>
+            </ThemedText>
+          </View>
+        ) : (
+          <ThemedText
+            style={[styles.hintText, { color: theme.textTertiary }]}
+          >
+            Add date of birth and procedure date for auto-computed age
+          </ThemedText>
+        )}
+
+        {/* Age CDS warning */}
+        {ageWarning ? (
+          <View
+            style={[
+              styles.warningBanner,
+              {
+                backgroundColor:
+                  ageWarning.severity === "red"
+                    ? theme.error + "15"
+                    : theme.warning + "15",
+                borderColor:
+                  ageWarning.severity === "red"
+                    ? theme.error + "40"
+                    : theme.warning + "40",
+              },
+            ]}
+          >
+            <Feather
+              name="alert-triangle"
+              size={14}
+              color={
+                ageWarning.severity === "red" ? theme.error : theme.warning
+              }
+            />
+            <ThemedText
+              style={[
+                styles.warningText,
+                {
+                  color:
+                    ageWarning.severity === "red"
+                      ? theme.error
+                      : theme.warning,
+                },
+              ]}
+            >
+              {ageWarning.message}
+            </ThemedText>
+          </View>
+        ) : null}
+
+        {/* Weight */}
+        <View style={styles.inlineField}>
+          <ThemedText
+            style={[styles.fieldLabel, { color: theme.textSecondary }]}
+          >
+            Weight (kg)
+          </ThemedText>
+          <TextInput
+            style={[
+              styles.numericInput,
+              {
+                backgroundColor: theme.backgroundTertiary,
+                borderColor: theme.border,
+                color: theme.text,
+              },
+            ]}
+            keyboardType="decimal-pad"
+            placeholder="—"
+            placeholderTextColor={theme.textTertiary}
+            value={ops.weightKg !== undefined ? String(ops.weightKg) : ""}
+            onChangeText={(t) => {
+              const n = parseFloat(t);
+              updateOperativeDetails({ weightKg: isNaN(n) ? undefined : n });
+            }}
+          />
+        </View>
+
+        {/* Pathway stage */}
+        <ThemedText
+          style={[styles.fieldLabel, { color: theme.textSecondary }]}
+        >
+          Pathway stage
+        </ThemedText>
+        <View style={styles.chipGrid}>
+          {PATHWAY_STAGES.map((opt) => {
+            const sel = ops.pathwayStage === opt.value;
+            return (
+              <Pressable
+                key={opt.value}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  updateOperativeDetails({
+                    pathwayStage: sel ? undefined : opt.value,
+                  });
+                }}
+                style={[
+                  styles.chip,
+                  {
+                    backgroundColor: sel
+                      ? theme.link
+                      : theme.backgroundTertiary,
+                    borderColor: sel ? theme.link : theme.border,
+                  },
+                ]}
+              >
+                <ThemedText
+                  style={[
+                    styles.chipText,
+                    { color: sel ? theme.buttonText : theme.text },
+                  ]}
+                >
+                  {opt.label}
+                </ThemedText>
+              </Pressable>
+            );
+          })}
+        </View>
+
+        {/* Named technique — conditional on procedure type */}
+        {techniques ? (
+          <>
+            <ThemedText
+              style={[styles.fieldLabel, { color: theme.textSecondary }]}
+            >
+              Named technique
+            </ThemedText>
+            <View style={styles.chipGrid}>
+              {techniques.map((tech) => {
+                const sel = ops.namedTechnique === tech.value;
+                return (
+                  <Pressable
+                    key={tech.value}
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      updateOperativeDetails({
+                        namedTechnique: sel ? undefined : tech.value,
+                      });
+                    }}
+                    style={[
+                      styles.chip,
+                      {
+                        backgroundColor: sel
+                          ? theme.link
+                          : theme.backgroundTertiary,
+                        borderColor: sel ? theme.link : theme.border,
+                      },
+                    ]}
+                  >
+                    <ThemedText
+                      style={[
+                        styles.chipText,
+                        { color: sel ? theme.buttonText : theme.text },
+                      ]}
+                    >
+                      {tech.label}
+                    </ThemedText>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </>
+        ) : null}
+
+        {/* Bone graft donor — conditional on procedure */}
+        {showBoneGraft ? (
+          <>
+            <ThemedText
+              style={[styles.fieldLabel, { color: theme.textSecondary }]}
+            >
+              Bone graft donor site
+            </ThemedText>
+            <View style={styles.chipGrid}>
+              {BONE_GRAFT_DONORS.map((donor) => {
+                const sel = ops.boneGraftDonor === donor.value;
+                return (
+                  <Pressable
+                    key={donor.value}
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      updateOperativeDetails({
+                        boneGraftDonor: sel ? undefined : donor.value,
+                      });
+                    }}
+                    style={[
+                      styles.chip,
+                      {
+                        backgroundColor: sel
+                          ? theme.link
+                          : theme.backgroundTertiary,
+                        borderColor: sel ? theme.link : theme.border,
+                      },
+                    ]}
+                  >
+                    <ThemedText
+                      style={[
+                        styles.chipText,
+                        { color: sel ? theme.buttonText : theme.text },
+                      ]}
+                    >
+                      {donor.label}
+                    </ThemedText>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </>
+        ) : null}
+
+        {/* Blood loss */}
+        <View style={styles.inlineField}>
+          <ThemedText
+            style={[styles.fieldLabel, { color: theme.textSecondary }]}
+          >
+            Estimated blood loss (mL)
+          </ThemedText>
+          <TextInput
+            style={[
+              styles.numericInput,
+              {
+                backgroundColor: theme.backgroundTertiary,
+                borderColor: theme.border,
+                color: theme.text,
+              },
+            ]}
+            keyboardType="numeric"
+            placeholder="—"
+            placeholderTextColor={theme.textTertiary}
+            value={
+              ops.estimatedBloodLossMl !== undefined
+                ? String(ops.estimatedBloodLossMl)
+                : ""
+            }
+            onChangeText={(t) => {
+              const n = parseInt(t, 10);
+              updateOperativeDetails({
+                estimatedBloodLossMl: isNaN(n) ? undefined : n,
+              });
+            }}
+          />
+        </View>
+
+        {/* Transfusion */}
+        {(ops.estimatedBloodLossMl ?? 0) > 0 ? (
+          <>
+            <View style={styles.switchRow}>
+              <ThemedText style={[styles.switchLabel, { color: theme.text }]}>
+                Transfusion required
+              </ThemedText>
+              <Switch
+                value={ops.transfusionRequired ?? false}
+                onValueChange={(v) => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  updateOperativeDetails({
+                    transfusionRequired: v,
+                    transfusionVolumeMl: v
+                      ? ops.transfusionVolumeMl
+                      : undefined,
+                  });
+                }}
+                trackColor={{ false: theme.border, true: theme.link }}
+                thumbColor={Platform.OS === "android" ? "#fff" : undefined}
+              />
+            </View>
+            {ops.transfusionRequired ? (
+              <View style={styles.inlineField}>
+                <ThemedText
+                  style={[styles.fieldLabel, { color: theme.textSecondary }]}
+                >
+                  Transfusion volume (mL)
+                </ThemedText>
+                <TextInput
+                  style={[
+                    styles.numericInput,
+                    {
+                      backgroundColor: theme.backgroundTertiary,
+                      borderColor: theme.border,
+                      color: theme.text,
+                    },
+                  ]}
+                  keyboardType="numeric"
+                  placeholder="—"
+                  placeholderTextColor={theme.textTertiary}
+                  value={
+                    ops.transfusionVolumeMl !== undefined
+                      ? String(ops.transfusionVolumeMl)
+                      : ""
+                  }
+                  onChangeText={(t) => {
+                    const n = parseInt(t, 10);
+                    updateOperativeDetails({
+                      transfusionVolumeMl: isNaN(n) ? undefined : n,
+                    });
+                  }}
+                />
+              </View>
+            ) : null}
+          </>
+        ) : null}
+      </SectionWrapper>
 
       {/* ────────────────────────────────────────────────────────────────────
        * OUTCOMES & AUDIT — always available, collapsed by default

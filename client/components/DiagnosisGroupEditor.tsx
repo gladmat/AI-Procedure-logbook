@@ -2737,22 +2737,6 @@ function DiagnosisGroupEditorInner({
           />
         ) : null}
 
-        {isCraniofacialModule &&
-        hasSelectedHandCaseType &&
-        normalizedCraniofacialAssessment ? (
-          <CraniofacialAssessment
-            assessment={normalizedCraniofacialAssessment}
-            onAssessmentChange={(
-              craniofacialAssessment: CraniofacialAssessmentData,
-            ) => onChange({ ...group, craniofacialAssessment })}
-            diagnosisId={selectedDiagnosis?.id}
-            subcategory={selectedDiagnosis?.subcategory}
-            patientDob={patientDateOfBirth || undefined}
-            surgeryDate={procedureDate || undefined}
-            selectedProcedureIds={procedurePicklistIds}
-          />
-        ) : null}
-
         {hasSelectedHandCaseType &&
         showTraumaDiagnosisEditor &&
         !isSkinCancerInlineFlow &&
@@ -3126,6 +3110,23 @@ function DiagnosisGroupEditorInner({
               />
             ) : null}
 
+            {/* Craniofacial assessment module (specialty-gated, after diagnosis selection) */}
+            {isCraniofacialModule &&
+            selectedDiagnosis?.id &&
+            normalizedCraniofacialAssessment ? (
+              <CraniofacialAssessment
+                assessment={normalizedCraniofacialAssessment}
+                onAssessmentChange={(
+                  craniofacialAssessment: CraniofacialAssessmentData,
+                ) => onChange({ ...group, craniofacialAssessment })}
+                diagnosisId={selectedDiagnosis?.id}
+                subcategory={selectedDiagnosis?.subcategory}
+                patientDob={patientDateOfBirth || undefined}
+                surgeryDate={procedureDate || undefined}
+                selectedProcedureIds={procedurePicklistIds}
+              />
+            ) : null}
+
             {primaryDiagnosis && !isSkinCancerModule && !isElectiveHand ? (
               <DiagnosisClinicalFields
                 diagnosis={{
@@ -3493,7 +3494,7 @@ function DiagnosisGroupEditorInner({
                           Show all procedures
                         </ThemedText>
                       </Pressable>
-                    ) : isBreastModule || isHeadNeck ? (
+                    ) : isBreastModule || isHeadNeck || isCraniofacialModule ? (
                       <>
                         {/* Compact procedure list (breast, head & neck) */}
                         <CompactProcedureList
