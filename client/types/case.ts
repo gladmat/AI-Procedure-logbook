@@ -1832,6 +1832,8 @@ export interface DiagnosisGroup {
   breastAssessment?: import("./breast").BreastAssessmentData;
   /** Affected fingers for per-finger conditions (trigger finger, Dupuytren's) */
   affectedFingers?: string[];
+  /** Per-finger Quinnell grading for trigger finger/thumb (finger ID → grade "0"-"4") */
+  triggerFingerGrading?: Record<string, string>;
   /** Dupuytren's disease assessment data (per-ray contracture measurements) */
   dupuytrenAssessment?: import("./dupuytren").DupuytrenAssessment;
 }

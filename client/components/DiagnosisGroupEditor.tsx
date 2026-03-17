@@ -276,6 +276,9 @@ function DiagnosisGroupEditorInner({
   const [affectedFingers, setAffectedFingers] = useState<string[]>(
     group.affectedFingers ?? [],
   );
+  const [triggerFingerGrading, setTriggerFingerGrading] = useState<
+    Record<string, string>
+  >(group.triggerFingerGrading ?? {});
   const [dupuytrenAssessment, setDupuytrenAssessment] = useState<
     import("@/types/dupuytren").DupuytrenAssessment | undefined
   >(group.dupuytrenAssessment);
@@ -520,6 +523,12 @@ function DiagnosisGroupEditorInner({
         handCaseType === "elective" && affectedFingers.length > 0
           ? affectedFingers
           : undefined,
+      triggerFingerGrading:
+        handCaseType === "elective" &&
+        affectedFingers.length > 0 &&
+        Object.keys(triggerFingerGrading).length > 0
+          ? triggerFingerGrading
+          : undefined,
       dupuytrenAssessment:
         handCaseType === "elective" && dupuytrenAssessment
           ? dupuytrenAssessment
@@ -544,6 +553,7 @@ function DiagnosisGroupEditorInner({
     handCaseType,
     handInfectionDetails,
     affectedFingers,
+    triggerFingerGrading,
     dupuytrenAssessment,
   ]);
 
@@ -2682,6 +2692,8 @@ function DiagnosisGroupEditorInner({
                   }
                   affectedFingers={affectedFingers}
                   onAffectedFingersChange={setAffectedFingers}
+                  triggerFingerGrading={triggerFingerGrading}
+                  onTriggerFingerGradingChange={setTriggerFingerGrading}
                   dupuytrenAssessment={dupuytrenAssessment}
                   onDupuytrenAssessmentChange={setDupuytrenAssessment}
                   selectedSuggestionIds={selectedSuggestionIds}
