@@ -26,7 +26,8 @@ import { InlineStagingButtons } from "@/components/staging/InlineStagingButtons"
 import { PickerField } from "@/components/FormField";
 import { ProcedureSuggestions } from "@/components/ProcedureSuggestions";
 import { FingerSelectionChips } from "./FingerSelectionChips";
-import { getFingerConfigForDiagnosis, FINGER_OPTIONS } from "@/lib/handElectiveFieldConfig";
+import { PerFingerQuinnellGrading } from "./PerFingerQuinnellGrading";
+import { getFingerConfigForDiagnosis, hasPerFingerQuinnell, formatTriggerFingerGrading, FINGER_OPTIONS } from "@/lib/handElectiveFieldConfig";
 import { generateDupuytrenSummaryText } from "@/lib/dupuytrenHelpers";
 import { DupuytrenAssessment as DupuytrenAssessmentUI } from "@/components/dupuytren/DupuytrenAssessment";
 import type { DiagnosisPicklistEntry } from "@/types/diagnosis";
@@ -74,6 +75,10 @@ interface HandElectiveAssessmentProps {
   affectedFingers?: string[];
   /** Called when affected fingers change */
   onAffectedFingersChange?: (fingers: string[]) => void;
+  /** Per-finger Quinnell grading (finger ID → grade value) */
+  triggerFingerGrading?: Record<string, string>;
+  /** Called when per-finger Quinnell grading changes */
+  onTriggerFingerGradingChange?: (grading: Record<string, string>) => void;
   /** Dupuytren assessment data */
   dupuytrenAssessment?: DupuytrenAssessmentType;
   /** Called when Dupuytren assessment changes */
@@ -106,6 +111,8 @@ export function HandElectiveAssessment({
   onLateralityChange,
   affectedFingers,
   onAffectedFingersChange,
+  triggerFingerGrading,
+  onTriggerFingerGradingChange,
   dupuytrenAssessment,
   onDupuytrenAssessmentChange,
   selectedSuggestionIds,
@@ -139,6 +146,7 @@ export function HandElectiveAssessment({
     (diagnosisStaging?.stagingSystems?.length ?? 0) > 0;
   const hasDupuytren = selectedDiagnosis?.hasDupuytrenAssessment === true;
   const fingerConfig = getFingerConfigForDiagnosis(selectedDiagnosis?.id);
+  const showQuinnell = hasPerFingerQuinnell(selectedDiagnosis?.id) && (affectedFingers?.length ?? 0) > 0;
   const showClassificationSection = hasDiagnosis;
 
   // Auto-progression: collapse diagnosis, expand next section
@@ -193,10 +201,23 @@ export function HandElectiveAssessment({
     );
   }
   if (affectedFingers && affectedFingers.length > 0) {
-    const fingerLabels = affectedFingers
-      .map((id) => FINGER_OPTIONS.find((f) => f.id === id)?.label ?? id)
-      .join(", ");
-    stagingSummaryParts.push(fingerLabels);
+    if (triggerFingerGrading && Object.keys(triggerFingerGrading).length > 0) {
+      const gradingText = formatTriggerFingerGrading(triggerFingerGrading, affectedFingers);
+      if (gradingText) stagingSummaryParts.push(gradingText);
+      // Show ungraded fingers too
+      const ungradedFingers = affectedFingers.filter((f) => !triggerFingerGrading[f]);
+      if (ungradedFingers.length > 0) {
+        const labels = ungradedFingers
+          .map((id) => FINGER_OPTIONS.find((f) => f.id === id)?.label ?? id)
+          .join(", ");
+        stagingSummaryParts.push(labels);
+      }
+    } else {
+      const fingerLabels = affectedFingers
+        .map((id) => FINGER_OPTIONS.find((f) => f.id === id)?.label ?? id)
+        .join(", ");
+      stagingSummaryParts.push(fingerLabels);
+    }
   }
   if (hasDupuytren && dupuytrenAssessment && dupuytrenAssessment.rays.length > 0) {
     stagingSummaryParts.push(generateDupuytrenSummaryText(dupuytrenAssessment));
@@ -303,6 +324,15 @@ export function HandElectiveAssessment({
               config={fingerConfig}
               selectedFingers={affectedFingers ?? []}
               onChange={onAffectedFingersChange}
+            />
+          ) : null}
+
+          {/* Per-finger Quinnell grading */}
+          {showQuinnell && onTriggerFingerGradingChange ? (
+            <PerFingerQuinnellGrading
+              affectedFingers={affectedFingers ?? []}
+              grading={triggerFingerGrading ?? {}}
+              onChange={onTriggerFingerGradingChange}
             />
           ) : null}
 

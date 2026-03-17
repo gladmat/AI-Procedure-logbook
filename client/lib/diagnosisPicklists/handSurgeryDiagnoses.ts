@@ -1094,17 +1094,19 @@ const HAND_DX_STENOSING_TENOSYNOVITIS: DiagnosisPicklistEntry[] = [
   },
   {
     id: "hand_dx_trigger_finger",
-    displayName: "Trigger finger",
+    displayName: "Trigger finger / thumb",
     snomedCtCode: "1539003",
     snomedCtDisplay: "Trigger finger (disorder)",
     specialty: "hand_wrist",
     subcategory: "Stenosing Tenosynovitis",
     clinicalGroup: "elective",
-    hasStaging: true, // Quinnell grade in diagnosisStagingConfig
+    hasStaging: false, // Per-finger Quinnell grading handled by FingerSelectionChips, not server staging
     searchSynonyms: [
       "trigger finger",
+      "trigger thumb",
       "stenosing tenosynovitis",
       "locked finger",
+      "locked thumb",
       "A1 pulley",
     ],
     suggestedProcedures: [
@@ -1114,28 +1116,14 @@ const HAND_DX_STENOSING_TENOSYNOVITIS: DiagnosisPicklistEntry[] = [
         isDefault: true,
         sortOrder: 1,
       },
-    ],
-    sortOrder: 2,
-  },
-  {
-    id: "hand_dx_trigger_thumb",
-    displayName: "Trigger thumb",
-    snomedCtCode: "42786005",
-    snomedCtDisplay: "Snapping thumb syndrome (disorder)",
-    specialty: "hand_wrist",
-    subcategory: "Stenosing Tenosynovitis",
-    clinicalGroup: "elective",
-    hasStaging: true, // Quinnell grade
-    searchSynonyms: ["trigger thumb", "locked thumb"],
-    suggestedProcedures: [
       {
         procedurePicklistId: "hand_comp_trigger_thumb",
         displayName: "Trigger thumb release",
-        isDefault: true,
-        sortOrder: 1,
+        isDefault: false,
+        sortOrder: 2,
       },
     ],
-    sortOrder: 3,
+    sortOrder: 2,
   },
 ];
 

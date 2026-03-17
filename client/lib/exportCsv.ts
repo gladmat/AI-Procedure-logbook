@@ -38,6 +38,7 @@ import {
   calculateDiathesisScore,
   getDominantPatternLabel,
 } from "@/lib/dupuytrenHelpers";
+import { formatTriggerFingerGrading } from "@/lib/handElectiveFieldConfig";
 
 export interface CsvExportOptions {
   includePatientId: boolean;
@@ -103,6 +104,7 @@ const CSV_HEADERS = [
   "hand_infection_kanavel",
   // ── Dupuytren / elective hand columns ──
   "affected_fingers",
+  "trigger_finger_grading",
   "dupuytren_ray_detail",
   "dupuytren_total_score",
   "dupuytren_dominant_pattern",
@@ -487,6 +489,13 @@ function caseToRow(c: Case, options: CsvExportOptions): string {
       : "",
     // ── Dupuytren / elective hand ──
     primaryGroup?.affectedFingers?.join("; ") ?? "",
+    primaryGroup?.triggerFingerGrading &&
+    primaryGroup?.affectedFingers?.length
+      ? formatTriggerFingerGrading(
+          primaryGroup.triggerFingerGrading,
+          primaryGroup.affectedFingers,
+        )
+      : "",
     primaryGroup?.dupuytrenAssessment?.rays?.length
       ? generateDupuytrenCsvRayDetail(primaryGroup.dupuytrenAssessment)
       : "",

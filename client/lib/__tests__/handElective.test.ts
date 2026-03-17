@@ -6,6 +6,12 @@ import {
   buildElectiveSnomedFallbackState,
   shouldRenderGenericDiagnosisSnomedPicker,
 } from "@/lib/handElectiveFlow";
+import {
+  getFingerConfigForDiagnosis,
+  hasPerFingerQuinnell,
+  formatTriggerFingerGrading,
+  QUINNELL_GRADES,
+} from "@/lib/handElectiveFieldConfig";
 
 // ═══════════════════════════════════════════════════════════
 // Helpers
@@ -330,15 +336,14 @@ describe("Nerve compression reclassification", () => {
     expect(handIds).not.toContain("hand_dx_guyon");
   });
 
-  it("Stenosing Tenosynovitis subcategory has exactly 3 diagnoses", () => {
+  it("Stenosing Tenosynovitis subcategory has exactly 2 diagnoses (merged trigger finger/thumb)", () => {
     const stenosingDx = allElective.filter(
       (d) => d.subcategory === "Stenosing Tenosynovitis",
     );
-    expect(stenosingDx.length).toBe(3);
+    expect(stenosingDx.length).toBe(2);
     const ids = stenosingDx.map((d) => d.id);
     expect(ids).toContain("hand_dx_dequervain");
     expect(ids).toContain("hand_dx_trigger_finger");
-    expect(ids).toContain("hand_dx_trigger_thumb");
   });
 
   it("CTS, CuTS, Guyon's exist in peripheral nerve diagnoses", () => {
@@ -465,5 +470,101 @@ describe("Elective SNOMED fallback helpers", () => {
     expect(nextState.acuteProceduresAccepted).toBe(false);
     expect(nextState.showAcuteFullProcedurePicker).toBe(false);
     expect(nextState.procedures).toEqual(defaultProcedures);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════
+// Per-finger Quinnell grading
+// ═══════════════════════════════════════════════════════════
+
+describe("Per-finger Quinnell grading", () => {
+  it("merged trigger finger/thumb diagnosis has all 5 digits", () => {
+    const config = getFingerConfigForDiagnosis("hand_dx_trigger_finger");
+    expect(config).not.toBeNull();
+    expect(config!.fingerOptions).toHaveLength(5);
+    expect(config!.fingerOptions.map((f) => f.id)).toEqual([
+      "thumb",
+      "index",
+      "middle",
+      "ring",
+      "little",
+    ]);
+    expect(config!.multiSelect).toBe(true);
+  });
+
+  it("old trigger thumb ID no longer has separate finger config", () => {
+    const config = getFingerConfigForDiagnosis("hand_dx_trigger_thumb");
+    expect(config).toBeNull();
+  });
+
+  it("hasPerFingerQuinnell returns true for trigger finger", () => {
+    expect(hasPerFingerQuinnell("hand_dx_trigger_finger")).toBe(true);
+  });
+
+  it("hasPerFingerQuinnell returns true for legacy trigger thumb ID", () => {
+    expect(hasPerFingerQuinnell("hand_dx_trigger_thumb")).toBe(true);
+  });
+
+  it("hasPerFingerQuinnell returns false for unrelated diagnosis", () => {
+    expect(hasPerFingerQuinnell("hand_dx_dequervain")).toBe(false);
+    expect(hasPerFingerQuinnell(undefined)).toBe(false);
+  });
+
+  it("QUINNELL_GRADES has 5 grades (0-IV)", () => {
+    expect(QUINNELL_GRADES).toHaveLength(5);
+    expect(QUINNELL_GRADES.map((g) => g.value)).toEqual([
+      "0",
+      "1",
+      "2",
+      "3",
+      "4",
+    ]);
+  });
+
+  it("formatTriggerFingerGrading formats single finger", () => {
+    const result = formatTriggerFingerGrading(
+      { index: "2" },
+      ["index"],
+    );
+    expect(result).toBe("Index Grade II");
+  });
+
+  it("formatTriggerFingerGrading formats multiple fingers", () => {
+    const result = formatTriggerFingerGrading(
+      { index: "2", ring: "3" },
+      ["index", "ring"],
+    );
+    expect(result).toBe("Index Grade II, Ring Grade III");
+  });
+
+  it("formatTriggerFingerGrading skips ungraded fingers", () => {
+    const result = formatTriggerFingerGrading(
+      { index: "1" },
+      ["index", "middle"],
+    );
+    expect(result).toBe("Index Grade I");
+  });
+
+  it("formatTriggerFingerGrading returns empty for no grades", () => {
+    const result = formatTriggerFingerGrading({}, ["index", "middle"]);
+    expect(result).toBe("");
+  });
+
+  it("merged diagnosis suggests both finger and thumb release procedures", () => {
+    const dx = HAND_SURGERY_DIAGNOSES.find(
+      (d) => d.id === "hand_dx_trigger_finger",
+    );
+    expect(dx).toBeDefined();
+    expect(dx!.suggestedProcedures).toHaveLength(2);
+    const ids = dx!.suggestedProcedures!.map((p) => p.procedurePicklistId);
+    expect(ids).toContain("hand_comp_trigger_finger");
+    expect(ids).toContain("hand_comp_trigger_thumb");
+  });
+
+  it("merged diagnosis has hasStaging false (per-finger grading replaces server staging)", () => {
+    const dx = HAND_SURGERY_DIAGNOSES.find(
+      (d) => d.id === "hand_dx_trigger_finger",
+    );
+    expect(dx!.hasStaging).toBe(false);
   });
 });

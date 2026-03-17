@@ -122,6 +122,22 @@ function migrateDupuytrenPicklistId(c: Case): Case {
   return changed ? { ...c, diagnosisGroups: updatedGroups } : c;
 }
 
+/**
+ * Migrate old `hand_dx_trigger_thumb` picklist ID → `hand_dx_trigger_finger`.
+ * Merged trigger thumb into a single unified trigger finger/thumb diagnosis.
+ */
+function migrateTriggerThumbPicklistId(c: Case): Case {
+  let changed = false;
+  const updatedGroups = c.diagnosisGroups.map((group) => {
+    if (group.diagnosisPicklistId === "hand_dx_trigger_thumb") {
+      changed = true;
+      return { ...group, diagnosisPicklistId: "hand_dx_trigger_finger" };
+    }
+    return group;
+  });
+  return changed ? { ...c, diagnosisGroups: updatedGroups } : c;
+}
+
 function migrateSkinCancerDiagnosisConsistency(c: Case): Case {
   let changed = false;
 
@@ -432,6 +448,7 @@ export function migrateCase(raw: unknown): Case {
       let migrated = migrateSpecialty(raw as Case);
       migrated = migrateSnomedCodes(migrated);
       migrated = migrateDupuytrenPicklistId(migrated);
+      migrated = migrateTriggerThumbPicklistId(migrated);
       migrated = migrateSkinCancerDiagnosisConsistency(migrated);
       migrated = normalizeCaseDateOnlyFields(migrated);
       migrated = normalizeCaseBreastFields(migrated);
@@ -489,8 +506,10 @@ export function migrateCase(raw: unknown): Case {
       normalizeCaseBreastFields(
         normalizeCaseDateOnlyFields(
           migrateSkinCancerDiagnosisConsistency(
-            migrateDupuytrenPicklistId(
-              migrateSnomedCodes(migrated as Case),
+            migrateTriggerThumbPicklistId(
+              migrateDupuytrenPicklistId(
+                migrateSnomedCodes(migrated as Case),
+              ),
             ),
           ),
         ),
