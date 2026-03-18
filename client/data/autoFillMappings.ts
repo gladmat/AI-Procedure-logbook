@@ -194,6 +194,64 @@ export const DIAGNOSIS_TO_RECIPIENT_SITE: Record<string, AnatomicalRegion> = {
   burns_dx_microstomia: "head_neck",
   burns_dx_nasal_contracture: "head_neck",
   burns_dx_ear_contracture: "head_neck",
+
+  // Lymphoedema — upper limb diagnoses (upper_arm as closest AnatomicalRegion)
+  lymph_dx_bcrl_upper: "upper_arm",
+  lymph_dx_melanoma_upper: "upper_arm",
+  lymph_dx_primary_upper: "upper_arm",
+  lymph_dx_sarcoma_le: "upper_arm", // can be upper or lower — default to upper
+  lymph_dx_post_radiation_le: "upper_arm",
+  lymph_dx_post_trauma: "upper_arm",
+  lymph_dx_post_infection: "upper_arm",
+
+  // Lymphoedema — lower limb diagnoses
+  lymph_dx_gynae_lower: "lower_leg",
+  lymph_dx_melanoma_lower: "lower_leg",
+  lymph_dx_uro_lower: "lower_leg",
+  lymph_dx_primary_lower: "lower_leg",
+  lymph_dx_meige: "lower_leg",
+  lymph_dx_tarda: "lower_leg",
+  lymph_dx_hereditary_other: "lower_leg",
+  lymph_dx_filariasis: "lower_leg",
+  lymph_dx_obesity_related: "lower_leg",
+  lymph_dx_phlebolymphoedema: "lower_leg",
+  lymph_dx_lipolymphoedema: "lower_leg",
+  lymph_dx_lipedema: "lower_leg",
+
+  // Lymphoedema — head & neck
+  lymph_dx_hn_lymphoedema: "head_neck",
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// VLNT RECIPIENT VESSEL SUGGESTIONS
+// When recipientSiteRegion + VLNT procedure → suggest these vessels
+// ═══════════════════════════════════════════════════════════════════════════
+
+export const LYMPH_VLNT_RECIPIENT_VESSELS: Record<string, string[]> = {
+  upper_arm: [
+    "Thoracodorsal artery",
+    "Thoracodorsal vein",
+    "Subscapular artery",
+    "Circumflex scapular artery",
+    "Radial artery (wrist)",
+    "Cephalic vein (wrist)",
+    "Brachial artery branch",
+  ],
+  lower_leg: [
+    "Posterior tibial artery",
+    "Great saphenous vein",
+    "Anterior tibial artery",
+    "Medial plantar artery",
+    "Femoral artery branch (groin)",
+    "Femoral vein branch (groin)",
+    "Popliteal vessels",
+  ],
+  head_neck: [
+    "Facial artery",
+    "Facial vein",
+    "Superficial temporal artery",
+    "Superficial temporal vein",
+  ],
 };
 
 // ═══════════════════════════════════════════════════════════════════════════

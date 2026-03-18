@@ -92,7 +92,14 @@ export interface DiagnosisPicklistEntry {
     | "congenital"
     | "reconstructive"
     | "aesthetic"
-    | "gender_affirming";
+    | "gender_affirming"
+    | "secondary_cancer"
+    | "secondary_noncancer"
+    | "primary"
+    | "lipedema"
+    | "malformation"
+    | "chylous"
+    | "experimental";
 
   /** Aesthetic intent modifier — cosmetic by default, overridable per-diagnosis */
   intent?:
@@ -112,6 +119,9 @@ export interface DiagnosisPicklistEntry {
 
   /** Whether this diagnosis activates the digit multi-select (e.g., trigger finger/thumb) */
   hasDigitMultiSelect?: boolean;
+
+  /** Whether this diagnosis activates the lymphoedema assessment module */
+  lymphoedemaModule?: boolean;
 
   /** Whether this diagnosis activates the peripheral nerve assessment module */
   peripheralNerveModule?: boolean;

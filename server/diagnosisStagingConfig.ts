@@ -404,17 +404,35 @@ export const diagnosisStagingConfigs: DiagnosisStagingConfig[] = [
     ],
   },
 
-  // Lymphoedema (ISL Stage)
+  // Lymphoedema — ISL Stage
   {
     snomedCtCodes: [
       "234097001", // Lymphedema
+      "402672004", // Lymphedema of upper limb
+      "445710004", // Lymphedema following surgical procedure
+      "234102003", // Lymphedema due to radiation therapy
+      "403462001", // Genital lymphedema
+      "56266002", // Congenital lymphedema (Milroy)
+      "77123007", // Lymphedema praecox (Meige)
+      "56970002", // Lymphedema tarda
+      "439128001", // Hereditary lymphedema
+      "95570007", // Primary lymphedema
+      "443250000", // Lymphedema of trunk
+      "399889006", // Lymphatic filariasis
+      "33129002", // Lipedema
     ],
-    keywords: ["lymphoedema", "lymphedema", "isl stage"],
+    keywords: ["lymphoedema", "lymphedema", "isl stage", "lipedema"],
     stagingSystems: [
       {
         name: "ISL Stage",
         description: "International Society of Lymphology staging",
         options: [
+          {
+            value: "0",
+            label: "Stage 0 — Subclinical",
+            description:
+              "Impaired lymphatic transport, no visible swelling; may have symptoms",
+          },
           {
             value: "I",
             label: "Stage I",
@@ -423,7 +441,7 @@ export const diagnosisStagingConfigs: DiagnosisStagingConfig[] = [
           },
           {
             value: "II",
-            label: "Stage II",
+            label: "Stage II (early)",
             description:
               "Spontaneously irreversible; pitting oedema that does not resolve with elevation alone",
           },
@@ -437,6 +455,81 @@ export const diagnosisStagingConfigs: DiagnosisStagingConfig[] = [
             label: "Stage III",
             description:
               "Lymphostatic elephantiasis; non-pitting with skin changes (acanthosis, fat deposits)",
+          },
+        ],
+      },
+      {
+        name: "Cheng Lymphoedema Grade",
+        description:
+          "Cheng grading system integrating circumference, cellulitis, and ICG findings",
+        options: [
+          {
+            value: "0",
+            label: "Grade 0 — No clinical lymphoedema",
+            description: "Subclinical, may have positive bioimpedance",
+          },
+          {
+            value: "I",
+            label: "Grade I — Mild, reversible",
+            description: "Soft pitting oedema, no fibrosis",
+          },
+          {
+            value: "II",
+            label: "Grade II — Moderate, irreversible",
+            description:
+              "Persistent swelling without fibrosis, responds to CDT",
+          },
+          {
+            value: "III",
+            label: "Grade III — Severe fibrosis",
+            description: "Fibrotic changes with recurrent cellulitis",
+          },
+          {
+            value: "IV",
+            label: "Grade IV — Elephantiasis",
+            description:
+              "Elephantiasis with severe skin changes and functional impairment",
+          },
+        ],
+      },
+      {
+        name: "MD Anderson ICG Stage",
+        description:
+          "MD Anderson staging based on ICG lymphography dermal backflow patterns",
+        options: [
+          {
+            value: "0",
+            label: "Stage 0 — No dermal backflow",
+            description: "Normal linear lymphatic flow",
+          },
+          {
+            value: "1",
+            label: "Stage 1 — Many patent, minimal backflow",
+            description: "Many patent lymphatics with minimal dermal backflow",
+          },
+          {
+            value: "2",
+            label: "Stage 2 — Moderate backflow",
+            description:
+              "Moderate number of patent lymphatics with segmental dermal backflow",
+          },
+          {
+            value: "3",
+            label: "Stage 3 — Few patent, extensive backflow",
+            description:
+              "Few patent lymphatics with extensive dermal backflow",
+          },
+          {
+            value: "4",
+            label: "Stage 4 — Severe (stardust)",
+            description:
+              "Severe dermal backflow with stardust pattern across limb",
+          },
+          {
+            value: "5",
+            label: "Stage 5 — Diffuse, no patent",
+            description:
+              "Diffuse dermal backflow with no identifiable patent lymphatics",
           },
         ],
       },

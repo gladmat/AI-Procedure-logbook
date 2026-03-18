@@ -973,6 +973,46 @@ Following established patterns:
 - Graft/conduit details: on assessment, NOT on procedure
 - FFMT procedures: trigger existing FreeFlapDetailsForm via hasFreeFlap: true
 
+## Lymphoedema Module — Locked Decisions
+
+### Architecture
+- LymphaticAssessment renders INLINE in DiagnosisGroupEditor (like HandTraumaAssessment)
+- Activates on diagnosis metadata `lymphoedemaModule: true`, NOT specialty gate
+- VLNT uses existing free flap infrastructure — VLNTSpecificDetails extends, not replaces
+- LVA per-anastomosis tracking is inline collapsible cards, NOT modal
+- Bilateral circumference measurements auto-calculate excess volume via truncated cone formula
+- Follow-up is structured (timepoints + LYMQOL domains + measurements), stored per-case
+- All 7 old `le_dx_*` diagnosis IDs migrated to `lymph_dx_*` prefix in `migration.ts`
+
+### Anti-Patterns — DO NOT
+- DO NOT create a hard gate between physiological/ablative procedure types
+- DO NOT duplicate FreeFlapDetails for VLNT — extend with VLNTSpecificDetails
+- DO NOT duplicate CollapsibleFormSection — import from existing path
+- DO NOT implement full 28-item LYMQOL questionnaire — domain summaries only
+- DO NOT put experimental diagnoses in a separate file — metadata flag in main file
+- DO NOT create separate procedure arrays — add to single procedurePicklist
+- DO NOT duplicate brand components — import from client/components/brand/
+- DO NOT create assessment as modal sheet — it's inline
+
+### Component Registry
+- `LymphaticAssessment` → `client/components/lymphatic/LymphaticAssessment.tsx`
+- `CircumferenceEntry` → `client/components/lymphatic/CircumferenceEntry.tsx`
+- `LVAOperativeDetails` → `client/components/lymphatic/LVAOperativeDetails.tsx` (Phase 4)
+- `VLNTDetails` → `client/components/lymphatic/VLNTDetails.tsx` (Phase 5)
+- `SAPLDetails` → `client/components/lymphatic/SAPLDetails.tsx` (Phase 5)
+- `LymphaticFollowUpEntry` → `client/components/lymphatic/LymphaticFollowUpEntry.tsx` (Phase 6)
+- Config: `client/lib/lymphaticConfig.ts`
+- Types: `client/types/lymphatic.ts`
+- Diagnoses: `client/lib/diagnosisPicklists/lymphoedemaDiagnoses.ts`
+
+### Data Flow
+- Assessment data: DiagnosisGroup.lymphoedemaAssessment (inline)
+- LVA operative data: CaseProcedure.lvaOperativeDetails (per-procedure)
+- VLNT extension data: CaseProcedure.vlntDetails (extends free flap)
+- SAPL data: CaseProcedure.saplDetails (per-procedure)
+- Follow-up data: stored per-case, linked by patient identifier
+- Staging: server/diagnosisStagingConfig.ts (ISL required, Cheng/ICG optional)
+
 ## Design system: Charcoal + Amber
 
 All tokens in `client/constants/theme.ts` (single source of truth, 273 lines).

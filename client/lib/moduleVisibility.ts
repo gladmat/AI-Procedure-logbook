@@ -39,6 +39,8 @@ export interface ModuleVisibility {
   burnsAssessment: boolean;
   /** Peripheral nerve assessment module — diagnosis-metadata driven */
   peripheralNerveAssessment: boolean;
+  /** Lymphoedema assessment module — diagnosis-metadata driven */
+  lymphoedemaAssessment: boolean;
 }
 
 /**
@@ -192,6 +194,10 @@ export function getModuleVisibility(
     group.specialty === "peripheral_nerve" ||
     !!group.peripheralNerveAssessment;
 
+  // Lymphoedema: diagnosis-metadata driven + specialty + existing data
+  const lymphoedemaAssessment =
+    group.specialty === "lymphoedema" || !!group.lymphoedemaAssessment;
+
   return {
     flapDetails,
     flapOutcome,
@@ -205,5 +211,6 @@ export function getModuleVisibility(
     aestheticAssessment,
     burnsAssessment,
     peripheralNerveAssessment,
+    lymphoedemaAssessment,
   };
 }

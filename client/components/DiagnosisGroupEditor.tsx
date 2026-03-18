@@ -145,6 +145,9 @@ import {
 } from "@/lib/peripheralNerveConfig";
 import type { PeripheralNerveAssessmentData } from "@/types/peripheralNerve";
 import { PeripheralNerveAssessment } from "@/components/peripheral-nerve";
+import { isLymphoedemaeDiagnosis } from "@/lib/lymphaticConfig";
+import { LymphaticAssessment } from "@/components/lymphatic";
+import type { LymphaticAssessment as LymphaticAssessmentData } from "@/types/lymphatic";
 import type {
   SkinCancerLesionAssessment,
   LesionPhoto,
@@ -1219,6 +1222,20 @@ function DiagnosisGroupEditorInner({
       !!group.peripheralNerveAssessment?.neuroma,
     [selectedDiagnosis, group.peripheralNerveAssessment?.neuroma],
   );
+
+  // Lymphoedema: diagnosis-metadata driven + specialty + existing data
+  const isLymphoedemaModule = useMemo(
+    () =>
+      isLymphoedemaeDiagnosis(selectedDiagnosis ?? undefined) ||
+      groupSpecialty === "lymphoedema" ||
+      !!group.lymphoedemaAssessment,
+    [selectedDiagnosis, groupSpecialty, group.lymphoedemaAssessment],
+  );
+
+  const normalizedLymphaticAssessment = useMemo(() => {
+    if (!isLymphoedemaModule) return undefined;
+    return group.lymphoedemaAssessment ?? {};
+  }, [isLymphoedemaModule, group.lymphoedemaAssessment]);
 
   const defaultBreastClinicalContext = useMemo(
     () => getBreastClinicalContext(selectedDiagnosis ?? undefined),
@@ -3376,6 +3393,17 @@ function DiagnosisGroupEditorInner({
                 selectedProcedureIds={procedurePicklistIds}
                 isBrachialPlexus={isBrachialPlexusModule}
                 isNeuroma={isNeuromaModule}
+              />
+            ) : null}
+
+            {/* Lymphoedema assessment module (diagnosis-metadata driven) */}
+            {isLymphoedemaModule && normalizedLymphaticAssessment ? (
+              <LymphaticAssessment
+                assessment={normalizedLymphaticAssessment}
+                onAssessmentChange={(
+                  lymphoedemaAssessment: LymphaticAssessmentData,
+                ) => onChange({ ...group, lymphoedemaAssessment })}
+                diagnosisId={selectedDiagnosis?.id}
               />
             ) : null}
 

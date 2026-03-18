@@ -3997,8 +3997,8 @@ const GENERAL_LYMPHOEDEMA: ProcedurePicklistEntry[] = [
   {
     id: "gen_lymph_lva",
     displayName: "Lymphovenous anastomosis (LVA)",
-    snomedCtCode: "438614006", // VERIFY
-    snomedCtDisplay: "Lymphovenous anastomosis (procedure)",
+    snomedCtCode: "264597004", // VERIFY — generic microsurgery code, no specific LVA SNOMED
+    snomedCtDisplay: "Microsurgery (procedure)",
     specialties: ["lymphoedema", "general"],
     subcategory: "Lymphoedema Surgery",
     tags: ["microsurgery", "elective"],
@@ -4007,8 +4007,8 @@ const GENERAL_LYMPHOEDEMA: ProcedurePicklistEntry[] = [
   {
     id: "gen_lymph_vlnt",
     displayName: "Vascularised lymph node transfer (VLNT)",
-    snomedCtCode: "438614006", // VERIFY
-    snomedCtDisplay: "Vascularised lymph node transfer (procedure)",
+    snomedCtCode: "234019008", // VERIFY — free flap reconstruction
+    snomedCtDisplay: "Free flap reconstruction (procedure)",
     specialties: ["lymphoedema", "general"],
     subcategory: "Lymphoedema Surgery",
     tags: ["free_flap", "microsurgery", "elective"],
@@ -4018,8 +4018,8 @@ const GENERAL_LYMPHOEDEMA: ProcedurePicklistEntry[] = [
   {
     id: "gen_lymph_liposuction",
     displayName: "Liposuction for lymphoedema",
-    snomedCtCode: "302441008", // VERIFY
-    snomedCtDisplay: "Liposuction for lymphoedema (procedure)",
+    snomedCtCode: "302441004", // VERIFY — liposuction generic
+    snomedCtDisplay: "Liposuction (procedure)",
     specialties: ["lymphoedema", "general"],
     subcategory: "Lymphoedema Surgery",
     tags: ["elective"],
@@ -4028,7 +4028,7 @@ const GENERAL_LYMPHOEDEMA: ProcedurePicklistEntry[] = [
   {
     id: "gen_lymph_debulking",
     displayName: "Lymphoedema debulking / Charles procedure",
-    snomedCtCode: "302441008", // VERIFY
+    snomedCtCode: "234097001", // VERIFY — no specific Charles code
     snomedCtDisplay: "Excisional debulking for lymphoedema (procedure)",
     specialties: ["lymphoedema", "general"],
     subcategory: "Lymphoedema Surgery",
@@ -6999,103 +6999,75 @@ const SKIN_CANCER_ADDITIONAL: ProcedurePicklistEntry[] = [
 ];
 
 // ═══════════════════════════════════════════════════════════════════════════
-// LYMPHOEDEMA — additional procedures beyond moved gen_lymph_* entries
+// LYMPHOEDEMA — expanded procedure catalogue (~30+ procedures)
+// Subcategories: LVA, VLNT, Debulking, Combined, Malformation/Chylous, Support
 // ═══════════════════════════════════════════════════════════════════════════
 
+// 4A. Lymphaticovenular Anastomosis — LVA
+const LYMPH_LVA: ProcedurePicklistEntry[] = [
+  { id: "lymph_lva_upper", displayName: "LVA — upper extremity", snomedCtCode: "264597004", snomedCtDisplay: "Microsurgery (procedure)", specialties: ["lymphoedema"], subcategory: "LVA (Supermicrosurgery)", tags: ["supermicrosurgery", "microsurgery"], sortOrder: 1 }, // VERIFY — no specific LVA SNOMED
+  { id: "lymph_lva_lower", displayName: "LVA — lower extremity", snomedCtCode: "264597004", snomedCtDisplay: "Microsurgery (procedure)", specialties: ["lymphoedema"], subcategory: "LVA (Supermicrosurgery)", tags: ["supermicrosurgery", "microsurgery"], sortOrder: 2 },
+  { id: "lymph_lva_cervical", displayName: "LVA — cervical / head & neck", snomedCtCode: "264597004", snomedCtDisplay: "Microsurgery (procedure)", specialties: ["lymphoedema", "head_neck"], subcategory: "LVA (Supermicrosurgery)", tags: ["supermicrosurgery", "microsurgery"], sortOrder: 3 },
+  { id: "lymph_lympha", displayName: "LYMPHA (lymphatic microsurgical preventive healing approach)", snomedCtCode: "264597004", snomedCtDisplay: "Prophylactic lymphovenous anastomosis (procedure)", specialties: ["lymphoedema"], subcategory: "LVA (Supermicrosurgery)", tags: ["supermicrosurgery", "microsurgery", "prophylactic"], sortOrder: 4 },
+  { id: "lymph_elva", displayName: "Efferent LVA (prophylactic/subclinical)", snomedCtCode: "264597004", snomedCtDisplay: "Microsurgery (procedure)", specialties: ["lymphoedema"], subcategory: "LVA (Supermicrosurgery)", tags: ["supermicrosurgery", "microsurgery", "prophylactic"], sortOrder: 5 },
+  { id: "lymph_dc_lva", displayName: "Deep cervical LVA (glymphatic/experimental)", snomedCtCode: "264597004", snomedCtDisplay: "Microsurgery (procedure)", specialties: ["lymphoedema"], subcategory: "LVA (Supermicrosurgery)", tags: ["supermicrosurgery", "microsurgery", "experimental"], sortOrder: 6 },
+];
+
+// 4B. Vascularized Lymph Node Transfer — VLNT (all hasFreeFlap: true)
+const LYMPH_VLNT: ProcedurePicklistEntry[] = [
+  { id: "lymph_vlnt_submental", displayName: "VLNT — submental donor", snomedCtCode: "234019008", snomedCtDisplay: "Free flap reconstruction (procedure)", specialties: ["lymphoedema"], subcategory: "VLNT (Free Flap)", tags: ["free_flap", "microsurgery"], hasFreeFlap: true, sortOrder: 1 }, // VERIFY
+  { id: "lymph_vlnt_supraclavicular", displayName: "VLNT — supraclavicular donor", snomedCtCode: "234019008", snomedCtDisplay: "Free flap reconstruction (procedure)", specialties: ["lymphoedema"], subcategory: "VLNT (Free Flap)", tags: ["free_flap", "microsurgery"], hasFreeFlap: true, sortOrder: 2 },
+  { id: "lymph_vlnt_lateral_thoracic", displayName: "VLNT — lateral thoracic donor", snomedCtCode: "234019008", snomedCtDisplay: "Free flap reconstruction (procedure)", specialties: ["lymphoedema"], subcategory: "VLNT (Free Flap)", tags: ["free_flap", "microsurgery"], hasFreeFlap: true, sortOrder: 3 },
+  { id: "lymph_vlnt_thoracodorsal", displayName: "VLNT — thoracodorsal donor", snomedCtCode: "234019008", snomedCtDisplay: "Free flap reconstruction (procedure)", specialties: ["lymphoedema"], subcategory: "VLNT (Free Flap)", tags: ["free_flap", "microsurgery"], hasFreeFlap: true, sortOrder: 4 },
+  { id: "lymph_vlnt_inguinal", displayName: "VLNT — inguinal / groin (SCIP-based) donor", snomedCtCode: "234019008", snomedCtDisplay: "Free flap reconstruction (procedure)", specialties: ["lymphoedema"], subcategory: "VLNT (Free Flap)", tags: ["free_flap", "microsurgery"], hasFreeFlap: true, sortOrder: 5 },
+  { id: "lymph_vlnt_gastroepiploic", displayName: "VLNT — gastroepiploic / omental donor", snomedCtCode: "234019008", snomedCtDisplay: "Free flap reconstruction (procedure)", specialties: ["lymphoedema"], subcategory: "VLNT (Free Flap)", tags: ["free_flap", "microsurgery"], hasFreeFlap: true, sortOrder: 6 },
+  { id: "lymph_vlnt_jejunal", displayName: "VLNT — jejunal mesenteric donor", snomedCtCode: "234019008", snomedCtDisplay: "Free flap reconstruction (procedure)", specialties: ["lymphoedema"], subcategory: "VLNT (Free Flap)", tags: ["free_flap", "microsurgery"], hasFreeFlap: true, sortOrder: 7 },
+  { id: "lymph_vlnt_combined_diep", displayName: "VLNT combined with DIEP flap", snomedCtCode: "234019008", snomedCtDisplay: "Free flap reconstruction (procedure)", specialties: ["lymphoedema", "breast"], subcategory: "VLNT (Free Flap)", tags: ["free_flap", "microsurgery"], hasFreeFlap: true, sortOrder: 8 },
+  { id: "lymph_vlnt_other", displayName: "VLNT — other donor site", snomedCtCode: "234019008", snomedCtDisplay: "Free flap reconstruction (procedure)", specialties: ["lymphoedema"], subcategory: "VLNT (Free Flap)", tags: ["free_flap", "microsurgery"], hasFreeFlap: true, sortOrder: 9 },
+];
+
+// 4C. Debulking / Ablative
+const LYMPH_DEBULKING: ProcedurePicklistEntry[] = [
+  { id: "lymph_sapl", displayName: "Suction-assisted protein lipectomy (SAPL / Brorson technique)", snomedCtCode: "302441004", snomedCtDisplay: "Liposuction (procedure)", specialties: ["lymphoedema"], subcategory: "Debulking / Ablative", tags: ["debulking"], sortOrder: 1 }, // VERIFY
+  { id: "lymph_lipo_lipedema", displayName: "Liposuction for lipedema (tumescent)", snomedCtCode: "302441004", snomedCtDisplay: "Liposuction (procedure)", specialties: ["lymphoedema"], subcategory: "Debulking / Ablative", tags: ["debulking"], sortOrder: 2 },
+  { id: "lymph_charles", displayName: "Charles procedure (radical excision + STSG)", snomedCtCode: "234097001", snomedCtDisplay: "Radical excision (procedure)", specialties: ["lymphoedema"], subcategory: "Debulking / Ablative", tags: ["debulking"], sortOrder: 3 }, // VERIFY
+  { id: "lymph_charles_modified", displayName: "Modified Charles procedure (\u00b1 VLNT)", snomedCtCode: "234097001", snomedCtDisplay: "Radical excision (procedure)", specialties: ["lymphoedema"], subcategory: "Debulking / Ablative", tags: ["debulking"], sortOrder: 4 }, // VERIFY
+  { id: "lymph_staged_reduction", displayName: "Staged debulking / direct excision", snomedCtCode: "234097001", snomedCtDisplay: "Excision (procedure)", specialties: ["lymphoedema"], subcategory: "Debulking / Ablative", tags: ["debulking"], sortOrder: 5 }, // VERIFY
+  { id: "lymph_genital_excision", displayName: "Genital lymphoedema excision + reconstruction", snomedCtCode: "234097001", snomedCtDisplay: "Excision (procedure)", specialties: ["lymphoedema"], subcategory: "Debulking / Ablative", tags: ["debulking"], sortOrder: 6 }, // VERIFY
+];
+
+// 4D. Combined / Staged Approaches
+const LYMPH_COMBINED: ProcedurePicklistEntry[] = [
+  { id: "lymph_combined_lva_vlnt", displayName: "Combined LVA + VLNT (same session)", snomedCtCode: "264597004", snomedCtDisplay: "Microsurgery (procedure)", specialties: ["lymphoedema"], subcategory: "Combined / Staged", tags: ["supermicrosurgery", "free_flap", "microsurgery"], hasFreeFlap: true, sortOrder: 1 },
+  { id: "lymph_staged_physio_debulk", displayName: "Staged: physiological procedure + later debulking", snomedCtCode: "264597004", snomedCtDisplay: "Microsurgery (procedure)", specialties: ["lymphoedema"], subcategory: "Combined / Staged", tags: ["supermicrosurgery"], sortOrder: 2 },
+  { id: "lymph_simultaneous_breast_vlnt", displayName: "Simultaneous autologous breast reconstruction + VLNT", snomedCtCode: "234019008", snomedCtDisplay: "Free flap reconstruction (procedure)", specialties: ["lymphoedema", "breast"], subcategory: "Combined / Staged", tags: ["free_flap", "microsurgery"], hasFreeFlap: true, sortOrder: 3 },
+];
+
+// 4E. Lymphatic Malformation & Chylous Procedures
+const LYMPH_MALFORMATION: ProcedurePicklistEntry[] = [
+  { id: "lymph_malf_excision", displayName: "Excision of lymphatic malformation", snomedCtCode: "174481005", snomedCtDisplay: "Excision of lymphangioma (procedure)", specialties: ["lymphoedema", "general"], subcategory: "Malformation & Chylous", tags: ["elective"], sortOrder: 1 },
+  { id: "lymph_malf_sclerotherapy", displayName: "Sclerotherapy for lymphatic malformation", snomedCtCode: "234097001", snomedCtDisplay: "Sclerotherapy (procedure)", specialties: ["lymphoedema", "general"], subcategory: "Malformation & Chylous", tags: ["elective"], sortOrder: 2 }, // VERIFY
+  { id: "lymph_thoracic_duct_ligation", displayName: "Thoracic duct ligation", snomedCtCode: "13782005", snomedCtDisplay: "Ligation of thoracic duct (procedure)", specialties: ["lymphoedema", "general"], subcategory: "Malformation & Chylous", tags: ["elective"], sortOrder: 3 },
+  { id: "lymph_thoracic_duct_embolisation", displayName: "Thoracic duct embolisation", snomedCtCode: "234097001", snomedCtDisplay: "Thoracic duct embolisation (procedure)", specialties: ["lymphoedema"], subcategory: "Malformation & Chylous", tags: ["elective"], sortOrder: 4 }, // VERIFY
+  { id: "lymph_lla", displayName: "Lymphaticolymphatic anastomosis (LLA)", snomedCtCode: "264597004", snomedCtDisplay: "Microsurgery (procedure)", specialties: ["lymphoedema"], subcategory: "Malformation & Chylous", tags: ["supermicrosurgery", "microsurgery"], sortOrder: 5 },
+];
+
+// 4F. Support / Adjunct
+const LYMPH_SUPPORT: ProcedurePicklistEntry[] = [
+  { id: "lymph_fat_grafting", displayName: "Fat grafting for lymphoedema", snomedCtCode: "302441004", snomedCtDisplay: "Autologous fat transfer (procedure)", specialties: ["lymphoedema"], subcategory: "Support / Adjunct", tags: ["elective"], sortOrder: 1 }, // VERIFY
+  { id: "lymph_robotic_lva", displayName: "Robot-assisted LVA (Symani/MUSA)", snomedCtCode: "264597004", snomedCtDisplay: "Microsurgery (procedure)", specialties: ["lymphoedema"], subcategory: "Support / Adjunct", tags: ["supermicrosurgery", "microsurgery", "experimental"], sortOrder: 2 },
+  { id: "lymph_revision_lva", displayName: "Revision / redo LVA", snomedCtCode: "264597004", snomedCtDisplay: "Microsurgery (procedure)", specialties: ["lymphoedema"], subcategory: "Support / Adjunct", tags: ["supermicrosurgery", "microsurgery"], sortOrder: 3 },
+  { id: "lymph_icg", displayName: "ICG lymphography (diagnostic)", snomedCtCode: "264597004", snomedCtDisplay: "Indocyanine green lymphography (procedure)", specialties: ["lymphoedema"], subcategory: "Support / Adjunct", tags: ["elective"], sortOrder: 4 }, // VERIFY
+];
+
+// Backward-compatible alias: keep old array name for the spread in PROCEDURE_PICKLIST
 const LYMPHOEDEMA_ADDITIONAL: ProcedurePicklistEntry[] = [
-  {
-    id: "lymph_lva_upper",
-    displayName: "Lymphovenous anastomosis (LVA) — upper limb",
-    snomedCtCode: "122465003",
-    snomedCtDisplay: "Lymphovenous anastomosis of upper limb (procedure)",
-    specialties: ["lymphoedema"],
-    subcategory: "Physiological (LVA)",
-    tags: ["microsurgery"],
-    sortOrder: 1,
-  },
-  {
-    id: "lymph_lva_lower",
-    displayName: "Lymphovenous anastomosis (LVA) — lower limb",
-    snomedCtCode: "122465003",
-    snomedCtDisplay: "Lymphovenous anastomosis of lower limb (procedure)",
-    specialties: ["lymphoedema"],
-    subcategory: "Physiological (LVA)",
-    tags: ["microsurgery"],
-    sortOrder: 2,
-  },
-  {
-    id: "lymph_vlnt_groin",
-    displayName: "VLNT — groin donor (SIEA/SCIP)",
-    snomedCtCode: "122465003",
-    snomedCtDisplay: "Vascularised lymph node transfer from groin (procedure)",
-    specialties: ["lymphoedema"],
-    subcategory: "Physiological (VLNT)",
-    tags: ["free_flap", "microsurgery"],
-    sortOrder: 1,
-  },
-  {
-    id: "lymph_vlnt_submental",
-    displayName: "VLNT — submental donor",
-    snomedCtCode: "122465003",
-    snomedCtDisplay:
-      "Vascularised lymph node transfer from submental region (procedure)",
-    specialties: ["lymphoedema"],
-    subcategory: "Physiological (VLNT)",
-    tags: ["free_flap", "microsurgery"],
-    sortOrder: 2,
-  },
-  {
-    id: "lymph_vlnt_supraclavicular",
-    displayName: "VLNT — supraclavicular donor",
-    snomedCtCode: "122465003",
-    snomedCtDisplay:
-      "Vascularised lymph node transfer from supraclavicular region (procedure)",
-    specialties: ["lymphoedema"],
-    subcategory: "Physiological (VLNT)",
-    tags: ["free_flap", "microsurgery"],
-    sortOrder: 3,
-  },
-  {
-    id: "lymph_vlnt_omental",
-    displayName: "VLNT — omental donor",
-    snomedCtCode: "122465003",
-    snomedCtDisplay: "Vascularised omental lymph node transfer (procedure)",
-    specialties: ["lymphoedema"],
-    subcategory: "Physiological (VLNT)",
-    tags: ["free_flap", "microsurgery"],
-    sortOrder: 4,
-  },
-  {
-    id: "lymph_combined_lva_vlnt",
-    displayName: "Combined LVA + VLNT",
-    snomedCtCode: "122465003",
-    snomedCtDisplay:
-      "Combined lymphovenous anastomosis and lymph node transfer (procedure)",
-    specialties: ["lymphoedema"],
-    subcategory: "Combined Procedures",
-    tags: ["free_flap", "microsurgery"],
-    sortOrder: 1,
-  },
-  {
-    id: "lymph_lympha",
-    displayName: "LYMPHA (lymphatic microsurgical preventive healing approach)",
-    snomedCtCode: "122465003",
-    snomedCtDisplay: "Prophylactic lymphovenous anastomosis (procedure)",
-    specialties: ["lymphoedema"],
-    subcategory: "Physiological (LVA)",
-    tags: ["microsurgery"],
-    sortOrder: 5,
-  },
-  {
-    id: "lymph_icg",
-    displayName: "ICG lymphography (diagnostic)",
-    snomedCtCode: "122465003",
-    snomedCtDisplay: "Indocyanine green lymphography (procedure)",
-    specialties: ["lymphoedema"],
-    subcategory: "Diagnostic",
-    tags: ["elective"],
-    sortOrder: 1,
-  },
+  ...LYMPH_LVA,
+  ...LYMPH_VLNT,
+  ...LYMPH_DEBULKING,
+  ...LYMPH_COMBINED,
+  ...LYMPH_MALFORMATION,
+  ...LYMPH_SUPPORT,
 ];
 
 // ═══════════════════════════════════════════════════════════════════════════

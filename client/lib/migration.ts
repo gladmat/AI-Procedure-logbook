@@ -107,6 +107,35 @@ function migrateSnomedCodes(c: Case): Case {
 }
 
 /**
+ * Migrate old `le_dx_*` lymphoedema diagnosis IDs → `lymph_dx_*` prefix.
+ * Part of the lymphoedema module overhaul that expanded from 7 to 29 diagnoses.
+ */
+const LYMPHOEDEMA_DX_ID_MAP: Record<string, string> = {
+  le_dx_primary_congenital: "lymph_dx_milroy",
+  le_dx_primary_praecox: "lymph_dx_meige",
+  le_dx_primary_tarda: "lymph_dx_tarda",
+  le_dx_secondary_post_lymphadenectomy: "lymph_dx_bcrl_upper",
+  le_dx_secondary_post_radiation: "lymph_dx_post_radiation_le",
+  le_dx_upper_limb: "lymph_dx_bcrl_upper",
+  le_dx_lower_limb: "lymph_dx_gynae_lower",
+};
+
+function migrateLymphoedemaPicklistIds(c: Case): Case {
+  let changed = false;
+  const updatedGroups = c.diagnosisGroups.map((group) => {
+    const newId = group.diagnosisPicklistId
+      ? LYMPHOEDEMA_DX_ID_MAP[group.diagnosisPicklistId]
+      : undefined;
+    if (newId) {
+      changed = true;
+      return { ...group, diagnosisPicklistId: newId };
+    }
+    return group;
+  });
+  return changed ? { ...c, diagnosisGroups: updatedGroups } : c;
+}
+
+/**
  * Migrate old `hand_dx_dupuytren` picklist ID → `hand_dx_dupuytren_primary`.
  * Ensures edit-mode can resolve the picklist entry after the diagnosis split.
  */
@@ -477,6 +506,7 @@ export function migrateCase(raw: unknown): Case {
       migrated = normalizeCaseDateOnlyFields(migrated);
       migrated = normalizeCaseBreastFields(migrated);
       migrated = migrateBreastFlapToAnastomoses(migrated);
+      migrated = migrateLymphoedemaPicklistIds(migrated);
       migrated = repairCaseSpecialty(migrated);
       if (
         !migrated.schemaVersion ||

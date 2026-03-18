@@ -258,7 +258,11 @@ export type ProcedureTag =
   | "presurgical"
   | "non_surgical_injectable"
   | "non_surgical_energy"
-  | "non_surgical_skin_treatment";
+  | "non_surgical_skin_treatment"
+  | "supermicrosurgery"
+  | "prophylactic"
+  | "debulking"
+  | "experimental";
 
 export type ASAScore = 1 | 2 | 3 | 4 | 5 | 6;
 
@@ -1781,6 +1785,12 @@ export interface CaseProcedure {
   implantDetails?: JointImplantDetails;
   /** Burn-specific procedure details (graft, excision, dermal substitute, etc.) */
   burnProcedureDetails?: import("./burns").BurnProcedureDetails;
+  /** LVA per-anastomosis operative details (lymphatic surgery) */
+  lvaOperativeDetails?: import("./lymphatic").LVAOperativeDetails;
+  /** VLNT donor-specific details extending free flap (lymphatic surgery) */
+  vlntDetails?: import("./lymphatic").VLNTSpecificDetails;
+  /** SAPL / liposuction operative details (lymphatic surgery) */
+  saplDetails?: import("./lymphatic").SAPLOperativeDetails;
   notes?: string;
   /** Which specific digit this procedure targets (for multi-digit cases like trigger finger). */
   digitId?: DigitId;
@@ -1875,6 +1885,8 @@ export interface DiagnosisGroup {
   burnsAssessment?: import("./burns").BurnsAssessmentData;
   /** Peripheral nerve assessment data (Sunderland grade, EDX, brachial plexus, neuroma) */
   peripheralNerveAssessment?: import("./peripheralNerve").PeripheralNerveAssessmentData;
+  /** Lymphoedema assessment data (ISL staging, ICG, bioimpedance, limb measurements, history) */
+  lymphoedemaAssessment?: import("./lymphatic").LymphaticAssessment;
 }
 
 export type GeneralHistologyCategory =
@@ -2263,6 +2275,10 @@ export const PROCEDURE_TAG_LABELS: Record<ProcedureTag, string> = {
   non_surgical_injectable: "Non-Surgical Injectable",
   non_surgical_energy: "Non-Surgical Energy",
   non_surgical_skin_treatment: "Non-Surgical Skin Treatment",
+  supermicrosurgery: "Supermicrosurgery",
+  prophylactic: "Prophylactic",
+  debulking: "Debulking",
+  experimental: "Experimental",
 };
 
 // RACS MALT Supervision Level Labels
