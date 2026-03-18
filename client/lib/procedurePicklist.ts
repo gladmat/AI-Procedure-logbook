@@ -5379,6 +5379,26 @@ const AESTHETICS_FACELIFT: ProcedurePicklistEntry[] = [
     tags: ["elective"],
     sortOrder: 10,
   },
+  {
+    id: "aes_lip_lift",
+    displayName: "Lip lift (subnasal bullhorn)",
+    snomedCtCode: "286553006", // VERIFY
+    snomedCtDisplay: "Plastic operation on face (procedure)",
+    specialties: ["aesthetics"],
+    subcategory: "Facial Rejuvenation",
+    tags: ["elective"],
+    sortOrder: 11,
+  },
+  {
+    id: "aes_face_chin_implant",
+    displayName: "Chin implant (mentoplasty)",
+    snomedCtCode: "69031006", // VERIFY
+    snomedCtDisplay: "Insertion of chin prosthesis (procedure)",
+    specialties: ["aesthetics"],
+    subcategory: "Facial Rejuvenation",
+    tags: ["elective"],
+    sortOrder: 12,
+  },
 ];
 
 const AESTHETICS_RHINOPLASTY: ProcedurePicklistEntry[] = [
@@ -5788,6 +5808,82 @@ const AESTHETICS_BODY: ProcedurePicklistEntry[] = [
     subcategory: "Body Aesthetics",
     tags: ["elective"],
     sortOrder: 6,
+  },
+];
+
+const AESTHETICS_ENERGY: ProcedurePicklistEntry[] = [
+  {
+    id: "aes_energy_rf_microneedling",
+    displayName: "Radiofrequency microneedling",
+    snomedCtCode: "441900009", // VERIFY
+    snomedCtDisplay: "Radiofrequency procedure on skin (procedure)",
+    specialties: ["aesthetics"],
+    subcategory: "Energy-Based Devices",
+    tags: ["elective"],
+    sortOrder: 1,
+  },
+  {
+    id: "aes_energy_hifu",
+    displayName: "High-intensity focused ultrasound (HIFU)",
+    snomedCtCode: "441900009", // VERIFY
+    snomedCtDisplay: "High-intensity focused ultrasound of skin (procedure)",
+    specialties: ["aesthetics"],
+    subcategory: "Energy-Based Devices",
+    tags: ["elective"],
+    sortOrder: 2,
+  },
+  {
+    id: "aes_energy_monopolar_rf",
+    displayName: "Monopolar radiofrequency skin tightening",
+    snomedCtCode: "441900009", // VERIFY
+    snomedCtDisplay: "Radiofrequency skin tightening (procedure)",
+    specialties: ["aesthetics"],
+    subcategory: "Energy-Based Devices",
+    tags: ["elective"],
+    sortOrder: 3,
+  },
+];
+
+const AESTHETICS_GENITAL: ProcedurePicklistEntry[] = [
+  {
+    id: "aes_genital_clitoral_hood",
+    displayName: "Clitoral hood reduction",
+    snomedCtCode: "176275007", // VERIFY
+    snomedCtDisplay: "Reduction of clitoral hood (procedure)",
+    specialties: ["aesthetics"],
+    subcategory: "Genital Aesthetics",
+    tags: ["elective"],
+    sortOrder: 1,
+  },
+  {
+    id: "aes_genital_vaginoplasty",
+    displayName: "Vaginoplasty (aesthetic)",
+    snomedCtCode: "176275007", // VERIFY
+    snomedCtDisplay: "Aesthetic vaginoplasty (procedure)",
+    specialties: ["aesthetics"],
+    subcategory: "Genital Aesthetics",
+    tags: ["elective"],
+    sortOrder: 2,
+  },
+  {
+    id: "aes_genital_monsplasty",
+    displayName: "Monsplasty (mons pubis reduction)",
+    snomedCtCode: "286553006", // VERIFY
+    snomedCtDisplay: "Monsplasty (procedure)",
+    specialties: ["aesthetics"],
+    subcategory: "Genital Aesthetics",
+    tags: ["elective"],
+    sortOrder: 3,
+  },
+  {
+    id: "aes_genital_penile",
+    displayName: "Penile aesthetic procedure",
+    snomedCtCode: "286553006", // VERIFY
+    snomedCtDisplay: "Plastic operation on penis (procedure)",
+    specialties: ["aesthetics"],
+    subcategory: "Genital Aesthetics",
+    tags: ["elective"],
+    sortOrder: 4,
   },
 ];
 
@@ -6672,6 +6768,8 @@ export const PROCEDURE_PICKLIST: ProcedurePicklistEntry[] = [
   ...AESTHETICS_SKIN_RESURFACING,
   ...AESTHETICS_HAIR,
   ...AESTHETICS_BODY,
+  ...AESTHETICS_ENERGY,
+  ...AESTHETICS_GENITAL,
   // Body Contouring
   ...BODY_CONTOUR_ABDOMINOPLASTY,
   ...BODY_CONTOUR_UPPER,

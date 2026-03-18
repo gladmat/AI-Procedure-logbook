@@ -94,6 +94,13 @@ export interface DiagnosisPicklistEntry {
     | "aesthetic"
     | "gender_affirming";
 
+  /** Aesthetic intent modifier — cosmetic by default, overridable per-diagnosis */
+  intent?:
+    | "cosmetic"
+    | "post_bariatric_mwl"
+    | "functional_reconstructive"
+    | "combined";
+
   /** Whether this diagnosis has staging/grading in diagnosisStagingConfig */
   hasStaging: boolean;
 

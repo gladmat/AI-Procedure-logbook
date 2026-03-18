@@ -83,7 +83,7 @@ const DIAGNOSIS_INTENT_MAP: Record<string, AestheticIntent> = {
   aes_dx_hyperhidrosis: "functional_reconstructive",
   // Combined
   aes_dx_diastasis_recti: "combined",
-  aes_dx_dermatochalasis_upper: "cosmetic", // can be overridden to functional
+  aes_dx_upper_eyelid_dermatochalasis: "cosmetic", // can be overridden to functional
   aes_dx_labia_hypertrophy: "cosmetic", // can be overridden to functional
 };
 
@@ -185,10 +185,10 @@ export const COMBINATION_PRESETS = {
   full_facelift: {
     label: "Full Facelift",
     procedures: [
-      "aes_facelift_deep_plane",
-      "aes_facelift_neck_lift",
-      "aes_bleph_upper",
-      "aes_body_fat_transfer_face",
+      "aes_face_deep_plane",
+      "aes_face_neck_lift",
+      "aes_face_upper_bleph",
+      "aes_face_fat_transfer",
     ],
     description: "Facelift + neck lift ± blepharoplasty ± fat grafting",
   },
@@ -200,8 +200,8 @@ export const COMBINATION_PRESETS = {
   post_bariatric_lower: {
     label: "Post-Bariatric Lower Body",
     procedures: [
-      "bc_postbar_circumferential_body_lift",
-      "bc_lower_medial_thigh",
+      "bc_postbar_combined_upper_lower",
+      "bc_lower_thigh_lift_medial",
       "aes_body_liposuction",
     ],
     description: "Lower body lift + thighplasty ± liposuction",

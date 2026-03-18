@@ -69,7 +69,7 @@ export type {
 export const ALL_DIAGNOSES: DiagnosisPicklistEntry[] = [
   ...HAND_SURGERY_DIAGNOSES,
   ...BURNS_DIAGNOSES,
-  ...BODY_CONTOURING_DIAGNOSES,
+  // Body contouring now absorbed into AESTHETICS_DIAGNOSES (Phase 2 merge)
   ...BREAST_DIAGNOSES,
   ...AESTHETICS_DIAGNOSES,
   ...GENERAL_DIAGNOSES,
@@ -87,9 +87,9 @@ export const ALL_DIAGNOSES: DiagnosisPicklistEntry[] = [
 const SPECIALTY_MAP: Partial<Record<Specialty, DiagnosisPicklistEntry[]>> = {
   hand_wrist: HAND_SURGERY_DIAGNOSES,
   burns: BURNS_DIAGNOSES,
-  body_contouring: [...AESTHETICS_DIAGNOSES, ...BODY_CONTOURING_DIAGNOSES],
+  body_contouring: AESTHETICS_DIAGNOSES,
   breast: BREAST_DIAGNOSES,
-  aesthetics: [...AESTHETICS_DIAGNOSES, ...BODY_CONTOURING_DIAGNOSES],
+  aesthetics: AESTHETICS_DIAGNOSES,
   general: [...GENERAL_DIAGNOSES, ...HN_DX_SKIN_CANCER],
   head_neck: [...HEAD_NECK_DIAGNOSES, ...GEN_DX_SKIN_CANCER],
   orthoplastic: ORTHOPLASTIC_DIAGNOSES,
@@ -160,6 +160,19 @@ const DIAGNOSIS_ID_ALIASES: Record<string, string> = {
   // Unified trigger digit: merged from separate finger/thumb entries
   hand_dx_trigger_finger: "hand_dx_trigger_digit",
   hand_dx_trigger_thumb: "hand_dx_trigger_digit",
+  // Body contouring → aesthetics merge (Phase 2)
+  bc_dx_abdominal_excess: "aes_dx_abdominal_excess",
+  bc_dx_panniculitis: "aes_dx_panniculitis",
+  bc_dx_diastasis: "aes_dx_diastasis_recti",
+  bc_dx_upper_arm_excess: "aes_dx_upper_arm_excess",
+  bc_dx_back_excess: "aes_dx_back_excess",
+  bc_dx_thigh_excess: "aes_dx_thigh_excess",
+  bc_dx_buttock_ptosis: "aes_dx_buttock_ptosis",
+  bc_dx_mons: "aes_dx_mons",
+  bc_dx_post_bariatric_trunk: "aes_dx_post_bariatric_body",
+  bc_dx_post_bariatric_arms: "aes_dx_post_bariatric_arm",
+  bc_dx_post_bariatric_thighs: "aes_dx_post_bariatric_thigh",
+  bc_dx_lipodystrophy: "aes_dx_lipodystrophy",
 };
 
 function getIdIndex(): Map<string, DiagnosisPicklistEntry> {
