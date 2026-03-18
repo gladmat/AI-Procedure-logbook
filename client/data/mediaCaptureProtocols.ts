@@ -363,7 +363,7 @@ export const AESTHETIC_BODY_PROTOCOL: CaptureProtocol = {
   label: "Aesthetic \u2014 Body Contouring (6-view)",
   description: "Abdominoplasty, liposuction, body contouring series",
   activationRules: {
-    specialties: ["body_contouring"],
+    specialties: ["aesthetics", "body_contouring"],
   },
   steps: [
     {

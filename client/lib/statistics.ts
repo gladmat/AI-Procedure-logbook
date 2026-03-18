@@ -792,14 +792,22 @@ export function calculateBreastStatistics(cases: Case[]): BreastStatistics {
 export function calculateBodyContouringStatistics(
   cases: Case[],
 ): BodyContouringStatistics {
-  const bodyContouringCases = cases.filter((c) =>
-    caseMatchesSpecialty(c, "body_contouring"),
+  const bodyContouringCases = cases.filter(
+    (c) =>
+      caseMatchesSpecialty(c, "body_contouring") ||
+      caseMatchesSpecialty(c, "aesthetics"),
   );
   const base = calculateBaseStatistics(bodyContouringCases);
 
   const resectionWeights: number[] = [];
   bodyContouringCases.forEach((c) => {
-    getProceduresForSpecialty(c, "body_contouring").forEach((proc) => {
+    const bcProcs = getProceduresForSpecialty(c, "body_contouring");
+    const aesProcs = getProceduresForSpecialty(c, "aesthetics");
+    const allProcs = [
+      ...bcProcs,
+      ...aesProcs.filter((p) => !bcProcs.some((bp) => bp.id === p.id)),
+    ];
+    allProcs.forEach((proc) => {
       const details = proc.clinicalDetails as
         | { resectionWeightGrams?: number }
         | undefined;
@@ -832,6 +840,7 @@ export function calculateStatistics(
     case "hand_wrist":
       return calculateHandSurgeryStatistics(cases);
     case "body_contouring":
+    case "aesthetics":
       return calculateBodyContouringStatistics(cases);
     case "breast":
       return calculateBreastStatistics(cases);

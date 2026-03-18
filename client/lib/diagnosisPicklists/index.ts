@@ -87,9 +87,9 @@ export const ALL_DIAGNOSES: DiagnosisPicklistEntry[] = [
 const SPECIALTY_MAP: Partial<Record<Specialty, DiagnosisPicklistEntry[]>> = {
   hand_wrist: HAND_SURGERY_DIAGNOSES,
   burns: BURNS_DIAGNOSES,
-  body_contouring: BODY_CONTOURING_DIAGNOSES,
+  body_contouring: [...AESTHETICS_DIAGNOSES, ...BODY_CONTOURING_DIAGNOSES],
   breast: BREAST_DIAGNOSES,
-  aesthetics: AESTHETICS_DIAGNOSES,
+  aesthetics: [...AESTHETICS_DIAGNOSES, ...BODY_CONTOURING_DIAGNOSES],
   general: [...GENERAL_DIAGNOSES, ...HN_DX_SKIN_CANCER],
   head_neck: [...HEAD_NECK_DIAGNOSES, ...GEN_DX_SKIN_CANCER],
   orthoplastic: ORTHOPLASTIC_DIAGNOSES,

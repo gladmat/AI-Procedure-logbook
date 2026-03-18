@@ -11,6 +11,7 @@
  */
 
 import type { Specialty, ProcedureTag, FreeFlap } from "@/types/case";
+import { resolveSpecialty } from "./aestheticsConfig";
 
 export interface ProcedurePicklistEntry {
   id: string;
@@ -5733,7 +5734,7 @@ const AESTHETICS_BODY: ProcedurePicklistEntry[] = [
     displayName: "Liposuction (any site — specify in notes)",
     snomedCtCode: "302441008",
     snomedCtDisplay: "Liposuction (procedure)",
-    specialties: ["aesthetics", "body_contouring"],
+    specialties: ["aesthetics"],
     subcategory: "Body Aesthetics",
     tags: ["elective"],
     sortOrder: 1,
@@ -5743,7 +5744,7 @@ const AESTHETICS_BODY: ProcedurePicklistEntry[] = [
     displayName: "High-definition liposuction / VASER",
     snomedCtCode: "302441008", // VERIFY
     snomedCtDisplay: "Ultrasound-assisted liposuction (procedure)",
-    specialties: ["aesthetics", "body_contouring"],
+    specialties: ["aesthetics"],
     subcategory: "Body Aesthetics",
     tags: ["elective"],
     sortOrder: 2,
@@ -5753,7 +5754,7 @@ const AESTHETICS_BODY: ProcedurePicklistEntry[] = [
     displayName: "Fat transfer — buttock (BBL)",
     snomedCtCode: "37834008", // VERIFY
     snomedCtDisplay: "Lipofilling of buttock (procedure)",
-    specialties: ["aesthetics", "body_contouring"],
+    specialties: ["aesthetics"],
     subcategory: "Body Aesthetics",
     tags: ["elective"],
     sortOrder: 3,
@@ -5801,7 +5802,7 @@ const BODY_CONTOUR_ABDOMINOPLASTY: ProcedurePicklistEntry[] = [
     displayName: "Abdominoplasty — full (with muscle plication)",
     snomedCtCode: "72310004",
     snomedCtDisplay: "Abdominoplasty (procedure)",
-    specialties: ["body_contouring"],
+    specialties: ["aesthetics"],
     subcategory: "Abdominoplasty",
     tags: ["elective"],
     sortOrder: 1,
@@ -5811,7 +5812,7 @@ const BODY_CONTOUR_ABDOMINOPLASTY: ProcedurePicklistEntry[] = [
     displayName: "Mini abdominoplasty",
     snomedCtCode: "72310004", // VERIFY
     snomedCtDisplay: "Mini abdominoplasty (procedure)",
-    specialties: ["body_contouring"],
+    specialties: ["aesthetics"],
     subcategory: "Abdominoplasty",
     tags: ["elective"],
     sortOrder: 2,
@@ -5821,7 +5822,7 @@ const BODY_CONTOUR_ABDOMINOPLASTY: ProcedurePicklistEntry[] = [
     displayName: "Extended abdominoplasty (with lateral extension)",
     snomedCtCode: "72310004", // VERIFY
     snomedCtDisplay: "Extended abdominoplasty (procedure)",
-    specialties: ["body_contouring"],
+    specialties: ["aesthetics"],
     subcategory: "Abdominoplasty",
     tags: ["elective"],
     sortOrder: 3,
@@ -5831,7 +5832,7 @@ const BODY_CONTOUR_ABDOMINOPLASTY: ProcedurePicklistEntry[] = [
     displayName: "Fleur-de-lis abdominoplasty",
     snomedCtCode: "72310004", // VERIFY
     snomedCtDisplay: "Fleur-de-lis abdominoplasty (procedure)",
-    specialties: ["body_contouring"],
+    specialties: ["aesthetics"],
     subcategory: "Abdominoplasty",
     tags: ["elective"],
     sortOrder: 4,
@@ -5841,7 +5842,7 @@ const BODY_CONTOUR_ABDOMINOPLASTY: ProcedurePicklistEntry[] = [
     displayName: "Reverse abdominoplasty",
     snomedCtCode: "72310004", // VERIFY
     snomedCtDisplay: "Reverse abdominoplasty (procedure)",
-    specialties: ["body_contouring"],
+    specialties: ["aesthetics"],
     subcategory: "Abdominoplasty",
     tags: ["elective"],
     sortOrder: 5,
@@ -5851,7 +5852,7 @@ const BODY_CONTOUR_ABDOMINOPLASTY: ProcedurePicklistEntry[] = [
     displayName: "Lipoabdominoplasty",
     snomedCtCode: "72310004", // VERIFY
     snomedCtDisplay: "Lipoabdominoplasty (procedure)",
-    specialties: ["body_contouring"],
+    specialties: ["aesthetics"],
     subcategory: "Abdominoplasty",
     tags: ["elective"],
     sortOrder: 6,
@@ -5861,7 +5862,7 @@ const BODY_CONTOUR_ABDOMINOPLASTY: ProcedurePicklistEntry[] = [
     displayName: "Panniculectomy (functional — non-cosmetic)",
     snomedCtCode: "86076005",
     snomedCtDisplay: "Panniculectomy (procedure)",
-    specialties: ["body_contouring"],
+    specialties: ["aesthetics"],
     subcategory: "Abdominoplasty",
     tags: ["elective"],
     sortOrder: 7,
@@ -5871,7 +5872,7 @@ const BODY_CONTOUR_ABDOMINOPLASTY: ProcedurePicklistEntry[] = [
     displayName: "Rectus diastasis repair (plication only — no skin excision)",
     snomedCtCode: "72310004", // VERIFY
     snomedCtDisplay: "Rectus abdominis plication (procedure)",
-    specialties: ["body_contouring"],
+    specialties: ["aesthetics"],
     subcategory: "Abdominoplasty",
     tags: ["elective"],
     sortOrder: 8,
@@ -5884,7 +5885,7 @@ const BODY_CONTOUR_UPPER: ProcedurePicklistEntry[] = [
     displayName: "Brachioplasty (arm lift)",
     snomedCtCode: "119954001",
     snomedCtDisplay: "Brachioplasty (procedure)",
-    specialties: ["body_contouring"],
+    specialties: ["aesthetics"],
     subcategory: "Upper Body Contouring",
     tags: ["elective"],
     sortOrder: 1,
@@ -5894,7 +5895,7 @@ const BODY_CONTOUR_UPPER: ProcedurePicklistEntry[] = [
     displayName: "Extended brachioplasty (arm + lateral chest wall)",
     snomedCtCode: "119954001", // VERIFY
     snomedCtDisplay: "Extended brachioplasty (procedure)",
-    specialties: ["body_contouring"],
+    specialties: ["aesthetics"],
     subcategory: "Upper Body Contouring",
     tags: ["elective"],
     sortOrder: 2,
@@ -5904,7 +5905,7 @@ const BODY_CONTOUR_UPPER: ProcedurePicklistEntry[] = [
     displayName: "Bra-line back lift (upper back excess)",
     snomedCtCode: "119954001",
     snomedCtDisplay: "Brachioplasty (procedure)",
-    specialties: ["body_contouring"],
+    specialties: ["aesthetics"],
     subcategory: "Upper Body Contouring",
     tags: ["elective"],
     sortOrder: 3,
@@ -5914,7 +5915,7 @@ const BODY_CONTOUR_UPPER: ProcedurePicklistEntry[] = [
     displayName: "Axillary roll excision",
     snomedCtCode: "119954001",
     snomedCtDisplay: "Brachioplasty (procedure)",
-    specialties: ["body_contouring"],
+    specialties: ["aesthetics"],
     subcategory: "Upper Body Contouring",
     tags: ["elective"],
     sortOrder: 4,
@@ -5927,7 +5928,7 @@ const BODY_CONTOUR_LOWER: ProcedurePicklistEntry[] = [
     displayName: "Thigh lift — medial",
     snomedCtCode: "392022003", // VERIFY
     snomedCtDisplay: "Thigh lift (procedure)",
-    specialties: ["body_contouring"],
+    specialties: ["aesthetics"],
     subcategory: "Lower Body Contouring",
     tags: ["elective"],
     sortOrder: 1,
@@ -5937,7 +5938,7 @@ const BODY_CONTOUR_LOWER: ProcedurePicklistEntry[] = [
     displayName: "Thigh lift — lateral / spiral",
     snomedCtCode: "392022003", // VERIFY
     snomedCtDisplay: "Thigh lift (procedure)",
-    specialties: ["body_contouring"],
+    specialties: ["aesthetics"],
     subcategory: "Lower Body Contouring",
     tags: ["elective"],
     sortOrder: 2,
@@ -5947,7 +5948,7 @@ const BODY_CONTOUR_LOWER: ProcedurePicklistEntry[] = [
     displayName: "Belt lipectomy (circumferential body lift)",
     snomedCtCode: "72310004",
     snomedCtDisplay: "Abdominoplasty (procedure)",
-    specialties: ["body_contouring"],
+    specialties: ["aesthetics"],
     subcategory: "Lower Body Contouring",
     tags: ["elective"],
     sortOrder: 3,
@@ -5957,7 +5958,7 @@ const BODY_CONTOUR_LOWER: ProcedurePicklistEntry[] = [
     displayName: "Lower body lift",
     snomedCtCode: "72310004",
     snomedCtDisplay: "Abdominoplasty (procedure)",
-    specialties: ["body_contouring"],
+    specialties: ["aesthetics"],
     subcategory: "Lower Body Contouring",
     tags: ["elective"],
     sortOrder: 4,
@@ -5967,7 +5968,7 @@ const BODY_CONTOUR_LOWER: ProcedurePicklistEntry[] = [
     displayName: "Knee lift / periarticular contouring",
     snomedCtCode: "286553006",
     snomedCtDisplay: "Plastic operation (procedure)",
-    specialties: ["body_contouring"],
+    specialties: ["aesthetics"],
     subcategory: "Lower Body Contouring",
     tags: ["elective"],
     sortOrder: 5,
@@ -5980,7 +5981,7 @@ const BODY_CONTOUR_BUTTOCK: ProcedurePicklistEntry[] = [
     displayName: "Buttock lift (excisional)",
     snomedCtCode: "72310004",
     snomedCtDisplay: "Abdominoplasty (procedure)",
-    specialties: ["body_contouring"],
+    specialties: ["aesthetics"],
     subcategory: "Buttock Procedures",
     tags: ["elective"],
     sortOrder: 1,
@@ -5990,7 +5991,7 @@ const BODY_CONTOUR_BUTTOCK: ProcedurePicklistEntry[] = [
     displayName: "Buttock implant",
     snomedCtCode: "69031006", // VERIFY
     snomedCtDisplay: "Insertion of buttock prosthesis (procedure)",
-    specialties: ["body_contouring"],
+    specialties: ["aesthetics"],
     subcategory: "Buttock Procedures",
     tags: ["elective"],
     sortOrder: 2,
@@ -6000,7 +6001,7 @@ const BODY_CONTOUR_BUTTOCK: ProcedurePicklistEntry[] = [
     displayName: "Buttock auto-augmentation (local flap / de-epithelialised)",
     snomedCtCode: "72310004",
     snomedCtDisplay: "Abdominoplasty (procedure)",
-    specialties: ["body_contouring"],
+    specialties: ["aesthetics"],
     subcategory: "Buttock Procedures",
     tags: ["elective"],
     sortOrder: 3,
@@ -6013,7 +6014,7 @@ const BODY_CONTOUR_POST_BARIATRIC: ProcedurePicklistEntry[] = [
     displayName: "Post-bariatric combined upper + lower body contouring",
     snomedCtCode: "72310004", // VERIFY
     snomedCtDisplay: "Post-bariatric body contouring (procedure)",
-    specialties: ["body_contouring"],
+    specialties: ["aesthetics"],
     subcategory: "Post-Bariatric",
     tags: ["elective"],
     sortOrder: 1,
@@ -6023,7 +6024,7 @@ const BODY_CONTOUR_POST_BARIATRIC: ProcedurePicklistEntry[] = [
     displayName: "Mons pubis lift / reduction",
     snomedCtCode: "286553006",
     snomedCtDisplay: "Plastic operation (procedure)",
-    specialties: ["body_contouring"],
+    specialties: ["aesthetics"],
     subcategory: "Post-Bariatric",
     tags: ["elective"],
     sortOrder: 2,
@@ -6033,7 +6034,7 @@ const BODY_CONTOUR_POST_BARIATRIC: ProcedurePicklistEntry[] = [
     displayName: "Redundant skin excision — other site (specify in notes)",
     snomedCtCode: "35646002", // VERIFY
     snomedCtDisplay: "Excision of redundant skin (procedure)",
-    specialties: ["body_contouring"],
+    specialties: ["aesthetics"],
     subcategory: "Post-Bariatric",
     tags: ["elective"],
     sortOrder: 3,
@@ -6046,7 +6047,7 @@ const BODY_CONTOUR_OTHER: ProcedurePicklistEntry[] = [
     displayName: "Calf implant",
     snomedCtCode: "69031006", // VERIFY
     snomedCtDisplay: "Insertion of calf prosthesis (procedure)",
-    specialties: ["body_contouring"],
+    specialties: ["aesthetics"],
     subcategory: "Other Body Contouring",
     tags: ["elective"],
     sortOrder: 1,
@@ -6056,7 +6057,7 @@ const BODY_CONTOUR_OTHER: ProcedurePicklistEntry[] = [
     displayName: "Pectoral implant",
     snomedCtCode: "69031006", // VERIFY
     snomedCtDisplay: "Insertion of pectoral prosthesis (procedure)",
-    specialties: ["body_contouring"],
+    specialties: ["aesthetics"],
     subcategory: "Other Body Contouring",
     tags: ["elective"],
     sortOrder: 2,
@@ -6066,7 +6067,7 @@ const BODY_CONTOUR_OTHER: ProcedurePicklistEntry[] = [
     displayName: "Body contouring scar revision",
     snomedCtCode: "234140001",
     snomedCtDisplay: "Revision of scar (procedure)",
-    specialties: ["body_contouring"],
+    specialties: ["aesthetics"],
     subcategory: "Other Body Contouring",
     tags: ["revision", "elective"],
     sortOrder: 3,
@@ -6076,7 +6077,7 @@ const BODY_CONTOUR_OTHER: ProcedurePicklistEntry[] = [
     displayName: "Dog-ear / skin excess revision",
     snomedCtCode: "234140001", // VERIFY
     snomedCtDisplay: "Revision of skin excess (procedure)",
-    specialties: ["body_contouring"],
+    specialties: ["aesthetics"],
     subcategory: "Other Body Contouring",
     tags: ["revision", "elective"],
     sortOrder: 4,
@@ -6086,7 +6087,7 @@ const BODY_CONTOUR_OTHER: ProcedurePicklistEntry[] = [
     displayName: "Seroma aspiration / capsulectomy (post-contouring)",
     snomedCtCode: "69794004",
     snomedCtDisplay: "Aspiration procedure (procedure)",
-    specialties: ["body_contouring"],
+    specialties: ["aesthetics"],
     subcategory: "Other Body Contouring",
     tags: ["revision"],
     sortOrder: 5,
@@ -6694,7 +6695,8 @@ export const PROCEDURE_PICKLIST: ProcedurePicklistEntry[] = [
 export function getProceduresForSpecialty(
   specialty: Specialty,
 ): ProcedurePicklistEntry[] {
-  return PROCEDURE_PICKLIST.filter((p) => p.specialties.includes(specialty));
+  const resolved = resolveSpecialty(specialty) as Specialty;
+  return PROCEDURE_PICKLIST.filter((p) => p.specialties.includes(resolved));
 }
 
 export function getSubcategoriesForSpecialty(specialty: Specialty): string[] {

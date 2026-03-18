@@ -14,7 +14,6 @@ export const PROCEDURE_CATEGORIES: ProcedureCategoryDefinition[] = [
   { id: "orthoplastic", label: "Orthoplastic & Limb" },
   { id: "burns", label: "Burns" },
   { id: "lymphoedema", label: "Lymphoedema" },
-  { id: "body_contouring", label: "Body Contouring" },
   { id: "aesthetics", label: "Aesthetics" },
   { id: "peripheral_nerve", label: "Peripheral Nerve" },
   { id: "general", label: "General / Other" },

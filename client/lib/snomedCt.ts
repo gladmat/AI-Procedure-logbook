@@ -307,7 +307,7 @@ export const SNOMED_PROCEDURES: SnomedProcedure[] = [
   {
     snomedCtCode: "72310004",
     snomedCtDisplay: "Abdominoplasty",
-    specialty: "body_contouring",
+    specialty: "aesthetics",
     commonName: "Abdominoplasty",
     countryMappings: {
       CH: {
@@ -330,7 +330,7 @@ export const SNOMED_PROCEDURES: SnomedProcedure[] = [
   {
     snomedCtCode: "119954001",
     snomedCtDisplay: "Brachioplasty",
-    specialty: "body_contouring",
+    specialty: "aesthetics",
     commonName: "Brachioplasty",
     countryMappings: {
       CH: {

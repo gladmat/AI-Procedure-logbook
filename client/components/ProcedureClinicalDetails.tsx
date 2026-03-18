@@ -1738,7 +1738,7 @@ export function ProcedureClinicalDetails({
     );
   }
 
-  if (specialty === "body_contouring") {
+  if (specialty === "body_contouring" || specialty === "aesthetics") {
     return (
       <BodyContouringClinicalFields
         clinicalDetails={clinicalDetails as Record<string, unknown>}

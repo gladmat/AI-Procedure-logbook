@@ -866,6 +866,33 @@ Following established patterns:
 - 21 migration entries added for changed codes in snomedCodeMigration.ts
 - 5 cross-reference validation tests added
 
+## Aesthetics Module — Locked Decisions
+
+### Architecture
+- Body Contouring merged INTO Aesthetics — `body_contouring` category ID retired, resolves to `aesthetics`
+- Intent modifier (cosmetic / post_bariatric_mwl / functional_reconstructive) on diagnosis, NOT procedure
+- AestheticAssessment renders INLINE in DiagnosisGroupEditor (like HandTraumaAssessment, BreastAssessment)
+- Product detail cards render as CollapsibleFormSections WITHIN AestheticAssessment
+- Non-surgical and surgical procedures live in SAME taxonomy, differentiated by `interventionType`
+- Each procedure in a combination session gets its OWN procedure entry (no combined codes)
+- Product catalogue is STATIC data (bundled, not fetched from API)
+
+### Anti-Patterns — DO NOT
+- DO NOT create a separate category for body contouring — it's merged into aesthetics
+- DO NOT create a hard gate between surgical and non-surgical — they're the same flow
+- DO NOT put product selection in a modal — it's an inline hierarchical picker
+- DO NOT duplicate the breast module's implant types — import from breast types
+- DO NOT duplicate CollapsibleFormSection — import from client/components/CollapsibleFormSection
+- DO NOT duplicate brand components — import from client/components/brand/
+- DO NOT create free-text fields for product names — always use structured picklist
+- DO NOT store product catalogue on server — it's client-side static data
+- DO NOT create new episode types for aesthetics — use existing types
+
+### Component Registry
+- Config: `client/lib/aestheticsConfig.ts`
+- Products: `client/lib/aestheticProducts.ts` (Phase 4)
+- Types: `client/types/aesthetics.ts`
+
 ## Design system: Charcoal + Amber
 
 All tokens in `client/constants/theme.ts` (single source of truth, 273 lines).

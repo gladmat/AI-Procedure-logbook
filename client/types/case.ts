@@ -145,6 +145,9 @@ export const PROCEDURE_CATEGORY_OPTIONS: Record<
     { value: "other", label: "Other" },
   ],
   body_contouring: [
+    { value: "face", label: "Face" },
+    { value: "body", label: "Body" },
+    { value: "breast", label: "Breast" },
     { value: "post_bariatric", label: "Post-Bariatric" },
     { value: "cosmetic", label: "Cosmetic" },
     { value: "reconstruction", label: "Reconstruction" },
@@ -166,6 +169,9 @@ export const PROCEDURE_CATEGORY_OPTIONS: Record<
     { value: "face", label: "Face" },
     { value: "body", label: "Body" },
     { value: "breast", label: "Breast" },
+    { value: "post_bariatric", label: "Post-Bariatric" },
+    { value: "cosmetic", label: "Cosmetic" },
+    { value: "reconstruction", label: "Reconstruction" },
     { value: "other", label: "Other" },
   ],
   general: [{ value: "other", label: "Other" }],
@@ -1858,6 +1864,8 @@ export interface DiagnosisGroup {
   handCaseTypeHint?: "trauma" | "acute" | "elective";
   /** Craniofacial assessment data (cleft classification, craniosynostosis, OMENS+) */
   craniofacialAssessment?: import("./craniofacial").CraniofacialAssessmentData;
+  /** Aesthetic assessment data (injectable/energy/surgical details) */
+  aestheticAssessment?: import("./aesthetics").AestheticAssessment;
 }
 
 export type GeneralHistologyCategory =
@@ -2349,6 +2357,14 @@ export const PROCEDURE_TYPES: Record<Specialty, string[]> = {
     "Implant Exchange",
   ],
   body_contouring: [
+    "Rhinoplasty",
+    "Blepharoplasty",
+    "Facelift",
+    "Breast Augmentation",
+    "Neck Lift",
+    "Brow Lift",
+    "Fat Transfer",
+    "Otoplasty",
     "Abdominoplasty",
     "Brachioplasty",
     "Thigh Lift",
@@ -2367,6 +2383,14 @@ export const PROCEDURE_TYPES: Record<Specialty, string[]> = {
     "Brow Lift",
     "Fat Transfer",
     "Otoplasty",
+    "Abdominoplasty",
+    "Brachioplasty",
+    "Thigh Lift",
+    "Belt Lipectomy",
+    "Liposuction",
+    "Panniculectomy",
+    "Lower Body Lift",
+    "Buttock Lift",
   ],
   hand_wrist: [
     "Fracture Fixation",
