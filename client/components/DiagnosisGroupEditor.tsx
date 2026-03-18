@@ -3127,7 +3127,7 @@ function DiagnosisGroupEditorInner({
               />
             ) : null}
 
-            {primaryDiagnosis && !isSkinCancerModule && !isElectiveHand ? (
+            {primaryDiagnosis && !isSkinCancerModule && !isElectiveHand && !isCraniofacialModule ? (
               <DiagnosisClinicalFields
                 diagnosis={{
                   snomedCtCode: primaryDiagnosis.conceptId,
