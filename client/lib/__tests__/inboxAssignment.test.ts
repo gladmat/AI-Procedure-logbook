@@ -105,11 +105,10 @@ describe("inferMediaTagForInboxItem", () => {
 // ═══════════════════════════════════════════════════════════
 
 describe("inboxItemToOperativeMediaSmart", () => {
-  it("sets tag and derives mediaType", () => {
+  it("sets tag correctly", () => {
     const item = makeInboxItem();
     const result = inboxItemToOperativeMediaSmart(item, "flap_harvest");
     expect(result.tag).toBe("flap_harvest");
-    expect(result.mediaType).toBe("intraoperative_photo");
   });
 
   it("preserves id, localUri, mimeType, and createdAt from inbox item", () => {
@@ -126,10 +125,10 @@ describe("inboxItemToOperativeMediaSmart", () => {
     expect(result.createdAt).toBe("2025-01-01T00:00:00.000Z");
   });
 
-  it("defaults mediaType to 'other' for unknown tags", () => {
+  it("sets tag to other when provided other", () => {
     const item = makeInboxItem();
     const result = inboxItemToOperativeMediaSmart(item, "other");
-    expect(result.mediaType).toBe("other");
+    expect(result.tag).toBe("other");
   });
 });
 

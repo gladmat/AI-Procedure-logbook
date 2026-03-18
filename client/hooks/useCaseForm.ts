@@ -14,7 +14,6 @@ import {
   CaseProcedure,
   DiagnosisGroup,
   Specialty,
-  Role,
   SmokingStatus,
   AnastomosisEntry,
   AnatomicalRegion,
@@ -37,7 +36,6 @@ import {
   SuggestionAcceptanceEntry,
   ReconstructionTiming,
   QuickCasePrefillData,
-  calculateAgeFromDob,
   JointCaseContext,
 } from "@/types/case";
 import { InfectionOverlay } from "@/types/infection";
@@ -70,13 +68,8 @@ import { findDiagnosisById } from "@/lib/diagnosisPicklists";
 import { UserProfile } from "@/lib/auth";
 import { withDefaultFlapOutcome } from "@/lib/flapOutcomeDefaults";
 import { toIsoDateValue } from "@/lib/dateValues";
-import { resolveCaseFormSpecialty } from "@/lib/caseSpecialty";
 import type { OperativeRole, SupervisionLevel } from "@/types/operativeRole";
-import {
-  migrateLegacyRole,
-  toNearestLegacyRole,
-  isLegacyRole,
-} from "@/types/operativeRole";
+import { toNearestLegacyRole } from "@/types/operativeRole";
 import { suggestRoleDefaults, isConsultantLevel } from "@/lib/roleDefaults";
 import {
   restoreDraftDateOnlyValue,
@@ -232,7 +225,7 @@ export interface CaseFormState {
   dvtProphylaxis: boolean;
   surgeryStartTime: string;
   surgeryEndTime: string;
-  role: Role;
+  role: string;
 
   // Operative Role & Supervision (3-dimensional model)
   responsibleConsultantName: string;
@@ -399,19 +392,12 @@ function loadCaseIntoFormState(
   caseData: Case,
   specialty: Specialty,
 ): CaseFormState {
-  const userMember = caseData.teamMembers?.find((m) => m.name === "You");
-  const role = (userMember?.role as Role | undefined) ?? "PS";
-
-  // Legacy migration: derive new role fields from old data when not present
-  let defaultOperativeRole: OperativeRole | "" =
+  const role: string =
+    caseData.teamMembers?.find((m) => m.name === "You")?.role ?? "PS";
+  const defaultOperativeRole: OperativeRole | "" =
     caseData.defaultOperativeRole ?? "";
-  let defaultSupervisionLevel: SupervisionLevel | "" =
+  const defaultSupervisionLevel: SupervisionLevel | "" =
     caseData.defaultSupervisionLevel ?? "";
-  if (!defaultOperativeRole && role && isLegacyRole(role)) {
-    const migrated = migrateLegacyRole(role);
-    defaultOperativeRole = migrated.role;
-    defaultSupervisionLevel = migrated.supervision;
-  }
 
   let clinicalDetails: Record<string, any> =
     getDefaultClinicalDetails(specialty);
@@ -435,7 +421,7 @@ function loadCaseIntoFormState(
     facility: caseData.facility,
     procedureType: caseData.procedureType,
     gender: caseData.gender ?? "",
-    age: caseData.age ? String(caseData.age) : "",
+    age: "",
     ethnicity: caseData.ethnicity ?? "",
     patientFirstName: caseData.patientFirstName ?? "",
     patientLastName: caseData.patientLastName ?? "",
@@ -544,7 +530,6 @@ export function formStateToDraft(
     defaultOperativeRole: state.defaultOperativeRole || undefined,
     defaultSupervisionLevel: state.defaultSupervisionLevel || undefined,
     gender: state.gender || undefined,
-    age: state.age ? parseInt(state.age) : undefined,
     ethnicity: state.ethnicity.trim() || undefined,
     admissionDate: state.admissionDate || undefined,
     dischargeDate: state.dischargeDate || undefined,
@@ -633,7 +618,7 @@ export function draftToFormState(
   if (draft.weightKg != null) result.weightKg = String(draft.weightKg);
   result.smoker = draft.smoker ?? "";
   result.diabetes = draft.diabetes ?? null;
-  result.role = (draft.teamMembers?.[0]?.role as Role | undefined) ?? "PS";
+  result.role = draft.teamMembers?.[0]?.role ?? "PS";
   result.responsibleConsultantName =
     (draft as any).responsibleConsultantName ?? "";
   result.responsibleConsultantUserId =
@@ -656,7 +641,7 @@ export function draftToFormState(
     );
   }
   result.gender = draft.gender ?? "";
-  result.age = draft.age ? String(draft.age) : "";
+  result.age = "";
   result.ethnicity = draft.ethnicity ?? "";
   result.patientFirstName = draft.patientFirstName ?? "";
   result.patientLastName = draft.patientLastName ?? "";
@@ -1077,7 +1062,7 @@ export function buildDuplicateState(
     facility: source.facility || primaryFacility,
     diagnosisGroups: normalizeBreastDiagnosisGroups(clonedGroups),
     role:
-      (source.teamMembers?.find((m) => m.name === "You")?.role as Role) ?? "PS",
+      source.teamMembers?.find((m) => m.name === "You")?.role ?? "PS",
     responsibleConsultantName: source.responsibleConsultantName ?? "",
     responsibleConsultantUserId: source.responsibleConsultantUserId ?? "",
     defaultOperativeRole: source.defaultOperativeRole ?? "",
@@ -1313,12 +1298,10 @@ export function useCaseForm({
   const [existingCase, setExistingCase] = useState<Case | null>(null);
   const [loadingExistingCase, setLoadingExistingCase] = useState(isEditMode);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const specialty = resolveCaseFormSpecialty({
-    isEditMode,
-    routeSpecialty,
-    duplicateSpecialty: duplicateFrom?.specialty,
-    existingCaseSpecialty: existingCase?.specialty,
-  });
+  const specialty: Specialty =
+    isEditMode && existingCase?.specialty
+      ? existingCase.specialty
+      : routeSpecialty ?? duplicateFrom?.specialty ?? "general";
 
   const draftLoadedRef = useRef(false);
   const savedRef = useRef(false);
@@ -1617,7 +1600,7 @@ export function useCaseForm({
                 sequenceOrder: 1,
                 procedureName: "",
                 specialty: effectiveSpecialty,
-                surgeonRole: "PS" as Role,
+                surgeonRole: "PS",
               },
             ],
             ...overrides,
@@ -1889,11 +1872,6 @@ export function useCaseForm({
           defaultOperativeRole: state.defaultOperativeRole || undefined,
           defaultSupervisionLevel: state.defaultSupervisionLevel || undefined,
           gender: state.gender || undefined,
-          age: state.patientDateOfBirth
-            ? calculateAgeFromDob(state.patientDateOfBirth)
-            : state.age
-              ? parseInt(state.age)
-              : undefined,
           ethnicity: state.ethnicity.trim() || undefined,
           patientFirstName: state.patientFirstName.trim() || undefined,
           patientLastName: state.patientLastName.trim() || undefined,
@@ -1992,7 +1970,6 @@ export function useCaseForm({
                   },
                 ],
           ownerId: isEditMode && existingCase ? existingCase.ownerId : userId,
-          schemaVersion: 5,
           formOpenedAt: formOpenedAt || undefined,
           formSavedAt,
           entryDurationSeconds,

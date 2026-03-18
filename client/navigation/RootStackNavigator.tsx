@@ -192,7 +192,6 @@ export type RootStackParamList = {
     callbackId?: string;
     editMode?: boolean;
     existingMediaId?: string;
-    existingMediaType?: string;
     existingTag?: MediaTag;
     existingCaption?: string;
     existingTimestamp?: string;

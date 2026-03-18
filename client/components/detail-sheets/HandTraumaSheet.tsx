@@ -77,7 +77,7 @@ function deriveActiveCategories(
     details.isFightBite ||
     details.isCompartmentSyndrome ||
     details.isRingAvulsion ||
-    details.amputationLevel ||
+    (details.digitAmputations && details.digitAmputations.length > 0) ||
     injuredStructures.some(
       (s) => s.category === "ligament" || s.category === "other",
     )
@@ -129,8 +129,7 @@ export function HandTraumaSheet({
       isFightBite: localDetails.isFightBite,
       isCompartmentSyndrome: localDetails.isCompartmentSyndrome,
       isRingAvulsion: localDetails.isRingAvulsion,
-      amputationLevel: localDetails.amputationLevel,
-      isReplantable: localDetails.isReplantable,
+      digitAmputations: localDetails.digitAmputations,
     });
   }, [activeCategories, localDetails, localFractures]);
 

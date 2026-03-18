@@ -1,8 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
-  migrateLegacyRole,
   toNearestLegacyRole,
-  isLegacyRole,
   isOperativeRole,
   resolveOperativeRole,
   resolveSupervisionLevel,
@@ -18,59 +16,6 @@ import {
   toSwissSiwf,
 } from "@/types/operativeRole";
 import { isConsultantLevel, suggestRoleDefaults } from "@/lib/roleDefaults";
-
-// ─── migrateLegacyRole ─────────────────────────────────────────────────────
-
-describe("migrateLegacyRole", () => {
-  it("maps PS → SURGEON + INDEPENDENT", () => {
-    expect(migrateLegacyRole("PS")).toEqual({
-      role: "SURGEON",
-      supervision: "INDEPENDENT",
-    });
-  });
-
-  it("maps PP → SURGEON + INDEPENDENT", () => {
-    expect(migrateLegacyRole("PP")).toEqual({
-      role: "SURGEON",
-      supervision: "INDEPENDENT",
-    });
-  });
-
-  it("maps AS → FIRST_ASST + NOT_APPLICABLE", () => {
-    expect(migrateLegacyRole("AS")).toEqual({
-      role: "FIRST_ASST",
-      supervision: "NOT_APPLICABLE",
-    });
-  });
-
-  it("maps ONS → OBSERVER + NOT_APPLICABLE", () => {
-    expect(migrateLegacyRole("ONS")).toEqual({
-      role: "OBSERVER",
-      supervision: "NOT_APPLICABLE",
-    });
-  });
-
-  it("maps SS → SUPERVISOR + NOT_APPLICABLE", () => {
-    expect(migrateLegacyRole("SS")).toEqual({
-      role: "SUPERVISOR",
-      supervision: "NOT_APPLICABLE",
-    });
-  });
-
-  it("maps SNS → SUPERVISOR + NOT_APPLICABLE", () => {
-    expect(migrateLegacyRole("SNS")).toEqual({
-      role: "SUPERVISOR",
-      supervision: "NOT_APPLICABLE",
-    });
-  });
-
-  it("maps A → OBSERVER + NOT_APPLICABLE", () => {
-    expect(migrateLegacyRole("A")).toEqual({
-      role: "OBSERVER",
-      supervision: "NOT_APPLICABLE",
-    });
-  });
-});
 
 // ─── toNearestLegacyRole ────────────────────────────────────────────────────
 
@@ -104,20 +49,7 @@ describe("toNearestLegacyRole", () => {
   });
 });
 
-// ─── isLegacyRole / isOperativeRole ─────────────────────────────────────────
-
-describe("isLegacyRole", () => {
-  it("detects legacy codes", () => {
-    expect(isLegacyRole("PS")).toBe(true);
-    expect(isLegacyRole("SS")).toBe(true);
-    expect(isLegacyRole("A")).toBe(true);
-  });
-
-  it("rejects new codes", () => {
-    expect(isLegacyRole("SURGEON")).toBe(false);
-    expect(isLegacyRole("random")).toBe(false);
-  });
-});
+// ─── isOperativeRole ────────────────────────────────────────────────────────
 
 describe("isOperativeRole", () => {
   it("detects new codes", () => {

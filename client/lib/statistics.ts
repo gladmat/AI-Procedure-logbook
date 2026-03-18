@@ -12,11 +12,7 @@ import {
   DONOR_SITE_COMPLICATION_LABELS,
   RECIPIENT_SITE_COMPLICATION_LABELS,
 } from "@/types/case";
-import {
-  type OperativeRole,
-  migrateLegacyRole,
-  isLegacyRole,
-} from "@/types/operativeRole";
+import { type OperativeRole } from "@/types/operativeRole";
 import {
   ANTICOAGULATION_PROTOCOLS,
   FLAP_MONITORING_PROTOCOLS,
@@ -185,23 +181,7 @@ function isWithinTimePeriod(
 }
 
 function getPrimaryRole(caseData: Case): OperativeRole {
-  // New model: case-level default
-  if (caseData.defaultOperativeRole) return caseData.defaultOperativeRole;
-  // Legacy: derive from first procedure's surgeonRole
-  const procs = getAllProcedures(caseData);
-  if (procs.length > 0) {
-    const role = procs[0]!.surgeonRole;
-    if (role && isLegacyRole(role)) return migrateLegacyRole(role).role;
-  }
-  // Fallback: teamMembers
-  if (caseData.teamMembers && caseData.teamMembers.length > 0) {
-    const legacyRole = caseData.teamMembers.find(
-      (m) => m.id === caseData.ownerId,
-    )?.role;
-    if (legacyRole && isLegacyRole(legacyRole))
-      return migrateLegacyRole(legacyRole).role;
-  }
-  return "SURGEON";
+  return caseData.defaultOperativeRole ?? "SURGEON";
 }
 
 function caseMatchesSpecialty(caseData: Case, specialty: Specialty): boolean {

@@ -70,30 +70,7 @@ import { BreastFlapExtensionSection } from "@/components/breast/BreastFlapExtens
 function getLegacyRecipientVesselQuality(
   clinicalDetails: FreeFlapDetails,
 ): FreeFlapDetails["recipientVesselQuality"] | undefined {
-  if (clinicalDetails.recipientVesselQuality) {
-    return clinicalDetails.recipientVesselQuality;
-  }
-  if (clinicalDetails.irradiatedVesselPreference === "vein_graft_required") {
-    return "irradiated_vein_graft_required";
-  }
-  if (clinicalDetails.irradiatedNeckDissectionPerformed) {
-    return "previously_operated";
-  }
-  if (
-    clinicalDetails.irradiatedVesselPreference === "ipsilateral_viable" ||
-    (clinicalDetails.irradiatedVesselStatus &&
-      clinicalDetails.irradiatedVesselStatus !== "normal")
-  ) {
-    return "irradiated_usable";
-  }
-  if (
-    clinicalDetails.irradiatedVesselStatus === "normal" ||
-    clinicalDetails.irradiatedVesselPreference === "contralateral"
-  ) {
-    return "normal";
-  }
-
-  return undefined;
+  return clinicalDetails.recipientVesselQuality;
 }
 
 export interface BreastFlapContext {
@@ -139,9 +116,7 @@ export function FreeFlapClinicalFields({
     breastContext ? "breast_chest" as const : clinicalDetails.recipientSiteRegion;
   const recipientVesselQuality =
     getLegacyRecipientVesselQuality(clinicalDetails);
-  const veinGraftUsed =
-    clinicalDetails.veinGraftUsed ??
-    clinicalDetails.irradiatedVesselPreference === "vein_graft_required";
+  const veinGraftUsed = clinicalDetails.veinGraftUsed;
 
   // Auto-fill IMA/IMV default anastomosis entries for breast context
   const breastAutoFillDone = useRef(false);
@@ -767,9 +742,6 @@ export function FreeFlapClinicalFields({
                   v === "irradiated_vein_graft_required"
                     ? true
                     : clinicalDetails.veinGraftUsed,
-                irradiatedVesselStatus: undefined,
-                irradiatedVesselPreference: undefined,
-                irradiatedNeckDissectionPerformed: undefined,
               })
             }
           />
@@ -801,9 +773,6 @@ export function FreeFlapClinicalFields({
                   v === "yes" ? clinicalDetails.veinGraftSource : undefined,
                 veinGraftLength:
                   v === "yes" ? clinicalDetails.veinGraftLength : undefined,
-                irradiatedVesselStatus: undefined,
-                irradiatedVesselPreference: undefined,
-                irradiatedNeckDissectionPerformed: undefined,
               })
             }
           />
@@ -819,9 +788,6 @@ export function FreeFlapClinicalFields({
                   onUpdate({
                     ...clinicalDetails,
                     veinGraftSource: v as FreeFlapDetails["veinGraftSource"],
-                    irradiatedVesselStatus: undefined,
-                    irradiatedVesselPreference: undefined,
-                    irradiatedNeckDissectionPerformed: undefined,
                   })
                 }
               />
@@ -836,9 +802,6 @@ export function FreeFlapClinicalFields({
                   onUpdate({
                     ...clinicalDetails,
                     veinGraftLength: v ? parseFloat(v) : undefined,
-                    irradiatedVesselStatus: undefined,
-                    irradiatedVesselPreference: undefined,
-                    irradiatedNeckDissectionPerformed: undefined,
                   })
                 }
                 placeholder="8"

@@ -1,9 +1,8 @@
 /**
- * Decrypt-on-demand hook for v2 encrypted media.
+ * Decrypt-on-demand hook for encrypted media.
  *
  * For opus-media: URIs: check cache → decrypt to temp file → cache → return file:/// URI
- * For encrypted-media: URIs: returns null (signals EncryptedImage to use v1 path)
- * For plain URIs: pass through
+ * For plain URIs: pass through (returns null)
  */
 
 import { useState, useEffect, useRef } from "react";

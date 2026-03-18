@@ -8,8 +8,6 @@ import {
 import {
   type OperativeRole,
   OPERATIVE_ROLE_LABELS,
-  migrateLegacyRole,
-  isLegacyRole,
 } from "@/types/operativeRole";
 import type { SkinCancerPathologyCategory } from "@/types/skinCancer";
 import {
@@ -162,23 +160,7 @@ export interface OperationalInsights {
 }
 
 function getPrimaryRole(caseData: Case): OperativeRole {
-  // New model: case-level default
-  if (caseData.defaultOperativeRole) return caseData.defaultOperativeRole;
-  // Legacy: derive from first procedure's surgeonRole
-  const procs = getAllProcedures(caseData);
-  if (procs.length > 0) {
-    const role = procs[0]!.surgeonRole;
-    if (role && isLegacyRole(role)) return migrateLegacyRole(role).role;
-  }
-  // Fallback: teamMembers
-  if (caseData.teamMembers && caseData.teamMembers.length > 0) {
-    const legacyRole = caseData.teamMembers.find(
-      (m) => m.id === caseData.ownerId,
-    )?.role;
-    if (legacyRole && isLegacyRole(legacyRole))
-      return migrateLegacyRole(legacyRole).role;
-  }
-  return "SURGEON";
+  return caseData.defaultOperativeRole ?? "SURGEON";
 }
 
 export function computeOperationalInsights(

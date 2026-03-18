@@ -26,7 +26,7 @@ import type { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { useMediaCallback } from "@/contexts/MediaCallbackContext";
 import { operativeMediaToAttachments } from "@/lib/operativeMedia";
 import { deleteEncryptedMedia } from "@/lib/mediaStorage";
-import { resolveMediaTag } from "@/lib/mediaTagMigration";
+import { resolveMediaTag } from "@/lib/mediaTagHelpers";
 import type { MediaContext } from "@/lib/mediaContext";
 
 // ═══════════════════════════════════════════════════════════

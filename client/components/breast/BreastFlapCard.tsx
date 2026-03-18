@@ -26,8 +26,6 @@ import { SectionWrapper } from "@/components/shared/SectionWrapper";
 import type {
   BreastFlapDetailsData,
   PerforatorEntry,
-  BreastRecipientArtery,
-  BreastRecipientVein,
   ImaInterspace,
   RibManagement,
   AnastomosisTechnique,
@@ -39,8 +37,6 @@ import type {
   IntramuscularCourse,
 } from "@/types/breast";
 import {
-  BREAST_RECIPIENT_ARTERY_LABELS,
-  BREAST_RECIPIENT_VEIN_LABELS,
   IMA_INTERSPACE_LABELS,
   RIB_MANAGEMENT_LABELS,
   ANASTOMOSIS_TECHNIQUE_LABELS,
@@ -55,23 +51,6 @@ import {
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants
 // ─────────────────────────────────────────────────────────────────────────────
-
-const ARTERIES: readonly BreastRecipientArtery[] = [
-  "ima",
-  "ima_perforator",
-  "thoracodorsal",
-  "circumflex_scapular",
-  "lateral_thoracic",
-  "other",
-] as const;
-
-const VEINS: readonly BreastRecipientVein[] = [
-  "imv",
-  "imv_perforator",
-  "thoracodorsal",
-  "cephalic",
-  "other",
-] as const;
 
 const INTERSPACES: readonly ImaInterspace[] = ["2nd", "3rd", "4th"] as const;
 
@@ -140,13 +119,8 @@ function getFlapSummaryText(d: BreastFlapDetailsData): string {
   const perfCount = d.perforators?.length ?? 0;
   if (perfCount > 0)
     parts.push(`${perfCount} perforator${perfCount > 1 ? "s" : ""}`);
-  if (d.recipientArtery === "ima" || d.recipientArtery === "ima_perforator") {
-    if (d.imaInterspace)
-      parts.push(`IMA ${IMA_INTERSPACE_LABELS[d.imaInterspace]}`);
-    else parts.push("IMA");
-  }
-  if (d.venousCouplerUsed && d.venousCouplerSizeMm)
-    parts.push(`coupler ${d.venousCouplerSizeMm}mm`);
+  if (d.imaInterspace)
+    parts.push(`IMA ${IMA_INTERSPACE_LABELS[d.imaInterspace]}`);
   if (d.flapWeightGrams) parts.push(`${d.flapWeightGrams}g`);
   return parts.join(", ") || "Tap to configure";
 }
@@ -171,9 +145,7 @@ export const BreastFlapCard = React.memo(function BreastFlapCard({
     [onChange, value],
   );
 
-  const isIma =
-    value.recipientArtery === "ima" ||
-    value.recipientArtery === "ima_perforator";
+  const isIma = !!value.imaInterspace;
 
   const summary = getFlapSummaryText(value);
 
@@ -313,58 +285,27 @@ export const BreastFlapCard = React.memo(function BreastFlapCard({
             allowDeselect
           />
 
-          {/* ── 2. Recipient Vessels ────────────────────────────────────── */}
+          {/* ── 2. IMA Details ────────────────────────────────────── */}
 
           <View style={styles.sectionDivider} />
 
           <BreastChipRow
-            label="Recipient Artery"
-            options={ARTERIES}
-            labels={BREAST_RECIPIENT_ARTERY_LABELS}
-            selected={value.recipientArtery}
-            onSelect={(v) => {
-              const patch: Partial<BreastFlapDetailsData> = {
-                recipientArtery: v,
-              };
-              if (v !== "ima" && v !== "ima_perforator") {
-                patch.imaInterspace = undefined;
-                patch.ribManagement = undefined;
-              }
-              update(patch);
-            }}
+            label="IMA Interspace"
+            options={INTERSPACES}
+            labels={IMA_INTERSPACE_LABELS}
+            selected={value.imaInterspace}
+            onSelect={(v) => update({ imaInterspace: v })}
             allowDeselect
           />
 
           <BreastChipRow
-            label="Recipient Vein"
-            options={VEINS}
-            labels={BREAST_RECIPIENT_VEIN_LABELS}
-            selected={value.recipientVein}
-            onSelect={(v) => update({ recipientVein: v })}
+            label="Rib Management"
+            options={RIB_MGMTS}
+            labels={RIB_MANAGEMENT_LABELS}
+            selected={value.ribManagement}
+            onSelect={(v) => update({ ribManagement: v })}
             allowDeselect
           />
-
-          {isIma ? (
-            <>
-              <BreastChipRow
-                label="IMA Interspace"
-                options={INTERSPACES}
-                labels={IMA_INTERSPACE_LABELS}
-                selected={value.imaInterspace}
-                onSelect={(v) => update({ imaInterspace: v })}
-                allowDeselect
-              />
-
-              <BreastChipRow
-                label="Rib Management"
-                options={RIB_MGMTS}
-                labels={RIB_MANAGEMENT_LABELS}
-                selected={value.ribManagement}
-                onSelect={(v) => update({ ribManagement: v })}
-                allowDeselect
-              />
-            </>
-          ) : null}
 
           {/* ── 3. Anastomosis ─────────────────────────────────────────── */}
 

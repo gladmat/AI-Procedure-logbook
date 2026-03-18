@@ -20,15 +20,15 @@ Key capabilities: multi-specialty case logging, SNOMED CT coded diagnoses and pr
 - **Phase 2 COMPLETE** — Charcoal+Amber theme, card-based diagnosis groups, section nav, summary view, specialty modules
 - **Acute Hand Category COMPLETE** — 3-way hand surgery branching, acute diagnoses, hand infection 4-layer assessment, infection-to-overlay bridge
 - **Phase 3 COMPLETE** — Inline validation, keyboard optimisation, haptic audit, duplicate case, favourites/recents
-- **Phase 4 COMPLETE** — Data migration (schemaVersion 4), CSV/FHIR/PDF export, analytics dashboard
+- **Phase 4 COMPLETE** — CSV/FHIR/PDF export, analytics dashboard
 - **Elective Hand + Joint Implant COMPLETE** — 38 elective diagnoses, 7 subcategories, 3 arthroplasty with implant tracking, 26 implant catalogue entries
 - **Skin Cancer Terminology Repair COMPLETE** — corrected SNOMED codes, rare malignancy metadata, UK-extension procedure codes
-- **Media Overhaul COMPLETE** — unified MediaTag taxonomy (64 tags, 7 groups), 7 capture protocols, legacy migration, EXIF stripping, 5 UI components
+- **Media Overhaul COMPLETE** — unified MediaTag taxonomy (64 tags, 7 groups), 7 capture protocols, EXIF stripping, 5 UI components
 - **Capture Pipeline A–H COMPLETE** — Opus Inbox (encrypted MMKV), Smart Import, Opus Camera (quick snap + guided), planned cases, smart assignment, auto-organise, NHI auto-match, transactional reservation lifecycle, iOS native scaffold (widget + locked-camera + deep links)
-- **Media Encryption Remediation COMPLETE** — v1/v2 delete parity, temp cache sweeping, FlashList for large libraries
-- **Case Category Repair COMPLETE** — edit-mode specialty preservation, conservative storage repair
+- **Media Encryption Remediation COMPLETE** — temp cache sweeping, FlashList for large libraries
+- **Case Category Repair COMPLETE** — edit-mode specialty preservation
 - **Patient Identity COMPLETE** — structured name/DOB/NHI, per-user HMAC-SHA256, country-aware UI, CSV/FHIR/PDF export
-- **Operative Role & Supervision COMPLETE** — 3-dimensional role model, 6 export format mappings, legacy migration
+- **Operative Role & Supervision COMPLETE** — 3-dimensional role model, 6 export format mappings
 - **UX Polish COMPLETE** — FAB animation, compact PatientInfoSection, day-case auto-fill, 30-day RACS MALT audit, plan mode toggle
 - **Head & Neck Progressive Disclosure COMPLETE** — CompactProcedureList (shared by breast + H&N), HeadNeckDiagnosisPicker (88 diagnoses, 9 subcategories)
 - **Hand Elective UX + Dupuytren Module COMPLETE** — reconstruction pathway multi-select pending actions, elective hand laterality simplified to Left/Right only, trigger finger per-finger multi-select, Dupuytren's split into primary/recurrent/palm-only diagnoses with DupuytrenAssessment component (per-ray MCP/PIP measurement, auto-calculated Tubiana staging, first web space, diathesis features, previous treatment tracking), removed flat Tubiana staging config, CSV/FHIR export support, 37 tests
@@ -99,9 +99,9 @@ client/
     detail-sheets/ onboarding/ shared/ staging/
   contexts/                      # AuthContext, CaseFormContext, AppLockContext, MediaCallbackContext
   hooks/                         # useCaseForm, useCaseDraft, useTheme, useStatistics, useDecryptedImage, etc.
-  lib/                           # 75+ files — storage, encryption, export, migration, selectors, etc.
+  lib/                           # 75+ files — storage, encryption, export, normalization, selectors, etc.
     diagnosisPicklists/          # 12 specialty picklists + lazy-loaded index
-    __tests__/                   # 44 test files
+    __tests__/                   # 63 test files
   types/                         # case, media, inbox, episode, infection, skinCancer, breast, dupuytren,
                                  #   handInfection, wound, jointImplant, operativeRole, etc.
   constants/                     # theme.ts (design tokens), categories, hospitals, trainingProgrammes
@@ -144,11 +144,11 @@ Auth → Onboarding → Main (bottom tabs: Dashboard, Statistics, Settings) with
 - **Form state:** `useCaseForm()` hook → `useReducer` with 15+ actions (`SET_FIELD`, `SET_FIELDS`, `RESET_FORM`, `LOAD_CASE`, `LOAD_DRAFT`, `ADD_TEAM_MEMBER`, `REMOVE_TEAM_MEMBER`, `ADD_ANASTOMOSIS`, `UPDATE_ANASTOMOSIS`, `REMOVE_ANASTOMOSIS`, `ADD_DIAGNOSIS_GROUP`, `REMOVE_DIAGNOSIS_GROUP`, `UPDATE_DIAGNOSIS_GROUP`, `REORDER_DIAGNOSIS_GROUPS`, `UPDATE_CLINICAL_DETAIL`). `CaseFormContext` now exposes selector-based subscriptions plus separate actions/validation contexts so unchanged sections do not rerender on unrelated edits.
 - **Server state:** Direct API helpers built on `getApiUrl()` + `fetch`.
 - **Auth state:** `AuthContext` with JWT tokens, profile, facilities, device keys.
-- **Patient privacy:** Identifiers HMAC-SHA256 hashed in local case index (per-user key in iOS Keychain). Patient identity fields (`patientFirstName`, `patientLastName`, `patientDateOfBirth`, `patientNhi`) stored on-device only, stripped before server sync via `stripPatientIdentityForSync()`. Legacy SHA-256 hashes detected by absence of `hmac:` prefix and lazily migrated.
+- **Patient privacy:** Identifiers HMAC-SHA256 hashed in local case index (per-user key in iOS Keychain). Patient identity fields (`patientFirstName`, `patientLastName`, `patientDateOfBirth`, `patientNhi`) stored on-device only, stripped before server sync via `stripPatientIdentityForSync()`.
 
 ### Multi-diagnosis group architecture
 
-Each Case has `diagnosisGroups: DiagnosisGroup[]` instead of flat diagnosis/procedures fields. Each group bundles: specialty, diagnosis, staging, fractures, procedures, and optional `handInfectionDetails`. `procedureSuggestionSource` tracks origin: `"picklist"`, `"skinCancer"`, `"acuteHand"`, or `"manual"`. Enables multi-specialty cases (e.g., hand surgery + orthoplastic in one session). Old cases auto-migrated on load via `client/lib/migration.ts`, and clearly recoverable top-level specialty regressions are conservatively repaired via `client/lib/caseSpecialty.ts`. Helpers: `getAllProcedures(c)`, `getCaseSpecialties(c)`, `getPrimaryDiagnosisName(c)` in `client/types/case.ts`.
+Each Case has `diagnosisGroups: DiagnosisGroup[]` instead of flat diagnosis/procedures fields. Each group bundles: specialty, diagnosis, staging, fractures, procedures, and optional `handInfectionDetails`. `procedureSuggestionSource` tracks origin: `"picklist"`, `"skinCancer"`, `"acuteHand"`, or `"manual"`. Enables multi-specialty cases (e.g., hand surgery + orthoplastic in one session). Helpers: `getAllProcedures(c)`, `getCaseSpecialties(c)`, `getPrimaryDiagnosisName(c)` in `client/types/case.ts`. Save-time normalization via `client/lib/caseNormalization.ts`.
 
 ### Case form sections (5-tab architecture)
 
@@ -203,7 +203,7 @@ Each has: dedicated diagnosis picklist, specialty colour, SVG icon, procedure su
 
 ### Procedure picklists & SNOMED CT
 
-509 procedures across all specialties in `client/lib/procedurePicklist.ts`. Each entry has SNOMED CT codes, specialty tags, subcategory. All specialties use the subcategory picker UI. SNOMED code migration (`client/lib/snomedCodeMigration.ts`) transparently updates old codes on load.
+509 procedures across all specialties in `client/lib/procedurePicklist.ts`. Each entry has SNOMED CT codes, specialty tags, subcategory. All specialties use the subcategory picker UI.
 
 ### Diagnosis-to-procedure suggestions
 
@@ -329,7 +329,6 @@ There is **no continuing-care pathway** in the product model. Re-excision / foll
 - biopsy-stage cases remain coded as generic "awaiting histology" until `currentHistology.pathologyCategory` is actually confirmed
 - confirmed histology resolves to the correct picklist diagnosis where supported
 - rare malignant subtypes without a dedicated picklist entry return explicit manual-review metadata instead of silently falling back to "awaiting histology"
-- `client/lib/migration.ts` reconciles legacy single-lesion skin-cancer diagnoses on load
 
 **Follow-up / episode behaviour:**
 
@@ -369,7 +368,7 @@ Tests: `client/lib/__tests__/skinCancerConfig.test.ts` (89 tests), `skinCancerPh
 
 ### Media tag system & capture protocols
 
-**Unified MediaTag taxonomy** replaces the legacy dual `OperativeMediaType` (8 values) + `MediaCategory` (20 values) system with a single `MediaTag` type (64 tags across 7 groups: temporal, imaging, flap_surgery, skin_cancer, aesthetic, hand_function, other). Defined in `client/types/media.ts` — single source of truth.
+**Unified MediaTag taxonomy** — a single `MediaTag` type (64 tags across 7 groups: temporal, imaging, flap_surgery, skin_cancer, aesthetic, hand_function, other). Defined in `client/types/media.ts` — single source of truth.
 
 **Key types & exports:**
 
@@ -380,13 +379,10 @@ Tests: `client/lib/__tests__/skinCancerConfig.test.ts` (89 tests), `skinCancerPh
 - `getTagsForGroup(group)` — sorted tags within a group
 - `getRelevantGroups(specialty?, procedureTags?, hasSkinCancerAssessment?)` — context-aware group filtering. Always includes temporal/imaging/other; conditionally adds flap_surgery, skin_cancer, aesthetic, hand_function based on case context. Skin cancer groups are diagnosis-driven via `hasSkinCancerAssessment` flag (not specialty-gated).
 
-**Legacy migration** (`client/lib/mediaTagMigration.ts`):
+**Tag helpers** (`client/lib/mediaTagHelpers.ts`):
 
-- `migrateOperativeMediaType(type)` — maps all 8 old types to MediaTag
-- `migrateMediaCategory(category)` — maps all 20 old categories to MediaTag
-- `resolveMediaTag({ tag?, category?, mediaType? })` — cascading fallback: tag → category → mediaType → "other"
+- `resolveMediaTag(tag?)` — resolves tag to valid MediaTag, defaulting to "other"
 - `suggestTemporalTag(procedureDate?)` — auto-suggests temporal MediaTag based on days since procedure (preop → intraop → postop_early → postop_mid → followup_3m/6m/12m → followup_late). Uses `parseDateOnlyValue()` for timezone-safe parsing.
-- Both `MediaAttachment.tag` and `OperativeMediaItem.tag` fields added; legacy fields `@deprecated`
 
 **Capture protocols** (`client/data/mediaCaptureProtocols.ts`):
 
@@ -640,10 +636,6 @@ Dedicated bottom tab with 3-tier analytics. Middle tab between Dashboard and Set
 
 `useStatistics` → loads cases once per focus → fans out to 10+ `useMemo` computations → `StatisticsScreen` renders. `computeOperationalInsights` accepts precomputed `baseStats` to avoid redundant computation. Specialty filtering uses canonical `getCaseSpecialties()` helper.
 
-### Data migration
-
-`migrateCase()` in `client/lib/migration.ts` — lazy migration on load, schemaVersion 4, idempotent. Handles old flat diagnosis/procedure fields → multi-group architecture. Validation via `migrationValidator.ts`.
-
 ## Skin cancer workflow — process design guidelines
 
 These guidelines govern all skin cancer workflow implementation. They apply to any component, type, or logic touching skin cancer case entry, multi-lesion sessions, histology tracking, or cancer pathway episodes. Violating these principles requires explicit approval from Mateusz.
@@ -863,7 +855,6 @@ Following established patterns:
 - 69 procedures: 48 International, 21 VERIFY codes fixed + 8 non-VERIFY corrections for wrong codes (360820005 "urethral stricture", 82371002 "proton beam", 239404006 "release IMF")
 - 0 broken procedure suggestion cross-references (53 unique procedurePicklistIds validated)
 - 5 autoFill recipient site mappings added (craniofacial microsomia, Treacher Collins, fibrous dysplasia, encephalocele, orbital hypertelorism → head_neck)
-- 21 migration entries added for changed codes in snomedCodeMigration.ts
 - 5 cross-reference validation tests added
 
 ## Aesthetics Module — Locked Decisions
@@ -982,7 +973,6 @@ Following established patterns:
 - LVA per-anastomosis tracking is inline collapsible cards, NOT modal
 - Bilateral circumference measurements auto-calculate excess volume via truncated cone formula
 - Follow-up is structured (timepoints + LYMQOL domains + measurements), stored per-case
-- All 7 old `le_dx_*` diagnosis IDs migrated to `lymph_dx_*` prefix in `migration.ts`
 
 ### Anti-Patterns — DO NOT
 - DO NOT create a hard gate between physiological/ablative procedure types
@@ -1074,7 +1064,6 @@ Touch targets: minimum 48px (`Spacing.touchTarget`)
 - **XChaCha20-Poly1305 AEAD** for all local case data
 - Envelope format: `enc:v1:nonce:ciphertext`
 - Key derivation from user passphrase via scrypt
-- Legacy XOR data auto re-encrypted on load
 
 ### E2EE scaffolding
 
@@ -1082,9 +1071,9 @@ Touch targets: minimum 48px (`Spacing.touchTarget`)
 - Public keys registered with server, revocable
 - Case key wrapping infrastructure in place
 
-### Encrypted media (v2 — file-based AES-256-GCM)
+### Encrypted media (file-based AES-256-GCM)
 
-**Architecture:** Per-image DEK model with file-system storage. Each photo gets a random 256-bit DEK, encrypted via AES-256-GCM (`@noble/ciphers`). The DEK is wrapped with the master key (AES-256-GCM) and stored in plaintext `meta.json`. Cipher provider remains isolated in `mediaEncryption.ts` for a future native file-crypto swap if profiling warrants it. `mediaStorage.ts` canonicalizes legacy `encrypted-media:{uuid}` references to `opus-media:{uuid}` when valid v2 backing exists.
+**Architecture:** Per-image DEK model with file-system storage. Each photo gets a random 256-bit DEK, encrypted via AES-256-GCM (`@noble/ciphers`). The DEK is wrapped with the master key (AES-256-GCM) and stored in plaintext `meta.json`. Cipher provider remains isolated in `mediaEncryption.ts` for a future native file-crypto swap if profiling warrants it.
 
 **Storage layout:**
 
@@ -1095,19 +1084,17 @@ Touch targets: minimum 48px (`Spacing.touchTarget`)
   meta.json    — { version:2, mediaId, wrappedDEK (hex), mimeType, width, height, hasThumb, createdAt }
 ```
 
-**URI scheme:** `opus-media:{uuid}` (v2) — routed by `mediaStorage.ts`. Legacy `encrypted-media:{uuid}` (v1) still supported with lazy migration on access.
+**URI scheme:** `opus-media:{uuid}` — routed by `mediaStorage.ts`.
 
-**Display pipeline:** `EncryptedImage` → v2 branch uses `useDecryptedImage` hook → decrypts to temp file in `Paths.cache` → renders via `expo-image` with `file:///` URI. LRU temp-file cache: 80 thumbnails (~2MB), 10 full images (~50MB). Max 2 concurrent decryptions.
+**Display pipeline:** `EncryptedImage` → `useDecryptedImage` hook → decrypts to temp file in `Paths.cache` → renders via `expo-image` with `file:///` URI. LRU temp-file cache: 80 thumbnails (~2MB), 10 full images (~50MB). Max 2 concurrent decryptions.
 
 **Security lifecycle:**
 
 - DEK zeroed after use (`dek.fill(0)`)
 - Decrypted temp files cleared on startup, logout, delete, and every app background transition (regardless of app lock config)
-- Thumbnails encrypted (v1 stored unencrypted — v2 fixes this gap)
-- Delete paths are idempotent across legacy AsyncStorage blobs and migrated v2 filesystem copies
+- Thumbnails encrypted
+- Delete paths are idempotent (deletes directory)
 - No plaintext on persistent storage — only in `Paths.cache` (OS-reclaimable)
-
-**v1 → v2 migration:** Lazy on-access via `mediaMigration.ts`. When a v1 URI is loaded, transparently re-encrypts to v2 file format. V1 AsyncStorage blobs deferred for explicit cleanup via `cleanupMigratedV1Data()`. Concurrent migrations coalesced per-ID.
 
 **Capture pipeline:** ImagePicker returns file URIs → `getImageBytesFromUri()` in `thumbnailGenerator.ts` re-encodes (inherently stripping EXIF) + extracts bytes → `generateThumbnailBytes()` creates 300px/0.6 thumbnail → `saveMediaV2()` encrypts both with per-image DEK → writes `image.enc` + `thumb.enc` + `meta.json`. Base64 is transient (decoded immediately, never stored). Single ImageManipulator pass — no double-encoding.
 
@@ -1115,7 +1102,7 @@ Touch targets: minimum 48px (`Spacing.touchTarget`)
 
 - `MediaManagementScreen` stages edits locally, prompts Save/Discard on dirty exit, deletes removed media on save, and cleans up newly imported media on discard
 - User-facing batch media cap standardised to 15 across case/discharge/media-management surfaces
-- Cleanup on case/photo delete (v2 deletes directory, v1 deletes AsyncStorage keys)
+- Cleanup on case/photo delete (deletes media directory)
 
 ### Server security
 
@@ -1192,12 +1179,12 @@ Configured in both `tsconfig.json` and `babel.config.js` (module-resolver plugin
 - **Selector-based case form store** — field-level subscriptions with separate actions/validation contexts to minimize rerenders
 - **Unconditional field setters** (`?? ""`) to ensure cleared fields persist
 - **Header save ref pattern** — `handleSaveRef.current` always latest closure
-- **Encrypted URIs** — `opus-media:{uuid}` (v2 file-based) and `encrypted-media:{uuid}` (v1 legacy) schemes for media references
+- **Encrypted URIs** — `opus-media:{uuid}` scheme for media references
 - **Draft auto-save** — debounced + AppState background flush
 
 ## Operative role & supervision model
 
-Three independent dimensions replacing the legacy single 7-value `Role` type (`PS|PP|AS|ONS|SS|SNS|A`):
+Three independent dimensions:
 
 1. **Operative Role** (`OperativeRole`): `SURGEON`, `FIRST_ASST`, `SECOND_ASST`, `OBSERVER`, `SUPERVISOR`
 2. **Supervision Level** (`SupervisionLevel`): `INDEPENDENT`, `SUP_AVAILABLE`, `SUP_PRESENT`, `SUP_SCRUBBED`, `DIRECTED`, `NOT_APPLICABLE`
@@ -1210,16 +1197,15 @@ Three independent dimensions replacing the legacy single 7-value `Role` type (`P
 - **Resolution chain:** `resolveOperativeRole(override?, default?)` → override > default > `"SURGEON"` fallback
 - **Supervision auto-clear:** only applicable for `SURGEON` role via `supervisionApplicable()` — non-SURGEON roles auto-resolve to `NOT_APPLICABLE`
 - **Smart defaults:** `suggestRoleDefaults(profile)` → consultants get `SURGEON + INDEPENDENT`, trainees get `SURGEON + SUP_SCRUBBED`
-- **Legacy migration:** `migrateLegacyRole(legacyCode)` maps old 7 codes to `{ role, supervision }` pairs. Cases load transparently.
-- **Backward compat:** `toNearestLegacyRole(role, supervision)` maps back to legacy code for export/sync. `teamMembers[0].role` still written on save.
+- **Export compat:** `toNearestLegacyRole(role, supervision)` maps to legacy code for export/sync.
 
 ### Key files
 
 | File                                         | Purpose                                                                                                           |
 | -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `client/types/operativeRole.ts`              | Types, labels, helpers, migration, 6 export format mappings (RACS MALT, JDocs, UK eLogbook, ACGME, German, Swiss) |
+| `client/types/operativeRole.ts`              | Types, labels, helpers, 6 export format mappings (RACS MALT, JDocs, UK eLogbook, ACGME, German, Swiss) |
 | `client/lib/roleDefaults.ts`                 | Smart defaults, `isConsultantLevel()`, `suggestRoleDefaults()`                                                    |
-| `client/lib/__tests__/operativeRole.test.ts` | 68 tests covering migration, resolution, export mappings                                                          |
+| `client/lib/__tests__/operativeRole.test.ts` | 68 tests covering resolution, export mappings                                                                     |
 
 ### Export-time format derivation
 
@@ -1234,12 +1220,12 @@ RACS MALT codes and other training-programme formats are derived at export time 
 
 ### Operating team removal
 
-The `OperatingTeamRole`, `OperatingTeamMember` types and operating team UI (add/remove team members in OperativeSection) have been removed. The `operatingTeam` field on `Case` is kept for backward compat (old case data) but is no longer collected or displayed. Team sharing will be handled by a separate feature.
+The operating team UI and types (`OperatingTeamRole`, `OperatingTeamMember`) have been fully removed. Team sharing will be handled by a separate feature.
 
 ## Testing
 
-- **Framework:** Vitest 4.0.18, **838 tests** across 52 files
-- **Client tests:** `client/lib/__tests__/` and `client/components/` — 44 test files covering hand trauma (diagnosis, mapping, ux), skin cancer (config 89, phase4 11, phase5 18, diagnoses 7), dashboard (selectors 7), hand (infection 42, elective 52), dupuytren (37), joint implant (44), media (encryption 7, fileStorage 3, migration 4, tagMigration 82, captureProtocols 41, operativeMedia 19, form 4, defaults 4, context 3), inbox (storage 13, assignment 17), capture (smartImportPrefs 10, sharedIngress 2), case (specialty 5, storageCache 4, specialtyRepair 2, draftPersistence 1), statistics (helpers 3, stats 7), dates (values 12, normalization 4), export (implant 3, breast), planned case (18), media organiser (15), NHI validation (12), patient identity (11), operative role (68), head & neck integration (4), breast (phase3, phase4, export), FISS calculator (12), plus media UI coverage
+- **Framework:** Vitest 4.0.18, **1173 tests** across 63 files
+- **Client tests:** `client/lib/__tests__/` and `client/components/` — covering hand trauma (diagnosis, mapping, ux), skin cancer (config 89, phase4 11, phase5 18, diagnoses 7), dashboard (selectors 7), hand (infection 42, elective 52), dupuytren (37), joint implant (44), media (encryption 7, fileStorage 3, tagHelpers 82, captureProtocols 41, operativeMedia 19, form 4, defaults 4, context 3), inbox (storage 13, assignment 17), capture (smartImportPrefs 10, sharedIngress 2), case (specialty 5, storageCache 4, draftPersistence 1), statistics (helpers 3, stats 7), dates (values 12, normalization 4), export (implant 3, breast), planned case (18), media organiser (15), NHI validation (12), patient identity (11), operative role (68), head & neck integration (4), breast (phase3, phase4, export), FISS calculator (12), craniofacial, aesthetics, burns, peripheral nerve, lymphoedema, plus media UI coverage
 - **Server tests:** `server/__tests__/` — auth (17), validation (7), diagnosisStagingConfig (3)
 - **Run:** `npm run test` (once) or `npm run test:watch` (watch mode)
 

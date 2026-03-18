@@ -169,9 +169,6 @@ function buildSelectionSignature({
   isCompartmentSyndrome,
   isRingAvulsion,
   digitAmputations,
-  amputationLevel,
-  amputationType,
-  isReplantable,
 }: {
   laterality?: Laterality;
   injuryMechanism?: string;
@@ -187,9 +184,6 @@ function buildSelectionSignature({
   isCompartmentSyndrome?: boolean;
   isRingAvulsion?: boolean;
   digitAmputations?: import("@/types/case").DigitAmputation[];
-  amputationLevel?: HandTraumaDetails["amputationLevel"];
-  amputationType?: HandTraumaDetails["amputationType"];
-  isReplantable?: boolean;
 }) {
   return JSON.stringify({
     laterality,
@@ -280,9 +274,6 @@ function buildSelectionSignature({
       isRingAvulsion,
     },
     digitAmputations,
-    amputationLevel,
-    amputationType,
-    isReplantable,
   });
 }
 
@@ -438,7 +429,7 @@ export function HandTraumaAssessment({
     )
       cats.add("special");
     if (
-      value.amputationLevel ||
+      value.digitAmputations?.[0]?.level ||
       (value.digitAmputations && value.digitAmputations.length > 0)
     )
       cats.add("amputation");
@@ -767,43 +758,14 @@ export function HandTraumaAssessment({
   }, [value]);
 
   const amputationState = useMemo((): AmputationState => {
-    // Prefer new digitAmputations; fall back to legacy single-level fields
-    if (value.digitAmputations && value.digitAmputations.length > 0) {
-      return {
-        digitAmputations: value.digitAmputations,
-        amputationLevel: value.amputationLevel,
-        amputationType: value.amputationType,
-        isReplantable: value.isReplantable,
-      };
-    }
-    // Legacy migration: wrap single-level in digitAmputations[0]
-    if (value.amputationLevel) {
-      const legacyDigit = selectedDigits[0] ?? ("D1" as DigitId);
-      return {
-        digitAmputations: [
-          {
-            digit: legacyDigit,
-            level: value.amputationLevel,
-            type: value.amputationType ?? "complete",
-            isReplantable: value.isReplantable,
-          },
-        ],
-        amputationLevel: value.amputationLevel,
-        amputationType: value.amputationType,
-        isReplantable: value.isReplantable,
-      };
-    }
     return {
-      digitAmputations: [],
-      amputationLevel: undefined,
-      amputationType: undefined,
-      isReplantable: undefined,
+      digitAmputations: value.digitAmputations ?? [],
     };
   }, [
     value.digitAmputations,
-    value.amputationLevel,
-    value.amputationType,
-    value.isReplantable,
+    value.digitAmputations?.[0]?.level,
+    value.digitAmputations?.[0]?.type,
+    value.digitAmputations?.[0]?.isReplantable,
     selectedDigits,
   ]);
 
@@ -862,10 +824,6 @@ export function HandTraumaAssessment({
           state.digitAmputations.length > 0
             ? state.digitAmputations
             : undefined,
-        // Keep legacy fields in sync for backward compat
-        amputationLevel: state.amputationLevel,
-        amputationType: state.amputationType,
-        isReplantable: state.isReplantable,
       });
     },
     [value, onChange],
@@ -906,9 +864,6 @@ export function HandTraumaAssessment({
       isCompartmentSyndrome: value.isCompartmentSyndrome,
       isRingAvulsion: value.isRingAvulsion,
       digitAmputations: value.digitAmputations,
-      amputationLevel: value.amputationLevel,
-      amputationType: value.amputationType,
-      isReplantable: value.isReplantable,
     };
 
     return resolveTraumaDiagnosis(selection);
@@ -925,12 +880,12 @@ export function HandTraumaAssessment({
     perfusionStatuses,
     softTissueDescriptors,
     value.digitAmputations,
-    value.amputationLevel,
-    value.amputationType,
+    value.digitAmputations?.[0]?.level,
+    value.digitAmputations?.[0]?.type,
     value.isCompartmentSyndrome,
     value.isFightBite,
     value.isHighPressureInjection,
-    value.isReplantable,
+    value.digitAmputations?.[0]?.isReplantable,
     value.isRingAvulsion,
   ]);
 
@@ -946,7 +901,7 @@ export function HandTraumaAssessment({
           value.isFightBite ||
           value.isCompartmentSyndrome ||
           value.isRingAvulsion ||
-          value.amputationLevel ||
+          value.digitAmputations?.[0]?.level ||
           (value.digitAmputations && value.digitAmputations.length > 0),
       ),
     [
@@ -956,7 +911,7 @@ export function HandTraumaAssessment({
       perfusionStatuses.length,
       softTissueDescriptors.length,
       value.digitAmputations,
-      value.amputationLevel,
+      value.digitAmputations?.[0]?.level,
       value.isCompartmentSyndrome,
       value.isFightBite,
       value.isHighPressureInjection,
@@ -981,9 +936,6 @@ export function HandTraumaAssessment({
         isCompartmentSyndrome: value.isCompartmentSyndrome,
         isRingAvulsion: value.isRingAvulsion,
         digitAmputations: value.digitAmputations,
-        amputationLevel: value.amputationLevel,
-        amputationType: value.amputationType,
-        isReplantable: value.isReplantable,
       }),
     [
       dislocations,
@@ -996,12 +948,12 @@ export function HandTraumaAssessment({
       selectedMechanismOther,
       softTissueDescriptors,
       value.digitAmputations,
-      value.amputationLevel,
-      value.amputationType,
+      value.digitAmputations?.[0]?.level,
+      value.digitAmputations?.[0]?.type,
       value.isCompartmentSyndrome,
       value.isFightBite,
       value.isHighPressureInjection,
-      value.isReplantable,
+      value.digitAmputations?.[0]?.isReplantable,
       value.isRingAvulsion,
     ],
   );
@@ -1110,7 +1062,7 @@ export function HandTraumaAssessment({
     if (specialCount > 0) counts.special = specialCount;
 
     const amputationCount =
-      (value.digitAmputations?.length ?? 0) || (value.amputationLevel ? 1 : 0);
+      (value.digitAmputations?.length ?? 0) || (value.digitAmputations?.[0]?.level ? 1 : 0);
     if (amputationCount > 0) counts.amputation = amputationCount;
 
     return counts;

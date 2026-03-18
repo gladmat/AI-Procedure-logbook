@@ -1,9 +1,7 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { File } from "expo-file-system";
-import { v4 as uuidv4 } from "uuid";
 import { ImageManipulator, SaveFormat } from "expo-image-manipulator";
 
-import { encryptData, decryptData, getMasterKeyBytes } from "./encryption";
+import { getMasterKeyBytes } from "./encryption";
 import {
   isOpusMediaUri,
   opusMediaIdFromUri,
@@ -20,18 +18,7 @@ import {
   prepareImageForEncryption,
   generateThumbnailFile,
 } from "./thumbnailGenerator";
-import {
-  migrateV1ToV2,
-  hasLegacyMedia,
-  forgetMigratedMedia,
-} from "./mediaMigration";
 import { bytesToBase64 } from "./binaryUtils";
-
-const MEDIA_KEY_PREFIX = "@surgical_logbook_media_";
-const THUMB_KEY_PREFIX = "@surgical_logbook_thumb_";
-const ENCRYPTED_MEDIA_PREFIX = "encrypted-media:";
-const THUMB_SIZE = 128;
-const THUMB_COMPRESS = 0.5;
 
 export { isOpusMediaUri, OPUS_MEDIA_PREFIX };
 
@@ -46,30 +33,10 @@ export interface ImportedMediaAsset {
   sourceUri: string;
 }
 
-export type ResolvedMediaStorageKind = "plain" | "v1" | "v2" | "missing";
-
 export interface ResolvedMediaStorage {
-  kind: ResolvedMediaStorageKind;
+  kind: "plain" | "v2" | "missing";
   mediaId?: string;
   canonicalUri: string;
-  hasLegacyBlob: boolean;
-  hasV2Files: boolean;
-}
-
-export function isEncryptedMediaUri(uri: string): boolean {
-  return uri.startsWith(ENCRYPTED_MEDIA_PREFIX);
-}
-
-function mediaIdFromUri(uri: string): string {
-  return uri.slice(ENCRYPTED_MEDIA_PREFIX.length);
-}
-
-function getLegacyMediaKey(mediaId: string): string {
-  return `${MEDIA_KEY_PREFIX}${mediaId}`;
-}
-
-function getLegacyThumbKey(mediaId: string): string {
-  return `${THUMB_KEY_PREFIX}${mediaId}`;
 }
 
 async function deleteFileIfExists(uri?: string | null): Promise<void> {
@@ -105,53 +72,22 @@ async function loadV2AsDataUri(
 
 export async function resolveMediaStorage(
   mediaUri: string,
-  options: { migrateLegacy?: boolean } = {},
 ): Promise<ResolvedMediaStorage> {
-  if (!isEncryptedMediaUri(mediaUri) && !isOpusMediaUri(mediaUri)) {
+  if (!isOpusMediaUri(mediaUri)) {
     return {
       kind: "plain",
       canonicalUri: mediaUri,
-      hasLegacyBlob: false,
-      hasV2Files: false,
     };
   }
 
-  const mediaId = isOpusMediaUri(mediaUri)
-    ? opusMediaIdFromUri(mediaUri)
-    : mediaIdFromUri(mediaUri);
+  const mediaId = opusMediaIdFromUri(mediaUri);
   const hasV2Files = await hasMediaV2(mediaId);
-  const hasLegacyBlob = await hasLegacyMedia(mediaId);
 
   if (hasV2Files) {
     return {
       kind: "v2",
       mediaId,
       canonicalUri: `${OPUS_MEDIA_PREFIX}${mediaId}`,
-      hasLegacyBlob,
-      hasV2Files: true,
-    };
-  }
-
-  if (hasLegacyBlob && options.migrateLegacy) {
-    const migratedUri = await migrateV1ToV2(mediaId);
-    if (migratedUri && (await hasMediaV2(mediaId))) {
-      return {
-        kind: "v2",
-        mediaId,
-        canonicalUri: migratedUri,
-        hasLegacyBlob: true,
-        hasV2Files: true,
-      };
-    }
-  }
-
-  if (hasLegacyBlob) {
-    return {
-      kind: "v1",
-      mediaId,
-      canonicalUri: `${ENCRYPTED_MEDIA_PREFIX}${mediaId}`,
-      hasLegacyBlob: true,
-      hasV2Files: false,
     };
   }
 
@@ -159,8 +95,6 @@ export async function resolveMediaStorage(
     kind: "missing",
     mediaId,
     canonicalUri: mediaUri,
-    hasLegacyBlob: false,
-    hasV2Files: false,
   };
 }
 
@@ -183,7 +117,7 @@ export async function canonicalizePersistedMediaUris<T>(value: T): Promise<T> {
 
   const visit = async (input: unknown): Promise<unknown> => {
     if (typeof input === "string") {
-      if (isEncryptedMediaUri(input) || isOpusMediaUri(input)) {
+      if (isOpusMediaUri(input)) {
         return resolveString(input);
       }
       return input;
@@ -223,25 +157,6 @@ export async function canonicalizePersistedMediaUris<T>(value: T): Promise<T> {
   };
 
   return (await visit(value)) as T;
-}
-
-async function generateThumbnailBase64(
-  sourceUri: string,
-): Promise<string | null> {
-  try {
-    const context = ImageManipulator.manipulate(sourceUri);
-    context.resize({ width: THUMB_SIZE, height: THUMB_SIZE });
-    const image = await context.renderAsync();
-    const result = await image.saveAsync({
-      format: SaveFormat.JPEG,
-      compress: THUMB_COMPRESS,
-      base64: true,
-    });
-    return result.base64 ?? null;
-  } catch (error) {
-    console.warn("Thumbnail generation failed:", error);
-    return null;
-  }
 }
 
 export async function saveEncryptedMediaFromUri(
@@ -292,97 +207,28 @@ export async function importMediaAssets(
   }
 }
 
-export async function saveEncryptedMedia(
-  base64Data: string,
-  mimeType: string = "image/jpeg",
-  sourceUri?: string,
-): Promise<string> {
-  const id = uuidv4();
-  const payload = JSON.stringify({ m: mimeType, d: base64Data });
-  const encrypted = await encryptData(payload);
-  await AsyncStorage.setItem(getLegacyMediaKey(id), encrypted);
-
-  if (sourceUri) {
-    const thumbBase64 = await generateThumbnailBase64(sourceUri);
-    if (thumbBase64) {
-      await AsyncStorage.setItem(getLegacyThumbKey(id), thumbBase64);
-    }
-  }
-
-  return `${ENCRYPTED_MEDIA_PREFIX}${id}`;
-}
-
 export async function loadThumbnail(uri: string): Promise<string | null> {
-  const resolved = await resolveMediaStorage(uri, { migrateLegacy: true });
+  if (!isOpusMediaUri(uri)) return null;
 
-  if (resolved.kind === "v2" && resolved.mediaId) {
-    return loadV2AsDataUri(resolved.mediaId, "thumb");
-  }
-
-  if (resolved.kind !== "v1" || !resolved.mediaId) {
-    return null;
-  }
-
-  const thumbBase64 = await AsyncStorage.getItem(
-    getLegacyThumbKey(resolved.mediaId),
-  );
-  if (!thumbBase64) return null;
-  return `data:image/jpeg;base64,${thumbBase64}`;
-}
-
-export async function generateAndSaveThumbnail(
-  uri: string,
-  dataUri: string,
-): Promise<void> {
-  if (isOpusMediaUri(uri) || !isEncryptedMediaUri(uri)) return;
-
-  const id = mediaIdFromUri(uri);
-  const thumbBase64 = await generateThumbnailBase64(dataUri);
-  if (thumbBase64) {
-    await AsyncStorage.setItem(getLegacyThumbKey(id), thumbBase64);
-  }
+  const mediaId = opusMediaIdFromUri(uri);
+  return loadV2AsDataUri(mediaId, "thumb");
 }
 
 export async function loadEncryptedMedia(uri: string): Promise<string | null> {
-  const resolved = await resolveMediaStorage(uri, { migrateLegacy: true });
+  if (!isOpusMediaUri(uri)) return null;
 
-  if (resolved.kind === "v2" && resolved.mediaId) {
-    return loadV2AsDataUri(resolved.mediaId, "image");
-  }
-
-  if (resolved.kind !== "v1" || !resolved.mediaId) {
-    return null;
-  }
-
-  const encrypted = await AsyncStorage.getItem(
-    getLegacyMediaKey(resolved.mediaId),
-  );
-  if (!encrypted) return null;
-
-  const decrypted = await decryptData(encrypted);
-  try {
-    const parsed = JSON.parse(decrypted);
-    return `data:${parsed.m || "image/jpeg"};base64,${parsed.d}`;
-  } catch {
-    return `data:image/jpeg;base64,${decrypted}`;
-  }
+  const mediaId = opusMediaIdFromUri(uri);
+  return loadV2AsDataUri(mediaId, "image");
 }
 
 async function deleteMediaById(mediaId: string): Promise<void> {
   await deleteMediaV2(mediaId);
-  await AsyncStorage.multiRemove([
-    getLegacyMediaKey(mediaId),
-    getLegacyThumbKey(mediaId),
-  ]);
-  await forgetMigratedMedia(mediaId);
 }
 
 export async function deleteEncryptedMedia(uri: string): Promise<void> {
-  if (!isEncryptedMediaUri(uri) && !isOpusMediaUri(uri)) return;
+  if (!isOpusMediaUri(uri)) return;
 
-  const mediaId = isOpusMediaUri(uri)
-    ? opusMediaIdFromUri(uri)
-    : mediaIdFromUri(uri);
+  const mediaId = opusMediaIdFromUri(uri);
   await deleteMediaById(mediaId);
 }
 
@@ -392,37 +238,16 @@ export async function deleteMultipleEncryptedMedia(
   const mediaIds = Array.from(
     new Set(
       uris
-        .filter((uri) => isEncryptedMediaUri(uri) || isOpusMediaUri(uri))
-        .map((uri) =>
-          isOpusMediaUri(uri) ? opusMediaIdFromUri(uri) : mediaIdFromUri(uri),
-        ),
+        .filter((uri) => isOpusMediaUri(uri))
+        .map((uri) => opusMediaIdFromUri(uri)),
     ),
   );
 
   if (mediaIds.length === 0) return;
 
   await deleteMultipleMediaV2(mediaIds);
-  const legacyKeys = mediaIds.flatMap((mediaId) => [
-    getLegacyMediaKey(mediaId),
-    getLegacyThumbKey(mediaId),
-  ]);
-  await AsyncStorage.multiRemove(legacyKeys);
-  for (const mediaId of mediaIds) {
-    await forgetMigratedMedia(mediaId);
-  }
 }
 
 export async function clearAllMediaStorage(): Promise<void> {
   await clearAllMediaV2();
-
-  const keys = await AsyncStorage.getAllKeys();
-  const mediaKeys = keys.filter(
-    (key) =>
-      key.startsWith(MEDIA_KEY_PREFIX) ||
-      key.startsWith(THUMB_KEY_PREFIX) ||
-      key === "@opus_media_migrated",
-  );
-  if (mediaKeys.length > 0) {
-    await AsyncStorage.multiRemove(mediaKeys);
-  }
 }

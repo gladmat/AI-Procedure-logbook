@@ -38,9 +38,8 @@ import { MediaTagPicker } from "@/components/media";
 import {
   resolveMediaTag,
   suggestDefaultMediaTag,
-} from "@/lib/mediaTagMigration";
+} from "@/lib/mediaTagHelpers";
 import type { MediaTag } from "@/types/media";
-import type { OperativeMediaType } from "@/types/case";
 import {
   buildOperativeMediaItemRecord,
   isPersistedMediaUriValue,
@@ -69,7 +68,6 @@ export default function AddOperativeMediaScreen() {
     callbackId,
     editMode = false,
     existingMediaId,
-    existingMediaType,
     existingTag,
     existingCaption,
     existingTimestamp,
@@ -77,16 +75,12 @@ export default function AddOperativeMediaScreen() {
     mediaContext,
   } = route.params;
 
-  // Resolve initial tag from existingTag or legacy existingMediaType
+  // Resolve initial tag from existingTag or suggest from context
   const initialTag: MediaTag = existingTag
     ? existingTag
-    : existingMediaType
-      ? resolveMediaTag({
-          mediaType: existingMediaType as OperativeMediaType,
-        })
-      : suggestDefaultMediaTag({
-          procedureDate: mediaContext?.procedureDate,
-        });
+    : suggestDefaultMediaTag({
+        procedureDate: mediaContext?.procedureDate,
+      });
 
   const [selectedTag, setSelectedTag] = useState<MediaTag>(initialTag);
   const [captionInput, setCaptionInput] = useState(existingCaption || "");

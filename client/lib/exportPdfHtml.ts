@@ -60,23 +60,8 @@ function getHeadNeckFlapSummary(caseData: Case): string {
 
       const details = procedure.clinicalDetails as FreeFlapDetails;
       const parts: string[] = [];
-      const recipientVesselQuality =
-        details.recipientVesselQuality ??
-        (details.irradiatedVesselPreference === "vein_graft_required"
-          ? "irradiated_vein_graft_required"
-          : details.irradiatedNeckDissectionPerformed
-            ? "previously_operated"
-            : details.irradiatedVesselPreference === "ipsilateral_viable" ||
-                (details.irradiatedVesselStatus &&
-                  details.irradiatedVesselStatus !== "normal")
-              ? "irradiated_usable"
-              : details.irradiatedVesselStatus === "normal" ||
-                  details.irradiatedVesselPreference === "contralateral"
-                ? "normal"
-                : undefined);
-      const veinGraftUsed =
-        details.veinGraftUsed ??
-        details.irradiatedVesselPreference === "vein_graft_required";
+      const recipientVesselQuality = details.recipientVesselQuality;
+      const veinGraftUsed = details.veinGraftUsed;
 
       if (recipientVesselQuality) {
         parts.push(RECIPIENT_VESSEL_QUALITY_LABELS[recipientVesselQuality]);

@@ -9,10 +9,6 @@ import type { DigitId, AmputationLevel, DigitAmputation } from "@/types/case";
 
 export interface AmputationState {
   digitAmputations: DigitAmputation[];
-  /** @deprecated legacy — kept for backward compat writes */
-  amputationLevel?: AmputationLevel;
-  amputationType?: "complete" | "subtotal";
-  isReplantable?: boolean;
 }
 
 interface AmputationSectionProps {
@@ -138,9 +134,6 @@ function MultiAmputationUI({
     onChange({
       ...value,
       digitAmputations: next,
-      amputationLevel: first?.level,
-      amputationType: first?.type,
-      isReplantable: first?.isReplantable,
     });
   };
 
@@ -155,9 +148,6 @@ function MultiAmputationUI({
     onChange({
       ...value,
       digitAmputations: entries,
-      amputationLevel: level,
-      amputationType: "complete",
-      isReplantable: undefined,
     });
   };
 
@@ -537,9 +527,6 @@ export function AmputationSection({
           onChange({
             ...value,
             digitAmputations: next,
-            amputationLevel: e?.level,
-            amputationType: e?.type,
-            isReplantable: e?.isReplantable,
           });
         }}
         theme={theme}

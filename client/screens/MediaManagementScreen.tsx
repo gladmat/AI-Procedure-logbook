@@ -39,8 +39,7 @@ import { useMediaCallback } from "@/contexts/MediaCallbackContext";
 import { MediaAttachment } from "@/types/case";
 import { MediaTagPicker } from "@/components/media";
 import { MEDIA_TAG_REGISTRY } from "@/types/media";
-import { resolveMediaTag } from "@/lib/mediaTagMigration";
-import { getLegacyCategoryForTag } from "@/lib/operativeMedia";
+import { resolveMediaTag } from "@/lib/mediaTagHelpers";
 import { buildDefaultMediaAttachment } from "@/lib/mediaAttachmentDefaults";
 import type { MediaTag } from "@/types/media";
 
@@ -222,16 +221,8 @@ export default function MediaManagementScreen() {
   const handleSetTag = (id: string, tag: MediaTag) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setLastSelectedTag(tag);
-    const category = getLegacyCategoryForTag(tag);
     setAttachments((prev) =>
-      prev.map((a) =>
-        a.id === id
-          ? (() => {
-              const { category: _existingCategory, ...rest } = a;
-              return category ? { ...rest, tag, category } : { ...rest, tag };
-            })()
-          : a,
-      ),
+      prev.map((a) => (a.id === id ? { ...a, tag } : a)),
     );
   };
 
@@ -244,18 +235,8 @@ export default function MediaManagementScreen() {
       return;
     }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    const category = getLegacyCategoryForTag(lastSelectedTag);
     setAttachments((prev) =>
-      prev.map((a) =>
-        !a.tag
-          ? (() => {
-              const { category: _existingCategory, ...rest } = a;
-              return category
-                ? { ...rest, tag: lastSelectedTag, category }
-                : { ...rest, tag: lastSelectedTag };
-            })()
-          : a,
-      ),
+      prev.map((a) => (!a.tag ? { ...a, tag: lastSelectedTag } : a)),
     );
   };
 

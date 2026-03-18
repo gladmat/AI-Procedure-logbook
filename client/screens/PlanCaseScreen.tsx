@@ -86,7 +86,6 @@ export default function PlanCaseScreen() {
       plannedDate: plannedDate || undefined,
       plannedNote: plannedNote.trim() || undefined,
       plannedTemplateId: selectedTemplateId ?? undefined,
-      schemaVersion: 4,
     } as Case;
   }, [
     patientId,

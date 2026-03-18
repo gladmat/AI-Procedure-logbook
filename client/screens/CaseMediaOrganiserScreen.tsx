@@ -20,13 +20,12 @@ import { EncryptedImage } from "@/components/EncryptedImage";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, Shadows } from "@/constants/theme";
-import { OperativeMediaItem, OperativeMediaType } from "@/types/case";
+import { OperativeMediaItem } from "@/types/case";
 import { MEDIA_TAG_REGISTRY } from "@/types/media";
 import type { MediaTag } from "@/types/media";
 import type { CaptureStep, CapturePhase } from "@/data/mediaCaptureProtocols";
 import { useMediaCallback } from "@/contexts/MediaCallbackContext";
 import { autoAssign } from "@/lib/inboxAssignment";
-import { TAG_TO_MEDIA_TYPE } from "@/lib/operativeMedia";
 import type { RootStackParamList } from "@/navigation/RootStackNavigator";
 
 type PhaseFilter = "all" | CapturePhase;
@@ -91,7 +90,6 @@ export default function CaseMediaOrganiserScreen() {
               ? {
                   ...m,
                   tag: "other" as MediaTag,
-                  mediaType: "other" as OperativeMediaType,
                 }
               : m,
           ),
@@ -119,8 +117,6 @@ export default function CaseMediaOrganiserScreen() {
             ? {
                 ...m,
                 tag: step.tag,
-                mediaType: (TAG_TO_MEDIA_TYPE[step.tag] ??
-                  "other") as OperativeMediaType,
               }
             : m,
         ),

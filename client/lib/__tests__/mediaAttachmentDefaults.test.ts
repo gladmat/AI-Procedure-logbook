@@ -23,7 +23,6 @@ describe("buildDefaultMediaAttachment", () => {
       id: "capture-1",
       localUri: "opus-media:test",
       tag: "discharge",
-      category: "discharge_wound",
       timestamp: toUtcNoonIsoTimestamp("2026-03-10"),
     });
   });
@@ -39,7 +38,6 @@ describe("buildDefaultMediaAttachment", () => {
     });
 
     expect(attachment.tag).toBe("xray_followup");
-    expect(attachment.category).toBeUndefined();
     expect(attachment.timestamp).toBe(toUtcNoonIsoTimestamp("2026-03-20"));
   });
 
@@ -67,6 +65,5 @@ describe("buildDefaultMediaAttachment", () => {
     });
 
     expect(attachment.tag).toBe("intraop");
-    expect(attachment.category).toBe("immediate_postop");
   });
 });

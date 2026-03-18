@@ -141,7 +141,7 @@ export function generateHandTraumaAssessmentSummary(
   if (details?.isRingAvulsion) parts.push("Ring avulsion");
 
   // Amputation
-  if (details?.amputationLevel) {
+  if (details?.digitAmputations && details.digitAmputations.length > 0) {
     const levelLabels: Record<string, string> = {
       fingertip: "Fingertip",
       distal_phalanx: "Distal phalanx",
@@ -151,10 +151,10 @@ export function generateHandTraumaAssessmentSummary(
       ray: "Ray",
       hand_wrist: "Hand/wrist",
     };
-    const label =
-      levelLabels[details.amputationLevel] ?? details.amputationLevel;
+    const amp = details.digitAmputations[0]!;
+    const label = levelLabels[amp.level] ?? amp.level;
     parts.push(
-      `${label} amputation${details.isReplantable ? " (replantable)" : ""}`,
+      `${label} amputation${amp.isReplantable ? " (replantable)" : ""}`,
     );
   }
 

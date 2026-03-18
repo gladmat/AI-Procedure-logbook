@@ -1,9 +1,8 @@
-import type { OperativeMediaItem, OperativeMediaType } from "@/types/case";
+import type { OperativeMediaItem } from "@/types/case";
 import type { InboxItem } from "@/types/inbox";
 import type { MediaTag } from "@/types/media";
 import { ALL_PROTOCOLS } from "@/data/mediaCaptureProtocols";
-import { TAG_TO_MEDIA_TYPE } from "@/lib/operativeMedia";
-import { suggestTemporalTag } from "@/lib/mediaTagMigration";
+import { suggestTemporalTag } from "@/lib/mediaTagHelpers";
 
 function resolveProtocolTag(
   templateId?: string,
@@ -54,7 +53,6 @@ export function buildOperativeMediaItemFromInboxItem(
     localUri: item.localUri,
     mimeType: item.mimeType,
     tag,
-    mediaType: (TAG_TO_MEDIA_TYPE[tag] ?? "other") as OperativeMediaType,
     createdAt: item.capturedAt,
     templateId: item.templateId,
     templateStepIndex: item.templateStepIndex,
@@ -83,7 +81,6 @@ export function buildCapturedOperativeMediaItem(args: {
     localUri: args.localUri,
     mimeType: args.mimeType,
     tag,
-    mediaType: (TAG_TO_MEDIA_TYPE[tag] ?? "other") as OperativeMediaType,
     createdAt: args.capturedAt,
     templateId: args.templateId,
     templateStepIndex: args.templateStepIndex,

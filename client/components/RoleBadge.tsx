@@ -3,7 +3,6 @@ import { View, StyleSheet } from "react-native";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { BorderRadius, Spacing } from "@/constants/theme";
-import { Role, ROLE_LABELS } from "@/types/case";
 import {
   type OperativeRole,
   OPERATIVE_ROLE_SHORT_LABELS,
@@ -11,7 +10,7 @@ import {
 } from "@/types/operativeRole";
 
 interface RoleBadgeProps {
-  role: Role | OperativeRole;
+  role: string | OperativeRole;
   size?: "small" | "medium";
 }
 
@@ -19,7 +18,6 @@ export function RoleBadge({ role, size = "medium" }: RoleBadgeProps) {
   const { theme } = useTheme();
 
   const getRoleColor = () => {
-    // New OperativeRole values
     if (isOperativeRole(role)) {
       switch (role) {
         case "SURGEON":
@@ -35,31 +33,14 @@ export function RoleBadge({ role, size = "medium" }: RoleBadgeProps) {
           return theme.textSecondary;
       }
     }
-    // Legacy Role values
-    switch (role) {
-      case "PS":
-        return theme.rolePrimary;
-      case "PP":
-        return theme.link;
-      case "AS":
-        return theme.roleAssistant;
-      case "ONS":
-        return theme.textSecondary;
-      case "SS":
-      case "SNS":
-        return theme.roleSupervising;
-      case "A":
-        return theme.roleTrainee;
-      default:
-        return theme.textSecondary;
-    }
+    return theme.textSecondary;
   };
 
   const getLabel = (): string => {
     if (isOperativeRole(role)) {
       return OPERATIVE_ROLE_SHORT_LABELS[role];
     }
-    return ROLE_LABELS[role as Role] ?? role;
+    return role;
   };
 
   const isSmall = size === "small";

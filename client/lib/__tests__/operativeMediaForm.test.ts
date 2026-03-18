@@ -7,10 +7,10 @@ import {
 } from "@/lib/operativeMediaForm";
 
 describe("operativeMediaForm", () => {
-  it("recognizes both legacy and v2 persisted media URIs", () => {
-    expect(isPersistedMediaUriValue("encrypted-media:legacy-id")).toBe(true);
+  it("recognizes v2 persisted media URIs", () => {
     expect(isPersistedMediaUriValue("opus-media:v2-id")).toBe(true);
     expect(isPersistedMediaUriValue("file:///tmp/photo.jpg")).toBe(false);
+    expect(isPersistedMediaUriValue("encrypted-media:legacy-id")).toBe(false);
   });
 
   it("reuses the original opus-media URI during an unchanged edit", () => {
@@ -51,7 +51,7 @@ describe("operativeMediaForm", () => {
     });
 
     expect(item.createdAt).toBe("2026-02-01T08:00:00.000Z");
-    expect(item.mediaType).toBe("intraoperative_photo");
+    expect(item.tag).toBe("flap_harvest");
     expect(item.caption).toBe("flap raised");
   });
 });

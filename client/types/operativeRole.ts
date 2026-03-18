@@ -106,33 +106,6 @@ export function validSupervisionLevels(
 // Stored as name + optional userId reference on the Case interface.
 // ════════════════════════════════════════════════════════════════
 
-// ════════════════════════════════════════════════════════════════
-// Legacy migration mapping
-// ════════════════════════════════════════════════════════════════
-
-/** Old combined role codes from the current ProcedureEntryCard */
-export type LegacySurgeonRole = "PS" | "PP" | "AS" | "ONS" | "SS" | "SNS" | "A";
-
-export const LEGACY_ROLE_LABELS: Record<LegacySurgeonRole, string> = {
-  PS: "Primary Surgeon",
-  PP: "Performed with Peer",
-  AS: "Assisting (scrubbed)",
-  ONS: "Observing (not scrubbed)",
-  SS: "Supervising (scrubbed)",
-  SNS: "Supervising (not scrubbed)",
-  A: "Available",
-};
-
-const LEGACY_ROLE_SET = new Set<string>([
-  "PS",
-  "PP",
-  "AS",
-  "ONS",
-  "SS",
-  "SNS",
-  "A",
-]);
-
 const OPERATIVE_ROLE_SET = new Set<string>([
   "SURGEON",
   "FIRST_ASST",
@@ -141,43 +114,9 @@ const OPERATIVE_ROLE_SET = new Set<string>([
   "SUPERVISOR",
 ]);
 
-/** Check if a string is a legacy role code */
-export function isLegacyRole(role: string): role is LegacySurgeonRole {
-  return LEGACY_ROLE_SET.has(role);
-}
-
-/** Check if a string is a new operative role */
+/** Check if a string is a valid operative role */
 export function isOperativeRole(role: string): role is OperativeRole {
   return OPERATIVE_ROLE_SET.has(role);
-}
-
-/**
- * Maps old single-field surgeonRole to the new two-dimensional model.
- * Lossless for all codes except PP which maps to SURGEON + INDEPENDENT
- * (two consultants of equal standing, no supervision hierarchy).
- */
-export function migrateLegacyRole(legacy: LegacySurgeonRole): {
-  role: OperativeRole;
-  supervision: SupervisionLevel;
-} {
-  switch (legacy) {
-    case "PS":
-      return { role: "SURGEON", supervision: "INDEPENDENT" };
-    case "PP":
-      return { role: "SURGEON", supervision: "INDEPENDENT" };
-    case "AS":
-      return { role: "FIRST_ASST", supervision: "NOT_APPLICABLE" };
-    case "ONS":
-      return { role: "OBSERVER", supervision: "NOT_APPLICABLE" };
-    case "SS":
-      return { role: "SUPERVISOR", supervision: "NOT_APPLICABLE" };
-    case "SNS":
-      return { role: "SUPERVISOR", supervision: "NOT_APPLICABLE" };
-    case "A":
-      return { role: "OBSERVER", supervision: "NOT_APPLICABLE" };
-    default:
-      return { role: "SURGEON", supervision: "INDEPENDENT" };
-  }
 }
 
 /**
@@ -187,7 +126,7 @@ export function migrateLegacyRole(legacy: LegacySurgeonRole): {
 export function toNearestLegacyRole(
   role: OperativeRole,
   supervision: SupervisionLevel,
-): LegacySurgeonRole {
+): "PS" | "PP" | "AS" | "ONS" | "SS" | "SNS" | "A" {
   switch (role) {
     case "FIRST_ASST":
     case "SECOND_ASST":

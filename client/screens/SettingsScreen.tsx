@@ -26,7 +26,6 @@ import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, Shadows } from "@/constants/theme";
 import { clearAllData, getCaseCount } from "@/lib/storage";
 import { exportCases, ExportFormat, EXPORT_FORMAT_LABELS } from "@/lib/export";
-import { validateMigrationCorpus } from "@/lib/migrationValidator";
 import { requestOnboardingRestart } from "@/lib/onboarding";
 import { getCodingSystemForProfile } from "@/lib/snomedCt";
 import { getAuthToken } from "@/lib/auth";
@@ -302,30 +301,6 @@ export default function SettingsScreen() {
     );
   };
 
-  const handleValidateMigration = async () => {
-    try {
-      const result = await validateMigrationCorpus();
-      const warnings = result.warningCases.length;
-      const summary = [
-        `Total: ${result.totalCases}`,
-        `Passed: ${result.successCount}`,
-        `Failed: ${result.failedCases.length}`,
-        `Warnings: ${warnings}`,
-      ].join("\n");
-
-      if (result.failedCases.length > 0) {
-        const failDetails = result.failedCases
-          .slice(0, 3)
-          .map((f) => `${f.caseId.slice(0, 8)}: ${f.errors[0]}`)
-          .join("\n");
-        Alert.alert("Migration Issues", `${summary}\n\n${failDetails}`);
-      } else {
-        Alert.alert("Migration OK", summary);
-      }
-    } catch (error: any) {
-      Alert.alert("Validation Error", error?.message || "Unknown error");
-    }
-  };
 
   const handleLogout = () => {
     Alert.alert("Sign Out", "Are you sure you want to sign out?", [
@@ -806,14 +781,6 @@ export default function SettingsScreen() {
               subtitle={caseCount !== null ? `${caseCount} cases` : undefined}
               onPress={handleExport}
             />
-            {__DEV__ ? (
-              <SettingsItem
-                icon="check-circle"
-                label="Validate Migration"
-                subtitle="DEV — checks all cases"
-                onPress={handleValidateMigration}
-              />
-            ) : null}
           </View>
         </View>
 

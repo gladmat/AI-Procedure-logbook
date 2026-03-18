@@ -16,7 +16,7 @@ import {
   operativeMediaToAttachments,
   attachmentsToOperativeMedia,
 } from "@/lib/operativeMedia";
-import { resolveMediaTag } from "@/lib/mediaTagMigration";
+import { resolveMediaTag } from "@/lib/mediaTagHelpers";
 import { ProtocolBadge, GuidedCaptureFlow } from "@/components/media";
 import { findProtocols, mergeProtocols } from "@/data/mediaCaptureProtocols";
 import type { MediaContext } from "@/lib/mediaContext";
@@ -111,7 +111,6 @@ export function OperativeMediaSection({
       callbackId,
       editMode: true,
       existingMediaId: item.id,
-      existingMediaType: item.mediaType,
       existingTag: item.tag,
       existingCaption: item.caption,
       existingTimestamp: item.timestamp,

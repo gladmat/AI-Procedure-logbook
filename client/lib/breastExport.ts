@@ -15,7 +15,6 @@ import {
   LIPOFILLING_INDICATION_LABELS,
   NIPPLE_RECON_TECHNIQUE_LABELS,
   PROCESSING_METHOD_LABELS,
-  BREAST_RECIPIENT_ARTERY_LABELS,
 } from "@/types/breast";
 import { normalizeBreastAssessment } from "@/lib/breastState";
 import { getImplantManufacturerLabel } from "@/lib/breastConfig";
@@ -42,7 +41,6 @@ export interface BreastSideExportData {
   flap?: {
     weightGrams?: number;
     perforatorCount?: number;
-    recipientArteryLabel?: string;
     couplerUsed?: boolean;
     couplerSizeMm?: number;
   };
@@ -126,11 +124,6 @@ export function getBreastExportData(
         ? {
             weightGrams: sideData.flapDetails.flapWeightGrams,
             perforatorCount: sideData.flapDetails.perforators?.length,
-            recipientArteryLabel: sideData.flapDetails.recipientArtery
-              ? BREAST_RECIPIENT_ARTERY_LABELS[
-                  sideData.flapDetails.recipientArtery
-                ]
-              : undefined,
             couplerUsed: sideData.flapDetails.venousCouplerUsed,
             couplerSizeMm: sideData.flapDetails.venousCouplerSizeMm,
           }

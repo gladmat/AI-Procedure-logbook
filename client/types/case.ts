@@ -21,20 +21,6 @@ export const CASE_STATUS_LABELS: Record<CaseStatus, string> = {
   planned: "Planned",
 };
 
-// RACS MALT Supervision Levels (role in theatre)
-export type Role = "PS" | "PP" | "AS" | "ONS" | "SS" | "SNS" | "A";
-
-/** @deprecated Use OperativeRole from operativeRole.ts instead. Kept for backward compat with old cases. */
-export type OperatingTeamRole =
-  | "primary_surgeon"
-  | "scrub_nurse"
-  | "circulating_nurse"
-  | "anaesthetist"
-  | "anaesthetic_registrar"
-  | "surgical_assistant"
-  | "surgical_registrar"
-  | "medical_student"
-  | "unassigned";
 
 // Procedure categories by specialty (high-level classification)
 export type HandSurgeryCategory =
@@ -959,17 +945,9 @@ export interface TeamMember {
   userId?: string;
   name: string;
   email?: string;
-  role: Role;
+  role: string;
   confirmed: boolean;
   addedAt: string;
-}
-
-/** @deprecated Operating team removed in role refactor. Kept for backward compat with old cases. */
-export interface OperatingTeamMember {
-  id: string;
-  name: string;
-  role: OperatingTeamRole;
-  specialty?: string;
 }
 
 export interface SurgeryTiming {
@@ -1067,14 +1045,8 @@ export interface HandTraumaDetails {
   isFightBite?: boolean;
   isCompartmentSyndrome?: boolean;
   isRingAvulsion?: boolean;
-  /** Per-digit amputation data (preferred over legacy single-level fields) */
+  /** Per-digit amputation data */
   digitAmputations?: DigitAmputation[];
-  /** @deprecated Use digitAmputations instead */
-  amputationLevel?: AmputationLevel;
-  /** @deprecated Use digitAmputations instead */
-  amputationType?: "complete" | "subtotal";
-  /** @deprecated Use digitAmputations instead */
-  isReplantable?: boolean;
 }
 
 export interface DiagnosisClinicalDetails {
@@ -1580,15 +1552,6 @@ export interface FreeFlapDetails {
   veinGraftUsed?: boolean;
   veinGraftSource?: VeinGraftSource;
   veinGraftLength?: number;
-  /** @deprecated Replaced by recipientVesselQuality. */
-  irradiatedVesselStatus?: "normal" | "thickened" | "calcified" | "friable";
-  /** @deprecated Replaced by recipientVesselQuality / veinGraftUsed. */
-  irradiatedVesselPreference?:
-    | "contralateral"
-    | "ipsilateral_viable"
-    | "vein_graft_required";
-  /** @deprecated Replaced by joint-case context or operative procedures. */
-  irradiatedNeckDissectionPerformed?: boolean;
 
   // Flap outcome stored in local clinicalDetails
   flapOutcome?: FreeFlapOutcomeDetails;
@@ -1776,7 +1739,7 @@ export interface CaseProcedure {
   snomedCtDisplay?: string;
   localCode?: string;
   localCodeSystem?: string;
-  surgeonRole: Role;
+  surgeonRole?: string;
   /** Per-procedure operative role override (overrides case-level defaultOperativeRole) */
   operativeRoleOverride?: OperativeRole;
   /** Per-procedure supervision level override (overrides case-level defaultSupervisionLevel) */
@@ -1929,8 +1892,6 @@ export interface Case {
   procedureCode?: ProcedureCode;
   diagnosisGroups: DiagnosisGroup[];
   surgeryTiming?: SurgeryTiming;
-  /** @deprecated Operating team removed in role refactor. Kept for backward compat with old cases. */
-  operatingTeam?: OperatingTeamMember[];
 
   // Operative Role & Supervision (3-dimensional model)
   responsibleConsultantName?: string;
@@ -1938,8 +1899,7 @@ export interface Case {
   defaultOperativeRole?: OperativeRole;
   defaultSupervisionLevel?: SupervisionLevel;
 
-  // Schema & entry tracking (Phase 4)
-  schemaVersion?: number;
+  // Entry tracking (Phase 4)
   formOpenedAt?: string;
   formSavedAt?: string;
   entryDurationSeconds?: number;
@@ -1958,8 +1918,6 @@ export interface Case {
 
   // Patient Demographics
   gender?: Gender;
-  /** @deprecated Use patientDateOfBirth + calculateAgeFromDob() instead. Kept for backward compat with old cases. */
-  age?: number;
   ethnicity?: string;
 
   // Admission Details
@@ -2066,59 +2024,6 @@ export interface PROMData {
   responses?: Record<string, string | number>;
 }
 
-export type MediaCategory =
-  | "preop"
-  | "flap_harvest"
-  | "flap_inset"
-  | "anastomosis"
-  | "closure"
-  | "immediate_postop"
-  | "flap_planning"
-  | "xray"
-  | "preop_xray"
-  | "intraop_xray"
-  | "postop_xray"
-  | "ct_angiogram"
-  | "ultrasound"
-  | "discharge_wound"
-  | "discharge_donor"
-  | "followup_photo"
-  | "donor_site"
-  | "complication"
-  | "revision"
-  | "other";
-
-export const MEDIA_CATEGORY_OPTIONS: {
-  value: MediaCategory;
-  label: string;
-  group: string;
-}[] = [
-  { value: "preop", label: "Pre-op", group: "Operation Day" },
-  { value: "flap_harvest", label: "Flap Harvest", group: "Operation Day" },
-  { value: "flap_inset", label: "Flap Inset", group: "Operation Day" },
-  { value: "anastomosis", label: "Anastomosis", group: "Operation Day" },
-  { value: "closure", label: "Closure", group: "Operation Day" },
-  {
-    value: "immediate_postop",
-    label: "Immediate Post-op",
-    group: "Operation Day",
-  },
-  { value: "flap_planning", label: "Flap Planning", group: "Operation Day" },
-  { value: "xray", label: "X-ray (generic)", group: "Imaging" },
-  { value: "preop_xray", label: "Pre-op X-ray", group: "Imaging" },
-  { value: "intraop_xray", label: "Intraop X-ray", group: "Imaging" },
-  { value: "postop_xray", label: "Post-op X-ray", group: "Imaging" },
-  { value: "ct_angiogram", label: "CT/Angiogram", group: "Imaging" },
-  { value: "ultrasound", label: "Ultrasound/Doppler", group: "Imaging" },
-  { value: "discharge_wound", label: "Discharge Wound", group: "Discharge" },
-  { value: "discharge_donor", label: "Discharge Donor", group: "Discharge" },
-  { value: "followup_photo", label: "Follow-up Photo", group: "Follow-up" },
-  { value: "donor_site", label: "Donor Site", group: "Follow-up" },
-  { value: "complication", label: "Complication", group: "Follow-up" },
-  { value: "revision", label: "Revision", group: "Follow-up" },
-  { value: "other", label: "Other", group: "Other" },
-];
-
 export interface MediaAttachment {
   id: string;
   localUri: string;
@@ -2127,21 +2032,8 @@ export interface MediaAttachment {
   caption?: string;
   createdAt: string;
   tag?: MediaTag;
-  /** @deprecated Use `tag` instead */
-  category?: MediaCategory;
   timestamp?: string; // User-selected date for the media (e.g. pre-op X-ray date)
 }
-
-// Operative media for photos/files attached directly to case record
-export type OperativeMediaType =
-  | "preoperative_photo"
-  | "intraoperative_photo"
-  | "xray"
-  | "ct_scan"
-  | "mri"
-  | "diagram"
-  | "document"
-  | "other";
 
 export interface OperativeMediaItem {
   id: string;
@@ -2149,8 +2041,6 @@ export interface OperativeMediaItem {
   thumbnailUri?: string;
   mimeType: string;
   tag?: MediaTag;
-  /** @deprecated Use `tag` instead */
-  mediaType: OperativeMediaType;
   caption?: string;
   timestamp?: string;
   createdAt: string;
@@ -2162,17 +2052,6 @@ export interface OperativeMediaItem {
    */
   sourceInboxId?: string;
 }
-
-export const OPERATIVE_MEDIA_TYPE_LABELS: Record<OperativeMediaType, string> = {
-  preoperative_photo: "Preop Photo",
-  intraoperative_photo: "Intraop Photo",
-  xray: "X-ray",
-  ct_scan: "CT Scan",
-  mri: "MRI",
-  diagram: "Diagram",
-  document: "Document",
-  other: "Other",
-};
 
 export interface TimelineEvent {
   id: string;
@@ -2281,40 +2160,6 @@ export const PROCEDURE_TAG_LABELS: Record<ProcedureTag, string> = {
   experimental: "Experimental",
 };
 
-// RACS MALT Supervision Level Labels
-export const ROLE_LABELS: Record<Role, string> = {
-  PS: "Primary Surgeon",
-  PP: "Performed with Peer",
-  AS: "Assisting (scrubbed)",
-  ONS: "Observing (not scrubbed)",
-  SS: "Supervising (scrubbed)",
-  SNS: "Supervising (not scrubbed)",
-  A: "Available",
-};
-
-// RACS MALT Supervision Level Descriptions
-export const ROLE_DESCRIPTIONS: Record<Role, string> = {
-  PS: "Primary Surgeon",
-  PP: "Surgeon working with peer or with peer support in a complex or new procedure or in a combined procedure with another specialty.",
-  AS: "Assisting",
-  ONS: "Procedure observed, not scrubbed.",
-  SS: "Supervising - in theatre at the table actively assisting and training.",
-  SNS: "Supervising - not scrubbed but in the operating theatre; actively watching the procedure and able to provide advice or scrub in if required.",
-  A: "Not in the theatre but available by telephone for advice and able to attend if required.",
-};
-
-/** @deprecated Operating team removed in role refactor. Kept for backward compat. */
-export const OPERATING_TEAM_ROLE_LABELS: Record<OperatingTeamRole, string> = {
-  primary_surgeon: "Primary Surgeon",
-  scrub_nurse: "Scrub Nurse",
-  circulating_nurse: "Circulating Nurse",
-  anaesthetist: "Anaesthetist",
-  anaesthetic_registrar: "Anaesthetic Registrar",
-  surgical_assistant: "Surgical Assistant",
-  surgical_registrar: "Surgical Registrar",
-  medical_student: "Medical Student",
-  unassigned: "Select Role...",
-};
 
 export const INDICATION_LABELS: Record<Indication, string> = {
   trauma: "Trauma",

@@ -1,5 +1,6 @@
 import { PHALANX_NAMES } from "@/data/aoHandClassification";
 import type {
+  AmputationLevel,
   CoverageZone,
   CoverageSize,
   DigitId,
@@ -36,9 +37,6 @@ export interface HandTraumaDiagnosisSelection {
   isCompartmentSyndrome?: boolean;
   isRingAvulsion?: boolean;
   digitAmputations?: import("@/types/case").DigitAmputation[];
-  amputationLevel?: HandTraumaDetails["amputationLevel"];
-  amputationType?: HandTraumaDetails["amputationType"];
-  isReplantable?: boolean;
 }
 
 export interface FractureInjury {
@@ -105,8 +103,8 @@ export interface SoftTissueInjury {
 
 export interface AmputationInjury {
   digits: DigitId[];
-  level: NonNullable<HandTraumaDetails["amputationLevel"]>;
-  type?: HandTraumaDetails["amputationType"];
+  level: AmputationLevel;
+  type?: "complete" | "subtotal";
   isReplantable?: boolean;
 }
 
@@ -161,10 +159,7 @@ const PHALANX_LONG_LABELS: Record<string, string> = {
   "3": "distal phalanx",
 };
 
-const LEVEL_LABELS: Record<
-  NonNullable<HandTraumaDetails["amputationLevel"]>,
-  string
-> = {
+const LEVEL_LABELS: Record<AmputationLevel, string> = {
   fingertip: "fingertip",
   distal_phalanx: "distal phalanx",
   middle_phalanx: "middle phalanx",
@@ -212,10 +207,7 @@ const LATIN = {
   fall: "casus",
 };
 
-const LATIN_LEVEL_LABELS: Record<
-  NonNullable<HandTraumaDetails["amputationLevel"]>,
-  string
-> = {
+const LATIN_LEVEL_LABELS: Record<AmputationLevel, string> = {
   fingertip: "apicem digiti",
   distal_phalanx: "phalangem distalem",
   middle_phalanx: "phalangem mediam",
@@ -453,12 +445,6 @@ export function deriveAffectedRays(
     }
   }
 
-  if (selection.amputationLevel === "ray") {
-    for (const digit of selection.affectedDigits ?? []) {
-      rays.add(digit);
-    }
-  }
-
   return sortDigits(Array.from(rays));
 }
 
@@ -688,16 +674,7 @@ function normalizeAmputations(
       isReplantable: da.isReplantable,
     }));
   }
-  // Legacy fallback
-  if (!selection.amputationLevel) return [];
-  return [
-    {
-      digits: sortDigits(selection.affectedDigits ?? []),
-      level: selection.amputationLevel,
-      type: selection.amputationType,
-      isReplantable: selection.isReplantable,
-    },
-  ];
+  return [];
 }
 
 export function normalizeSelection(
@@ -1583,9 +1560,7 @@ export function buildSelectionFromGroup(
     isFightBite: handTrauma.isFightBite,
     isCompartmentSyndrome: handTrauma.isCompartmentSyndrome,
     isRingAvulsion: handTrauma.isRingAvulsion,
-    amputationLevel: handTrauma.amputationLevel,
-    amputationType: handTrauma.amputationType,
-    isReplantable: handTrauma.isReplantable,
+    digitAmputations: handTrauma.digitAmputations,
   };
 }
 

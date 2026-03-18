@@ -13,11 +13,7 @@ import {
   UnplannedICUReason,
 } from "@/types/case";
 import type { CaseSummary } from "@/types/caseSummary";
-import {
-  isLegacyRole,
-  migrateLegacyRole,
-  type OperativeRole,
-} from "@/types/operativeRole";
+import type { OperativeRole } from "@/types/operativeRole";
 import { getCasePrimaryTitle } from "@/lib/caseDiagnosisSummary";
 import {
   caseCanAddHistology,
@@ -31,18 +27,12 @@ import {
   clearAllMediaStorage,
   deleteMultipleEncryptedMedia,
 } from "./mediaStorage";
-import * as Crypto from "expo-crypto";
 import { normalizeTimelineEventDateOnlyFields } from "./dateFieldNormalization";
 import {
-  migrateCase,
   normalizeCaseDateOnlyFields,
   normalizeCaseBreastFields,
-} from "./migration";
-import { repairCaseSpecialty } from "./caseSpecialty";
-import {
-  hashPatientIdentifierHmac,
-  isLegacyHash,
-} from "./patientIdentifierHmac";
+} from "./caseNormalization";
+import { hashPatientIdentifierHmac } from "./patientIdentifierHmac";
 
 const CASE_INDEX_KEY = "@surgical_logbook_case_index";
 const CASE_PREFIX = "@surgical_logbook_case_";
@@ -50,9 +40,6 @@ const TIMELINE_KEY = "@surgical_logbook_timeline";
 const USER_KEY = "@surgical_logbook_user";
 const SETTINGS_KEY = "@surgical_logbook_settings";
 const CASE_DRAFT_KEY_PREFIX = "@surgical_logbook_case_draft_";
-const LEGACY_ENCRYPTED_CASES_KEY = "@surgical_logbook_cases_encrypted";
-const LEGACY_CASES_KEY = "@surgical_logbook_cases";
-const CASE_SPECIALTY_REPAIR_KEY = "@surgical_logbook_case_specialty_repair_v1";
 const CASE_SUMMARIES_KEY = "@surgical_logbook_case_summaries_v1";
 const CASE_SUMMARY_STORE_VERSION = 1;
 
@@ -114,23 +101,7 @@ function serializeCaseSummaryStore(summaries: CaseSummary[]): string {
 }
 
 function resolveCaseOperativeRole(caseData: Case): OperativeRole | undefined {
-  if (caseData.defaultOperativeRole) {
-    return caseData.defaultOperativeRole;
-  }
-
-  const firstProcedure = getAllProcedures(caseData)[0];
-  if (firstProcedure?.surgeonRole && isLegacyRole(firstProcedure.surgeonRole)) {
-    return migrateLegacyRole(firstProcedure.surgeonRole).role;
-  }
-
-  const legacyRole = caseData.teamMembers?.find(
-    (member) => member.id === caseData.ownerId,
-  )?.role;
-  if (legacyRole && isLegacyRole(legacyRole)) {
-    return migrateLegacyRole(legacyRole).role;
-  }
-
-  return undefined;
+  return caseData.defaultOperativeRole;
 }
 
 function resolveSkinCancerBadge(caseData: Case): {
@@ -261,22 +232,6 @@ export async function hashPatientIdentifier(
   return hashPatientIdentifierHmac(patientIdentifier);
 }
 
-/**
- * Legacy SHA-256 hash (no HMAC key). Used only for backward-compat
- * matching against old index entries during the migration period.
- */
-async function legacyHashPatientIdentifier(
-  patientIdentifier: string,
-): Promise<string> {
-  const normalized = patientIdentifier.toUpperCase().replace(/\s/g, "");
-  return Crypto.digestStringAsync(
-    Crypto.CryptoDigestAlgorithm.SHA256,
-    normalized,
-    { encoding: Crypto.CryptoEncoding.HEX },
-  );
-}
-
-let indexMigrated = false;
 let caseIndexCache: CaseIndexEntry[] | null = null;
 const caseCache = new Map<string, Case>();
 let allCasesCache: Case[] | null = null;
@@ -307,44 +262,6 @@ function getCachedCasesInIndexOrder(index: CaseIndexEntry[]): Case[] | null {
   return ordered;
 }
 
-async function migrateCaseIndexIfNeeded(
-  entries: CaseIndexEntry[],
-): Promise<CaseIndexEntry[]> {
-  let changed = false;
-  const migrated: CaseIndexEntry[] = [];
-
-  for (const entry of entries) {
-    const rawIdentifier = (entry as any).patientIdentifier as
-      | string
-      | undefined;
-    let patientIdentifierHash = (entry as any).patientIdentifierHash as
-      | string
-      | undefined;
-
-    if (!patientIdentifierHash && rawIdentifier) {
-      patientIdentifierHash = await hashPatientIdentifier(rawIdentifier);
-      changed = true;
-    }
-
-    if ((entry as any).patientIdentifier !== undefined) {
-      changed = true;
-    }
-
-    migrated.push({
-      id: entry.id,
-      procedureDate: entry.procedureDate,
-      patientIdentifierHash,
-      updatedAt: entry.updatedAt,
-    });
-  }
-
-  if (changed) {
-    await saveCaseIndex(migrated);
-  }
-
-  return migrated;
-}
-
 async function getCaseIndex(): Promise<CaseIndexEntry[]> {
   if (caseIndexCache) {
     return caseIndexCache;
@@ -354,12 +271,6 @@ async function getCaseIndex(): Promise<CaseIndexEntry[]> {
     const data = await AsyncStorage.getItem(CASE_INDEX_KEY);
     if (data) {
       const parsed = JSON.parse(data) as CaseIndexEntry[];
-      if (!indexMigrated) {
-        const migrated = await migrateCaseIndexIfNeeded(parsed);
-        indexMigrated = true;
-        caseIndexCache = migrated;
-        return migrated;
-      }
       caseIndexCache = parsed;
       return parsed;
     }
@@ -377,144 +288,6 @@ async function saveCaseIndex(index: CaseIndexEntry[]): Promise<void> {
   await AsyncStorage.setItem(CASE_INDEX_KEY, JSON.stringify(index));
 }
 
-async function migrateLegacyData(): Promise<boolean> {
-  try {
-    const legacyEncrypted = await AsyncStorage.getItem(
-      LEGACY_ENCRYPTED_CASES_KEY,
-    );
-    if (legacyEncrypted) {
-      const decrypted = await decryptData(legacyEncrypted);
-      const cases: Case[] = JSON.parse(decrypted);
-
-      const index: CaseIndexEntry[] = [];
-      for (const caseData of cases) {
-        const encrypted = await encryptData(JSON.stringify(caseData));
-        await AsyncStorage.setItem(`${CASE_PREFIX}${caseData.id}`, encrypted);
-        const patientIdentifierHash = await hashPatientIdentifier(
-          caseData.patientIdentifier,
-        );
-        index.push({
-          id: caseData.id,
-          procedureDate: caseData.procedureDate,
-          patientIdentifierHash,
-          updatedAt:
-            caseData.updatedAt ||
-            caseData.createdAt ||
-            new Date().toISOString(),
-        });
-      }
-
-      index.sort(
-        (a, b) =>
-          new Date(b.procedureDate).getTime() -
-          new Date(a.procedureDate).getTime(),
-      );
-      await saveCaseIndex(index);
-      await AsyncStorage.removeItem(LEGACY_ENCRYPTED_CASES_KEY);
-      clearCaseReadCaches();
-      console.log(`Migrated ${cases.length} cases to per-case storage`);
-      return true;
-    }
-
-    const legacyPlain = await AsyncStorage.getItem(LEGACY_CASES_KEY);
-    if (legacyPlain) {
-      const cases: Case[] = JSON.parse(legacyPlain);
-
-      const index: CaseIndexEntry[] = [];
-      for (const caseData of cases) {
-        const encrypted = await encryptData(JSON.stringify(caseData));
-        await AsyncStorage.setItem(`${CASE_PREFIX}${caseData.id}`, encrypted);
-        const patientIdentifierHash = await hashPatientIdentifier(
-          caseData.patientIdentifier,
-        );
-        index.push({
-          id: caseData.id,
-          procedureDate: caseData.procedureDate,
-          patientIdentifierHash,
-          updatedAt:
-            caseData.updatedAt ||
-            caseData.createdAt ||
-            new Date().toISOString(),
-        });
-      }
-
-      index.sort(
-        (a, b) =>
-          new Date(b.procedureDate).getTime() -
-          new Date(a.procedureDate).getTime(),
-      );
-      await saveCaseIndex(index);
-      await AsyncStorage.removeItem(LEGACY_CASES_KEY);
-      clearCaseReadCaches();
-      console.log(`Migrated ${cases.length} legacy cases to per-case storage`);
-      return true;
-    }
-
-    return false;
-  } catch (error) {
-    console.error("Error migrating legacy data:", error);
-    return false;
-  }
-}
-
-let migrationChecked = false;
-let specialtyRepairChecked = false;
-
-async function writeStoredCasePreservingMetadata(
-  caseData: Case,
-): Promise<void> {
-  const encrypted = await encryptData(JSON.stringify(caseData));
-  await AsyncStorage.setItem(`${CASE_PREFIX}${caseData.id}`, encrypted);
-}
-
-async function repairStoredCaseSpecialtiesIfNeeded(): Promise<void> {
-  if (specialtyRepairChecked) {
-    return;
-  }
-
-  const repairMarker = await AsyncStorage.getItem(CASE_SPECIALTY_REPAIR_KEY);
-  if (repairMarker === "1") {
-    specialtyRepairChecked = true;
-    return;
-  }
-
-  try {
-    const index = await getCaseIndex();
-    let changed = false;
-
-    for (const entry of index) {
-      const storageKey = `${CASE_PREFIX}${entry.id}`;
-      const encrypted = await AsyncStorage.getItem(storageKey);
-      if (!encrypted) {
-        continue;
-      }
-
-      const decrypted = await decryptData(encrypted);
-      const rawCase = JSON.parse(decrypted) as Case;
-      const repairedCase = repairCaseSpecialty(migrateCase(rawCase));
-
-      if (repairedCase.specialty === rawCase.specialty) {
-        continue;
-      }
-
-      changed = true;
-      await writeStoredCasePreservingMetadata({
-        ...rawCase,
-        specialty: repairedCase.specialty,
-      });
-    }
-
-    if (changed) {
-      caseSummaryCache = null;
-      await AsyncStorage.removeItem(CASE_SUMMARIES_KEY);
-    }
-
-    await AsyncStorage.setItem(CASE_SPECIALTY_REPAIR_KEY, "1");
-    specialtyRepairChecked = true;
-  } catch (error) {
-    console.error("Error repairing stored case specialties:", error);
-  }
-}
 
 async function saveCaseSummaries(summaries: CaseSummary[]): Promise<void> {
   caseSummaryCache = summaries;
@@ -538,12 +311,6 @@ async function rebuildCaseSummariesFromIndex(
 
 export async function getCaseSummaries(): Promise<CaseSummary[]> {
   try {
-    if (!migrationChecked) {
-      await migrateLegacyData();
-      migrationChecked = true;
-    }
-    await repairStoredCaseSpecialtiesIfNeeded();
-
     const index = await getCaseIndex();
     if (index.length === 0) {
       caseSummaryCache = [];
@@ -592,12 +359,6 @@ function yieldToUI(): Promise<void> {
 
 export async function getCases(): Promise<Case[]> {
   try {
-    if (!migrationChecked) {
-      await migrateLegacyData();
-      migrationChecked = true;
-    }
-    await repairStoredCaseSpecialtiesIfNeeded();
-
     const index = await getCaseIndex();
     if (index.length === 0) return [];
     if (allCasesCache && allCasesCache.length === index.length) {
@@ -634,12 +395,6 @@ export async function getCases(): Promise<Case[]> {
 
 export async function getCase(id: string): Promise<Case | null> {
   try {
-    if (!migrationChecked) {
-      await migrateLegacyData();
-      migrationChecked = true;
-    }
-    await repairStoredCaseSpecialtiesIfNeeded();
-
     const cached = caseCache.get(id);
     if (cached) {
       return cached;
@@ -649,18 +404,7 @@ export async function getCase(id: string): Promise<Case | null> {
     if (!encrypted) return null;
 
     const decrypted = await decryptData(encrypted);
-    const caseData = migrateCase(JSON.parse(decrypted));
-
-    // Lazy HMAC hash migration: upgrade SHA-256 → HMAC-SHA256 on load
-    if (caseData?.patientIdentifier) {
-      migrateHashIfNeeded(caseData.id, caseData.patientIdentifier).catch((e) =>
-        console.error(
-          "[storage] Hash migration failed for case:",
-          caseData.id,
-          e,
-        ),
-      );
-    }
+    const caseData = JSON.parse(decrypted) as Case;
 
     return cacheCase(caseData);
   } catch (error) {
@@ -688,26 +432,6 @@ export async function getCasesByIds(ids: string[]): Promise<Case[]> {
   }
 
   return results.filter((caseData): caseData is Case => caseData !== null);
-}
-
-/**
- * If a case's index entry still has a legacy SHA-256 hash,
- * recompute with HMAC-SHA256 and update the index.
- */
-async function migrateHashIfNeeded(
-  caseId: string,
-  patientIdentifier: string,
-): Promise<void> {
-  const index = await getCaseIndex();
-  const entry = index.find((e) => e.id === caseId);
-  if (!entry?.patientIdentifierHash) return;
-  if (!isLegacyHash(entry.patientIdentifierHash)) return;
-
-  const newHash = await hashPatientIdentifier(patientIdentifier);
-  if (!newHash) return;
-
-  entry.patientIdentifierHash = newHash;
-  await saveCaseIndex(index);
 }
 
 export async function saveCase(caseData: Case): Promise<void> {
@@ -797,11 +521,6 @@ export async function saveCase(caseData: Case): Promise<void> {
 
 export async function getCaseCount(): Promise<number> {
   try {
-    if (!migrationChecked) {
-      await migrateLegacyData();
-      migrationChecked = true;
-    }
-    await repairStoredCaseSpecialtiesIfNeeded();
     const index = await getCaseIndex();
     return index.length;
   } catch (error) {
@@ -907,15 +626,9 @@ export async function findCasesByPatientId(patientId: string): Promise<Case[]> {
   const hmacHash = await hashPatientIdentifier(patientId);
   if (!hmacHash) return [];
 
-  // Also compute legacy SHA-256 for backward compat with un-migrated entries
-  const legacyHash = await legacyHashPatientIdentifier(patientId);
-
   const matchingEntries = index.filter((e) => {
     if (!e.patientIdentifierHash) return false;
-    return (
-      e.patientIdentifierHash === hmacHash ||
-      e.patientIdentifierHash === legacyHash
-    );
+    return e.patientIdentifierHash === hmacHash;
   });
 
   const cases = await Promise.all(
@@ -1222,9 +935,6 @@ export async function clearAllData(): Promise<void> {
     await AsyncStorage.removeItem(TIMELINE_KEY);
     await AsyncStorage.removeItem(USER_KEY);
     await AsyncStorage.removeItem(SETTINGS_KEY);
-    await AsyncStorage.removeItem(LEGACY_ENCRYPTED_CASES_KEY);
-    await AsyncStorage.removeItem(LEGACY_CASES_KEY);
-    await AsyncStorage.removeItem(CASE_SPECIALTY_REPAIR_KEY);
     await AsyncStorage.removeItem(CASE_SUMMARIES_KEY);
     const draftKeys = (await AsyncStorage.getAllKeys()).filter((key) =>
       key.startsWith(CASE_DRAFT_KEY_PREFIX),
@@ -1233,9 +943,6 @@ export async function clearAllData(): Promise<void> {
       await AsyncStorage.multiRemove(draftKeys);
     }
     await clearAllMediaStorage();
-    indexMigrated = false;
-    migrationChecked = false;
-    specialtyRepairChecked = false;
     clearCaseReadCaches();
   } catch (error) {
     console.error("Error clearing all data:", error);

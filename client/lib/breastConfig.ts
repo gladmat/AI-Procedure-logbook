@@ -26,7 +26,6 @@ import type {
 import {
   IMPLANT_PLANE_LABELS,
   IMPLANT_SHAPE_LABELS,
-  BREAST_RECIPIENT_ARTERY_LABELS,
   IMA_INTERSPACE_LABELS,
   CHEST_MASC_TECHNIQUE_LABELS,
   NAC_MANAGEMENT_LABELS,
@@ -429,7 +428,7 @@ export function calculateBreastCompletion(
     (!visibility.showBreastFlapDetails &&
       !visibility.showPedicledFlapDetails) ||
     (visibility.showBreastFlapDetails
-      ? !!side.flapDetails?.recipientArtery
+      ? hasMeaningfulValue(side.flapDetails)
       : hasMeaningfulValue(side.flapDetails));
 
   const lipofillingComplete =
@@ -515,16 +514,8 @@ export function getFlapSummary(
   const perfCount = data.perforators?.length ?? 0;
   if (perfCount > 0)
     parts.push(`${perfCount} perforator${perfCount > 1 ? "s" : ""}`);
-  if (data.recipientArtery) {
-    const arteryLabel = BREAST_RECIPIENT_ARTERY_LABELS[data.recipientArtery];
-    if (data.recipientArtery === "ima" && data.imaInterspace) {
-      parts.push(`${arteryLabel} ${IMA_INTERSPACE_LABELS[data.imaInterspace]}`);
-    } else {
-      parts.push(arteryLabel);
-    }
-  }
-  if (data.venousCouplerUsed && data.venousCouplerSizeMm) {
-    parts.push(`coupler ${data.venousCouplerSizeMm}mm`);
+  if (data.imaInterspace) {
+    parts.push(`IMA ${IMA_INTERSPACE_LABELS[data.imaInterspace]}`);
   }
   if (data.flapWeightGrams) parts.push(`${data.flapWeightGrams}g`);
   return parts.join(", ");

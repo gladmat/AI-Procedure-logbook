@@ -2,8 +2,7 @@ import { v4 as uuidv4 } from "uuid";
 
 import type { MediaAttachment, TimelineEventType } from "@/types/case";
 import { toIsoDateValue, toUtcNoonIsoTimestamp } from "@/lib/dateValues";
-import { suggestDefaultMediaTag } from "@/lib/mediaTagMigration";
-import { getLegacyCategoryForTag } from "@/lib/operativeMedia";
+import { suggestDefaultMediaTag } from "@/lib/mediaTagHelpers";
 
 interface SavedMediaAsset {
   localUri: string;
@@ -23,7 +22,6 @@ export function buildDefaultMediaAttachment(args: {
     procedureDate: args.procedureDate,
     mediaDate: args.mediaDate,
   });
-  const category = getLegacyCategoryForTag(tag);
   const dateValue =
     args.mediaDate instanceof Date
       ? toIsoDateValue(args.mediaDate)
@@ -36,6 +34,5 @@ export function buildDefaultMediaAttachment(args: {
     createdAt: args.createdAt,
     timestamp: dateValue ? toUtcNoonIsoTimestamp(dateValue) : undefined,
     tag,
-    ...(category ? { category } : {}),
   };
 }

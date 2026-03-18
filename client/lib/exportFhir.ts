@@ -981,24 +981,8 @@ function buildProcedure(
     proc.clinicalDetails
   ) {
     const freeFlapDetails = proc.clinicalDetails as FreeFlapDetails;
-    const recipientVesselQuality =
-      freeFlapDetails.recipientVesselQuality ??
-      (freeFlapDetails.irradiatedVesselPreference === "vein_graft_required"
-        ? "irradiated_vein_graft_required"
-        : freeFlapDetails.irradiatedNeckDissectionPerformed
-          ? "previously_operated"
-          : freeFlapDetails.irradiatedVesselPreference ===
-                "ipsilateral_viable" ||
-              (freeFlapDetails.irradiatedVesselStatus &&
-                freeFlapDetails.irradiatedVesselStatus !== "normal")
-            ? "irradiated_usable"
-            : freeFlapDetails.irradiatedVesselStatus === "normal" ||
-                freeFlapDetails.irradiatedVesselPreference === "contralateral"
-              ? "normal"
-              : undefined);
-    const veinGraftUsed =
-      freeFlapDetails.veinGraftUsed ??
-      freeFlapDetails.irradiatedVesselPreference === "vein_graft_required";
+    const recipientVesselQuality = freeFlapDetails.recipientVesselQuality;
+    const veinGraftUsed = freeFlapDetails.veinGraftUsed;
     const headNeckExtensions: Record<string, unknown>[] = [];
 
     if (recipientVesselQuality) {

@@ -11,12 +11,10 @@ import type { InboxItem } from "@/types/inbox";
 import type { MediaTag } from "@/types/media";
 import type {
   OperativeMediaItem,
-  OperativeMediaType,
   Case,
 } from "@/types/case";
 import { ALL_PROTOCOLS, type CaptureStep } from "@/data/mediaCaptureProtocols";
-import { suggestTemporalTag } from "@/lib/mediaTagMigration";
-import { TAG_TO_MEDIA_TYPE } from "@/lib/operativeMedia";
+import { suggestTemporalTag } from "@/lib/mediaTagHelpers";
 import { hashPatientIdentifier } from "@/lib/patientIdentifierHash";
 
 /**
@@ -68,7 +66,6 @@ export function inboxItemToOperativeMediaSmart(
     localUri: item.localUri,
     mimeType: item.mimeType,
     tag,
-    mediaType: (TAG_TO_MEDIA_TYPE[tag] ?? "other") as OperativeMediaType,
     createdAt: item.capturedAt,
     templateId: item.templateId,
     templateStepIndex: item.templateStepIndex,
@@ -107,7 +104,7 @@ export function extractPatientIdHint(items: InboxItem[]): string | undefined {
  * Auto-assign media items to protocol slots within a case.
  *
  * Priority chain:
- * 1. Template metadata — photo has templateId + templateStepIndex → look up step → assign its tag.
+ * 1. Template metadata — photo has templateId + templateStepIndex -> look up step -> assign its tag.
  * 2. Temporal/sequential — group remaining untagged by capture time, fill empty slots in protocol order.
  * 3. Unmatched — leave tag unchanged (keeps existing tag or stays untagged).
  *
@@ -133,8 +130,6 @@ export function autoAssign(
         const targetIdx = protocolSteps.findIndex((s) => s.tag === step.tag);
         if (targetIdx >= 0 && !filledStepIndices.has(targetIdx)) {
           item.tag = step.tag;
-          item.mediaType = (TAG_TO_MEDIA_TYPE[step.tag] ??
-            "other") as OperativeMediaType;
           filledStepIndices.add(targetIdx);
         }
       }
@@ -155,8 +150,6 @@ export function autoAssign(
 
     const step = protocolSteps[nextSlotIdx]!;
     item.tag = step.tag;
-    item.mediaType = (TAG_TO_MEDIA_TYPE[step.tag] ??
-      "other") as OperativeMediaType;
     filledStepIndices.add(nextSlotIdx);
   }
 

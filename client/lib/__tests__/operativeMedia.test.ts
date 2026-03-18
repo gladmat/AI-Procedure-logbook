@@ -2,67 +2,28 @@ import { describe, expect, it } from "vitest";
 
 import {
   attachmentsToOperativeMedia,
-  getLegacyCategoryForTag,
   operativeMediaToAttachments,
-  TAG_TO_MEDIA_TYPE,
 } from "@/lib/operativeMedia";
 import type { MediaAttachment, OperativeMediaItem } from "@/types/case";
 import { MEDIA_TAG_REGISTRY } from "@/types/media";
 import type { MediaTag } from "@/types/media";
-import { resolveMediaTag } from "@/lib/mediaTagMigration";
+import { resolveMediaTag } from "@/lib/mediaTagHelpers";
 
-// ═══════════════════════════════════════════════════════════
-// TAG_TO_MEDIA_TYPE completeness
-// ═══════════════════════════════════════════════════════════
-
-describe("TAG_TO_MEDIA_TYPE completeness", () => {
-  it("covers all 64 MediaTags", () => {
-    const registryTags = Object.keys(MEDIA_TAG_REGISTRY);
-    expect(registryTags.length).toBe(64);
-    for (const tag of registryTags) {
-      expect(
-        TAG_TO_MEDIA_TYPE[tag as MediaTag],
-        `Missing TAG_TO_MEDIA_TYPE entry for: ${tag}`,
-      ).toBeDefined();
-    }
-  });
-
-  it("all values are valid OperativeMediaType values", () => {
-    const validTypes = [
-      "preoperative_photo",
-      "intraoperative_photo",
-      "xray",
-      "ct_scan",
-      "mri",
-      "diagram",
-      "document",
-      "other",
-    ];
-    for (const [tag, mediaType] of Object.entries(TAG_TO_MEDIA_TYPE)) {
-      expect(
-        validTypes.includes(mediaType),
-        `TAG_TO_MEDIA_TYPE[${tag}] = "${mediaType}" is not a valid OperativeMediaType`,
-      ).toBe(true);
-    }
-  });
-});
-
-// ═══════════════════════════════════════════════════════════
+// ===============================================================
 // operativeMediaToAttachments
-// ═══════════════════════════════════════════════════════════
+// ===============================================================
 
 describe("operativeMediaToAttachments", () => {
   it("maps a single item with all fields", () => {
     const media: OperativeMediaItem[] = [
       {
         id: "media-1",
-        localUri: "encrypted-media:1",
+        localUri: "opus-media:1",
         mimeType: "image/jpeg",
-        mediaType: "xray",
         createdAt: "2026-03-09T00:00:00Z",
         caption: "Pre-fixation",
         tag: "xray_preop",
-        thumbnailUri: "encrypted-media:1-thumb",
+        thumbnailUri: "opus-media:1-thumb",
         timestamp: "2026-03-09T12:00:00Z",
       },
     ];
@@ -72,32 +33,30 @@ describe("operativeMediaToAttachments", () => {
     expect(attachments).toEqual<MediaAttachment[]>([
       {
         id: "media-1",
-        localUri: "encrypted-media:1",
+        localUri: "opus-media:1",
         mimeType: "image/jpeg",
         createdAt: "2026-03-09T00:00:00Z",
         caption: "Pre-fixation",
         tag: "xray_preop",
-        category: "preop_xray",
-        thumbnailUri: "encrypted-media:1-thumb",
+        thumbnailUri: "opus-media:1-thumb",
         timestamp: "2026-03-09T12:00:00Z",
       },
     ]);
   });
 
-  it("resolves tag from mediaType when tag is missing", () => {
+  it("resolves tag to other when tag is missing", () => {
     const media: OperativeMediaItem[] = [
       {
         id: "media-2",
         localUri: "opus-media:2",
         mimeType: "image/jpeg",
-        mediaType: "ct_scan",
         createdAt: "2026-03-09T00:00:00Z",
       },
     ];
 
     const attachments = operativeMediaToAttachments(media);
 
-    expect(attachments[0]?.tag).toBe("ct_scan");
+    expect(attachments[0]?.tag).toBe("other");
   });
 
   it("returns empty array for empty input", () => {
@@ -110,14 +69,13 @@ describe("operativeMediaToAttachments", () => {
         id: "m1",
         localUri: "opus-media:1",
         mimeType: "image/jpeg",
-        mediaType: "preoperative_photo",
         createdAt: "2026-03-08T00:00:00Z",
+        tag: "preop_clinical",
       },
       {
         id: "m2",
         localUri: "opus-media:2",
         mimeType: "image/jpeg",
-        mediaType: "intraoperative_photo",
         createdAt: "2026-03-09T00:00:00Z",
         tag: "flap_harvest",
       },
@@ -125,8 +83,8 @@ describe("operativeMediaToAttachments", () => {
         id: "m3",
         localUri: "opus-media:3",
         mimeType: "image/png",
-        mediaType: "diagram",
         createdAt: "2026-03-09T01:00:00Z",
+        tag: "diagram",
       },
     ];
 
@@ -145,8 +103,8 @@ describe("operativeMediaToAttachments", () => {
         id: "m1",
         localUri: "opus-media:1",
         mimeType: "image/jpeg",
-        mediaType: "other",
         createdAt: "2026-03-09T00:00:00Z",
+        tag: "other",
       },
     ];
 
@@ -156,57 +114,11 @@ describe("operativeMediaToAttachments", () => {
     expect(attachments[0]?.thumbnailUri).toBeUndefined();
     expect(attachments[0]?.timestamp).toBeUndefined();
   });
-
-  it("maps all 8 OperativeMediaType values", () => {
-    const types = [
-      "preoperative_photo",
-      "intraoperative_photo",
-      "xray",
-      "ct_scan",
-      "mri",
-      "diagram",
-      "document",
-      "other",
-    ] as const;
-
-    for (const type of types) {
-      const media: OperativeMediaItem[] = [
-        {
-          id: `m-${type}`,
-          localUri: `opus-media:${type}`,
-          mimeType: "image/jpeg",
-          mediaType: type,
-          createdAt: "2026-03-09T00:00:00Z",
-        },
-      ];
-
-      const attachments = operativeMediaToAttachments(media);
-      expect(attachments).toHaveLength(1);
-      expect(attachments[0]?.tag).toBeDefined();
-      expect(attachments[0]?.tag! in MEDIA_TAG_REGISTRY).toBe(true);
-    }
-  });
-
-  it("derives legacy category from the specific tag when present", () => {
-    const media: OperativeMediaItem[] = [
-      {
-        id: "precise",
-        localUri: "opus-media:precise",
-        mimeType: "image/jpeg",
-        mediaType: "intraoperative_photo",
-        createdAt: "2026-03-09T00:00:00Z",
-        tag: "flap_harvest",
-      },
-    ];
-
-    const attachments = operativeMediaToAttachments(media);
-    expect(attachments[0]?.category).toBe("flap_harvest");
-  });
 });
 
-// ═══════════════════════════════════════════════════════════
+// ===============================================================
 // attachmentsToOperativeMedia
-// ═══════════════════════════════════════════════════════════
+// ===============================================================
 
 describe("attachmentsToOperativeMedia", () => {
   it("maps attachment with tag to operative media", () => {
@@ -222,24 +134,22 @@ describe("attachmentsToOperativeMedia", () => {
 
     const media = attachmentsToOperativeMedia(attachments);
 
-    expect(media[0]?.mediaType).toBe("intraoperative_photo");
     expect(media[0]?.tag).toBe("flap_harvest");
   });
 
-  it("maps attachment with category (no tag) to operative media", () => {
+  it("maps attachment without tag to other", () => {
     const attachments: MediaAttachment[] = [
       {
         id: "a1",
-        localUri: "encrypted-media:2",
+        localUri: "opus-media:2",
         mimeType: "image/jpeg",
         createdAt: "2026-03-09T00:00:00Z",
-        category: "preop",
       },
     ];
 
     const media = attachmentsToOperativeMedia(attachments);
 
-    expect(media[0]?.mediaType).toBe("preoperative_photo");
+    expect(media[0]?.tag).toBe("other");
   });
 
   it("returns empty array for empty input", () => {
@@ -270,7 +180,6 @@ describe("attachmentsToOperativeMedia", () => {
     expect(media[0]?.thumbnailUri).toBe("opus-media:1-thumb");
     expect(media[0]?.timestamp).toBe("2026-03-09T14:00:00Z");
     expect(media[0]?.tag).toBe("anastomosis");
-    expect(media[0]?.mediaType).toBe("intraoperative_photo");
   });
 
   it("maps multiple items preserving order", () => {
@@ -299,18 +208,17 @@ describe("attachmentsToOperativeMedia", () => {
   });
 });
 
-// ═══════════════════════════════════════════════════════════
+// ===============================================================
 // Roundtrip integrity
-// ═══════════════════════════════════════════════════════════
+// ===============================================================
 
 describe("roundtrip mapping", () => {
-  it("media → attachments → media preserves core fields", () => {
+  it("media -> attachments -> media preserves core fields", () => {
     const original: OperativeMediaItem[] = [
       {
         id: "rt1",
         localUri: "opus-media:rt1",
         mimeType: "image/jpeg",
-        mediaType: "intraoperative_photo",
         createdAt: "2026-03-09T00:00:00Z",
         tag: "flap_inset",
         caption: "Inset complete",
@@ -336,7 +244,6 @@ describe("roundtrip mapping", () => {
         id: "rt1",
         localUri: "opus-media:rt1",
         mimeType: "image/jpeg",
-        mediaType: "preoperative_photo",
         createdAt: "2026-03-08T00:00:00Z",
         tag: "preop_clinical",
       },
@@ -344,7 +251,6 @@ describe("roundtrip mapping", () => {
         id: "rt2",
         localUri: "opus-media:rt2",
         mimeType: "image/jpeg",
-        mediaType: "xray",
         createdAt: "2026-03-09T00:00:00Z",
         tag: "xray_preop",
       },
@@ -352,7 +258,6 @@ describe("roundtrip mapping", () => {
         id: "rt3",
         localUri: "opus-media:rt3",
         mimeType: "image/png",
-        mediaType: "diagram",
         createdAt: "2026-03-09T01:00:00Z",
         tag: "diagram",
       },
@@ -377,12 +282,11 @@ describe("roundtrip mapping", () => {
 });
 
 describe("resolved display tag behaviour", () => {
-  it("prefers the specific tag label over the coarse legacy media type", () => {
+  it("prefers the specific tag label over other", () => {
     const item: OperativeMediaItem = {
       id: "media-display",
       localUri: "opus-media:display",
       mimeType: "image/jpeg",
-      mediaType: "intraoperative_photo",
       createdAt: "2026-03-09T00:00:00Z",
       tag: "flap_perfusion",
     };
@@ -390,10 +294,5 @@ describe("resolved display tag behaviour", () => {
     const resolved = resolveMediaTag(item);
     expect(resolved).toBe("flap_perfusion");
     expect(MEDIA_TAG_REGISTRY[resolved].label).toBe("Perfusion check");
-  });
-
-  it("returns the expected legacy category for a tag when available", () => {
-    expect(getLegacyCategoryForTag("xray_preop")).toBe("preop_xray");
-    expect(getLegacyCategoryForTag("flap_perfusion")).toBeUndefined();
   });
 });

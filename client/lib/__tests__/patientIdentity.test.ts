@@ -1,5 +1,4 @@
 import { describe, expect, it, vi } from "vitest";
-import { isLegacyHash } from "@/lib/patientIdentifierHmac";
 import { calculateAgeFromDob, getPatientDisplayName } from "@/types/case";
 
 vi.mock("expo-secure-store", () => ({
@@ -74,12 +73,3 @@ describe("getPatientDisplayName", () => {
   });
 });
 
-describe("isLegacyHash", () => {
-  it("detects legacy bare SHA-256 hashes", () => {
-    expect(isLegacyHash("abc123def456")).toBe(true);
-  });
-
-  it("detects HMAC hashes with prefix", () => {
-    expect(isLegacyHash("hmac:abc123def456")).toBe(false);
-  });
-});

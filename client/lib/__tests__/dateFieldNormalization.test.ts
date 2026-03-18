@@ -4,15 +4,14 @@ import {
   normalizeEpisodeDateOnlyFields,
   normalizeTimelineEventDateOnlyFields,
 } from "@/lib/dateFieldNormalization";
-import { normalizeCaseDateOnlyFields, migrateCase } from "@/lib/migration";
+import { normalizeCaseDateOnlyFields } from "@/lib/caseNormalization";
 import type { TreatmentEpisode } from "@/types/episode";
 import type { TimelineEvent } from "@/types/case";
 
 describe("date field normalization", () => {
-  it("normalizes legacy case date-only fields on load", () => {
+  it("normalizes case date-only fields", () => {
     const rawCase = {
       id: "case-1",
-      schemaVersion: 5,
       specialty: "skin_cancer",
       patientIdentifier: "ABC123",
       facility: "Opus",
@@ -60,25 +59,25 @@ describe("date field normalization", () => {
       ],
     } as any;
 
-    const migrated = migrateCase(rawCase);
+    const normalized = normalizeCaseDateOnlyFields(rawCase);
 
-    expect(migrated.procedureDate).toBe("2026-03-09");
-    expect(migrated.admissionDate).toBe("2026-03-08");
-    expect(migrated.dischargeDate).toBe("2026-03-11");
-    expect(migrated.injuryDate).toBe("2026-03-07");
+    expect(normalized.procedureDate).toBe("2026-03-09");
+    expect(normalized.admissionDate).toBe("2026-03-08");
+    expect(normalized.dischargeDate).toBe("2026-03-11");
+    expect(normalized.injuryDate).toBe("2026-03-07");
     expect(
-      migrated.diagnosisGroups[0]?.skinCancerAssessment?.currentHistology
+      normalized.diagnosisGroups[0]?.skinCancerAssessment?.currentHistology
         ?.reportDate,
     ).toBe("2026-03-10");
     expect(
-      migrated.diagnosisGroups[0]?.skinCancerAssessment?.priorHistology
+      normalized.diagnosisGroups[0]?.skinCancerAssessment?.priorHistology
         ?.reportDate,
     ).toBe("2026-02-15");
     expect(
-      migrated.diagnosisGroups[0]?.lesionInstances?.[0]?.skinCancerAssessment
+      normalized.diagnosisGroups[0]?.lesionInstances?.[0]?.skinCancerAssessment
         ?.currentHistology?.reportDate,
     ).toBe("2026-03-11");
-    expect(migrated.createdAt).toBe(rawCase.createdAt);
+    expect(normalized.createdAt).toBe(rawCase.createdAt);
   });
 
   it("normalizes episode onset dates without touching timestamp fields", () => {
@@ -115,7 +114,7 @@ describe("date field normalization", () => {
       mediaAttachments: [
         {
           id: "media-1",
-          localUri: "encrypted-media:media-1",
+          localUri: "opus-media:media-1",
           mimeType: "image/jpeg",
           createdAt: "2026-03-09T08:30:00.000Z",
           timestamp: "2026-03-09T08:35:00.000Z",

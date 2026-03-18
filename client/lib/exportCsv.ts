@@ -356,10 +356,10 @@ function extractBreastCsvFields(
     right?.implant?.admProduct ?? "",
     left?.flap?.weightGrams ?? "",
     left?.flap?.perforatorCount ?? "",
-    left?.flap?.recipientArteryLabel ?? "",
+    "",
     right?.flap?.weightGrams ?? "",
     right?.flap?.perforatorCount ?? "",
-    right?.flap?.recipientArteryLabel ?? "",
+    "",
     left?.lipofillingVolumeMl ?? "",
     right?.lipofillingVolumeMl ?? "",
     breast.lipofilling?.harvestTechniqueLabel ?? "",
@@ -392,23 +392,8 @@ function extractHeadNeckCsvFields(c: Case): (string | number | undefined)[] {
     return new Array(6).fill("") as string[];
   }
 
-  const recipientVesselQuality =
-    details.recipientVesselQuality ??
-    (details.irradiatedVesselPreference === "vein_graft_required"
-      ? "irradiated_vein_graft_required"
-      : details.irradiatedNeckDissectionPerformed
-        ? "previously_operated"
-        : details.irradiatedVesselPreference === "ipsilateral_viable" ||
-            (details.irradiatedVesselStatus &&
-              details.irradiatedVesselStatus !== "normal")
-          ? "irradiated_usable"
-          : details.irradiatedVesselStatus === "normal" ||
-              details.irradiatedVesselPreference === "contralateral"
-            ? "normal"
-            : undefined);
-  const veinGraftUsed =
-    details.veinGraftUsed ??
-    details.irradiatedVesselPreference === "vein_graft_required";
+  const recipientVesselQuality = details.recipientVesselQuality;
+  const veinGraftUsed = details.veinGraftUsed;
 
   return [
     recipientVesselQuality
@@ -658,7 +643,7 @@ function caseToRow(c: Case, options: CsvExportOptions): string {
     options.includePatientId ? c.patientDateOfBirth : undefined,
     options.includePatientId ? c.patientNhi : undefined,
     options.includePatientId
-      ? (calculateAgeFromDob(c.patientDateOfBirth) ?? c.age)
+      ? calculateAgeFromDob(c.patientDateOfBirth)
       : undefined,
     c.procedureDate,
     c.facility,

@@ -50,9 +50,3 @@ export async function hashPatientIdentifierHmac(
   return HMAC_HASH_PREFIX + bytesToHex(hash);
 }
 
-/**
- * Check if a hash is a legacy bare SHA-256 (no `hmac:` prefix).
- */
-export function isLegacyHash(hash: string): boolean {
-  return !hash.startsWith(HMAC_HASH_PREFIX);
-}

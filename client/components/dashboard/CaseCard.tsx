@@ -21,11 +21,7 @@ import {
 } from "@/lib/skinCancerConfig";
 import { RoleBadge } from "@/components/RoleBadge";
 import { SpecialtyIcon } from "@/components/SpecialtyIcon";
-import {
-  migrateLegacyRole,
-  isLegacyRole,
-  type OperativeRole,
-} from "@/types/operativeRole";
+import { type OperativeRole } from "@/types/operativeRole";
 
 const BADGE_PRIORITY: Record<string, number> = {
   error: 0,
@@ -164,20 +160,10 @@ function DashboardCaseCardInner({
 
   const formattedDate = formatRelativeDate(caseData.procedureDate);
 
-  // Resolve operative role from new model, falling back to legacy migration
-  const resolvedRole: OperativeRole | undefined = (() => {
-    if (isCaseSummary(caseData)) {
-      return caseData.operativeRole;
-    }
-    if (caseData.defaultOperativeRole) return caseData.defaultOperativeRole;
-    const legacyRole = caseData.teamMembers.find(
-      (m) => m.id === caseData.ownerId,
-    )?.role;
-    if (legacyRole && isLegacyRole(legacyRole)) {
-      return migrateLegacyRole(legacyRole).role;
-    }
-    return undefined;
-  })();
+  // Resolve operative role
+  const resolvedRole: OperativeRole | undefined = isCaseSummary(caseData)
+    ? caseData.operativeRole
+    : caseData.defaultOperativeRole ?? undefined;
   const showRoleBadge = resolvedRole != null && resolvedRole !== "SURGEON";
 
   const caseTitle = isCaseSummary(caseData)

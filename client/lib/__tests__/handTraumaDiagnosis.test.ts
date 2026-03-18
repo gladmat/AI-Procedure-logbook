@@ -191,9 +191,14 @@ describe("hand trauma diagnosis generation", () => {
     const result = generateHandTraumaDiagnosis({
       laterality: "left",
       affectedDigits: ["I"],
-      amputationLevel: "proximal_phalanx",
-      amputationType: "complete",
-      isReplantable: true,
+      digitAmputations: [
+        {
+          digit: "I",
+          level: "proximal_phalanx",
+          type: "complete",
+          isReplantable: true,
+        },
+      ],
     });
 
     expect(result!.headerLine).toBe("Left thumb amputation injury");

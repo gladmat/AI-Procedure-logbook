@@ -12,7 +12,7 @@ describe("case draft persistence", () => {
     const operativeMedia: OperativeMediaItem[] = [
       {
         id: "media-1",
-        localUri: "encrypted-media:media-1",
+        localUri: "opus-media:media-1",
         mimeType: "image/jpeg",
         mediaType: "intraoperative_photo",
         createdAt: "2026-03-09T00:00:00Z",

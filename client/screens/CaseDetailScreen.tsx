@@ -84,8 +84,6 @@ import { SpecialtyBadge } from "@/components/SpecialtyBadge";
 import { RoleBadge } from "@/components/RoleBadge";
 import {
   resolveOperativeRole,
-  migrateLegacyRole,
-  isLegacyRole,
   type OperativeRole,
 } from "@/types/operativeRole";
 import { LoadingState } from "@/components/LoadingState";
@@ -109,7 +107,7 @@ import {
   REVISION_REASON_LABELS,
 } from "@/types/jointImplant";
 import { buildMediaContextFromCase } from "@/lib/mediaContext";
-import { resolveMediaTag } from "@/lib/mediaTagMigration";
+import { resolveMediaTag } from "@/lib/mediaTagHelpers";
 import {
   IMPLANT_DIGIT_LABELS,
   IMPLANT_LATERALITY_LABELS,
@@ -186,26 +184,6 @@ function getRecipientVesselQualityLabel(
   if (details.recipientVesselQuality) {
     return RECIPIENT_VESSEL_QUALITY_LABELS[details.recipientVesselQuality];
   }
-  if (details.irradiatedVesselPreference === "vein_graft_required") {
-    return RECIPIENT_VESSEL_QUALITY_LABELS.irradiated_vein_graft_required;
-  }
-  if (details.irradiatedNeckDissectionPerformed) {
-    return RECIPIENT_VESSEL_QUALITY_LABELS.previously_operated;
-  }
-  if (
-    details.irradiatedVesselPreference === "ipsilateral_viable" ||
-    (details.irradiatedVesselStatus &&
-      details.irradiatedVesselStatus !== "normal")
-  ) {
-    return RECIPIENT_VESSEL_QUALITY_LABELS.irradiated_usable;
-  }
-  if (
-    details.irradiatedVesselStatus === "normal" ||
-    details.irradiatedVesselPreference === "contralateral"
-  ) {
-    return RECIPIENT_VESSEL_QUALITY_LABELS.normal;
-  }
-
   return undefined;
 }
 
@@ -602,15 +580,9 @@ export default function CaseDetailScreen() {
     (m) => m.id === caseData.ownerId || m.userId === caseData.ownerId,
   );
 
-  // Resolve case-level operative role from new model or legacy migration
-  const caseDefaultRole: OperativeRole | undefined = (() => {
-    if (caseData.defaultOperativeRole) return caseData.defaultOperativeRole;
-    const legacyRole = userMember?.role;
-    if (legacyRole && isLegacyRole(legacyRole)) {
-      return migrateLegacyRole(legacyRole).role;
-    }
-    return undefined;
-  })();
+  // Resolve case-level operative role
+  const caseDefaultRole: OperativeRole | undefined =
+    caseData.defaultOperativeRole ?? undefined;
 
   const formatDuration = (minutes: number | undefined): string | undefined => {
     if (!minutes) return undefined;
@@ -645,7 +617,6 @@ export default function CaseDetailScreen() {
   );
   const hasPatientDemographics =
     caseData.gender ||
-    caseData.age ||
     caseData.ethnicity ||
     caseData.patientFirstName ||
     caseData.patientLastName ||
@@ -1047,19 +1018,13 @@ export default function CaseDetailScreen() {
                                   }
                                 />
                               ) : null}
-                              {((proc.clinicalDetails as FreeFlapDetails)
-                                .veinGraftUsed ??
-                                (proc.clinicalDetails as FreeFlapDetails)
-                                  .irradiatedVesselPreference ===
-                                  "vein_graft_required") !== undefined ? (
+                              {(proc.clinicalDetails as FreeFlapDetails)
+                                .veinGraftUsed !== undefined ? (
                                 <DetailRow
                                   label="Vein Graft"
                                   value={
-                                    ((proc.clinicalDetails as FreeFlapDetails)
-                                      .veinGraftUsed ??
                                     (proc.clinicalDetails as FreeFlapDetails)
-                                      .irradiatedVesselPreference ===
-                                      "vein_graft_required")
+                                      .veinGraftUsed
                                       ? "Yes"
                                       : "No"
                                   }
@@ -1473,15 +1438,8 @@ export default function CaseDetailScreen() {
               {caseData.patientDateOfBirth && (
                 <DetailRow
                   label="Date of Birth"
-                  value={
-                    caseData.age
-                      ? `${caseData.patientDateOfBirth} (age ${caseData.age})`
-                      : caseData.patientDateOfBirth
-                  }
+                  value={caseData.patientDateOfBirth}
                 />
-              )}
-              {!caseData.patientDateOfBirth && caseData.age && (
-                <DetailRow label="Age" value={String(caseData.age)} />
               )}
               <DetailRow
                 label="Gender"

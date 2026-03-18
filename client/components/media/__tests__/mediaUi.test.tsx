@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MediaTagBadge } from "@/components/media/MediaTagBadge";
 import { MediaTagPicker } from "@/components/media/MediaTagPicker";
 import { Colors } from "@/constants/theme";
-import { resolveMediaTag } from "@/lib/mediaTagMigration";
+import { resolveMediaTag } from "@/lib/mediaTagHelpers";
 import type { OperativeMediaItem } from "@/types/case";
 
 (
@@ -136,7 +136,6 @@ describe("media UI", () => {
       id: "media-display",
       localUri: "opus-media:display",
       mimeType: "image/jpeg",
-      mediaType: "intraoperative_photo",
       createdAt: "2026-03-09T00:00:00Z",
       tag: "flap_perfusion",
     };

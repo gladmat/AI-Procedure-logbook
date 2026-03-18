@@ -1602,5 +1602,4 @@ export function getCleftCranioDiagnosesForSubcategory(
 //   - 254020001 kept (unicoronal craniosynostosis — International, display corrected)
 //
 // 0 broken procedure suggestion cross-references (53 unique procedurePicklistIds)
-// Migration entries added to snomedCodeMigration.ts for all 4 changed codes
 // ═══════════════════════════════════════════════════════════════════════════════

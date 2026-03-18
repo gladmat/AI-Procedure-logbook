@@ -1,254 +1,51 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  migrateOperativeMediaType,
-  migrateMediaCategory,
   resolveMediaTag,
   suggestTemporalTag,
   suggestDefaultMediaTag,
-} from "@/lib/mediaTagMigration";
+} from "@/lib/mediaTagHelpers";
 import {
   MEDIA_TAG_REGISTRY,
   getPreferredMediaTagGroup,
   getRelevantGroups,
 } from "@/types/media";
-import type {
-  MediaCategory,
-  OperativeMediaType,
-  TimelineEventType,
-} from "@/types/case";
+import type { TimelineEventType } from "@/types/case";
 import type { MediaTag, MediaTagGroup } from "@/types/media";
 
-// ═══════════════════════════════════════════════════════════
-// migrateOperativeMediaType
-// ═══════════════════════════════════════════════════════════
-
-describe("migrateOperativeMediaType", () => {
-  const ALL_OPERATIVE_MEDIA_TYPES: OperativeMediaType[] = [
-    "preoperative_photo",
-    "intraoperative_photo",
-    "xray",
-    "ct_scan",
-    "mri",
-    "diagram",
-    "document",
-    "other",
-  ];
-
-  it("maps all 8 OperativeMediaType values to valid MediaTags", () => {
-    for (const type of ALL_OPERATIVE_MEDIA_TYPES) {
-      const tag = migrateOperativeMediaType(type);
-      expect(tag in MEDIA_TAG_REGISTRY).toBe(true);
-    }
-  });
-
-  it("maps preoperative_photo to preop_clinical", () => {
-    expect(migrateOperativeMediaType("preoperative_photo")).toBe(
-      "preop_clinical",
-    );
-  });
-
-  it("maps intraoperative_photo to intraop", () => {
-    expect(migrateOperativeMediaType("intraoperative_photo")).toBe("intraop");
-  });
-
-  it("maps xray to xray_preop", () => {
-    expect(migrateOperativeMediaType("xray")).toBe("xray_preop");
-  });
-
-  it("maps ct_scan to ct_scan", () => {
-    expect(migrateOperativeMediaType("ct_scan")).toBe("ct_scan");
-  });
-
-  it("maps mri to mri", () => {
-    expect(migrateOperativeMediaType("mri")).toBe("mri");
-  });
-
-  it("maps diagram to diagram", () => {
-    expect(migrateOperativeMediaType("diagram")).toBe("diagram");
-  });
-
-  it("maps document to document", () => {
-    expect(migrateOperativeMediaType("document")).toBe("document");
-  });
-
-  it("maps other to other", () => {
-    expect(migrateOperativeMediaType("other")).toBe("other");
-  });
-
-  it("returns other for unknown type", () => {
-    expect(migrateOperativeMediaType("nonexistent" as OperativeMediaType)).toBe(
-      "other",
-    );
-  });
-});
-
-// ═══════════════════════════════════════════════════════════
-// migrateMediaCategory
-// ═══════════════════════════════════════════════════════════
-
-describe("migrateMediaCategory", () => {
-  const ALL_MEDIA_CATEGORIES: MediaCategory[] = [
-    "preop",
-    "flap_harvest",
-    "flap_inset",
-    "anastomosis",
-    "closure",
-    "immediate_postop",
-    "flap_planning",
-    "xray",
-    "preop_xray",
-    "intraop_xray",
-    "postop_xray",
-    "ct_angiogram",
-    "ultrasound",
-    "discharge_wound",
-    "discharge_donor",
-    "followup_photo",
-    "donor_site",
-    "complication",
-    "revision",
-    "other",
-  ];
-
-  it("maps all 20 MediaCategory values to valid MediaTags", () => {
-    for (const category of ALL_MEDIA_CATEGORIES) {
-      const tag = migrateMediaCategory(category);
-      expect(
-        tag in MEDIA_TAG_REGISTRY,
-        `${category} mapped to invalid tag: ${tag}`,
-      ).toBe(true);
-    }
-  });
-
-  it("maps preop to preop_clinical", () => {
-    expect(migrateMediaCategory("preop")).toBe("preop_clinical");
-  });
-
-  it("maps flap_harvest to flap_harvest", () => {
-    expect(migrateMediaCategory("flap_harvest")).toBe("flap_harvest");
-  });
-
-  it("maps anastomosis to anastomosis", () => {
-    expect(migrateMediaCategory("anastomosis")).toBe("anastomosis");
-  });
-
-  it("maps closure to donor_closure", () => {
-    expect(migrateMediaCategory("closure")).toBe("donor_closure");
-  });
-
-  it("maps xray to xray_preop", () => {
-    expect(migrateMediaCategory("xray")).toBe("xray_preop");
-  });
-
-  it("maps preop_xray to xray_preop", () => {
-    expect(migrateMediaCategory("preop_xray")).toBe("xray_preop");
-  });
-
-  it("maps intraop_xray to xray_intraop", () => {
-    expect(migrateMediaCategory("intraop_xray")).toBe("xray_intraop");
-  });
-
-  it("maps postop_xray to xray_postop", () => {
-    expect(migrateMediaCategory("postop_xray")).toBe("xray_postop");
-  });
-
-  it("maps ct_angiogram to ct_angiogram", () => {
-    expect(migrateMediaCategory("ct_angiogram")).toBe("ct_angiogram");
-  });
-
-  it("maps ultrasound to ultrasound", () => {
-    expect(migrateMediaCategory("ultrasound")).toBe("ultrasound");
-  });
-
-  // Extended mappings (beyond original blueprint)
-  it("maps discharge_wound to discharge", () => {
-    expect(migrateMediaCategory("discharge_wound")).toBe("discharge");
-  });
-
-  it("maps discharge_donor to discharge", () => {
-    expect(migrateMediaCategory("discharge_donor")).toBe("discharge");
-  });
-
-  it("maps followup_photo to scar_followup", () => {
-    expect(migrateMediaCategory("followup_photo")).toBe("scar_followup");
-  });
-
-  it("maps donor_site to donor_site", () => {
-    expect(migrateMediaCategory("donor_site")).toBe("donor_site");
-  });
-
-  it("maps complication to wound_postop", () => {
-    expect(migrateMediaCategory("complication")).toBe("wound_postop");
-  });
-
-  it("maps revision to intraop", () => {
-    expect(migrateMediaCategory("revision")).toBe("intraop");
-  });
-
-  it("returns other for unknown category", () => {
-    expect(migrateMediaCategory("nonexistent" as MediaCategory)).toBe("other");
-  });
-});
-
-// ═══════════════════════════════════════════════════════════
+// ===============================================================
 // resolveMediaTag
-// ═══════════════════════════════════════════════════════════
+// ===============================================================
 
 describe("resolveMediaTag", () => {
-  it("prefers tag when present and valid", () => {
-    expect(
-      resolveMediaTag({
-        tag: "flap_harvest",
-        category: "preop",
-        mediaType: "xray",
-      }),
-    ).toBe("flap_harvest");
+  it("returns tag when present and valid", () => {
+    expect(resolveMediaTag({ tag: "flap_harvest" })).toBe("flap_harvest");
   });
 
-  it("falls back to category when tag is absent", () => {
-    expect(
-      resolveMediaTag({
-        category: "anastomosis",
-        mediaType: "intraoperative_photo",
-      }),
-    ).toBe("anastomosis");
-  });
-
-  it("falls back to mediaType when tag and category are absent", () => {
-    expect(
-      resolveMediaTag({
-        mediaType: "ct_scan",
-      }),
-    ).toBe("ct_scan");
-  });
-
-  it('returns "other" when all fields are absent', () => {
+  it('returns "other" when tag is absent', () => {
     expect(resolveMediaTag({})).toBe("other");
   });
 
-  it("ignores invalid tag and falls back to category", () => {
-    expect(
-      resolveMediaTag({
-        tag: "totally_invalid_tag" as MediaTag,
-        category: "flap_inset",
-      }),
-    ).toBe("flap_inset");
+  it('returns "other" when tag is undefined', () => {
+    expect(resolveMediaTag({ tag: undefined })).toBe("other");
   });
 
-  it("ignores invalid tag and falls back to mediaType", () => {
-    expect(
-      resolveMediaTag({
-        tag: "totally_invalid_tag" as MediaTag,
-        mediaType: "mri",
-      }),
-    ).toBe("mri");
+  it('returns "other" for invalid tag', () => {
+    expect(resolveMediaTag({ tag: "totally_invalid_tag" as MediaTag })).toBe(
+      "other",
+    );
+  });
+
+  it("returns valid tag for every tag in the registry", () => {
+    for (const tag of Object.keys(MEDIA_TAG_REGISTRY) as MediaTag[]) {
+      expect(resolveMediaTag({ tag })).toBe(tag);
+    }
   });
 });
 
-// ═══════════════════════════════════════════════════════════
+// ===============================================================
 // Registry completeness
-// ═══════════════════════════════════════════════════════════
+// ===============================================================
 
 describe("registry completeness", () => {
   it("has exactly 64 tags in the registry", () => {
@@ -260,57 +57,11 @@ describe("registry completeness", () => {
     const unique = new Set(tags);
     expect(tags.length).toBe(unique.size);
   });
-
-  it("all migrateOperativeMediaType outputs exist in registry", () => {
-    const types: OperativeMediaType[] = [
-      "preoperative_photo",
-      "intraoperative_photo",
-      "xray",
-      "ct_scan",
-      "mri",
-      "diagram",
-      "document",
-      "other",
-    ];
-    for (const type of types) {
-      const tag = migrateOperativeMediaType(type);
-      expect(tag in MEDIA_TAG_REGISTRY).toBe(true);
-    }
-  });
-
-  it("all migrateMediaCategory outputs exist in registry", () => {
-    const categories: MediaCategory[] = [
-      "preop",
-      "flap_harvest",
-      "flap_inset",
-      "anastomosis",
-      "closure",
-      "immediate_postop",
-      "flap_planning",
-      "xray",
-      "preop_xray",
-      "intraop_xray",
-      "postop_xray",
-      "ct_angiogram",
-      "ultrasound",
-      "discharge_wound",
-      "discharge_donor",
-      "followup_photo",
-      "donor_site",
-      "complication",
-      "revision",
-      "other",
-    ];
-    for (const cat of categories) {
-      const tag = migrateMediaCategory(cat);
-      expect(tag in MEDIA_TAG_REGISTRY).toBe(true);
-    }
-  });
 });
 
-// ═══════════════════════════════════════════════════════════
+// ===============================================================
 // getRelevantGroups
-// ═══════════════════════════════════════════════════════════
+// ===============================================================
 
 describe("getRelevantGroups", () => {
   it("always includes temporal, imaging, and other", () => {
@@ -405,9 +156,9 @@ describe("getRelevantGroups", () => {
   });
 });
 
-// ═══════════════════════════════════════════════════════════
+// ===============================================================
 // suggestTemporalTag
-// ═══════════════════════════════════════════════════════════
+// ===============================================================
 
 describe("suggestTemporalTag", () => {
   const REFERENCE_DATE = "2026-03-10";

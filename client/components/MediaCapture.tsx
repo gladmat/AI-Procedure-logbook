@@ -25,7 +25,7 @@ import { MediaAttachment, TimelineEventType } from "@/types/case";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { useMediaCallback } from "@/contexts/MediaCallbackContext";
 import { MediaTagBadge } from "@/components/media";
-import { resolveMediaTag } from "@/lib/mediaTagMigration";
+import { resolveMediaTag } from "@/lib/mediaTagHelpers";
 import { buildDefaultMediaAttachment } from "@/lib/mediaAttachmentDefaults";
 import type { MediaContext } from "@/lib/mediaContext";
 

@@ -321,10 +321,6 @@ export const ADM_POSITION_LABELS: Record<AdmPosition, string> = {
 
 export interface BreastFlapDetailsData {
   perforators?: PerforatorEntry[];
-  /** @deprecated Use FreeFlapDetails.anastomoses instead (migrated in v2.5) */
-  recipientArtery?: BreastRecipientArtery;
-  /** @deprecated Use FreeFlapDetails.anastomoses instead (migrated in v2.5) */
-  recipientVein?: BreastRecipientVein;
   imaInterspace?: ImaInterspace;
   ribManagement?: RibManagement;
   /** @deprecated Use FreeFlapDetails.anastomoses[].couplingMethod instead */

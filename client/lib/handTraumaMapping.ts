@@ -79,12 +79,8 @@ export interface HandTraumaSelection {
   isCompartmentSyndrome?: boolean;
   isRingAvulsion?: boolean;
 
-  // Per-digit amputations (preferred)
+  // Per-digit amputations
   digitAmputations?: import("@/types/case").DigitAmputation[];
-  // Legacy amputation level
-  amputationLevel?: import("@/types/case").AmputationLevel;
-  amputationType?: "complete" | "subtotal";
-  isReplantable?: boolean;
 }
 
 export interface TraumaProcedureSuggestion {
@@ -375,9 +371,6 @@ function toDiagnosisSelection(
     isCompartmentSyndrome: selection.isCompartmentSyndrome,
     isRingAvulsion: selection.isRingAvulsion,
     digitAmputations: selection.digitAmputations,
-    amputationLevel: selection.amputationLevel,
-    amputationType: selection.amputationType,
-    isReplantable: selection.isReplantable,
   };
 }
 
@@ -749,7 +742,10 @@ const SPECIAL_INJURY_MAP = {
 function resolveAmputationDiagnosis(
   selection: HandTraumaSelection,
 ): LegacyTraumaResult {
-  const { amputationLevel, isReplantable, affectedDigits } = selection;
+  const { affectedDigits, digitAmputations } = selection;
+  const firstAmp = digitAmputations?.[0];
+  const amputationLevel = firstAmp?.level;
+  const isReplantable = firstAmp?.isReplantable;
   const isThumb = affectedDigits.includes("I");
   const multipleDigits = affectedDigits.length > 1;
 
