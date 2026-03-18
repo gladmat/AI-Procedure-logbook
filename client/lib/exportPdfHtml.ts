@@ -185,6 +185,40 @@ function getPeripheralNerveSummary(caseData: Case): string {
   return parts.join(", ");
 }
 
+function getLymphaticSummary(caseData: Case): string {
+  const group = (caseData.diagnosisGroups ?? []).find(
+    (g) => g.lymphoedemaAssessment,
+  );
+  if (!group?.lymphoedemaAssessment) return "";
+
+  const la = group.lymphoedemaAssessment;
+  const parts: string[] = [];
+
+  if (la.islStage) parts.push(`ISL ${la.islStage}`);
+  if (la.affectedRegion) {
+    const side = la.affectedSide ? ` ${la.affectedSide}` : "";
+    parts.push(`${la.affectedRegion.replace(/_/g, " ")}${side}`);
+  }
+  if (la.limbMeasurements?.excessVolumePercent != null) {
+    parts.push(`${la.limbMeasurements.excessVolumePercent}% excess`);
+  }
+
+  // Summarise procedure-level details
+  for (const proc of group.procedures) {
+    if (proc.lvaOperativeDetails?.anastomoses?.length) {
+      parts.push(`LVA x${proc.lvaOperativeDetails.anastomoses.length}`);
+    }
+    if (proc.vlntDetails?.donorSite) {
+      parts.push(`VLNT ${proc.vlntDetails.donorSite}`);
+    }
+    if (proc.saplDetails?.totalAspirateMl) {
+      parts.push(`SAPL ${proc.saplDetails.totalAspirateMl}mL`);
+    }
+  }
+
+  return parts.join(", ");
+}
+
 function escapeHtml(str: string): string {
   return str
     .replace(/&/g, "&amp;")
@@ -298,6 +332,7 @@ export function buildPdfHtml(cases: Case[], options: PdfExportOptions): string {
 
     const craniofacialSummary = getCraniofacialSummary(c);
     const peripheralNerveSummary = getPeripheralNerveSummary(c);
+    const lymphaticSummary = getLymphaticSummary(c);
 
     const implantSummary = [jointImplantSummary, ...breastParts]
       .filter(Boolean)
@@ -350,7 +385,7 @@ export function buildPdfHtml(cases: Case[], options: PdfExportOptions): string {
       escapeHtml(primary?.diagnosis?.displayName || ""),
       escapeHtml(primaryProc?.procedureName || ""),
       escapeHtml(
-        [implantSummary, headNeckFlapSummary, dupuytrenSummary, craniofacialSummary, peripheralNerveSummary].filter(Boolean).join("; "),
+        [implantSummary, headNeckFlapSummary, dupuytrenSummary, craniofacialSummary, peripheralNerveSummary, lymphaticSummary].filter(Boolean).join("; "),
       ),
       escapeHtml(complications),
       escapeHtml(c.outcome || ""),

@@ -239,6 +239,9 @@ export interface LymphaticAssessment {
   // ── Affected Limb ──
   affectedSide?: "left" | "right" | "bilateral";
   affectedRegion?: LymphoedemaRegion;
+
+  // ── Follow-Up (Phase 6) ──
+  followUp?: LymphaticFollowUp;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════

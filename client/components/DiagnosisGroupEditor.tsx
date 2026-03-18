@@ -3404,6 +3404,15 @@ function DiagnosisGroupEditorInner({
                   lymphoedemaAssessment: LymphaticAssessmentData,
                 ) => onChange({ ...group, lymphoedemaAssessment })}
                 diagnosisId={selectedDiagnosis?.id}
+                procedures={group.procedures}
+                onProcedureDetailsChange={(procedureId, field, details) => {
+                  const updatedProcedures = group.procedures.map((p) =>
+                    p.id === procedureId
+                      ? { ...p, [field]: details }
+                      : p,
+                  );
+                  onChange({ ...group, procedures: updatedProcedures });
+                }}
               />
             ) : null}
 

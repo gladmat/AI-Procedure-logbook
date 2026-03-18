@@ -60,6 +60,12 @@ import {
   BP_APPROACH_LABELS,
   NEUROMA_AETIOLOGY_LABELS,
 } from "@/lib/peripheralNerveConfig";
+import {
+  ISL_STAGE_LABELS,
+  ISL_SEVERITY_LABELS,
+  LYMPHOEDEMA_REGION_LABELS,
+} from "@/types/lymphatic";
+import { getLymphaticProcedureCategory } from "@/lib/lymphaticConfig";
 
 export interface CsvExportOptions {
   includePatientId: boolean;
@@ -219,6 +225,19 @@ const CSV_HEADERS = [
   "cf_hearing_grommets",
   "cf_feeding_method",
   "cf_complications",
+  // ── Lymphoedema module columns ──
+  "lymph_isl_stage",
+  "lymph_isl_severity",
+  "lymph_region",
+  "lymph_side",
+  "lymph_excess_volume_ml",
+  "lymph_excess_volume_pct",
+  "lymph_lva_count",
+  "lymph_lva_techniques",
+  "lymph_vlnt_donor",
+  "lymph_vlnt_nodes",
+  "lymph_sapl_aspirate_ml",
+  "lymph_sapl_technique",
   // ── Peripheral nerve module columns ──
   "pn_nerve_injured",
   "pn_sunderland_grade",
@@ -530,6 +549,62 @@ function extractPeripheralNerveCsvFields(
   ];
 }
 
+// ── Lymphoedema module extraction ──
+const LE_EMPTY = new Array(12).fill("") as string[];
+
+function extractLymphaticCsvFields(
+  groups: DiagnosisGroup[],
+): (string | number | undefined)[] {
+  const group = groups.find((g) => g.lymphoedemaAssessment);
+  if (!group?.lymphoedemaAssessment) return LE_EMPTY;
+
+  const la = group.lymphoedemaAssessment;
+
+  // LVA: collect anastomosis count and techniques across all procedures
+  let lvaCount = 0;
+  const lvaTechniques: string[] = [];
+  let vlntDonor = "";
+  let vlntNodes: string | number = "";
+  let saplAspirate: string | number = "";
+  let saplTechnique = "";
+
+  for (const proc of group.procedures) {
+    const cat = getLymphaticProcedureCategory(proc.picklistEntryId);
+    if (cat === "lva" && proc.lvaOperativeDetails) {
+      const lva = proc.lvaOperativeDetails;
+      lvaCount += lva.anastomoses?.length ?? 0;
+      for (const a of lva.anastomoses ?? []) {
+        if (a.technique && !lvaTechniques.includes(a.technique)) {
+          lvaTechniques.push(a.technique);
+        }
+      }
+    }
+    if (cat === "vlnt" && proc.vlntDetails) {
+      vlntDonor = proc.vlntDetails.donorSite ?? "";
+      vlntNodes = proc.vlntDetails.nodeCount ?? "";
+    }
+    if ((cat === "sapl" || cat === "lipo_lipedema") && proc.saplDetails) {
+      saplAspirate = proc.saplDetails.totalAspirateMl ?? "";
+      saplTechnique = proc.saplDetails.technique ?? "";
+    }
+  }
+
+  return [
+    la.islStage ? ISL_STAGE_LABELS[la.islStage] : "",
+    la.islSeverity ? ISL_SEVERITY_LABELS[la.islSeverity] : "",
+    la.affectedRegion ? LYMPHOEDEMA_REGION_LABELS[la.affectedRegion] : "",
+    la.affectedSide ?? "",
+    la.limbMeasurements?.excessVolumeMl ?? "",
+    la.limbMeasurements?.excessVolumePercent ?? "",
+    lvaCount || "",
+    lvaTechniques.join("; "),
+    vlntDonor,
+    vlntNodes,
+    saplAspirate,
+    saplTechnique,
+  ];
+}
+
 function caseToRow(c: Case, options: CsvExportOptions): string {
   const groups = c.diagnosisGroups || [];
   const primaryGroup = groups[0];
@@ -572,6 +647,7 @@ function caseToRow(c: Case, options: CsvExportOptions): string {
   const breastFields = extractBreastCsvFields(groups);
   const headNeckFields = extractHeadNeckCsvFields(c);
   const craniofacialFields = extractCraniofacialCsvFields(groups);
+  const lymphaticFields = extractLymphaticCsvFields(groups);
   const peripheralNerveFields = extractPeripheralNerveCsvFields(groups);
 
   const values: (string | number | boolean | undefined | null)[] = [
@@ -736,6 +812,8 @@ function caseToRow(c: Case, options: CsvExportOptions): string {
     ...headNeckFields,
     // ── Craniofacial module ──
     ...craniofacialFields,
+    // ── Lymphoedema module ──
+    ...lymphaticFields,
     // ── Peripheral nerve module ──
     ...peripheralNerveFields,
   ];

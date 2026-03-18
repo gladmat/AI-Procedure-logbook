@@ -1313,6 +1313,87 @@ export default function CaseDetailScreen() {
                           ) : null}
                         </View>
                       ) : null}
+                      {/* Lymphoedema LVA details */}
+                      {proc.lvaOperativeDetails?.anastomoses?.length ? (
+                        <View
+                          style={[
+                            styles.procedureClinicalDetails,
+                            { borderTopColor: theme.border },
+                          ]}
+                        >
+                          <DetailRow
+                            label="LVA Anastomoses"
+                            value={proc.lvaOperativeDetails.anastomoses.length}
+                          />
+                          {proc.lvaOperativeDetails.anaesthesiaType ? (
+                            <DetailRow
+                              label="Anaesthesia"
+                              value={proc.lvaOperativeDetails.anaesthesiaType.replace(/_/g, " ")}
+                            />
+                          ) : null}
+                          {proc.lvaOperativeDetails.roboticAssistance &&
+                          proc.lvaOperativeDetails.roboticAssistance !== "none" ? (
+                            <DetailRow
+                              label="Robotic Assistance"
+                              value={proc.lvaOperativeDetails.roboticAssistance}
+                            />
+                          ) : null}
+                          {proc.lvaOperativeDetails.operativeTimeMinutes ? (
+                            <DetailRow
+                              label="Op Time"
+                              value={proc.lvaOperativeDetails.operativeTimeMinutes}
+                              unit="min"
+                            />
+                          ) : null}
+                        </View>
+                      ) : null}
+                      {/* Lymphoedema VLNT details */}
+                      {proc.vlntDetails?.donorSite ? (
+                        <View
+                          style={[
+                            styles.procedureClinicalDetails,
+                            { borderTopColor: theme.border },
+                          ]}
+                        >
+                          <DetailRow
+                            label="VLNT Donor"
+                            value={proc.vlntDetails.donorSite.replace(/_/g, " ")}
+                          />
+                          {proc.vlntDetails.nodeCount ? (
+                            <DetailRow
+                              label="Node Count"
+                              value={proc.vlntDetails.nodeCount}
+                            />
+                          ) : null}
+                          {proc.vlntDetails.recipientSite ? (
+                            <DetailRow
+                              label="Recipient"
+                              value={proc.vlntDetails.recipientSite}
+                            />
+                          ) : null}
+                        </View>
+                      ) : null}
+                      {/* Lymphoedema SAPL details */}
+                      {proc.saplDetails?.totalAspirateMl ? (
+                        <View
+                          style={[
+                            styles.procedureClinicalDetails,
+                            { borderTopColor: theme.border },
+                          ]}
+                        >
+                          <DetailRow
+                            label="SAPL Aspirate"
+                            value={proc.saplDetails.totalAspirateMl}
+                            unit="mL"
+                          />
+                          {proc.saplDetails.technique ? (
+                            <DetailRow
+                              label="Technique"
+                              value={proc.saplDetails.technique.replace(/_/g, " ")}
+                            />
+                          ) : null}
+                        </View>
+                      ) : null}
                     </View>
                   ))}
                 </View>

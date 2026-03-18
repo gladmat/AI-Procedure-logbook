@@ -1002,6 +1002,9 @@ export function buildDuplicateState(
       id: uuidv4(),
       clinicalDetails: p.clinicalDetails ? { ...p.clinicalDetails } : undefined,
       implantDetails: p.implantDetails ? { ...p.implantDetails } : undefined,
+      lvaOperativeDetails: p.lvaOperativeDetails ? structuredClone(p.lvaOperativeDetails) : undefined,
+      vlntDetails: p.vlntDetails ? { ...p.vlntDetails } : undefined,
+      saplDetails: p.saplDetails ? { ...p.saplDetails } : undefined,
     })),
     diagnosisClinicalDetails: g.diagnosisClinicalDetails
       ? { ...g.diagnosisClinicalDetails }

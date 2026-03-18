@@ -811,6 +811,56 @@ function buildCondition(
     }
   }
 
+  // ── Lymphoedema assessment ──
+  if (group.lymphoedemaAssessment) {
+    const la = group.lymphoedemaAssessment;
+    const leExt: { url: string; valueString: string }[] = [];
+
+    if (la.islStage) {
+      leExt.push({ url: "islStage", valueString: la.islStage });
+    }
+    if (la.islSeverity) {
+      leExt.push({ url: "islSeverity", valueString: la.islSeverity });
+    }
+    if (la.affectedRegion) {
+      leExt.push({ url: "affectedRegion", valueString: la.affectedRegion });
+    }
+    if (la.affectedSide) {
+      leExt.push({ url: "affectedSide", valueString: la.affectedSide });
+    }
+    if (la.limbMeasurements?.excessVolumeMl != null) {
+      leExt.push({
+        url: "excessVolumeMl",
+        valueString: String(la.limbMeasurements.excessVolumeMl),
+      });
+    }
+    if (la.limbMeasurements?.excessVolumePercent != null) {
+      leExt.push({
+        url: "excessVolumePercent",
+        valueString: String(la.limbMeasurements.excessVolumePercent),
+      });
+    }
+    if (la.mdAndersonICGStage) {
+      leExt.push({
+        url: "mdAndersonICGStage",
+        valueString: la.mdAndersonICGStage,
+      });
+    }
+    if (la.chengGrade) {
+      leExt.push({ url: "chengGrade", valueString: la.chengGrade });
+    }
+
+    if (leExt.length > 0) {
+      condition.extension = [
+        ...(condition.extension ?? []),
+        {
+          url: "urn:opus:lymphoedema-assessment",
+          extension: leExt,
+        },
+      ];
+    }
+  }
+
   return condition;
 }
 

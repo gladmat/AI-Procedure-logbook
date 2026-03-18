@@ -2,6 +2,7 @@
  * Lymphoedema module configuration and helpers.
  *
  * - isLymphoedemaeDiagnosis(): activation predicate
+ * - getLymphaticProcedureCategory(): procedure → LVA/VLNT/SAPL routing
  * - getDefaultLymphaticAssessment(): factory for new assessments
  * - calculateExcessVolume(): truncated cone formula for bilateral limb measurements
  */
@@ -28,6 +29,32 @@ export function isLymphoedemaeDiagnosis(
  */
 export function getDefaultLymphaticAssessment(): LymphaticAssessment {
   return {};
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// PROCEDURE CATEGORY ROUTING
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export type LymphaticProcedureCategory =
+  | "lva"
+  | "vlnt"
+  | "sapl"
+  | "lipo_lipedema"
+  | null;
+
+/**
+ * Determine the lymphatic procedure category from a picklist entry ID.
+ * Used to conditionally render LVA/VLNT/SAPL operative detail sections.
+ */
+export function getLymphaticProcedureCategory(
+  picklistEntryId?: string,
+): LymphaticProcedureCategory {
+  if (!picklistEntryId) return null;
+  if (picklistEntryId.startsWith("lymph_lva_") || picklistEntryId === "lymph_lympha" || picklistEntryId === "lymph_elva" || picklistEntryId === "lymph_dc_lva" || picklistEntryId === "lymph_robotic_lva" || picklistEntryId === "lymph_revision_lva" || picklistEntryId === "lymph_lla") return "lva";
+  if (picklistEntryId.startsWith("lymph_vlnt_") || picklistEntryId === "lymph_combined_lva_vlnt" || picklistEntryId === "lymph_simultaneous_breast_vlnt") return "vlnt";
+  if (picklistEntryId === "lymph_sapl") return "sapl";
+  if (picklistEntryId === "lymph_lipo_lipedema") return "lipo_lipedema";
+  return null;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════

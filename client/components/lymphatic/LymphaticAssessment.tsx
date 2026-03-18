@@ -51,6 +51,18 @@ import {
   BIOIMPEDANCE_DEVICE_LABELS,
 } from "@/types/lymphatic";
 import { CircumferenceEntry } from "./CircumferenceEntry";
+import { LVAOperativeDetailsComponent } from "./LVAOperativeDetails";
+import { VLNTDetailsComponent } from "./VLNTDetails";
+import { SAPLDetailsComponent } from "./SAPLDetails";
+import { LymphaticFollowUpEntry } from "./LymphaticFollowUpEntry";
+import { getLymphaticProcedureCategory } from "@/lib/lymphaticConfig";
+import type { CaseProcedure } from "@/types/case";
+import type {
+  LVAOperativeDetails,
+  VLNTSpecificDetails,
+  SAPLOperativeDetails,
+  LymphaticFollowUp,
+} from "@/types/lymphatic";
 
 // ─── Props ──────────────────────────────────────────────────────────────────
 
@@ -58,6 +70,14 @@ interface LymphaticAssessmentProps {
   assessment: LymphaticAssessmentData;
   onAssessmentChange: (assessment: LymphaticAssessmentData) => void;
   diagnosisId?: string;
+  /** Procedures from the parent diagnosis group — used for procedure-level detail sections */
+  procedures?: CaseProcedure[];
+  /** Callback to update procedure-level detail fields */
+  onProcedureDetailsChange?: (
+    procedureId: string,
+    field: string,
+    details: unknown,
+  ) => void;
 }
 
 // ─── Chip helper ────────────────────────────────────────────────────────────
@@ -151,6 +171,8 @@ export const LymphaticAssessment = React.memo(function LymphaticAssessment({
   assessment,
   onAssessmentChange,
   diagnosisId,
+  procedures,
+  onProcedureDetailsChange,
 }: LymphaticAssessmentProps) {
   const { theme } = useTheme();
 
@@ -705,6 +727,68 @@ export const LymphaticAssessment = React.memo(function LymphaticAssessment({
           />
         </View>
       </SectionWrapper>
+
+      {/* ────── Section 7+: Procedure-Level Operative Details ────── */}
+      {procedures && onProcedureDetailsChange
+        ? procedures.map((proc) => {
+            const category = getLymphaticProcedureCategory(
+              proc.picklistEntryId,
+            );
+            if (category === "lva") {
+              const details: LVAOperativeDetails = proc.lvaOperativeDetails ?? {
+                anastomoses: [],
+              };
+              return (
+                <LVAOperativeDetailsComponent
+                  key={proc.id}
+                  value={details}
+                  onChange={(d) =>
+                    onProcedureDetailsChange(
+                      proc.id,
+                      "lvaOperativeDetails",
+                      d,
+                    )
+                  }
+                  procedureName={proc.procedureName}
+                />
+              );
+            }
+            if (category === "vlnt") {
+              const details: VLNTSpecificDetails = proc.vlntDetails ?? {};
+              return (
+                <VLNTDetailsComponent
+                  key={proc.id}
+                  value={details}
+                  onChange={(d) =>
+                    onProcedureDetailsChange(proc.id, "vlntDetails", d)
+                  }
+                  procedureName={proc.procedureName}
+                />
+              );
+            }
+            if (category === "sapl" || category === "lipo_lipedema") {
+              const details: SAPLOperativeDetails = proc.saplDetails ?? {};
+              return (
+                <SAPLDetailsComponent
+                  key={proc.id}
+                  value={details}
+                  onChange={(d) =>
+                    onProcedureDetailsChange(proc.id, "saplDetails", d)
+                  }
+                  procedureName={proc.procedureName}
+                />
+              );
+            }
+            return null;
+          })
+        : null}
+
+      {/* ────── Follow-Up Section (collapsed by default) ────── */}
+      <LymphaticFollowUpEntry
+        value={assessment.followUp ?? { timepoint: "3_months", date: "" }}
+        onChange={(followUp) => update({ followUp })}
+        affectedRegion={assessment.affectedRegion}
+      />
     </View>
   );
 });
