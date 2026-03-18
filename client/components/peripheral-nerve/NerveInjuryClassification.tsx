@@ -110,10 +110,7 @@ export const NerveInjuryClassification = React.memo(
         {/* Sunderland Grade */}
         <View>
           <ThemedText
-            style={[
-              styles.fieldLabel,
-              { color: theme.textSecondary },
-            ]}
+            style={[styles.fieldLabel, { color: theme.textSecondary }]}
           >
             Sunderland Grade
           </ThemedText>
@@ -130,9 +127,7 @@ export const NerveInjuryClassification = React.memo(
                       backgroundColor: selected
                         ? theme.accent
                         : theme.backgroundElevated,
-                      borderColor: selected
-                        ? theme.accent
-                        : theme.border,
+                      borderColor: selected ? theme.accent : theme.border,
                     },
                   ]}
                   accessibilityRole="button"
@@ -143,9 +138,7 @@ export const NerveInjuryClassification = React.memo(
                     style={[
                       styles.chipText,
                       {
-                        color: selected
-                          ? theme.buttonText
-                          : theme.text,
+                        color: selected ? theme.buttonText : theme.text,
                       },
                     ]}
                   >
@@ -157,10 +150,7 @@ export const NerveInjuryClassification = React.memo(
           </View>
           {sunderlandGrade != null && (
             <ThemedText
-              style={[
-                styles.gradeDescription,
-                { color: theme.textSecondary },
-              ]}
+              style={[styles.gradeDescription, { color: theme.textSecondary }]}
             >
               {SUNDERLAND_LABELS[sunderlandGrade]}
             </ThemedText>
@@ -170,10 +160,7 @@ export const NerveInjuryClassification = React.memo(
         {/* Mechanism */}
         <View>
           <ThemedText
-            style={[
-              styles.fieldLabel,
-              { color: theme.textSecondary },
-            ]}
+            style={[styles.fieldLabel, { color: theme.textSecondary }]}
           >
             Mechanism
           </ThemedText>
@@ -190,9 +177,7 @@ export const NerveInjuryClassification = React.memo(
                       backgroundColor: selected
                         ? theme.accent
                         : theme.backgroundElevated,
-                      borderColor: selected
-                        ? theme.accent
-                        : theme.border,
+                      borderColor: selected ? theme.accent : theme.border,
                     },
                   ]}
                   accessibilityRole="button"
@@ -202,9 +187,7 @@ export const NerveInjuryClassification = React.memo(
                     style={[
                       styles.chipText,
                       {
-                        color: selected
-                          ? theme.buttonText
-                          : theme.text,
+                        color: selected ? theme.buttonText : theme.text,
                       },
                     ]}
                   >
@@ -220,10 +203,7 @@ export const NerveInjuryClassification = React.memo(
         <View style={styles.twoColumnRow}>
           <View style={{ flex: 1 }}>
             <ThemedText
-              style={[
-                styles.fieldLabel,
-                { color: theme.textSecondary },
-              ]}
+              style={[styles.fieldLabel, { color: theme.textSecondary }]}
             >
               Injury Timing
             </ThemedText>
@@ -240,9 +220,7 @@ export const NerveInjuryClassification = React.memo(
                         backgroundColor: selected
                           ? theme.accent
                           : theme.backgroundElevated,
-                        borderColor: selected
-                          ? theme.accent
-                          : theme.border,
+                        borderColor: selected ? theme.accent : theme.border,
                       },
                     ]}
                     accessibilityRole="button"
@@ -252,9 +230,7 @@ export const NerveInjuryClassification = React.memo(
                       style={[
                         styles.chipText,
                         {
-                          color: selected
-                            ? theme.buttonText
-                            : theme.text,
+                          color: selected ? theme.buttonText : theme.text,
                         },
                       ]}
                     >
@@ -268,10 +244,7 @@ export const NerveInjuryClassification = React.memo(
 
           <View style={{ flex: 1 }}>
             <ThemedText
-              style={[
-                styles.fieldLabel,
-                { color: theme.textSecondary },
-              ]}
+              style={[styles.fieldLabel, { color: theme.textSecondary }]}
             >
               Injury Type
             </ThemedText>
@@ -288,9 +261,7 @@ export const NerveInjuryClassification = React.memo(
                         backgroundColor: selected
                           ? theme.accent
                           : theme.backgroundElevated,
-                        borderColor: selected
-                          ? theme.accent
-                          : theme.border,
+                        borderColor: selected ? theme.accent : theme.border,
                       },
                     ]}
                     accessibilityRole="button"
@@ -300,9 +271,7 @@ export const NerveInjuryClassification = React.memo(
                       style={[
                         styles.chipText,
                         {
-                          color: selected
-                            ? theme.buttonText
-                            : theme.text,
+                          color: selected ? theme.buttonText : theme.text,
                         },
                       ]}
                     >

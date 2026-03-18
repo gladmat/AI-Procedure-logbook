@@ -65,6 +65,22 @@ import {
   IMPLANT_PLANE_LABELS,
 } from "@/types/breast";
 import { getImplantManufacturerLabel } from "@/lib/breastConfig";
+import {
+  NERVE_LABELS,
+  MECHANISM_LABELS as PN_MECHANISM_LABELS,
+  TIMING_LABELS as PN_TIMING_LABELS,
+  REPAIR_TIMING_LABELS,
+  REPAIR_TECHNIQUE_LABELS,
+  GRAFT_SOURCE_LABELS,
+  NAMED_TRANSFER_LABELS,
+  BP_PATTERN_LABELS,
+  BP_MECHANISM_LABELS,
+  NEUROMA_TECHNIQUE_LABELS,
+} from "@/types/peripheralNerve";
+import {
+  BP_APPROACH_LABELS,
+  NEUROMA_AETIOLOGY_LABELS,
+} from "@/lib/peripheralNerveConfig";
 
 // ─── FHIR R4 Type Stubs ───────────────────────────────────────────────────
 
@@ -663,6 +679,133 @@ function buildCondition(
         {
           url: "opus:craniofacialAssessment",
           extension: cfExt,
+        },
+      ];
+    }
+  }
+
+  // Peripheral nerve assessment extension
+  if (group.peripheralNerveAssessment) {
+    const pn = group.peripheralNerveAssessment;
+    const pnExt: { url: string; valueString: string }[] = [];
+
+    if (pn.nerveInjured) {
+      pnExt.push({
+        url: "nerveInjured",
+        valueString: NERVE_LABELS[pn.nerveInjured],
+      });
+    }
+    if (pn.sunderlandGrade) {
+      pnExt.push({
+        url: "sunderlandGrade",
+        valueString: pn.sunderlandGrade,
+      });
+    }
+    if (pn.mechanism) {
+      pnExt.push({
+        url: "mechanism",
+        valueString: PN_MECHANISM_LABELS[pn.mechanism],
+      });
+    }
+    if (pn.timing) {
+      pnExt.push({
+        url: "timing",
+        valueString: PN_TIMING_LABELS[pn.timing],
+      });
+    }
+    if (pn.repairTiming) {
+      pnExt.push({
+        url: "repairTiming",
+        valueString: REPAIR_TIMING_LABELS[pn.repairTiming],
+      });
+    }
+    if (pn.repairTechnique) {
+      pnExt.push({
+        url: "repairTechnique",
+        valueString: REPAIR_TECHNIQUE_LABELS[pn.repairTechnique],
+      });
+    }
+    if (pn.graftDetails?.graftType) {
+      pnExt.push({
+        url: "graftType",
+        valueString: pn.graftDetails.graftType,
+      });
+    }
+    if (pn.graftDetails?.graftSource) {
+      pnExt.push({
+        url: "graftSource",
+        valueString: GRAFT_SOURCE_LABELS[pn.graftDetails.graftSource],
+      });
+    }
+    if (pn.transferDetails?.namedTransfer) {
+      pnExt.push({
+        url: "namedTransfer",
+        valueString: NAMED_TRANSFER_LABELS[pn.transferDetails.namedTransfer],
+      });
+    }
+
+    // Brachial plexus sub-extension
+    if (pn.brachialPlexus) {
+      const bp = pn.brachialPlexus;
+      const bpExt: { url: string; valueString: string }[] = [];
+
+      if (bp.injuryPattern) {
+        bpExt.push({
+          url: "injuryPattern",
+          valueString: BP_PATTERN_LABELS[bp.injuryPattern],
+        });
+      }
+      if (bp.mechanism) {
+        bpExt.push({
+          url: "mechanism",
+          valueString: BP_MECHANISM_LABELS[bp.mechanism],
+        });
+      }
+      if (bp.approach) {
+        bpExt.push({
+          url: "approach",
+          valueString: BP_APPROACH_LABELS[bp.approach],
+        });
+      }
+
+      if (bpExt.length > 0) {
+        pnExt.push(
+          ...(bpExt as { url: string; valueString: string }[]),
+        );
+        // Also add as nested sub-extension for structured consumers
+        condition.extension = [
+          ...(condition.extension ?? []),
+          {
+            url: "urn:opus:brachial-plexus-assessment",
+            extension: bpExt,
+          },
+        ];
+      }
+    }
+
+    // Neuroma sub-extension fields
+    if (pn.neuroma) {
+      const neuroma = pn.neuroma;
+      if (neuroma.aetiology) {
+        pnExt.push({
+          url: "neuromaAetiology",
+          valueString: NEUROMA_AETIOLOGY_LABELS[neuroma.aetiology],
+        });
+      }
+      if (neuroma.technique) {
+        pnExt.push({
+          url: "neuromaTechnique",
+          valueString: NEUROMA_TECHNIQUE_LABELS[neuroma.technique],
+        });
+      }
+    }
+
+    if (pnExt.length > 0) {
+      condition.extension = [
+        ...(condition.extension ?? []),
+        {
+          url: "urn:opus:peripheral-nerve-assessment",
+          extension: pnExt,
         },
       ];
     }

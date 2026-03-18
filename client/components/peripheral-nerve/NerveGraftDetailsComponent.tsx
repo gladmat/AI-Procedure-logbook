@@ -11,7 +11,10 @@ import * as Haptics from "expo-haptics";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
-import type { NerveGraftDetails, NerveConduitDetails } from "@/types/peripheralNerve";
+import type {
+  NerveGraftDetails,
+  NerveConduitDetails,
+} from "@/types/peripheralNerve";
 import { GRAFT_SOURCE_LABELS } from "@/types/peripheralNerve";
 import type { NerveGraftSource } from "@/types/peripheralNerve";
 
@@ -81,9 +84,7 @@ export const NerveGraftDetailsComponent = React.memo(
         {/* Graft section */}
         {showGraft && (
           <>
-            <ThemedText
-              style={[styles.sectionTitle, { color: theme.text }]}
-            >
+            <ThemedText style={[styles.sectionTitle, { color: theme.text }]}>
               Nerve Graft
             </ThemedText>
 
@@ -137,9 +138,14 @@ export const NerveGraftDetailsComponent = React.memo(
                       <Pressable
                         key={src}
                         onPress={() => {
-                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                          Haptics.impactAsync(
+                            Haptics.ImpactFeedbackStyle.Light,
+                          );
                           updateGraft({
-                            graftSource: graftDetails?.graftSource === src ? undefined : src,
+                            graftSource:
+                              graftDetails?.graftSource === src
+                                ? undefined
+                                : src,
                           });
                         }}
                         style={[
@@ -148,9 +154,7 @@ export const NerveGraftDetailsComponent = React.memo(
                             backgroundColor: selected
                               ? theme.accent
                               : theme.backgroundElevated,
-                            borderColor: selected
-                              ? theme.accent
-                              : theme.border,
+                            borderColor: selected ? theme.accent : theme.border,
                           },
                         ]}
                       >
@@ -158,9 +162,7 @@ export const NerveGraftDetailsComponent = React.memo(
                           style={{
                             fontSize: 13,
                             fontWeight: "500",
-                            color: selected
-                              ? theme.buttonText
-                              : theme.text,
+                            color: selected ? theme.buttonText : theme.text,
                           }}
                         >
                           {GRAFT_SOURCE_LABELS[src]}
@@ -233,9 +235,7 @@ export const NerveGraftDetailsComponent = React.memo(
         {/* Conduit section */}
         {showConduit && (
           <>
-            <ThemedText
-              style={[styles.sectionTitle, { color: theme.text }]}
-            >
+            <ThemedText style={[styles.sectionTitle, { color: theme.text }]}>
               Nerve Conduit
             </ThemedText>
 

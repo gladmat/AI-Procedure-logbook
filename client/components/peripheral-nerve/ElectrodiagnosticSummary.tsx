@@ -34,7 +34,11 @@ const BOOLEAN_FIELDS: Array<{
   label: string;
   hint?: string;
 }> = [
-  { key: "snapsPresent", label: "SNAPs present", hint: "Preganglionic vs postganglionic" },
+  {
+    key: "snapsPresent",
+    label: "SNAPs present",
+    hint: "Preganglionic vs postganglionic",
+  },
   { key: "denervationPresent", label: "Active denervation" },
   { key: "reinnervationPresent", label: "Reinnervation potentials" },
   { key: "fibrillationPotentials", label: "Fibrillation potentials" },
@@ -80,9 +84,7 @@ export const ElectrodiagnosticSummaryComponent = React.memo(
                 {label}
               </ThemedText>
               {hint != null && (
-                <ThemedText
-                  style={{ color: theme.textTertiary, fontSize: 12 }}
-                >
+                <ThemedText style={{ color: theme.textTertiary, fontSize: 12 }}>
                   {hint}
                 </ThemedText>
               )}
@@ -126,9 +128,7 @@ export const ElectrodiagnosticSummaryComponent = React.memo(
                     style={[
                       styles.chipText,
                       {
-                        color: selected
-                          ? theme.buttonText
-                          : theme.text,
+                        color: selected ? theme.buttonText : theme.text,
                       },
                     ]}
                   >

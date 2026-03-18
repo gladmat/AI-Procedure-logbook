@@ -105,9 +105,7 @@ export const NerveTransferPicker = React.memo(function NerveTransferPicker({
     <View style={{ gap: Spacing.md }}>
       {/* Named transfer */}
       <View>
-        <ThemedText
-          style={[styles.fieldLabel, { color: theme.textSecondary }]}
-        >
+        <ThemedText style={[styles.fieldLabel, { color: theme.textSecondary }]}>
           Named Transfer
         </ThemedText>
         <View style={styles.chipRow}>
@@ -147,9 +145,7 @@ export const NerveTransferPicker = React.memo(function NerveTransferPicker({
 
       {/* Target function */}
       <View>
-        <ThemedText
-          style={[styles.fieldLabel, { color: theme.textSecondary }]}
-        >
+        <ThemedText style={[styles.fieldLabel, { color: theme.textSecondary }]}>
           Target Function
         </ThemedText>
         <View style={styles.chipRow}>
@@ -188,9 +184,7 @@ export const NerveTransferPicker = React.memo(function NerveTransferPicker({
 
       {/* Direct vs via graft */}
       <View>
-        <ThemedText
-          style={[styles.fieldLabel, { color: theme.textSecondary }]}
-        >
+        <ThemedText style={[styles.fieldLabel, { color: theme.textSecondary }]}>
           Coaptation
         </ThemedText>
         <View style={styles.chipRow}>

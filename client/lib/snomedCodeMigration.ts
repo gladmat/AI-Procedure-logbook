@@ -514,6 +514,95 @@ export const OLD_TO_NEW_SNOMED: Record<string, SnomedMigrationEntry> = {
     newCode: "128491006",
     newDisplay: "Heterotopic ossification (disorder)",
   },
+
+  // ── Peripheral nerve SNOMED CT fixes (validated against Ontoserver March 2026) ──
+
+  // Upper extremity nerve injury
+  "735061002": {
+    newCode: "67279004",
+    newDisplay: "Injury of median nerve (disorder)",
+  },
+  "735063004": {
+    newCode: "62745008",
+    newDisplay: "Injury of ulnar nerve (disorder)",
+  },
+  "735062009": {
+    newCode: "87450004",
+    newDisplay: "Injury of radial nerve (disorder)",
+  },
+  "54521005": {
+    newCode: "443876008",
+    newDisplay: "Radial tunnel syndrome (disorder)",
+  },
+  "30753003": {
+    newCode: "230628008",
+    newDisplay: "Pronator syndrome (disorder)",
+  },
+  "60057000": {
+    newCode: "193134004",
+    newDisplay: "Ulnar nerve entrapment at wrist (disorder)",
+  },
+  "57891003": {
+    newCode: "128210009",
+    newDisplay: "Thoracic outlet syndrome (disorder)",
+  },
+  "39291006": {
+    newCode: "212291002",
+    newDisplay: "Long thoracic nerve injury (disorder)",
+  },
+
+  // Brachial plexus
+  "71553001": {
+    newCode: "6836001",
+    newDisplay: "Injury of brachial plexus (disorder)",
+  },
+  "17781004": {
+    newCode: "46894009",
+    newDisplay: "Obstetric brachial plexus palsy (disorder)",
+  },
+  "363232006": {
+    newCode: "1230019002",
+    newDisplay: "Radiation-induced plexopathy (disorder)",
+  },
+  "126948001": {
+    newCode: "189948006",
+    newDisplay: "Schwannoma (disorder)",
+  },
+
+  // Lower extremity nerve injury
+  "46968001": {
+    newCode: "25604001",
+    newDisplay:
+      "Traumatic injury of common peroneal nerve (disorder)",
+  },
+  "75799005": {
+    newCode: "47374004",
+    newDisplay: "Tarsal tunnel syndrome (disorder)",
+  },
+  "282765009": {
+    newCode: "7449006",
+    newDisplay: "Injury of femoral nerve (disorder)",
+  },
+  "76670007": {
+    newCode: "85007004",
+    newDisplay: "Meralgia paraesthetica (disorder)",
+  },
+  "42701004": {
+    newCode: "30085007",
+    newDisplay: "Morton's neuroma (disorder)",
+  },
+
+  // Neuroma
+  "277879009": {
+    newCode: "443892003",
+    newDisplay: "Neuroma (disorder)",
+  },
+
+  // Nerve tumours
+  "127037002": {
+    newCode: "404037002",
+    newDisplay: "Malignant peripheral nerve sheath tumour (disorder)",
+  },
 };
 
 export function migrateSnomedCode(code: string): SnomedMigrationEntry | null {

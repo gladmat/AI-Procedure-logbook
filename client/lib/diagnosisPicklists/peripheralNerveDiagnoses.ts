@@ -9,7 +9,7 @@
  *   4E: Nerve Tumours (4)
  *
  * SNOMED CT codes from Clinical Finding hierarchy (<<404684003).
- * Codes marked // VERIFY need validation against Ontoserver in Phase 7.
+ * All codes validated against Ontoserver (March 2026 audit).
  */
 
 import type { DiagnosisPicklistEntry } from "@/types/diagnosis";
@@ -23,7 +23,7 @@ const PN_DX_UPPER_EXTREMITY: DiagnosisPicklistEntry[] = [
     id: "pn_dx_median_nerve_injury",
     displayName: "Median nerve injury",
     shortName: "Median nerve",
-    snomedCtCode: "735061002", // VERIFY
+    snomedCtCode: "67279004",
     snomedCtDisplay: "Injury of median nerve (disorder)",
     specialty: "peripheral_nerve",
     subcategory: "Upper Extremity Nerve Injury",
@@ -49,7 +49,7 @@ const PN_DX_UPPER_EXTREMITY: DiagnosisPicklistEntry[] = [
     id: "pn_dx_ulnar_nerve_injury",
     displayName: "Ulnar nerve injury",
     shortName: "Ulnar nerve",
-    snomedCtCode: "735063004", // VERIFY
+    snomedCtCode: "62745008",
     snomedCtDisplay: "Injury of ulnar nerve (disorder)",
     specialty: "peripheral_nerve",
     subcategory: "Upper Extremity Nerve Injury",
@@ -75,7 +75,7 @@ const PN_DX_UPPER_EXTREMITY: DiagnosisPicklistEntry[] = [
     id: "pn_dx_radial_nerve_injury",
     displayName: "Radial nerve injury",
     shortName: "Radial nerve",
-    snomedCtCode: "735062009", // VERIFY
+    snomedCtCode: "87450004",
     snomedCtDisplay: "Injury of radial nerve (disorder)",
     specialty: "peripheral_nerve",
     subcategory: "Upper Extremity Nerve Injury",
@@ -108,8 +108,8 @@ const PN_DX_UPPER_EXTREMITY: DiagnosisPicklistEntry[] = [
     id: "pn_dx_ain_syndrome",
     displayName: "Anterior interosseous nerve syndrome",
     shortName: "AIN syndrome",
-    snomedCtCode: "128196005", // VERIFY
-    snomedCtDisplay: "Disorder of anterior interosseous nerve (disorder)",
+    snomedCtCode: "302885000",
+    snomedCtDisplay: "Anterior interosseous nerve entrapment (disorder)",
     specialty: "peripheral_nerve",
     subcategory: "Upper Extremity Nerve Injury",
     clinicalGroup: "elective",
@@ -130,8 +130,8 @@ const PN_DX_UPPER_EXTREMITY: DiagnosisPicklistEntry[] = [
     id: "pn_dx_pin_syndrome",
     displayName: "Posterior interosseous nerve syndrome",
     shortName: "PIN syndrome",
-    snomedCtCode: "281377008", // VERIFY
-    snomedCtDisplay: "Disorder of posterior interosseous nerve (disorder)",
+    snomedCtCode: "302886004",
+    snomedCtDisplay: "Posterior interosseous nerve compression (disorder)",
     specialty: "peripheral_nerve",
     subcategory: "Upper Extremity Nerve Injury",
     clinicalGroup: "elective",
@@ -158,7 +158,7 @@ const PN_DX_UPPER_EXTREMITY: DiagnosisPicklistEntry[] = [
     id: "pn_dx_radial_tunnel_syndrome",
     displayName: "Radial tunnel syndrome",
     shortName: "Radial tunnel",
-    snomedCtCode: "54521005", // VERIFY
+    snomedCtCode: "443876008",
     snomedCtDisplay: "Radial tunnel syndrome (disorder)",
     specialty: "peripheral_nerve",
     subcategory: "Upper Extremity Nerve Injury",
@@ -184,7 +184,7 @@ const PN_DX_UPPER_EXTREMITY: DiagnosisPicklistEntry[] = [
     id: "pn_dx_pronator_syndrome",
     displayName: "Pronator syndrome",
     shortName: "Pronator",
-    snomedCtCode: "30753003", // VERIFY
+    snomedCtCode: "230628008",
     snomedCtDisplay: "Pronator syndrome (disorder)",
     specialty: "peripheral_nerve",
     subcategory: "Upper Extremity Nerve Injury",
@@ -210,8 +210,8 @@ const PN_DX_UPPER_EXTREMITY: DiagnosisPicklistEntry[] = [
     id: "pn_dx_guyon_canal_syndrome",
     displayName: "Guyon's canal syndrome",
     shortName: "Guyon's canal",
-    snomedCtCode: "60057000", // VERIFY
-    snomedCtDisplay: "Guyon's canal syndrome (disorder)",
+    snomedCtCode: "193134004",
+    snomedCtDisplay: "Ulnar nerve entrapment at wrist (disorder)",
     specialty: "peripheral_nerve",
     subcategory: "Upper Extremity Nerve Injury",
     clinicalGroup: "elective",
@@ -237,7 +237,7 @@ const PN_DX_UPPER_EXTREMITY: DiagnosisPicklistEntry[] = [
     id: "pn_dx_thoracic_outlet_syndrome",
     displayName: "Thoracic outlet syndrome (neurogenic)",
     shortName: "TOS",
-    snomedCtCode: "57891003", // VERIFY — updated from blueprint 128196005
+    snomedCtCode: "128210009",
     snomedCtDisplay: "Thoracic outlet syndrome (disorder)",
     specialty: "peripheral_nerve",
     subcategory: "Upper Extremity Nerve Injury",
@@ -265,7 +265,7 @@ const PN_DX_UPPER_EXTREMITY: DiagnosisPicklistEntry[] = [
     id: "pn_dx_suprascapular_neuropathy",
     displayName: "Suprascapular neuropathy",
     shortName: "Suprascapular",
-    snomedCtCode: "281377008", // VERIFY
+    snomedCtCode: "609601001",
     snomedCtDisplay: "Suprascapular neuropathy (disorder)",
     specialty: "peripheral_nerve",
     subcategory: "Upper Extremity Nerve Injury",
@@ -291,8 +291,8 @@ const PN_DX_UPPER_EXTREMITY: DiagnosisPicklistEntry[] = [
     id: "pn_dx_long_thoracic_palsy",
     displayName: "Long thoracic nerve palsy (winged scapula)",
     shortName: "Long thoracic palsy",
-    snomedCtCode: "39291006", // VERIFY
-    snomedCtDisplay: "Long thoracic nerve palsy (disorder)",
+    snomedCtCode: "212291002",
+    snomedCtDisplay: "Long thoracic nerve injury (disorder)",
     specialty: "peripheral_nerve",
     subcategory: "Upper Extremity Nerve Injury",
     clinicalGroup: "trauma",
@@ -400,7 +400,7 @@ const PN_DX_BRACHIAL_PLEXUS: DiagnosisPicklistEntry[] = [
     id: "pn_dx_bp_traction_extended",
     displayName: "Brachial plexus injury — extended upper (C5\u2013C7)",
     shortName: "Extended upper BPI",
-    snomedCtCode: "71553001", // VERIFY
+    snomedCtCode: "6836001",
     snomedCtDisplay: "Injury of brachial plexus (disorder)",
     specialty: "peripheral_nerve",
     subcategory: "Brachial Plexus",
@@ -439,7 +439,7 @@ const PN_DX_BRACHIAL_PLEXUS: DiagnosisPicklistEntry[] = [
     id: "pn_dx_bp_traction_complete",
     displayName: "Brachial plexus injury — complete (C5\u2013T1)",
     shortName: "Total BPI",
-    snomedCtCode: "71553001",
+    snomedCtCode: "6836001",
     snomedCtDisplay: "Injury of brachial plexus (disorder)",
     specialty: "peripheral_nerve",
     subcategory: "Brachial Plexus",
@@ -519,7 +519,7 @@ const PN_DX_BRACHIAL_PLEXUS: DiagnosisPicklistEntry[] = [
     id: "pn_dx_bp_obstetric",
     displayName: "Obstetric brachial plexus palsy (OBPP)",
     shortName: "OBPP",
-    snomedCtCode: "17781004", // VERIFY
+    snomedCtCode: "46894009",
     snomedCtDisplay: "Obstetric brachial plexus palsy (disorder)",
     specialty: "peripheral_nerve",
     subcategory: "Brachial Plexus",
@@ -553,7 +553,7 @@ const PN_DX_BRACHIAL_PLEXUS: DiagnosisPicklistEntry[] = [
     id: "pn_dx_bp_penetrating",
     displayName: "Brachial plexus injury — penetrating/GSW",
     shortName: "Penetrating BPI",
-    snomedCtCode: "71553001", // VERIFY
+    snomedCtCode: "6836001",
     snomedCtDisplay: "Injury of brachial plexus (disorder)",
     specialty: "peripheral_nerve",
     subcategory: "Brachial Plexus",
@@ -587,8 +587,8 @@ const PN_DX_BRACHIAL_PLEXUS: DiagnosisPicklistEntry[] = [
     id: "pn_dx_bp_radiation",
     displayName: "Radiation-induced brachial plexopathy",
     shortName: "Radiation plexopathy",
-    snomedCtCode: "363232006", // VERIFY
-    snomedCtDisplay: "Radiation-induced brachial plexopathy (disorder)",
+    snomedCtCode: "1230019002",
+    snomedCtDisplay: "Radiation-induced plexopathy (disorder)",
     specialty: "peripheral_nerve",
     subcategory: "Brachial Plexus",
     clinicalGroup: "elective",
@@ -614,8 +614,8 @@ const PN_DX_BRACHIAL_PLEXUS: DiagnosisPicklistEntry[] = [
     id: "pn_dx_bp_tumour",
     displayName: "Brachial plexus tumour (schwannoma/neurofibroma)",
     shortName: "Plexus tumour",
-    snomedCtCode: "126948001", // VERIFY
-    snomedCtDisplay: "Neoplasm of brachial plexus (disorder)",
+    snomedCtCode: "189948006",
+    snomedCtDisplay: "Schwannoma (disorder)",
     specialty: "peripheral_nerve",
     subcategory: "Brachial Plexus",
     clinicalGroup: "oncological",
@@ -648,8 +648,8 @@ const PN_DX_LOWER_EXTREMITY: DiagnosisPicklistEntry[] = [
     id: "pn_dx_common_peroneal_injury",
     displayName: "Common peroneal nerve injury (foot drop)",
     shortName: "CPN palsy",
-    snomedCtCode: "46968001", // Existing verified code
-    snomedCtDisplay: "Common peroneal nerve palsy (disorder)",
+    snomedCtCode: "25604001",
+    snomedCtDisplay: "Traumatic injury of common peroneal nerve (disorder)",
     specialty: "peripheral_nerve",
     subcategory: "Lower Extremity Nerve Injury",
     clinicalGroup: "trauma",
@@ -682,7 +682,7 @@ const PN_DX_LOWER_EXTREMITY: DiagnosisPicklistEntry[] = [
     id: "pn_dx_tarsal_tunnel",
     displayName: "Tarsal tunnel syndrome",
     shortName: "Tarsal tunnel",
-    snomedCtCode: "75799005", // VERIFY
+    snomedCtCode: "47374004",
     snomedCtDisplay: "Tarsal tunnel syndrome (disorder)",
     specialty: "peripheral_nerve",
     subcategory: "Lower Extremity Nerve Injury",
@@ -708,7 +708,7 @@ const PN_DX_LOWER_EXTREMITY: DiagnosisPicklistEntry[] = [
     id: "pn_dx_sciatic_injury",
     displayName: "Sciatic nerve injury",
     shortName: "Sciatic nerve",
-    snomedCtCode: "35986008", // VERIFY
+    snomedCtCode: "35986008",
     snomedCtDisplay: "Sciatic nerve injury (disorder)",
     specialty: "peripheral_nerve",
     subcategory: "Lower Extremity Nerve Injury",
@@ -740,8 +740,8 @@ const PN_DX_LOWER_EXTREMITY: DiagnosisPicklistEntry[] = [
     id: "pn_dx_femoral_nerve_injury",
     displayName: "Femoral nerve injury",
     shortName: "Femoral nerve",
-    snomedCtCode: "282765009", // VERIFY
-    snomedCtDisplay: "Femoral nerve injury (disorder)",
+    snomedCtCode: "7449006",
+    snomedCtDisplay: "Injury of femoral nerve (disorder)",
     specialty: "peripheral_nerve",
     subcategory: "Lower Extremity Nerve Injury",
     clinicalGroup: "trauma",
@@ -766,8 +766,8 @@ const PN_DX_LOWER_EXTREMITY: DiagnosisPicklistEntry[] = [
     id: "pn_dx_meralgia_paresthetica",
     displayName: "Meralgia paresthetica (LFCN)",
     shortName: "Meralgia",
-    snomedCtCode: "76670007", // VERIFY
-    snomedCtDisplay: "Meralgia paresthetica (disorder)",
+    snomedCtCode: "85007004",
+    snomedCtDisplay: "Meralgia paraesthetica (disorder)",
     specialty: "peripheral_nerve",
     subcategory: "Lower Extremity Nerve Injury",
     clinicalGroup: "elective",
@@ -799,8 +799,8 @@ const PN_DX_LOWER_EXTREMITY: DiagnosisPicklistEntry[] = [
     id: "pn_dx_morton_neuroma",
     displayName: "Morton neuroma (interdigital)",
     shortName: "Morton neuroma",
-    snomedCtCode: "42701004", // VERIFY
-    snomedCtDisplay: "Morton neuroma (disorder)",
+    snomedCtCode: "30085007",
+    snomedCtDisplay: "Morton's neuroma (disorder)",
     specialty: "peripheral_nerve",
     subcategory: "Lower Extremity Nerve Injury",
     clinicalGroup: "elective",
@@ -827,7 +827,7 @@ const PN_DX_LOWER_EXTREMITY: DiagnosisPicklistEntry[] = [
     id: "pn_dx_obturator_neuropathy",
     displayName: "Obturator neuropathy",
     shortName: "Obturator",
-    snomedCtCode: "281377008", // VERIFY
+    snomedCtCode: "298130005",
     snomedCtDisplay: "Obturator neuropathy (disorder)",
     specialty: "peripheral_nerve",
     subcategory: "Lower Extremity Nerve Injury",
@@ -853,8 +853,8 @@ const PN_DX_LOWER_EXTREMITY: DiagnosisPicklistEntry[] = [
     id: "pn_dx_pudendal_neuropathy",
     displayName: "Pudendal neuropathy",
     shortName: "Pudendal",
-    snomedCtCode: "128196005", // VERIFY
-    snomedCtDisplay: "Pudendal neuropathy (disorder)",
+    snomedCtCode: "315056009",
+    snomedCtDisplay: "Pudendal nerve neuropathy (disorder)",
     specialty: "peripheral_nerve",
     subcategory: "Lower Extremity Nerve Injury",
     clinicalGroup: "elective",
@@ -886,8 +886,8 @@ const PN_DX_NEUROMA: DiagnosisPicklistEntry[] = [
     id: "pn_dx_neuroma_post_amputation",
     displayName: "Symptomatic neuroma — post-amputation",
     shortName: "Stump neuroma",
-    snomedCtCode: "277879009", // VERIFY
-    snomedCtDisplay: "Traumatic neuroma (disorder)",
+    snomedCtCode: "443892003",
+    snomedCtDisplay: "Neuroma (disorder)",
     specialty: "peripheral_nerve",
     subcategory: "Neuroma",
     clinicalGroup: "elective",
@@ -920,8 +920,8 @@ const PN_DX_NEUROMA: DiagnosisPicklistEntry[] = [
     id: "pn_dx_neuroma_traumatic",
     displayName: "Symptomatic neuroma — post-traumatic",
     shortName: "Traumatic neuroma",
-    snomedCtCode: "277879009", // VERIFY
-    snomedCtDisplay: "Traumatic neuroma (disorder)",
+    snomedCtCode: "443892003",
+    snomedCtDisplay: "Neuroma (disorder)",
     specialty: "peripheral_nerve",
     subcategory: "Neuroma",
     clinicalGroup: "elective",
@@ -953,8 +953,8 @@ const PN_DX_NEUROMA: DiagnosisPicklistEntry[] = [
     id: "pn_dx_neuroma_iatrogenic",
     displayName: "Symptomatic neuroma — iatrogenic",
     shortName: "Iatrogenic neuroma",
-    snomedCtCode: "277879009", // VERIFY
-    snomedCtDisplay: "Traumatic neuroma (disorder)",
+    snomedCtCode: "443892003",
+    snomedCtDisplay: "Neuroma (disorder)",
     specialty: "peripheral_nerve",
     subcategory: "Neuroma",
     clinicalGroup: "elective",
@@ -986,8 +986,8 @@ const PN_DX_NEUROMA: DiagnosisPicklistEntry[] = [
     id: "pn_dx_neuroma_in_continuity",
     displayName: "Neuroma-in-continuity",
     shortName: "NIC",
-    snomedCtCode: "277879009", // VERIFY
-    snomedCtDisplay: "Traumatic neuroma (disorder)",
+    snomedCtCode: "443892003",
+    snomedCtDisplay: "Neuroma (disorder)",
     specialty: "peripheral_nerve",
     subcategory: "Neuroma",
     clinicalGroup: "elective",
@@ -1020,8 +1020,8 @@ const PN_DX_NEUROMA: DiagnosisPicklistEntry[] = [
     id: "pn_dx_painful_nerve_scar",
     displayName: "Painful nerve scar (without neuroma)",
     shortName: "Nerve scar",
-    snomedCtCode: "128196005", // VERIFY
-    snomedCtDisplay: "Disorder of peripheral nerve (disorder)",
+    snomedCtCode: "239178001",
+    snomedCtDisplay: "Scar neuroma (disorder)",
     specialty: "peripheral_nerve",
     subcategory: "Neuroma",
     clinicalGroup: "elective",
@@ -1081,7 +1081,7 @@ const PN_DX_TUMOUR: DiagnosisPicklistEntry[] = [
     id: "pn_dx_neurofibroma_solitary",
     displayName: "Neurofibroma — solitary",
     shortName: "Neurofibroma",
-    snomedCtCode: "92564007", // VERIFY
+    snomedCtCode: "404029005",
     snomedCtDisplay: "Neurofibroma (disorder)",
     specialty: "peripheral_nerve",
     subcategory: "Nerve Tumours",
@@ -1107,8 +1107,8 @@ const PN_DX_TUMOUR: DiagnosisPicklistEntry[] = [
     id: "pn_dx_neurofibroma_plexiform",
     displayName: "Plexiform neurofibroma",
     shortName: "Plexiform NF",
-    snomedCtCode: "92564007", // VERIFY
-    snomedCtDisplay: "Neurofibroma (disorder)",
+    snomedCtCode: "254242006",
+    snomedCtDisplay: "Diffuse neurofibroma (disorder)",
     specialty: "peripheral_nerve",
     subcategory: "Nerve Tumours",
     clinicalGroup: "oncological",
@@ -1133,9 +1133,9 @@ const PN_DX_TUMOUR: DiagnosisPicklistEntry[] = [
     id: "pn_dx_mpnst",
     displayName: "Malignant peripheral nerve sheath tumour (MPNST)",
     shortName: "MPNST",
-    snomedCtCode: "127037002", // VERIFY
+    snomedCtCode: "404037002",
     snomedCtDisplay:
-      "Malignant peripheral nerve sheath tumor (disorder)",
+      "Malignant peripheral nerve sheath tumour (disorder)",
     specialty: "peripheral_nerve",
     subcategory: "Nerve Tumours",
     clinicalGroup: "oncological",

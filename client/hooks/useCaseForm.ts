@@ -1022,6 +1022,18 @@ export function buildDuplicateState(
     dupuytrenAssessment: g.dupuytrenAssessment
       ? structuredClone(g.dupuytrenAssessment)
       : undefined,
+    peripheralNerveAssessment: g.peripheralNerveAssessment
+      ? structuredClone(g.peripheralNerveAssessment)
+      : undefined,
+    craniofacialAssessment: g.craniofacialAssessment
+      ? structuredClone(g.craniofacialAssessment)
+      : undefined,
+    aestheticAssessment: g.aestheticAssessment
+      ? structuredClone(g.aestheticAssessment)
+      : undefined,
+    burnsAssessment: g.burnsAssessment
+      ? structuredClone(g.burnsAssessment)
+      : undefined,
     fractures: g.fractures?.map((f) => ({ ...f, id: uuidv4() })) ?? [],
     lesionInstances:
       g.lesionInstances?.map((l) => ({

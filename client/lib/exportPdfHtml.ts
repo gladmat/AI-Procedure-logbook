@@ -31,6 +31,17 @@ import {
   generateDupuytrenSummaryText,
   calculateDiathesisScore,
 } from "@/lib/dupuytrenHelpers";
+import {
+  NERVE_LABELS,
+  MECHANISM_LABELS as PN_MECHANISM_LABELS,
+  REPAIR_TECHNIQUE_LABELS,
+  BP_PATTERN_LABELS,
+  NEUROMA_TECHNIQUE_LABELS,
+} from "@/types/peripheralNerve";
+import {
+  BP_APPROACH_LABELS,
+  NEUROMA_AETIOLOGY_LABELS,
+} from "@/lib/peripheralNerveConfig";
 
 export interface PdfExportOptions {
   includePatientId?: boolean;
@@ -140,6 +151,35 @@ function getCraniofacialSummary(caseData: Case): string {
   }
   if (ca.outcomes?.dental?.goslonScore) {
     parts.push(`GOSLON: ${ca.outcomes.dental.goslonScore}/5`);
+  }
+
+  return parts.join(", ");
+}
+
+function getPeripheralNerveSummary(caseData: Case): string {
+  const group = (caseData.diagnosisGroups ?? []).find(
+    (g) => g.peripheralNerveAssessment,
+  );
+  if (!group?.peripheralNerveAssessment) return "";
+
+  const pn = group.peripheralNerveAssessment;
+  const parts: string[] = [];
+
+  if (pn.nerveInjured) parts.push(NERVE_LABELS[pn.nerveInjured]);
+  if (pn.sunderlandGrade) parts.push(`Sunderland ${pn.sunderlandGrade}`);
+  if (pn.mechanism) parts.push(PN_MECHANISM_LABELS[pn.mechanism]);
+  if (pn.repairTechnique) parts.push(REPAIR_TECHNIQUE_LABELS[pn.repairTechnique]);
+
+  if (pn.brachialPlexus) {
+    const bp = pn.brachialPlexus;
+    if (bp.injuryPattern) parts.push(`BP: ${BP_PATTERN_LABELS[bp.injuryPattern]}`);
+    if (bp.approach) parts.push(BP_APPROACH_LABELS[bp.approach]);
+  }
+
+  if (pn.neuroma) {
+    const neuroma = pn.neuroma;
+    if (neuroma.aetiology) parts.push(NEUROMA_AETIOLOGY_LABELS[neuroma.aetiology]);
+    if (neuroma.technique) parts.push(NEUROMA_TECHNIQUE_LABELS[neuroma.technique]);
   }
 
   return parts.join(", ");
@@ -257,6 +297,7 @@ export function buildPdfHtml(cases: Case[], options: PdfExportOptions): string {
     }
 
     const craniofacialSummary = getCraniofacialSummary(c);
+    const peripheralNerveSummary = getPeripheralNerveSummary(c);
 
     const implantSummary = [jointImplantSummary, ...breastParts]
       .filter(Boolean)
@@ -309,7 +350,7 @@ export function buildPdfHtml(cases: Case[], options: PdfExportOptions): string {
       escapeHtml(primary?.diagnosis?.displayName || ""),
       escapeHtml(primaryProc?.procedureName || ""),
       escapeHtml(
-        [implantSummary, headNeckFlapSummary, dupuytrenSummary, craniofacialSummary].filter(Boolean).join("; "),
+        [implantSummary, headNeckFlapSummary, dupuytrenSummary, craniofacialSummary, peripheralNerveSummary].filter(Boolean).join("; "),
       ),
       escapeHtml(complications),
       escapeHtml(c.outcome || ""),

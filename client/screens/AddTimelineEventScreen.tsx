@@ -33,6 +33,8 @@ import { MediaCapture } from "@/components/MediaCapture";
 import { PROMEntryForm } from "@/components/PROMEntryForm";
 import { WoundAssessment } from "@/types/wound";
 import { WoundAssessmentForm } from "@/components/WoundAssessmentForm";
+import type { NerveOutcomeAssessment } from "@/types/peripheralNerve";
+import { NerveOutcomeForm } from "@/components/peripheral-nerve/NerveOutcomeForm";
 import {
   saveTimelineEvent,
   getTimelineEvents,
@@ -80,6 +82,9 @@ export default function AddTimelineEventScreen() {
     caseDischargeDate,
     editEventId,
     mediaContext,
+    hasPeripheralNerveAssessment,
+    nerveInjured,
+    procedureDate,
   } = route.params;
 
   const isEditMode = !!editEventId;
@@ -111,6 +116,24 @@ export default function AddTimelineEventScreen() {
     "dry_healing" | "moist" | "redness" | "breakdown" | ""
   >("");
   const [editingEvent, setEditingEvent] = useState<TimelineEvent | null>(null);
+
+  // Nerve outcome state — shown for follow_up_visit when case has peripheral nerve assessment
+  const [nerveOutcome, setNerveOutcome] = useState<NerveOutcomeAssessment>(
+    () => {
+      const monthsSince =
+        procedureDate && eventDate
+          ? Math.round(
+              (new Date(eventDate).getTime() -
+                new Date(procedureDate).getTime()) /
+                (1000 * 60 * 60 * 24 * 30.44),
+            )
+          : 0;
+      return {
+        assessmentDate: eventDate,
+        monthsSinceSurgery: Math.max(0, monthsSince),
+      };
+    },
+  );
 
   // Set dynamic header title
   useLayoutEffect(() => {
@@ -152,6 +175,7 @@ export default function AddTimelineEventScreen() {
         }
         if (existing.woundAssessmentData)
           setWoundAssessmentData(existing.woundAssessmentData);
+        if (existing.nerveOutcome) setNerveOutcome(existing.nerveOutcome);
       } catch (error) {
         console.error("Error loading event for editing:", error);
       }
@@ -284,6 +308,9 @@ export default function AddTimelineEventScreen() {
 
       if (eventType === "follow_up_visit" && followUpInterval) {
         updates.followUpInterval = followUpInterval;
+        if (hasPeripheralNerveAssessment) {
+          updates.nerveOutcome = nerveOutcome;
+        }
       }
 
       if (eventType === "wound_assessment") {
@@ -542,6 +569,13 @@ export default function AddTimelineEventScreen() {
             defaultMediaDate={eventDate}
             mediaContext={mediaContext}
           />
+          {hasPeripheralNerveAssessment && (
+            <NerveOutcomeForm
+              outcome={nerveOutcome}
+              onChange={setNerveOutcome}
+              nerveInjured={nerveInjured}
+            />
+          )}
           <FormField
             label="Clinical Notes"
             value={note}

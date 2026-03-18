@@ -2176,6 +2176,7 @@ export interface TimelineEvent {
   promData?: PROMData;
   complicationData?: ComplicationEntry;
   woundAssessmentData?: WoundAssessment;
+  nerveOutcome?: import("./peripheralNerve").NerveOutcomeAssessment;
 }
 
 export type TimelineEventContext =

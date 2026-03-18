@@ -3,3 +3,7 @@ export { NerveInjuryClassification } from "./NerveInjuryClassification";
 export { ElectrodiagnosticSummaryComponent } from "./ElectrodiagnosticSummary";
 export { NerveGraftDetailsComponent } from "./NerveGraftDetailsComponent";
 export { NerveTransferPicker } from "./NerveTransferPicker";
+export { BrachialPlexusDiagram } from "./BrachialPlexusDiagram";
+export { BrachialPlexusAssessment } from "./BrachialPlexusAssessment";
+export { NeuromaAssessment } from "./NeuromaAssessment";
+export { NerveOutcomeForm } from "./NerveOutcomeForm";

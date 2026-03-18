@@ -138,7 +138,11 @@ import type { AestheticAssessment as AestheticAssessmentData } from "@/types/aes
 import { BurnsAssessment } from "@/components/burns/BurnsAssessment";
 import { isBurnsDiagnosis, getDefaultBurnsAssessment, getBurnPhaseFromDiagnosis } from "@/lib/burnsConfig";
 import type { BurnsAssessmentData } from "@/types/burns";
-import { isPeripheralNerveDiagnosis } from "@/lib/peripheralNerveConfig";
+import {
+  isPeripheralNerveDiagnosis,
+  isBrachialPlexusDiagnosis,
+  isNeuromaDiagnosis,
+} from "@/lib/peripheralNerveConfig";
 import type { PeripheralNerveAssessmentData } from "@/types/peripheralNerve";
 import { PeripheralNerveAssessment } from "@/components/peripheral-nerve";
 import type {
@@ -1199,6 +1203,22 @@ function DiagnosisGroupEditorInner({
     if (!isPeripheralNerveModule) return undefined;
     return group.peripheralNerveAssessment ?? {};
   }, [isPeripheralNerveModule, group.peripheralNerveAssessment]);
+
+  // Brachial plexus sub-module: diagnosis-driven OR existing data
+  const isBrachialPlexusModule = useMemo(
+    () =>
+      isBrachialPlexusDiagnosis(selectedDiagnosis ?? undefined) ||
+      !!group.peripheralNerveAssessment?.brachialPlexus,
+    [selectedDiagnosis, group.peripheralNerveAssessment?.brachialPlexus],
+  );
+
+  // Neuroma sub-module: diagnosis-driven OR existing data
+  const isNeuromaModule = useMemo(
+    () =>
+      isNeuromaDiagnosis(selectedDiagnosis ?? undefined) ||
+      !!group.peripheralNerveAssessment?.neuroma,
+    [selectedDiagnosis, group.peripheralNerveAssessment?.neuroma],
+  );
 
   const defaultBreastClinicalContext = useMemo(
     () => getBreastClinicalContext(selectedDiagnosis ?? undefined),
@@ -3354,6 +3374,8 @@ function DiagnosisGroupEditorInner({
                 ) => onChange({ ...group, peripheralNerveAssessment })}
                 diagnosisId={selectedDiagnosis?.id}
                 selectedProcedureIds={procedurePicklistIds}
+                isBrachialPlexus={isBrachialPlexusModule}
+                isNeuroma={isNeuromaModule}
               />
             ) : null}
 

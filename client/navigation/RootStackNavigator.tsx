@@ -170,6 +170,12 @@ export type RootStackParamList = {
     caseDischargeDate?: string;
     editEventId?: string;
     mediaContext?: MediaContext;
+    /** When true, follow_up_visit events show NerveOutcomeForm */
+    hasPeripheralNerveAssessment?: boolean;
+    /** Pre-populated nerve for outcome muscle mapping */
+    nerveInjured?: import("@/types/peripheralNerve").NerveIdentifier;
+    /** Procedure date for months-since-surgery auto-computation */
+    procedureDate?: string;
   };
   MediaManagement: {
     existingAttachments?: MediaAttachment[];

@@ -44,6 +44,22 @@ import type {
   LAHSHALClassification,
 } from "@/types/craniofacial";
 import { formatTriggerFingerGrading } from "@/lib/handElectiveFieldConfig";
+import {
+  NERVE_LABELS,
+  MECHANISM_LABELS as PN_MECHANISM_LABELS,
+  TIMING_LABELS as PN_TIMING_LABELS,
+  REPAIR_TIMING_LABELS,
+  REPAIR_TECHNIQUE_LABELS,
+  GRAFT_SOURCE_LABELS,
+  NAMED_TRANSFER_LABELS,
+  BP_PATTERN_LABELS,
+  BP_MECHANISM_LABELS,
+  NEUROMA_TECHNIQUE_LABELS,
+} from "@/types/peripheralNerve";
+import {
+  BP_APPROACH_LABELS,
+  NEUROMA_AETIOLOGY_LABELS,
+} from "@/lib/peripheralNerveConfig";
 
 export interface CsvExportOptions {
   includePatientId: boolean;
@@ -203,6 +219,21 @@ const CSV_HEADERS = [
   "cf_hearing_grommets",
   "cf_feeding_method",
   "cf_complications",
+  // ── Peripheral nerve module columns ──
+  "pn_nerve_injured",
+  "pn_sunderland_grade",
+  "pn_mechanism",
+  "pn_timing",
+  "pn_repair_timing",
+  "pn_repair_technique",
+  "pn_graft_type",
+  "pn_graft_source",
+  "pn_named_transfer",
+  "pn_bp_injury_pattern",
+  "pn_bp_mechanism",
+  "pn_bp_approach",
+  "pn_neuroma_aetiology",
+  "pn_neuroma_technique",
 ] as const;
 
 function escapeCsvField(
@@ -463,6 +494,42 @@ function extractCraniofacialCsvFields(
   ];
 }
 
+// ── Peripheral nerve helpers ──
+
+const PN_EMPTY = new Array(14).fill("") as string[];
+
+function extractPeripheralNerveCsvFields(
+  groups: DiagnosisGroup[],
+): (string | number | undefined)[] {
+  const group = groups.find((g) => g.peripheralNerveAssessment);
+  if (!group?.peripheralNerveAssessment) return PN_EMPTY;
+
+  const pn = group.peripheralNerveAssessment;
+  const bp = pn.brachialPlexus;
+  const neuroma = pn.neuroma;
+
+  return [
+    pn.nerveInjured ? NERVE_LABELS[pn.nerveInjured] : "",
+    pn.sunderlandGrade ?? "",
+    pn.mechanism ? PN_MECHANISM_LABELS[pn.mechanism] : "",
+    pn.timing ? PN_TIMING_LABELS[pn.timing] : "",
+    pn.repairTiming ? REPAIR_TIMING_LABELS[pn.repairTiming] : "",
+    pn.repairTechnique ? REPAIR_TECHNIQUE_LABELS[pn.repairTechnique] : "",
+    pn.graftDetails?.graftType ?? "",
+    pn.graftDetails?.graftSource
+      ? GRAFT_SOURCE_LABELS[pn.graftDetails.graftSource]
+      : "",
+    pn.transferDetails?.namedTransfer
+      ? NAMED_TRANSFER_LABELS[pn.transferDetails.namedTransfer]
+      : "",
+    bp?.injuryPattern ? BP_PATTERN_LABELS[bp.injuryPattern] : "",
+    bp?.mechanism ? BP_MECHANISM_LABELS[bp.mechanism] : "",
+    bp?.approach ? BP_APPROACH_LABELS[bp.approach] : "",
+    neuroma?.aetiology ? NEUROMA_AETIOLOGY_LABELS[neuroma.aetiology] : "",
+    neuroma?.technique ? NEUROMA_TECHNIQUE_LABELS[neuroma.technique] : "",
+  ];
+}
+
 function caseToRow(c: Case, options: CsvExportOptions): string {
   const groups = c.diagnosisGroups || [];
   const primaryGroup = groups[0];
@@ -505,6 +572,7 @@ function caseToRow(c: Case, options: CsvExportOptions): string {
   const breastFields = extractBreastCsvFields(groups);
   const headNeckFields = extractHeadNeckCsvFields(c);
   const craniofacialFields = extractCraniofacialCsvFields(groups);
+  const peripheralNerveFields = extractPeripheralNerveCsvFields(groups);
 
   const values: (string | number | boolean | undefined | null)[] = [
     c.id,
@@ -668,6 +736,8 @@ function caseToRow(c: Case, options: CsvExportOptions): string {
     ...headNeckFields,
     // ── Craniofacial module ──
     ...craniofacialFields,
+    // ── Peripheral nerve module ──
+    ...peripheralNerveFields,
   ];
 
   return values.map(escapeCsvField).join(",");

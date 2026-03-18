@@ -41,12 +41,16 @@ import { NerveInjuryClassification } from "./NerveInjuryClassification";
 import { ElectrodiagnosticSummaryComponent } from "./ElectrodiagnosticSummary";
 import { NerveGraftDetailsComponent } from "./NerveGraftDetailsComponent";
 import { NerveTransferPicker } from "./NerveTransferPicker";
+import { BrachialPlexusAssessment } from "./BrachialPlexusAssessment";
+import { NeuromaAssessment } from "./NeuromaAssessment";
 
 interface PeripheralNerveAssessmentProps {
   assessment: PeripheralNerveAssessmentData;
   onAssessmentChange: (updated: PeripheralNerveAssessmentData) => void;
   diagnosisId?: string;
   selectedProcedureIds?: string[];
+  isBrachialPlexus?: boolean;
+  isNeuroma?: boolean;
 }
 
 /** Check if any selected procedure is a repair/graft/transfer/conduit */
@@ -67,16 +71,14 @@ function hasRepairProcedure(procedureIds: string[] | undefined): boolean {
 function hasGraftProcedure(procedureIds: string[] | undefined): boolean {
   if (!procedureIds) return false;
   return procedureIds.some(
-    (id) =>
-      id.startsWith("pn_nerve_graft") || id === "pn_sural_nerve_harvest",
+    (id) => id.startsWith("pn_nerve_graft") || id === "pn_sural_nerve_harvest",
   );
 }
 
 function hasConduitProcedure(procedureIds: string[] | undefined): boolean {
   if (!procedureIds) return false;
   return procedureIds.some(
-    (id) =>
-      id.startsWith("pn_nerve_conduit") || id === "pn_nerve_wrap",
+    (id) => id.startsWith("pn_nerve_conduit") || id === "pn_nerve_wrap",
   );
 }
 
@@ -112,6 +114,8 @@ export const PeripheralNerveAssessment = React.memo(
     onAssessmentChange,
     diagnosisId,
     selectedProcedureIds,
+    isBrachialPlexus,
+    isNeuroma,
   }: PeripheralNerveAssessmentProps) {
     const { theme } = useTheme();
 
@@ -206,10 +210,7 @@ export const PeripheralNerveAssessment = React.memo(
             {PICKER_GROUPS.map((group) => (
               <View key={group}>
                 <ThemedText
-                  style={[
-                    styles.groupLabel,
-                    { color: theme.textSecondary },
-                  ]}
+                  style={[styles.groupLabel, { color: theme.textSecondary }]}
                 >
                   {NERVE_GROUP_LABELS[group]}
                 </ThemedText>
@@ -226,9 +227,7 @@ export const PeripheralNerveAssessment = React.memo(
                             backgroundColor: selected
                               ? theme.accent
                               : theme.backgroundElevated,
-                            borderColor: selected
-                              ? theme.accent
-                              : theme.border,
+                            borderColor: selected ? theme.accent : theme.border,
                           },
                         ]}
                         accessibilityRole="button"
@@ -238,9 +237,7 @@ export const PeripheralNerveAssessment = React.memo(
                           style={{
                             fontSize: 13,
                             fontWeight: "500",
-                            color: selected
-                              ? theme.buttonText
-                              : theme.text,
+                            color: selected ? theme.buttonText : theme.text,
                           }}
                           numberOfLines={1}
                         >
@@ -348,9 +345,7 @@ export const PeripheralNerveAssessment = React.memo(
               </ThemedText>
               <Switch
                 value={assessment.neuromaPresentIntraop === true}
-                onValueChange={(val) =>
-                  update({ neuromaPresentIntraop: val })
-                }
+                onValueChange={(val) => update({ neuromaPresentIntraop: val })}
                 trackColor={{ true: theme.accent, false: theme.border }}
                 thumbColor={theme.backgroundRoot}
               />
@@ -364,58 +359,54 @@ export const PeripheralNerveAssessment = React.memo(
                 NAP Across Lesion
               </ThemedText>
               <View style={styles.chipRow}>
-                {(
-                  ["positive", "negative", "not_tested"] as const
-                ).map((val) => {
-                  const selected = assessment.napAcrossLesion === val;
-                  const label =
-                    val === "not_tested"
-                      ? "Not tested"
-                      : val === "positive"
-                        ? "Positive"
-                        : "Negative";
-                  return (
-                    <Pressable
-                      key={val}
-                      onPress={() => {
-                        Haptics.impactAsync(
-                          Haptics.ImpactFeedbackStyle.Light,
-                        );
-                        update({
-                          napAcrossLesion:
-                            assessment.napAcrossLesion === val
-                              ? undefined
-                              : val,
-                        });
-                      }}
-                      style={[
-                        styles.chip,
-                        {
-                          backgroundColor: selected
-                            ? theme.accent
-                            : theme.backgroundElevated,
-                          borderColor: selected
-                            ? theme.accent
-                            : theme.border,
-                        },
-                      ]}
-                      accessibilityRole="button"
-                      accessibilityState={{ selected }}
-                    >
-                      <ThemedText
-                        style={{
-                          fontSize: 14,
-                          fontWeight: "500",
-                          color: selected
-                            ? theme.buttonText
-                            : theme.text,
+                {(["positive", "negative", "not_tested"] as const).map(
+                  (val) => {
+                    const selected = assessment.napAcrossLesion === val;
+                    const label =
+                      val === "not_tested"
+                        ? "Not tested"
+                        : val === "positive"
+                          ? "Positive"
+                          : "Negative";
+                    return (
+                      <Pressable
+                        key={val}
+                        onPress={() => {
+                          Haptics.impactAsync(
+                            Haptics.ImpactFeedbackStyle.Light,
+                          );
+                          update({
+                            napAcrossLesion:
+                              assessment.napAcrossLesion === val
+                                ? undefined
+                                : val,
+                          });
                         }}
+                        style={[
+                          styles.chip,
+                          {
+                            backgroundColor: selected
+                              ? theme.accent
+                              : theme.backgroundElevated,
+                            borderColor: selected ? theme.accent : theme.border,
+                          },
+                        ]}
+                        accessibilityRole="button"
+                        accessibilityState={{ selected }}
                       >
-                        {label}
-                      </ThemedText>
-                    </Pressable>
-                  );
-                })}
+                        <ThemedText
+                          style={{
+                            fontSize: 14,
+                            fontWeight: "500",
+                            color: selected ? theme.buttonText : theme.text,
+                          }}
+                        >
+                          {label}
+                        </ThemedText>
+                      </Pressable>
+                    );
+                  },
+                )}
               </View>
             </View>
 
@@ -439,9 +430,7 @@ export const PeripheralNerveAssessment = React.memo(
               </ThemedText>
               <Switch
                 value={assessment.associatedFracture === true}
-                onValueChange={(val) =>
-                  update({ associatedFracture: val })
-                }
+                onValueChange={(val) => update({ associatedFracture: val })}
                 trackColor={{ true: theme.accent, false: theme.border }}
                 thumbColor={theme.backgroundRoot}
               />
@@ -456,10 +445,7 @@ export const PeripheralNerveAssessment = React.memo(
               {/* Repair timing */}
               <View>
                 <ThemedText
-                  style={[
-                    styles.fieldLabel,
-                    { color: theme.textSecondary },
-                  ]}
+                  style={[styles.fieldLabel, { color: theme.textSecondary }]}
                 >
                   Repair Timing
                 </ThemedText>
@@ -476,9 +462,7 @@ export const PeripheralNerveAssessment = React.memo(
                             backgroundColor: selected
                               ? theme.accent
                               : theme.backgroundElevated,
-                            borderColor: selected
-                              ? theme.accent
-                              : theme.border,
+                            borderColor: selected ? theme.accent : theme.border,
                           },
                         ]}
                       >
@@ -486,9 +470,7 @@ export const PeripheralNerveAssessment = React.memo(
                           style={{
                             fontSize: 13,
                             fontWeight: "500",
-                            color: selected
-                              ? theme.buttonText
-                              : theme.text,
+                            color: selected ? theme.buttonText : theme.text,
                           }}
                         >
                           {REPAIR_TIMING_LABELS[t]}
@@ -502,10 +484,7 @@ export const PeripheralNerveAssessment = React.memo(
               {/* Repair technique */}
               <View>
                 <ThemedText
-                  style={[
-                    styles.fieldLabel,
-                    { color: theme.textSecondary },
-                  ]}
+                  style={[styles.fieldLabel, { color: theme.textSecondary }]}
                 >
                   Repair Technique
                 </ThemedText>
@@ -522,9 +501,7 @@ export const PeripheralNerveAssessment = React.memo(
                             backgroundColor: selected
                               ? theme.accent
                               : theme.backgroundElevated,
-                            borderColor: selected
-                              ? theme.accent
-                              : theme.border,
+                            borderColor: selected ? theme.accent : theme.border,
                           },
                         ]}
                       >
@@ -532,9 +509,7 @@ export const PeripheralNerveAssessment = React.memo(
                           style={{
                             fontSize: 13,
                             fontWeight: "500",
-                            color: selected
-                              ? theme.buttonText
-                              : theme.text,
+                            color: selected ? theme.buttonText : theme.text,
                           }}
                         >
                           {REPAIR_TECHNIQUE_LABELS[t]}
@@ -570,9 +545,19 @@ export const PeripheralNerveAssessment = React.memo(
           </SectionWrapper>
         )}
 
-        {/* ═══ Sub-module placeholders (Phase 4–5) ═══ */}
-        {/* BrachialPlexusAssessment will render here when brachialPlexusModule */}
-        {/* NeuromaAssessment will render here when neuromaModule */}
+        {/* ═══ Sub-modules ═══ */}
+        {isBrachialPlexus && (
+          <BrachialPlexusAssessment
+            data={assessment.brachialPlexus ?? { roots: {} }}
+            onChange={(brachialPlexus) => update({ brachialPlexus })}
+          />
+        )}
+        {isNeuroma && (
+          <NeuromaAssessment
+            data={assessment.neuroma ?? { aetiology: "traumatic" }}
+            onChange={(neuroma) => update({ neuroma })}
+          />
+        )}
       </View>
     );
   },
