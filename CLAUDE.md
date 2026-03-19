@@ -1283,3 +1283,464 @@ Prefix by element type, suffix with semantic name:
 | `card-` | `card-{type}-{id}` | `card-case-{id}` |
 | `list-` | `list-{name}` | `list-recent-cases` |
 | `sheet-` / `modal-` | `sheet-{name}` | `sheet-diagnosis-picker` |
+
+## AI Testing & Visual Quality Standards
+
+This section exists so that Claude Code can autonomously navigate, test, and evaluate the Opus Logbook app using the Expo MCP Server. Read this section before any testing, UI review, or screenshot analysis task.
+
+**Last updated from codebase scan: 2026-03-19**
+
+### App Screen Map
+
+#### Root navigator (`client/navigation/RootStackNavigator.tsx`)
+
+Conditional screen switching based on `isAuthenticated`, `hasSeenWelcome`, `hasSeenFeatures`, and `onboardingComplete`:
+
+**Pre-auth flow (sequential gates):**
+
+| Gate | Screen | File |
+|------|--------|------|
+| `!hasSeenWelcome` | Welcome | `client/screens/onboarding/WelcomeScreen.tsx` |
+| `!hasSeenFeatures` | Features | `client/screens/onboarding/FeaturePager.tsx` |
+| `showEmailAuth` | EmailSignup | `client/screens/onboarding/EmailSignupScreen.tsx` |
+| Default | Auth | `client/screens/AuthScreen.tsx` (`screen-auth`) |
+
+**Onboarding flow** (post-auth, `!onboardingComplete`):
+
+| Step | Screen | File |
+|------|--------|------|
+| categories | Categories | `client/screens/onboarding/CategoriesScreen.tsx` |
+| training | Training | `client/screens/onboarding/TrainingScreen.tsx` |
+| hospital | Hospital | `client/screens/onboarding/HospitalScreen.tsx` |
+| privacy | Privacy | `client/screens/onboarding/PrivacyScreen.tsx` |
+
+**Main tab navigator** (`client/navigation/MainTabNavigator.tsx`):
+
+| Tab | Name | Stack Navigator | testID |
+|-----|------|-----------------|--------|
+| Cases | `DashboardTab` | `DashboardStackNavigator.tsx` | `main.tab-dashboard` |
+| Statistics | `StatisticsTab` | `StatisticsStackNavigator.tsx` | `main.tab-statistics` |
+| Settings | `SettingsTab` | `SettingsStackNavigator.tsx` | `main.tab-settings` |
+
+**Authenticated modal/push screens** (on root stack):
+
+| Name | File | testID | Presentation |
+|------|------|--------|-------------|
+| CaseDetail | `CaseDetailScreen.tsx` | `screen-caseDetail` | push |
+| CaseForm | `CaseFormScreen.tsx` | `screen-caseForm` | push |
+| AddCase | `AddCaseScreen.tsx` | — | push |
+| AddTimelineEvent | `AddTimelineEventScreen.tsx` | `screen-addTimelineEvent` | modal |
+| MediaManagement | `MediaManagementScreen.tsx` | `screen-mediaManagement` | fullScreenModal |
+| AddOperativeMedia | `AddOperativeMediaScreen.tsx` | `screen-addOperativeMedia` | fullScreenModal |
+| EpisodeDetail | `EpisodeDetailScreen.tsx` | `screen-episodeDetail` | push |
+| EpisodeList | `EpisodeListScreen.tsx` | `screen-episodeList` | push |
+| SetupAppLock | `SetupAppLockScreen.tsx` | `screen-setupAppLock` | push |
+| EditProfile | `EditProfileScreen.tsx` | `screen-editProfile` | push |
+| ManageFacilities | `ManageFacilitiesScreen.tsx` | `screen-manageFacilities` | push |
+| SurgicalPreferences | `SurgicalPreferencesScreen.tsx` | `screen-surgicalPreferences` | push |
+| Personalisation | `PersonalisationScreen.tsx` | `screen-personalisation` | push |
+| CaseSearch | `CaseSearchScreen.tsx` | `screen-caseSearch` | modal |
+| NeedsAttentionList | `NeedsAttentionListScreen.tsx` | `screen-needsAttention` | push |
+| Inbox | `InboxScreen.tsx` | `screen-inbox` | push |
+| SmartImport | `SmartImportScreen.tsx` | `screen-smartImport` | fullScreenModal |
+| OpusCamera | `OpusCameraScreen.tsx` | `screen-opusCamera` | fullScreenModal |
+| GuidedCapture | `GuidedCaptureScreen.tsx` | `screen-guidedCapture` | fullScreenModal |
+| PlanCase | `PlanCaseScreen.tsx` | `screen-planCase` | fullScreenModal |
+| PlannedCaseList | `PlannedCaseListScreen.tsx` | `screen-plannedCaseList` | push |
+| CaseMediaOrganiser | `CaseMediaOrganiserScreen.tsx` | `screen-caseMediaOrganiser` | modal |
+| AddHistology | `AddHistologyScreen.tsx` | `screen-addHistology` | push |
+
+**Lock overlay:** `LockScreen.tsx` (`screen-lock`) renders as absolute overlay when `isAppLockConfigured && isLocked`.
+
+**Total: 38 screen files** (29 main + 9 onboarding).
+
+### Diagnosis Inventory
+
+| Specialty | File | Count | Staging Systems | Module Trigger |
+|-----------|------|-------|-----------------|----------------|
+| Hand Surgery | `handSurgeryDiagnoses.ts` | 100 | Gustilo-Anderson, Eaton-Littler, Herbert, Lichtman, Kanavel Signs | `hand_wrist` specialty + `caseType` gate |
+| Head & Neck | `headNeckDiagnoses.ts` | 88 | TNM (T/N/M + Overall), House-Brackmann, Le Fort, Pittsburgh Fistula, Whitaker | `head_neck` specialty |
+| Aesthetics | `aestheticsDiagnoses.ts` | 42 | Baker Classification | `aesthetics` specialty or `aes_`/`bc_` procedure prefix |
+| Burns | `burnsDiagnoses.ts` | 41 | Depth, TBSA %, Severity | `burns` specialty |
+| Cleft/Craniofacial | `cleftCranioDiagnoses.ts` | 38 | Veau Classification | `cleft_cranio` specialty |
+| Breast | `breastDiagnoses.ts` | 37 | — | `breast` specialty |
+| Peripheral Nerve | `peripheralNerveDiagnoses.ts` | 37 | EMG Grade, Severity | `peripheral_nerve` specialty or diagnosis metadata |
+| General | `generalDiagnoses.ts` | 32 | NPUAP Stage, Wagner Grade, Hurley Stage | Default (no special module) |
+| Lymphoedema | `lymphoedemaDiagnoses.ts` | 29 | ISL Stage, Cheng Grade, MD Anderson ICG | `lymphoedema` specialty or diagnosis metadata |
+| Orthoplastic | `orthoplasticDiagnoses.ts` | 14 | Gustilo-Anderson | Free flap / pedicled flap module |
+| Skin Cancer | `skinCancerDiagnoses.ts` | 11 | Breslow Thickness, Ulceration, TNM (AJCC 8th Ed) | Diagnosis-driven (`hasEnhancedHistology` or SNOMED match) |
+| Body Contouring | `bodyContouringDiagnoses.ts` | (deprecated — re-exports from aesthetics) | — | — |
+
+**Total: 469 structured diagnoses** across 11 active picklist files (body contouring is deprecated/merged into aesthetics).
+
+**29 staging systems** defined in `server/diagnosisStagingConfig.ts`: Gustilo-Anderson, Breslow Thickness, Ulceration, Severity, EMG Grade, TNM T/N/M Stage, NPUAP Stage, Depth, TBSA %, Baker Classification, Hurley Stage, ISL Stage, Cheng Lymphoedema Grade, MD Anderson ICG Stage, Wagner Grade, Le Fort Classification, House-Brackmann Grade, Kanavel Signs, Eaton-Littler Stage, Herbert Classification, Lichtman Stage, Veau Classification, Pittsburgh Fistula Classification, Whitaker Classification, TNM T/N/M Stage (AJCC 8th Ed), Overall Stage (AJCC 8th Ed).
+
+### Case Form Architecture
+
+Component tree based on verified file existence:
+
+```
+CaseFormScreen.tsx
+├── SectionNavBar (5 pills: Patient, Case, Operative, Media, Outcomes)
+│
+├── PatientInfoSection.tsx              — client/components/case-form/PatientInfoSection.tsx
+├── CaseSection.tsx                     — client/components/case-form/CaseSection.tsx
+│   ├── DiagnosisProcedureSection.tsx   — client/components/case-form/DiagnosisProcedureSection.tsx
+│   │   └── DiagnosisGroupEditor.tsx    — client/components/DiagnosisGroupEditor.tsx
+│   │       ├── SkinCancerAssessment    — client/components/skin-cancer/SkinCancerAssessment.tsx
+│   │       │   ├── SkinCancerPathwayGate.tsx
+│   │       │   ├── PathologySection.tsx
+│   │       │   ├── HistologySection.tsx
+│   │       │   ├── LesionDetailsSection.tsx
+│   │       │   ├── MarginRecommendationBadge.tsx
+│   │       │   ├── SLNBSection.tsx
+│   │       │   ├── ReExcisionPromptCard.tsx
+│   │       │   ├── CompletionSummary.tsx
+│   │       │   └── SkinCancerSummaryPanel.tsx
+│   │       ├── HandTraumaAssessment    — client/components/hand-trauma/HandTraumaAssessment.tsx
+│   │       ├── AcuteHandAssessment     — client/components/acute-hand/AcuteHandAssessment.tsx
+│   │       │   ├── AcuteHandSummaryPanel.tsx
+│   │       │   └── HandInfectionCard   — client/components/hand-infection/HandInfectionCard.tsx
+│   │       ├── HandElectivePicker      — client/components/hand-elective/HandElectivePicker.tsx
+│   │       │   └── HandElectiveAssessment.tsx
+│   │       ├── DupuytrenAssessment     — client/components/dupuytren/DupuytrenAssessment.tsx
+│   │       ├── BreastAssessment        — client/components/breast/BreastAssessment.tsx
+│   │       │   ├── BreastContextSelector.tsx
+│   │       │   ├── BreastProgressiveAssessment.tsx
+│   │       │   ├── BreastSideCard.tsx
+│   │       │   ├── ImplantDetailsCard.tsx
+│   │       │   ├── BreastFlapCard.tsx
+│   │       │   ├── BreastFlapExtensionSection.tsx
+│   │       │   ├── LipofillingCard.tsx
+│   │       │   └── LiposuctionCard.tsx
+│   │       ├── CraniofacialAssessment  — client/components/craniofacial/CraniofacialAssessment.tsx
+│   │       ├── AestheticAssessment     — client/components/aesthetics/AestheticAssessment.tsx
+│   │       │   └── PostBariatricContext.tsx
+│   │       ├── BurnsAssessment         — client/components/burns/BurnsAssessment.tsx
+│   │       │   ├── BurnSeverityBadges.tsx
+│   │       │   └── ExcisionDetailsSection.tsx
+│   │       ├── PeripheralNerveAssessment — client/components/peripheral-nerve/PeripheralNerveAssessment.tsx
+│   │       │   ├── BrachialPlexusAssessment.tsx
+│   │       │   ├── NerveInjuryClassification.tsx
+│   │       │   ├── ElectrodiagnosticSummary.tsx
+│   │       │   └── NeuromaAssessment.tsx
+│   │       ├── LymphaticAssessment     — client/components/lymphatic/LymphaticAssessment.tsx
+│   │       │   ├── LVAOperativeDetails.tsx
+│   │       │   ├── VLNTDetails.tsx
+│   │       │   └── SAPLDetails.tsx
+│   │       ├── JointImplantSection     — client/components/joint-implant/JointImplantSection.tsx
+│   │       ├── MultiLesionEditor       — client/components/MultiLesionEditor.tsx
+│   │       ├── ProcedureClinicalDetails — client/components/ProcedureClinicalDetails.tsx
+│   │       ├── InfectionOverlayForm    — client/components/InfectionOverlayForm.tsx
+│   │       ├── WoundAssessmentForm     — client/components/WoundAssessmentForm.tsx
+│   │       └── FlapOutcomeSection      — client/components/FlapOutcomeSection.tsx
+│   └── TreatmentContextSection.tsx     — client/components/case-form/TreatmentContextSection.tsx
+│       └── JointCaseContextSection.tsx — client/components/case-form/JointCaseContextSection.tsx
+├── OperativeSection.tsx                — client/components/case-form/OperativeSection.tsx
+├── OperativeMediaSection.tsx           — client/components/OperativeMediaSection.tsx
+├── OutcomesSection.tsx                 — client/components/case-form/OutcomesSection.tsx
+└── CaseSummaryView.tsx                 — client/components/case-form/CaseSummaryView.tsx
+```
+
+All components above verified to exist at the listed paths.
+
+### Module Activation Logic
+
+Defined in `client/lib/moduleVisibility.ts`. The `getModuleVisibility()` function returns a `ModuleVisibility` object with 13 boolean flags:
+
+| Module | Activation Rule |
+|--------|----------------|
+| `flapDetails` | Any procedure maps to a free flap via `PICKLIST_TO_FLAP_TYPE` or has `free_flap` tag |
+| `flapOutcome` | Same as `flapDetails` |
+| `handTraumaAssessment` | `specialty === "hand_wrist" && handCaseType === "trauma"` |
+| `infection` | Infection subcategory procedure, or `infectionOverlay` exists, or hand infection escalated |
+| `woundAssessment` | Procedure has `complex_wound` tag, or episode type is `wound_management`/`burns_management`, or existing data |
+| `skinCancerAssessment` | `specialty === "skin_cancer"`, or SNOMED code match via `shouldActivateSkinCancerModuleForSnomed()`, or existing data |
+| `implant` | Any procedure has `hasImplant: true` via `procedureHasImplant()` |
+| `breast` | `isBreastSpecialty(specialty)` — specialty-gated |
+| `craniofacialAssessment` | `specialty === "cleft_cranio"` — specialty-gated |
+| `aestheticAssessment` | `specialty === "aesthetics"`, or procedure has `aes_`/`bc_` prefix, or existing data |
+| `burnsAssessment` | `specialty === "burns"` or existing data |
+| `peripheralNerveAssessment` | `specialty === "peripheral_nerve"` or existing data |
+| `lymphoedemaAssessment` | `specialty === "lymphoedema"` or existing data |
+
+### testID Convention
+
+Every `testID` follows: `scope.section.element-qualifier`
+
+- Segments: camelCase
+- Hierarchy separator: dots (`.`)
+- Qualifier separator: hyphens (`-`)
+- Dynamic items: Use domain IDs not array indices where possible (e.g., `card-${caseData.id}` not `card-${index}`)
+
+Element type abbreviations:
+
+| Abbreviation | Used for |
+|-------------|----------|
+| `btn` | Buttons, CTAs |
+| `chip` | Selection chips |
+| `toggle` | Boolean toggles |
+| `picker` | Pickers, selection modals |
+| `input` | Text/number inputs |
+| `card` | Tappable cards |
+| `row` | Tappable list rows |
+| `section` | Collapsible section headers |
+| `tab` | Tab bar items |
+| `scroll` | ScrollView / FlatList |
+| `badge` | Status/completion indicators |
+| `option` | Individual options in pickers |
+| `gate` | Pathway gate options |
+
+**Scope prefixes in use:**
+
+| Scope | Example |
+|-------|---------|
+| `screen-*` | `screen-dashboard`, `screen-caseForm` |
+| `main.*` | `main.tab-dashboard`, `main.tab-statistics`, `main.tab-settings` |
+| `caseForm.*` | `caseForm.nav.pill-case`, `caseForm.hand.chip-digit-thumb` |
+| `caseDetail.*` | `caseDetail.btn-actions`, `caseDetail.btn-addHistology` |
+| `dashboard.*` | `dashboard.fab.btn-logCase`, `dashboard.cases.card-${id}` |
+| `settings.*` | `settings.row-editProfile`, `settings.profile.input-firstName` |
+| `statistics.*` | `statistics.card-${specialty}`, `statistics.btn-seeAllMilestones` |
+| `onboarding.*` | `onboarding.profile.input-firstName`, `onboarding.country.card-nz` |
+| `episodeDetail.*` | `episodeDetail.btn-changeStatus-${status}` |
+| `episodes.*` | `episodes.card-${id}` |
+| `histology.*` | `histology.chip-category-${value}` |
+| `timelineEvent.*` | `timelineEvent.btn-save` |
+
+Duplicate check:
+```bash
+grep -roh 'testID="[^"]*"' client/ | sort | uniq -d
+# Must return empty
+```
+
+**Current testID count: 193 unique static + 94 unique dynamic patterns = 287 total testID definitions.**
+
+### Visual Standards
+
+#### Colour Tokens (from `client/constants/theme.ts`)
+
+| Token | Dark Mode | Light Mode | Usage |
+|-------|-----------|------------|-------|
+| `backgroundRoot` | `#0C0F14` | `#FFFFFF` | App canvas / screen background |
+| `backgroundElevated` | `#161B22` | `#FFFFFF` | Cards, elevated surfaces |
+| `backgroundSecondary` | `#1C2128` | `#F6F8FA` | Secondary surfaces, raised areas |
+| `text` | `#E6EDF3` | `#1F2328` | Primary body text |
+| `textSecondary` | `#8B949E` | `#656D76` | Secondary / label text |
+| `textTertiary` | `#656D76` | `#8B949E` | Tertiary / hint text |
+| `accent` | `#E5A00D` | `#E5A00D` | Brand amber — interactive elements ONLY |
+| `link` | `#E5A00D` | `#B47E00` | Tappable text, active states |
+| `border` | `#2D333B` | `#D0D7DE` | Card borders, dividers |
+| `buttonText` | `#0C0F14` | `#FFFFFF` | Text on amber-filled buttons |
+| `success` | `#2EA043` | `#1A7F37` | Positive outcomes, completion |
+| `warning` | `#D29922` | `#9A6700` | Caution states |
+| `error` | `#F85149` | `#CF222E` | Errors, destructive actions |
+| `info` | `#58A6FF` | `#0969DA` | Informational badges |
+| `tabIconSelected` | `#E5A00D` | `#B47E00` | Active tab icon |
+| `tabIconDefault` | `#656D76` | `#8B949E` | Inactive tab icon |
+| `rolePrimary` | `#E5A00D` | `#B47E00` | Surgeon role badge |
+| `roleSupervising` | `#D8B4FE` | `#8250DF` | Supervisor role badge |
+| `roleAssistant` | `#86EFAC` | `#1A7F37` | Assistant role badge |
+| `roleTrainee` | `#7DD3FC` | `#0969DA` | Trainee role badge |
+
+**Amber rule:** The accent colour (`#E5A00D` dark / `#B47E00` light) appears ONLY on: logo, CTA button fills, selected borders, progress bars, active tab icons, link text. Never on static icons, illustrations, or body text.
+
+#### Touch Targets & Spacing
+
+| Rule | Minimum | Standard |
+|------|---------|----------|
+| Tappable element height | 44pt | 48–56pt |
+| Tappable element width | 44pt | — |
+| CTA button height | — | 56pt |
+| Spacing between tappable elements | 8pt | 12pt |
+| Horizontal padding | 16pt min | 24pt standard |
+| Grid unit | 8pt | — |
+
+#### Contrast (WCAG AA)
+
+| Element | Minimum Ratio | Against |
+|---------|---------------|---------|
+| Body text | 4.5:1 | `backgroundRoot` |
+| Large text (≥18pt bold / ≥24pt) | 3:1 | `backgroundRoot` |
+| Interactive elements | 3:1 | Adjacent background |
+
+### Testing Workflows for Expo MCP
+
+**Prerequisites:**
+
+- Metro: `EXPO_UNSTABLE_MCP_SERVER=1 npx expo start --dev-client`
+- Simulator booted with dev build
+- Test account: `m.gladysz@outlook.com` / `testtest` / PIN: `1111`
+
+#### Workflow 1: Full Visual Audit
+
+Systematically screenshot every screen in the screen map above. For each:
+
+1. Navigate to the screen
+2. `automation_take_screenshot()`
+3. Evaluate against visual standards (colours, touch targets, contrast, spacing, amber rule)
+4. For screens with collapsible sections, screenshot both collapsed and expanded states
+5. Log findings as: `[SCREEN] [SEVERITY] [DESCRIPTION]`
+
+#### Workflow 2: Diagnosis Smoke Test (All Specialties)
+
+For each specialty in the Diagnosis Inventory above:
+
+1. Open new case → select the specialty
+2. Open diagnosis picker → search for the first diagnosis in that specialty's picklist
+3. Verify it appears, select it
+4. Verify any expected staging system renders (check the picklist entry's `stagingSnomedCode` field)
+5. Verify the expected specialty module renders (per Module Activation Logic table)
+6. Verify suggested procedures appear
+7. Screenshot and move to next specialty
+
+This is a QUICK per-specialty check, NOT per-diagnosis. Use the Dynamic Testing Suite for exhaustive per-diagnosis testing.
+
+#### Workflow 3: Comprehensive Per-Diagnosis Testing
+
+Defer to the Dynamic Testing Suite prompt. That prompt reads the actual picklist files and tests every single diagnosis entry. This section provides the visual standards and testID conventions that the dynamic suite references.
+
+#### Workflow 4: Progressive Disclosure Integrity
+
+For each specialty module that exists (12 modules verified):
+
+1. Select a diagnosis that triggers the module
+2. Screenshot collapsed state — verify only relevant sections visible
+3. Expand each collapsible section, screenshot
+4. Verify no cross-specialty contamination (e.g., no breast fields when hand selected)
+
+**Modules to test:** HandTrauma, AcuteHand, HandElective, Dupuytren, SkinCancer, Breast, Craniofacial, Aesthetic, Burns, PeripheralNerve, Lymphatic, JointImplant.
+
+#### Workflow 5: Edge Cases
+
+1. Save empty form → verify validation errors on `patientIdentifier`, `procedureDate`, `facility`
+2. Case list with no cases → verify `DashboardEmptyState`
+3. Long patient name → verify truncation with `numberOfLines` + ellipsis
+4. Diagnosis picker with no results → verify "no results" state
+5. Start case → cancel → verify discard confirmation
+6. Multi-diagnosis group → verify group indexing and deletion
+
+### Screenshot Analysis Checklist
+
+When evaluating a screenshot, check in this order:
+
+1. **Layout** — Safe areas respected, consistent padding (`Spacing` constants: 4/8/12/16/20/24), nothing cut off
+2. **Colour** — Correct background shade per `theme.*` tokens, amber only on permitted elements, card surfaces use `backgroundElevated`
+3. **Typography** — Nothing below 12pt (`caption`), hierarchy via weight not just size, `SF Mono` for numeric data
+4. **Touch targets** — All buttons/chips ≥ 44pt, sufficient spacing between tappable elements
+5. **Content** — No placeholder text, no debug labels, helpful empty states
+6. **Progressive disclosure** — Only relevant modules visible for selected specialty (per activation logic table)
+7. **Dark mode** — All surfaces use `theme.backgroundRoot` / `theme.backgroundElevated` / `theme.backgroundSecondary`, never raw hex
+
+### Maestro E2E Test Conventions
+
+Directory: `.maestro/` at project root
+File naming: `{flow-name}.yaml`
+App ID: `com.drgladysz.opus`
+Selectors: Always use `id:` (testID), never `text:` (text changes break tests)
+
+```yaml
+# Template
+appId: com.drgladysz.opus
+---
+- launchApp
+- tapOn:
+    id: "main.tab-dashboard"
+- assertVisible:
+    id: "screen-dashboard"
+```
+
+## Design Quality & Aesthetics
+
+<opus_design_philosophy>
+Opus is a precision instrument for surgeons, not a consumer social app. Every pixel must communicate competence, restraint, and respect for the user's time. The aesthetic reference points are Bloomberg Terminal (information density done right), Linear (opinionated dark-mode craftsmanship), and Stryker surgical instruments (radical simplicity as confidence signal).
+
+You tend toward generic, "safe" UI output. For Opus, generic is wrong — it reads as amateur to surgeon users who work with precision instruments daily. Be intentional with every choice. But intentional does NOT mean decorative — it means every element earns its place.
+
+When building or modifying UI:
+- Consult the installed Expo `building-native-ui` skill (`~/.claude/skills/expo-building-native-ui`) for HIG-compliant patterns
+- Consult the Software Mansion skill (`~/.claude/skills/swm-rn-best-practices`) for smooth, native-feeling transitions
+- Consult the Callstack skill (`~/.claude/skills/callstack-rn-best-practices`) to keep complex forms at 60fps
+- Use the Apple Developer MCP tools (`searchAppleDocumentation`, `fetchAppleDocumentation`) to verify HIG compliance when unsure
+- Use the Expo MCP server (`search_documentation`, `read_documentation`) for current Expo API patterns
+</opus_design_philosophy>
+
+### Design Tokens Reference
+
+Colour tokens, typography variants, layout tokens (border radius, spacing), and touch target dimensions are defined in the **Design system: Charcoal + Amber** section above. The **Visual Standards** subsection of AI Testing & Visual Quality Standards provides the complete dark/light token table with WCAG contrast requirements. This section focuses on composition patterns, motion, and medical UX principles that those sections don't cover.
+
+### Component Composition Patterns
+
+**Collapsible sections** (the backbone of the case form):
+- Header: full-width tappable row, `theme.text` title left, chevron right
+- Chevron rotates 90° on expand (Reanimated `useAnimatedStyle`)
+- Content animates height from 0 (Reanimated layout animation)
+- Specialty modules (SkinCancer, Breast, HandTrauma, Burns, PeripheralNerve, Lymphatic, Craniofacial, Aesthetic) get amber left border (2pt `theme.accent`)
+- Standard sections (Patient Factors, Admission & Timing) do NOT get amber borders
+
+**Selection chips:**
+- Unselected: `theme.border` border, `theme.backgroundElevated` fill, `theme.textSecondary` label
+- Selected: `theme.accent` border, amber 8% opacity fill, `theme.text` label
+- Disabled: `theme.backgroundSecondary` fill, `theme.textTertiary` label, no border
+- Pressed: opacity 0.7 on the entire chip
+- Minimum effective tap zone: 44pt (extend with padding if chip renders smaller)
+
+**CTA buttons:**
+- Primary: `theme.accent` fill, `theme.buttonText` text, 56pt height, `BorderRadius.md` (14px)
+- Secondary: transparent fill, `theme.accent` text, `theme.border` border
+- Destructive: `theme.error` fill, white text
+- Disabled: `theme.backgroundSecondary` fill, `theme.textTertiary` text
+
+**Empty states:**
+- Centered vertically in available space
+- Feather icon at 48pt in `theme.textTertiary`
+- Headline: `theme.text`, 17pt Semibold
+- Description: `theme.textSecondary`, 15pt Regular
+- Optional CTA below
+- Never leave a screen blank — every empty state guides the user toward the next action
+
+**Tappable cards:**
+- `theme.backgroundElevated` fill, `theme.border` 1pt border, `BorderRadius.md` (14px)
+- No shadows in dark mode — elevation through background lightening only
+- Light mode: `Shadows.card` for subtle depth
+- Pressed: opacity 0.7
+
+**Form inputs:**
+- `theme.backgroundElevated` fill, `theme.border` 1pt border, `BorderRadius.sm` (10px)
+- Focused: `theme.accent` border (replaces default border)
+- Error: `theme.error` border + error message below in `theme.error` at 13pt
+- Disabled: `theme.backgroundSecondary` fill, `theme.textTertiary` text
+- Height: 48pt minimum
+
+### Animation & Motion
+
+- **All animations on UI thread** via Reanimated `useAnimatedStyle` / `withTiming` / `withSpring` — never JS-thread `Animated.timing`
+- **CollapsibleFormSection expansion:** `withTiming(height, { duration: 250, easing: Easing.out(Easing.cubic) })` — fast enough to not block workflow, slow enough to track visually
+- **Chip selection:** instant border/fill change, no animation delay — speed matters for multi-select workflows
+- **Page transitions:** use React Navigation native stack transitions, don't custom-animate navigation
+- **Loading states:** subtle opacity pulse (0.3 → 0.7 → 0.3) on skeleton views, never spinners for < 2s waits
+- **LayoutAnimation:** always call `LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)` before the state update that triggers the layout change
+- **Respect `reduceMotion`:** check `AccessibilityInfo.isReduceMotionEnabled`, replace animations with instant state changes
+- **FAB animation:** speed dial fan-out uses `withSpring` for natural deceleration on mini-FAB positions
+
+### Medical UX Rules
+
+These override any generic design pattern:
+
+1. **Never use colour alone for status.** Every status indicator must pair colour with a text label or icon. A surgeon with colour vision deficiency must understand case status at a glance.
+2. **Auto-save aggressively.** Case form data saves to local draft on every field blur. Losing a half-entered case because the app was backgrounded is unacceptable. `useCaseDraft` handles debounced + AppState background flush.
+3. **Confirm destructive actions.** Delete case, discard changes, sign out — all require explicit confirmation with a clear description of what will be lost.
+4. **No surprise data loss.** If navigating away from an unsaved form, show a discard confirmation. If a network request fails, queue it for retry, don't silently drop it.
+5. **Structured data only.** No free-text fields for clinical data that needs to be queryable. Every picker, chip, and toggle produces structured, exportable data. Free text is the enemy of audit and research.
+6. **Progressive disclosure over scrolling.** Collapse sections that aren't relevant. A hand trauma case should never show breast fields. Module visibility is data-driven via `getModuleVisibility()` in `client/lib/moduleVisibility.ts`.
+7. **Sub-60-second happy path.** An uncomplicated case (BCC excision, simple fracture) must be loggable in under 60 seconds. Count taps during testing — if a common case needs more than 12 taps, the flow needs simplification.
+
+### Screenshot Evaluation Priority
+
+When taking and analysing screenshots during visual QA, triage findings by severity:
+
+1. **Broken** — Layout overflow, cut-off text, overlapping elements, blank screens. **Fix immediately.**
+2. **Wrong** — Incorrect colours (amber where it shouldn't be, raw hex instead of theme token), wrong font weight, missing borders. **Fix immediately.**
+3. **Uncomfortable** — Touch targets < 44pt, elements too close together (< 8pt), text below 12pt. **Fix in current session.**
+4. **Inconsistent** — Spacing not on 8pt grid, mixed border radii, inconsistent card styles across screens. **Log for batch fix.**
+5. **Unpolished** — Missing empty states, abrupt transitions, no loading states, placeholder text. **Note for polish pass.**
