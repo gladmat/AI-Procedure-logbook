@@ -561,8 +561,8 @@ const HAND_FRACTURE_FIXATION: ProcedurePicklistEntry[] = [
   {
     id: "hand_fx_distal_radius_exfix",
     displayName: "Distal radius external fixation",
-    snomedCtCode: "302191005", // VERIFY
-    snomedCtDisplay: "Application of external fixator to radius (procedure)",
+    snomedCtCode: "449093001",
+    snomedCtDisplay: "External fixation of radius (procedure)",
     specialties: ["hand_wrist"],
     subcategory: "Fracture & Joint Fixation",
     tags: ["trauma"],
@@ -604,9 +604,9 @@ const HAND_FRACTURE_FIXATION: ProcedurePicklistEntry[] = [
   {
     id: "hand_fx_phalanx_crif",
     displayName: "Phalangeal fracture CRIF (K-wires)",
-    snomedCtCode: "276813006",
+    snomedCtCode: "179168007",
     snomedCtDisplay:
-      "Closed reduction of fracture of carpals/metacarpals with internal fixation (procedure)",
+      "Closed reduction of fracture of finger (procedure)",
     specialties: ["hand_wrist"],
     subcategory: "Fracture & Joint Fixation",
     tags: ["trauma"],
@@ -670,9 +670,9 @@ const HAND_FRACTURE_FIXATION: ProcedurePicklistEntry[] = [
   {
     id: "hand_fx_phalanx_crif_ccs",
     displayName: "Phalangeal fracture CRIF (headless compression screw)",
-    snomedCtCode: "276813006",
+    snomedCtCode: "179168007",
     snomedCtDisplay:
-      "Closed reduction of fracture with internal fixation (procedure)",
+      "Closed reduction of fracture of finger (procedure)",
     specialties: ["hand_wrist"],
     subcategory: "Fracture & Joint Fixation",
     tags: ["trauma"],
@@ -681,9 +681,9 @@ const HAND_FRACTURE_FIXATION: ProcedurePicklistEntry[] = [
   {
     id: "hand_fx_phalanx_exfix",
     displayName: "Phalangeal fracture external fixation",
-    snomedCtCode: "276813006",
+    snomedCtCode: "179168007",
     snomedCtDisplay:
-      "Closed reduction of fracture with internal fixation (procedure)",
+      "Closed reduction of fracture of finger (procedure)",
     specialties: ["hand_wrist"],
     subcategory: "Fracture & Joint Fixation",
     tags: ["trauma"],
@@ -746,9 +746,9 @@ const HAND_FRACTURE_FIXATION: ProcedurePicklistEntry[] = [
   {
     id: "hand_fx_scaphoid_nonunion_graft",
     displayName: "Scaphoid non-union bone graft",
-    snomedCtCode: "608784006",
+    snomedCtCode: "256651005",
     snomedCtDisplay:
-      "Open reduction of fracture with internal fixation (procedure)",
+      "Autogenous vascularised bone graft (procedure)",
     specialties: ["hand_wrist"],
     subcategory: "Fracture & Joint Fixation",
     tags: ["revision"],
@@ -1016,9 +1016,9 @@ const HAND_JOINT_PROCEDURES: ProcedurePicklistEntry[] = [
   {
     id: "hand_joint_cmc1_prosthesis",
     displayName: "CMC1 joint prosthesis (e.g., Ivory / Touch / Ma\u00EFa)",
-    snomedCtCode: "74589006", // VERIFY
+    snomedCtCode: "16008005",
     snomedCtDisplay:
-      "Arthroplasty of carpometacarpal joint of thumb (procedure)",
+      "Prosthetic arthroplasty of carpometacarpal joint (procedure)",
     specialties: ["hand_wrist"],
     subcategory: "Joint Procedures",
     tags: ["elective"],
@@ -1028,9 +1028,9 @@ const HAND_JOINT_PROCEDURES: ProcedurePicklistEntry[] = [
   {
     id: "hand_joint_pip_arthroplasty",
     displayName: "PIP joint arthroplasty",
-    snomedCtCode: "34380001", // VERIFY
+    snomedCtCode: "239495002",
     snomedCtDisplay:
-      "Arthroplasty of proximal interphalangeal joint (procedure)",
+      "Prosthetic arthroplasty of interphalangeal joint of finger (procedure)",
     specialties: ["hand_wrist"],
     subcategory: "Joint Procedures",
     tags: ["elective"],
@@ -1040,8 +1040,8 @@ const HAND_JOINT_PROCEDURES: ProcedurePicklistEntry[] = [
   {
     id: "hand_joint_mcp_arthroplasty",
     displayName: "MCP joint arthroplasty",
-    snomedCtCode: "76916001", // VERIFY
-    snomedCtDisplay: "Arthroplasty of metacarpophalangeal joint (procedure)",
+    snomedCtCode: "239490007",
+    snomedCtDisplay: "Arthroplasty of metacarpophalangeal joint of finger (procedure)",
     specialties: ["hand_wrist"],
     subcategory: "Joint Procedures",
     tags: ["elective"],
@@ -1051,8 +1051,8 @@ const HAND_JOINT_PROCEDURES: ProcedurePicklistEntry[] = [
   {
     id: "hand_joint_dip_arthrodesis",
     displayName: "DIP joint arthrodesis",
-    snomedCtCode: "42191004", // VERIFY
-    snomedCtDisplay: "Arthrodesis of distal interphalangeal joint (procedure)",
+    snomedCtCode: "205081000",
+    snomedCtDisplay: "Arthrodesis of interphalangeal joint of finger (procedure)",
     specialties: ["hand_wrist"],
     subcategory: "Joint Procedures",
     tags: ["elective"],
@@ -1061,9 +1061,9 @@ const HAND_JOINT_PROCEDURES: ProcedurePicklistEntry[] = [
   {
     id: "hand_joint_pip_arthrodesis",
     displayName: "PIP joint arthrodesis",
-    snomedCtCode: "51459001", // VERIFY
+    snomedCtCode: "205081000",
     snomedCtDisplay:
-      "Arthrodesis of proximal interphalangeal joint (procedure)",
+      "Arthrodesis of interphalangeal joint of finger (procedure)",
     specialties: ["hand_wrist"],
     subcategory: "Joint Procedures",
     tags: ["elective"],
@@ -1072,8 +1072,8 @@ const HAND_JOINT_PROCEDURES: ProcedurePicklistEntry[] = [
   {
     id: "hand_joint_wrist_arthrodesis",
     displayName: "Wrist arthrodesis (total or partial)",
-    snomedCtCode: "45484004",
-    snomedCtDisplay: "Arthrodesis of wrist (procedure)",
+    snomedCtCode: "699327008",
+    snomedCtDisplay: "Arthrodesis of joint of wrist region (procedure)",
     specialties: ["hand_wrist"],
     subcategory: "Joint Procedures",
     tags: ["elective"],
@@ -1303,7 +1303,7 @@ const HAND_VASCULAR_PROCEDURES: ProcedurePicklistEntry[] = [
     id: "hand_vasc_vein_graft",
     displayName: "Vein graft interposition",
     snomedCtCode: "88309008",
-    snomedCtDisplay: "Repair of blood vessel with vein graft (procedure)",
+    snomedCtDisplay: "Repair of blood vessel with tissue patch graft of vein (procedure)",
     specialties: ["hand_wrist"],
     subcategory: "Vascular Repair",
     tags: ["microsurgery", "trauma"],
@@ -1457,8 +1457,8 @@ const HAND_SOFT_TISSUE_COVERAGE: ProcedurePicklistEntry[] = [
   {
     id: "hand_cov_cross_finger",
     displayName: "Cross-finger flap",
-    snomedCtCode: "122462001", // VERIFY
-    snomedCtDisplay: "Flap reconstruction (procedure)",
+    snomedCtCode: "1202018003",
+    snomedCtDisplay: "Reconstruction using flap (procedure)",
     specialties: ["hand_wrist"],
     subcategory: "Soft Tissue Coverage",
     tags: ["local_flap", "trauma"],
@@ -1467,8 +1467,8 @@ const HAND_SOFT_TISSUE_COVERAGE: ProcedurePicklistEntry[] = [
   {
     id: "hand_cov_moberg",
     displayName: "Moberg advancement flap",
-    snomedCtCode: "122462001", // VERIFY
-    snomedCtDisplay: "Flap reconstruction (procedure)",
+    snomedCtCode: "1202018003",
+    snomedCtDisplay: "Reconstruction using flap (procedure)",
     specialties: ["hand_wrist"],
     subcategory: "Soft Tissue Coverage",
     tags: ["local_flap", "trauma"],
@@ -1477,8 +1477,8 @@ const HAND_SOFT_TISSUE_COVERAGE: ProcedurePicklistEntry[] = [
   {
     id: "hand_cov_vy_advancement",
     displayName: "V-Y advancement flap (fingertip)",
-    snomedCtCode: "122462001", // VERIFY
-    snomedCtDisplay: "Flap reconstruction (procedure)",
+    snomedCtCode: "1202018003",
+    snomedCtDisplay: "Reconstruction using flap (procedure)",
     specialties: ["hand_wrist"],
     subcategory: "Soft Tissue Coverage",
     tags: ["local_flap", "trauma"],
@@ -1487,8 +1487,8 @@ const HAND_SOFT_TISSUE_COVERAGE: ProcedurePicklistEntry[] = [
   {
     id: "hand_cov_homodigital_island",
     displayName: "Homodigital island flap",
-    snomedCtCode: "122462001", // VERIFY
-    snomedCtDisplay: "Flap reconstruction (procedure)",
+    snomedCtCode: "1202018003",
+    snomedCtDisplay: "Reconstruction using flap (procedure)",
     specialties: ["hand_wrist"],
     subcategory: "Soft Tissue Coverage",
     tags: ["local_flap", "trauma"],
@@ -1497,8 +1497,8 @@ const HAND_SOFT_TISSUE_COVERAGE: ProcedurePicklistEntry[] = [
   {
     id: "hand_cov_fdma_foucher",
     displayName: "First dorsal metacarpal artery flap (Foucher)",
-    snomedCtCode: "122462001", // VERIFY
-    snomedCtDisplay: "Flap reconstruction (procedure)",
+    snomedCtCode: "1202018003",
+    snomedCtDisplay: "Reconstruction using flap (procedure)",
     specialties: ["hand_wrist"],
     subcategory: "Soft Tissue Coverage",
     tags: ["pedicled_flap", "trauma"],
@@ -1507,8 +1507,8 @@ const HAND_SOFT_TISSUE_COVERAGE: ProcedurePicklistEntry[] = [
   {
     id: "hand_cov_reverse_radial_forearm",
     displayName: "Reverse radial forearm flap (pedicled)",
-    snomedCtCode: "122462001", // VERIFY
-    snomedCtDisplay: "Flap reconstruction (procedure)",
+    snomedCtCode: "1202018003",
+    snomedCtDisplay: "Reconstruction using flap (procedure)",
     specialties: ["hand_wrist"],
     subcategory: "Soft Tissue Coverage",
     tags: ["pedicled_flap", "trauma"],
@@ -1517,8 +1517,8 @@ const HAND_SOFT_TISSUE_COVERAGE: ProcedurePicklistEntry[] = [
   {
     id: "hand_cov_posterior_interosseous",
     displayName: "Posterior interosseous artery flap",
-    snomedCtCode: "122462001", // VERIFY
-    snomedCtDisplay: "Flap reconstruction (procedure)",
+    snomedCtCode: "1202018003",
+    snomedCtDisplay: "Reconstruction using flap (procedure)",
     specialties: ["hand_wrist"],
     subcategory: "Soft Tissue Coverage",
     tags: ["pedicled_flap", "trauma"],
@@ -1527,8 +1527,8 @@ const HAND_SOFT_TISSUE_COVERAGE: ProcedurePicklistEntry[] = [
   {
     id: "hand_cov_groin_flap",
     displayName: "Groin flap (pedicled, staged)",
-    snomedCtCode: "122462001", // VERIFY
-    snomedCtDisplay: "Flap reconstruction (procedure)",
+    snomedCtCode: "1202018003",
+    snomedCtDisplay: "Reconstruction using flap (procedure)",
     specialties: ["hand_wrist"],
     subcategory: "Soft Tissue Coverage",
     tags: ["pedicled_flap", "trauma"],
@@ -1537,8 +1537,8 @@ const HAND_SOFT_TISSUE_COVERAGE: ProcedurePicklistEntry[] = [
   {
     id: "hand_cov_free_flap",
     displayName: "Free flap to hand (specify type in notes)",
-    snomedCtCode: "122462001",
-    snomedCtDisplay: "Flap reconstruction (procedure)",
+    snomedCtCode: "771225007",
+    snomedCtDisplay: "Reconstruction using free flap (procedure)",
     specialties: ["hand_wrist"],
     subcategory: "Soft Tissue Coverage",
     tags: ["free_flap", "microsurgery", "trauma"],
@@ -1771,8 +1771,8 @@ const HAND_CONGENITAL: ProcedurePicklistEntry[] = [
     id: "hand_cong_radial_deficiency",
     displayName:
       "Radial longitudinal deficiency — centralisation / radialisation",
-    snomedCtCode: "19199006",
-    snomedCtDisplay: "Repair of syndactyly (procedure)",
+    snomedCtCode: "265742000",
+    snomedCtDisplay: "Centralisation carpus correction for radial club hand (procedure)",
     specialties: ["hand_wrist"],
     subcategory: "Congenital Hand",
     tags: ["elective"],
@@ -1801,8 +1801,8 @@ const HAND_CONGENITAL: ProcedurePicklistEntry[] = [
   {
     id: "hand_cong_cleft_hand",
     displayName: "Cleft hand reconstruction",
-    snomedCtCode: "19199006",
-    snomedCtDisplay: "Repair of syndactyly (procedure)",
+    snomedCtCode: "2270007",
+    snomedCtDisplay: "Repair of cleft hand (procedure)",
     specialties: ["hand_wrist"],
     subcategory: "Congenital Hand",
     tags: ["elective"],
@@ -1878,8 +1878,8 @@ const HAND_OTHER: ProcedurePicklistEntry[] = [
   {
     id: "hand_other_rheumatoid",
     displayName: "Rheumatoid hand surgery (synovectomy / reconstruction)",
-    snomedCtCode: "54936004", // VERIFY
-    snomedCtDisplay: "Synovectomy of hand (procedure)",
+    snomedCtCode: "74278002",
+    snomedCtDisplay: "Synovectomy of tendon sheath of hand (procedure)",
     specialties: ["hand_wrist"],
     subcategory: "Rheumatoid Hand",
     tags: ["elective"],
@@ -7075,90 +7075,90 @@ const LYMPHOEDEMA_ADDITIONAL: ProcedurePicklistEntry[] = [
 // ═══════════════════════════════════════════════════════════════════════════
 
 const PN_DECOMPRESSION: ProcedurePicklistEntry[] = [
-  { id: "pn_radial_tunnel_release", displayName: "Radial tunnel decompression", snomedCtCode: "302497003", snomedCtDisplay: "Decompression of peripheral nerve (procedure)", specialties: ["peripheral_nerve", "hand_wrist"], subcategory: "Nerve Decompression", tags: ["elective"], sortOrder: 1 }, // VERIFY
-  { id: "pn_pronator_release", displayName: "Pronator syndrome decompression", snomedCtCode: "302497003", snomedCtDisplay: "Decompression of peripheral nerve (procedure)", specialties: ["peripheral_nerve", "hand_wrist"], subcategory: "Nerve Decompression", tags: ["elective"], sortOrder: 2 }, // VERIFY
-  { id: "pn_guyon_canal_release", displayName: "Guyon's canal decompression", snomedCtCode: "302497003", snomedCtDisplay: "Decompression of peripheral nerve (procedure)", specialties: ["peripheral_nerve", "hand_wrist"], subcategory: "Nerve Decompression", tags: ["elective"], sortOrder: 3 }, // VERIFY
-  { id: "pn_suprascapular_release", displayName: "Suprascapular nerve release", snomedCtCode: "302497003", snomedCtDisplay: "Decompression of peripheral nerve (procedure)", specialties: ["peripheral_nerve"], subcategory: "Nerve Decompression", tags: ["elective"], sortOrder: 4 }, // VERIFY
-  { id: "pn_tos_first_rib_resection", displayName: "TOS \u2014 first rib resection", snomedCtCode: "65801008", snomedCtDisplay: "Excision of first rib (procedure)", specialties: ["peripheral_nerve"], subcategory: "Nerve Decompression", tags: ["elective"], sortOrder: 5 }, // VERIFY
-  { id: "pn_tarsal_tunnel_release", displayName: "Tarsal tunnel release", snomedCtCode: "302497003", snomedCtDisplay: "Decompression of peripheral nerve (procedure)", specialties: ["peripheral_nerve"], subcategory: "Nerve Decompression", tags: ["elective"], sortOrder: 6 }, // VERIFY
-  { id: "pn_lfcn_release", displayName: "LFCN decompression (meralgia paresthetica)", snomedCtCode: "302497003", snomedCtDisplay: "Decompression of peripheral nerve (procedure)", specialties: ["peripheral_nerve"], subcategory: "Nerve Decompression", tags: ["elective"], sortOrder: 7 }, // VERIFY
-  { id: "pn_common_peroneal_release", displayName: "Common peroneal nerve decompression (fibular head)", snomedCtCode: "302497003", snomedCtDisplay: "Decompression of peripheral nerve (procedure)", specialties: ["peripheral_nerve"], subcategory: "Nerve Decompression", tags: ["elective"], sortOrder: 8 }, // VERIFY
+  { id: "pn_radial_tunnel_release", displayName: "Radial tunnel decompression", snomedCtCode: "38135000", snomedCtDisplay: "Decompression of nerve (procedure)", specialties: ["peripheral_nerve", "hand_wrist"], subcategory: "Nerve Decompression", tags: ["elective"], sortOrder: 1 },
+  { id: "pn_pronator_release", displayName: "Pronator syndrome decompression", snomedCtCode: "38135000", snomedCtDisplay: "Decompression of nerve (procedure)", specialties: ["peripheral_nerve", "hand_wrist"], subcategory: "Nerve Decompression", tags: ["elective"], sortOrder: 2 },
+  { id: "pn_guyon_canal_release", displayName: "Guyon's canal decompression", snomedCtCode: "38135000", snomedCtDisplay: "Decompression of nerve (procedure)", specialties: ["peripheral_nerve", "hand_wrist"], subcategory: "Nerve Decompression", tags: ["elective"], sortOrder: 3 },
+  { id: "pn_suprascapular_release", displayName: "Suprascapular nerve release", snomedCtCode: "38135000", snomedCtDisplay: "Decompression of nerve (procedure)", specialties: ["peripheral_nerve"], subcategory: "Nerve Decompression", tags: ["elective"], sortOrder: 4 },
+  { id: "pn_tos_first_rib_resection", displayName: "TOS \u2014 first rib resection", snomedCtCode: "112716008", snomedCtDisplay: "Excision of first rib (procedure)", specialties: ["peripheral_nerve"], subcategory: "Nerve Decompression", tags: ["elective"], sortOrder: 5 },
+  { id: "pn_tarsal_tunnel_release", displayName: "Tarsal tunnel release", snomedCtCode: "38135000", snomedCtDisplay: "Decompression of nerve (procedure)", specialties: ["peripheral_nerve"], subcategory: "Nerve Decompression", tags: ["elective"], sortOrder: 6 },
+  { id: "pn_lfcn_release", displayName: "LFCN decompression (meralgia paresthetica)", snomedCtCode: "38135000", snomedCtDisplay: "Decompression of nerve (procedure)", specialties: ["peripheral_nerve"], subcategory: "Nerve Decompression", tags: ["elective"], sortOrder: 7 },
+  { id: "pn_common_peroneal_release", displayName: "Common peroneal nerve decompression (fibular head)", snomedCtCode: "38135000", snomedCtDisplay: "Decompression of nerve (procedure)", specialties: ["peripheral_nerve"], subcategory: "Nerve Decompression", tags: ["elective"], sortOrder: 8 },
 ];
 
 const PN_NERVE_REPAIR: ProcedurePicklistEntry[] = [
-  { id: "pn_nerve_repair_epineurial", displayName: "Nerve repair \u2014 epineurial", snomedCtCode: "69505002", snomedCtDisplay: "Repair of peripheral nerve (procedure)", specialties: ["peripheral_nerve", "hand_wrist"], subcategory: "Nerve Repair", tags: ["trauma"], sortOrder: 1 }, // VERIFY
-  { id: "pn_nerve_repair_grouped_fascicular", displayName: "Nerve repair \u2014 grouped fascicular", snomedCtCode: "69505002", snomedCtDisplay: "Repair of peripheral nerve (procedure)", specialties: ["peripheral_nerve", "hand_wrist"], subcategory: "Nerve Repair", tags: ["trauma"], sortOrder: 2 }, // VERIFY
-  { id: "pn_nerve_repair_fascicular", displayName: "Nerve repair \u2014 fascicular", snomedCtCode: "69505002", snomedCtDisplay: "Repair of peripheral nerve (procedure)", specialties: ["peripheral_nerve"], subcategory: "Nerve Repair", tags: ["trauma"], sortOrder: 3 }, // VERIFY
-  { id: "pn_nerve_repair_end_to_side", displayName: "Nerve repair \u2014 end-to-side", snomedCtCode: "69505002", snomedCtDisplay: "Repair of peripheral nerve (procedure)", specialties: ["peripheral_nerve"], subcategory: "Nerve Repair", tags: [], sortOrder: 4 }, // VERIFY
+  { id: "pn_nerve_repair_epineurial", displayName: "Nerve repair \u2014 epineurial", snomedCtCode: "3666002", snomedCtDisplay: "Peripheral neurorrhaphy (procedure)", specialties: ["peripheral_nerve", "hand_wrist"], subcategory: "Nerve Repair", tags: ["trauma"], sortOrder: 1 },
+  { id: "pn_nerve_repair_grouped_fascicular", displayName: "Nerve repair \u2014 grouped fascicular", snomedCtCode: "3666002", snomedCtDisplay: "Peripheral neurorrhaphy (procedure)", specialties: ["peripheral_nerve", "hand_wrist"], subcategory: "Nerve Repair", tags: ["trauma"], sortOrder: 2 },
+  { id: "pn_nerve_repair_fascicular", displayName: "Nerve repair \u2014 fascicular", snomedCtCode: "171814002", snomedCtDisplay: "Microsurgical repair of peripheral nerve (procedure)", specialties: ["peripheral_nerve"], subcategory: "Nerve Repair", tags: ["trauma"], sortOrder: 3 },
+  { id: "pn_nerve_repair_end_to_side", displayName: "Nerve repair \u2014 end-to-side", snomedCtCode: "3666002", snomedCtDisplay: "Peripheral neurorrhaphy (procedure)", specialties: ["peripheral_nerve"], subcategory: "Nerve Repair", tags: [], sortOrder: 4 },
 ];
 
 const PN_NERVE_GRAFT: ProcedurePicklistEntry[] = [
-  { id: "pn_nerve_graft_autograft", displayName: "Nerve graft \u2014 autograft", snomedCtCode: "7428004", snomedCtDisplay: "Nerve graft (procedure)", specialties: ["peripheral_nerve", "hand_wrist"], subcategory: "Nerve Grafting & Conduit", tags: [], sortOrder: 1 },
-  { id: "pn_nerve_graft_allograft", displayName: "Nerve graft \u2014 processed allograft (Avance)", snomedCtCode: "7428004", snomedCtDisplay: "Nerve graft (procedure)", specialties: ["peripheral_nerve", "hand_wrist"], subcategory: "Nerve Grafting & Conduit", tags: [], sortOrder: 2 }, // VERIFY
-  { id: "pn_nerve_conduit_hollow", displayName: "Nerve conduit \u2014 hollow tube", snomedCtCode: "7428004", snomedCtDisplay: "Nerve graft (procedure)", specialties: ["peripheral_nerve", "hand_wrist"], subcategory: "Nerve Grafting & Conduit", tags: [], sortOrder: 3 }, // VERIFY
-  { id: "pn_nerve_conduit_filled", displayName: "Nerve conduit \u2014 filled (3D matrix)", snomedCtCode: "7428004", snomedCtDisplay: "Nerve graft (procedure)", specialties: ["peripheral_nerve"], subcategory: "Nerve Grafting & Conduit", tags: [], sortOrder: 4 }, // VERIFY
-  { id: "pn_nerve_wrap", displayName: "Nerve wrap / protector", snomedCtCode: "69505002", snomedCtDisplay: "Repair of peripheral nerve (procedure)", specialties: ["peripheral_nerve"], subcategory: "Nerve Grafting & Conduit", tags: [], sortOrder: 5 }, // VERIFY
-  { id: "pn_sural_nerve_harvest", displayName: "Sural nerve graft harvest", snomedCtCode: "178778006", snomedCtDisplay: "Sural nerve graft harvest (procedure)", specialties: ["peripheral_nerve"], subcategory: "Nerve Grafting & Conduit", tags: [], sortOrder: 6 }, // VERIFY
+  { id: "pn_nerve_graft_autograft", displayName: "Nerve graft \u2014 autograft", snomedCtCode: "27493007", snomedCtDisplay: "Graft to peripheral nerve (procedure)", specialties: ["peripheral_nerve", "hand_wrist"], subcategory: "Nerve Grafting & Conduit", tags: [], sortOrder: 1 },
+  { id: "pn_nerve_graft_allograft", displayName: "Nerve graft \u2014 processed allograft (Avance)", snomedCtCode: "27493007", snomedCtDisplay: "Graft to peripheral nerve (procedure)", specialties: ["peripheral_nerve", "hand_wrist"], subcategory: "Nerve Grafting & Conduit", tags: [], sortOrder: 2 },
+  { id: "pn_nerve_conduit_hollow", displayName: "Nerve conduit \u2014 hollow tube", snomedCtCode: "27493007", snomedCtDisplay: "Graft to peripheral nerve (procedure)", specialties: ["peripheral_nerve", "hand_wrist"], subcategory: "Nerve Grafting & Conduit", tags: [], sortOrder: 3 },
+  { id: "pn_nerve_conduit_filled", displayName: "Nerve conduit \u2014 filled (3D matrix)", snomedCtCode: "27493007", snomedCtDisplay: "Graft to peripheral nerve (procedure)", specialties: ["peripheral_nerve"], subcategory: "Nerve Grafting & Conduit", tags: [], sortOrder: 4 },
+  { id: "pn_nerve_wrap", displayName: "Nerve wrap / protector", snomedCtCode: "3666002", snomedCtDisplay: "Peripheral neurorrhaphy (procedure)", specialties: ["peripheral_nerve"], subcategory: "Nerve Grafting & Conduit", tags: [], sortOrder: 5 },
+  { id: "pn_sural_nerve_harvest", displayName: "Sural nerve graft harvest", snomedCtCode: "180661001", snomedCtDisplay: "Harvest of sural nerve (procedure)", specialties: ["peripheral_nerve"], subcategory: "Nerve Grafting & Conduit", tags: [], sortOrder: 6 },
 ];
 
 const PN_NERVE_TRANSFER: ProcedurePicklistEntry[] = [
-  { id: "pn_transfer_oberlin", displayName: "Oberlin transfer (ulnar \u2192 biceps)", snomedCtCode: "28778006", snomedCtDisplay: "Transfer of nerve (procedure)", specialties: ["peripheral_nerve"], subcategory: "Nerve Transfer", tags: ["microsurgery"], sortOrder: 1 }, // VERIFY
-  { id: "pn_transfer_mackinnon_double", displayName: "Double fascicular transfer (Mackinnon)", snomedCtCode: "28778006", snomedCtDisplay: "Transfer of nerve (procedure)", specialties: ["peripheral_nerve"], subcategory: "Nerve Transfer", tags: ["microsurgery"], sortOrder: 2 }, // VERIFY
-  { id: "pn_transfer_sxa_ssn", displayName: "SXA \u2192 suprascapular (shoulder ABD/ER)", snomedCtCode: "28778006", snomedCtDisplay: "Transfer of nerve (procedure)", specialties: ["peripheral_nerve"], subcategory: "Nerve Transfer", tags: ["microsurgery"], sortOrder: 3 }, // VERIFY
-  { id: "pn_transfer_somsak", displayName: "Triceps branch \u2192 axillary (Leechavengvongs)", snomedCtCode: "28778006", snomedCtDisplay: "Transfer of nerve (procedure)", specialties: ["peripheral_nerve"], subcategory: "Nerve Transfer", tags: ["microsurgery"], sortOrder: 4 }, // VERIFY
-  { id: "pn_transfer_intercostal_mcn", displayName: "Intercostal \u2192 musculocutaneous", snomedCtCode: "28778006", snomedCtDisplay: "Transfer of nerve (procedure)", specialties: ["peripheral_nerve"], subcategory: "Nerve Transfer", tags: ["microsurgery"], sortOrder: 5 }, // VERIFY
-  { id: "pn_transfer_phrenic_mcn", displayName: "Phrenic \u2192 musculocutaneous (via graft)", snomedCtCode: "28778006", snomedCtDisplay: "Transfer of nerve (procedure)", specialties: ["peripheral_nerve"], subcategory: "Nerve Transfer", tags: ["microsurgery"], sortOrder: 6 }, // VERIFY
-  { id: "pn_transfer_contralateral_c7", displayName: "Contralateral C7 \u2192 median (prespinal)", snomedCtCode: "28778006", snomedCtDisplay: "Transfer of nerve (procedure)", specialties: ["peripheral_nerve"], subcategory: "Nerve Transfer", tags: ["microsurgery"], sortOrder: 7 }, // VERIFY
-  { id: "pn_transfer_medial_pectoral", displayName: "Medial pectoral \u2192 musculocutaneous", snomedCtCode: "28778006", snomedCtDisplay: "Transfer of nerve (procedure)", specialties: ["peripheral_nerve"], subcategory: "Nerve Transfer", tags: ["microsurgery"], sortOrder: 8 }, // VERIFY
-  { id: "pn_transfer_deep_peroneal", displayName: "Tibial branch \u2192 deep peroneal (foot drop)", snomedCtCode: "28778006", snomedCtDisplay: "Transfer of nerve (procedure)", specialties: ["peripheral_nerve"], subcategory: "Nerve Transfer", tags: ["microsurgery"], sortOrder: 9 }, // VERIFY
-  { id: "pn_transfer_other_ue", displayName: "Nerve transfer \u2014 other (upper extremity)", snomedCtCode: "28778006", snomedCtDisplay: "Transfer of nerve (procedure)", specialties: ["peripheral_nerve"], subcategory: "Nerve Transfer", tags: ["microsurgery"], sortOrder: 10 }, // VERIFY
-  { id: "pn_transfer_other_le", displayName: "Nerve transfer \u2014 other (lower extremity)", snomedCtCode: "28778006", snomedCtDisplay: "Transfer of nerve (procedure)", specialties: ["peripheral_nerve"], subcategory: "Nerve Transfer", tags: ["microsurgery"], sortOrder: 11 }, // VERIFY
-  { id: "pn_nerve_transfer_long_thoracic", displayName: "Nerve transfer for long thoracic palsy", snomedCtCode: "28778006", snomedCtDisplay: "Transfer of nerve (procedure)", specialties: ["peripheral_nerve"], subcategory: "Nerve Transfer", tags: ["microsurgery"], sortOrder: 12 }, // VERIFY
-  { id: "pn_cfng", displayName: "Cross-face nerve graft (CFNG \u2014 stages 1+2)", snomedCtCode: "7428004", snomedCtDisplay: "Nerve graft (procedure)", specialties: ["peripheral_nerve", "head_neck"], subcategory: "Nerve Transfer", tags: ["microsurgery"], sortOrder: 13 }, // VERIFY
+  { id: "pn_transfer_oberlin", displayName: "Oberlin transfer (ulnar \u2192 biceps)", snomedCtCode: "840681000168101", snomedCtDisplay: "Nerve transfer (procedure)", specialties: ["peripheral_nerve"], subcategory: "Nerve Transfer", tags: ["microsurgery"], sortOrder: 1 },
+  { id: "pn_transfer_mackinnon_double", displayName: "Double fascicular transfer (Mackinnon)", snomedCtCode: "840681000168101", snomedCtDisplay: "Nerve transfer (procedure)", specialties: ["peripheral_nerve"], subcategory: "Nerve Transfer", tags: ["microsurgery"], sortOrder: 2 },
+  { id: "pn_transfer_sxa_ssn", displayName: "SXA \u2192 suprascapular (shoulder ABD/ER)", snomedCtCode: "840681000168101", snomedCtDisplay: "Nerve transfer (procedure)", specialties: ["peripheral_nerve"], subcategory: "Nerve Transfer", tags: ["microsurgery"], sortOrder: 3 },
+  { id: "pn_transfer_somsak", displayName: "Triceps branch \u2192 axillary (Leechavengvongs)", snomedCtCode: "840681000168101", snomedCtDisplay: "Nerve transfer (procedure)", specialties: ["peripheral_nerve"], subcategory: "Nerve Transfer", tags: ["microsurgery"], sortOrder: 4 },
+  { id: "pn_transfer_intercostal_mcn", displayName: "Intercostal \u2192 musculocutaneous", snomedCtCode: "840681000168101", snomedCtDisplay: "Nerve transfer (procedure)", specialties: ["peripheral_nerve"], subcategory: "Nerve Transfer", tags: ["microsurgery"], sortOrder: 5 },
+  { id: "pn_transfer_phrenic_mcn", displayName: "Phrenic \u2192 musculocutaneous (via graft)", snomedCtCode: "840681000168101", snomedCtDisplay: "Nerve transfer (procedure)", specialties: ["peripheral_nerve"], subcategory: "Nerve Transfer", tags: ["microsurgery"], sortOrder: 6 },
+  { id: "pn_transfer_contralateral_c7", displayName: "Contralateral C7 \u2192 median (prespinal)", snomedCtCode: "840681000168101", snomedCtDisplay: "Nerve transfer (procedure)", specialties: ["peripheral_nerve"], subcategory: "Nerve Transfer", tags: ["microsurgery"], sortOrder: 7 },
+  { id: "pn_transfer_medial_pectoral", displayName: "Medial pectoral \u2192 musculocutaneous", snomedCtCode: "840681000168101", snomedCtDisplay: "Nerve transfer (procedure)", specialties: ["peripheral_nerve"], subcategory: "Nerve Transfer", tags: ["microsurgery"], sortOrder: 8 },
+  { id: "pn_transfer_deep_peroneal", displayName: "Tibial branch \u2192 deep peroneal (foot drop)", snomedCtCode: "840681000168101", snomedCtDisplay: "Nerve transfer (procedure)", specialties: ["peripheral_nerve"], subcategory: "Nerve Transfer", tags: ["microsurgery"], sortOrder: 9 },
+  { id: "pn_transfer_other_ue", displayName: "Nerve transfer \u2014 other (upper extremity)", snomedCtCode: "840681000168101", snomedCtDisplay: "Nerve transfer (procedure)", specialties: ["peripheral_nerve"], subcategory: "Nerve Transfer", tags: ["microsurgery"], sortOrder: 10 },
+  { id: "pn_transfer_other_le", displayName: "Nerve transfer \u2014 other (lower extremity)", snomedCtCode: "840681000168101", snomedCtDisplay: "Nerve transfer (procedure)", specialties: ["peripheral_nerve"], subcategory: "Nerve Transfer", tags: ["microsurgery"], sortOrder: 11 },
+  { id: "pn_nerve_transfer_long_thoracic", displayName: "Nerve transfer for long thoracic palsy", snomedCtCode: "840681000168101", snomedCtDisplay: "Nerve transfer (procedure)", specialties: ["peripheral_nerve"], subcategory: "Nerve Transfer", tags: ["microsurgery"], sortOrder: 12 },
+  { id: "pn_cfng", displayName: "Cross-face nerve graft (CFNG \u2014 stages 1+2)", snomedCtCode: "1557941000168102", snomedCtDisplay: "Cross facial nerve graft (procedure)", specialties: ["peripheral_nerve", "head_neck"], subcategory: "Nerve Transfer", tags: ["microsurgery"], sortOrder: 13 },
 ];
 
 const PN_NEUROMA: ProcedurePicklistEntry[] = [
-  { id: "pn_neuroma_excision_burial", displayName: "Neuroma excision + muscle/bone burial", snomedCtCode: "69831004", snomedCtDisplay: "Excision of neuroma (procedure)", specialties: ["peripheral_nerve"], subcategory: "Neuroma Management", tags: [], sortOrder: 1 }, // VERIFY
-  { id: "pn_neuroma_tmr", displayName: "Targeted Muscle Reinnervation (TMR)", snomedCtCode: "28778006", snomedCtDisplay: "Transfer of nerve (procedure)", specialties: ["peripheral_nerve"], subcategory: "Neuroma Management", tags: [], sortOrder: 2 }, // VERIFY
-  { id: "pn_neuroma_rpni", displayName: "RPNI \u2014 Regenerative Peripheral Nerve Interface", snomedCtCode: "69505002", snomedCtDisplay: "Repair of peripheral nerve (procedure)", specialties: ["peripheral_nerve"], subcategory: "Neuroma Management", tags: [], sortOrder: 3 }, // VERIFY
-  { id: "pn_neuroma_ds_rpni", displayName: "DS-RPNI (dermal sensory variant)", snomedCtCode: "69505002", snomedCtDisplay: "Repair of peripheral nerve (procedure)", specialties: ["peripheral_nerve"], subcategory: "Neuroma Management", tags: [], sortOrder: 4 }, // VERIFY
-  { id: "pn_neuroma_c_rpni", displayName: "Composite RPNI (C-RPNI)", snomedCtCode: "69505002", snomedCtDisplay: "Repair of peripheral nerve (procedure)", specialties: ["peripheral_nerve"], subcategory: "Neuroma Management", tags: [], sortOrder: 5 }, // VERIFY
-  { id: "pn_neuroma_centro_central", displayName: "Centro-central neurorrhaphy", snomedCtCode: "69505002", snomedCtDisplay: "Repair of peripheral nerve (procedure)", specialties: ["peripheral_nerve"], subcategory: "Neuroma Management", tags: [], sortOrder: 6 }, // VERIFY
-  { id: "pn_neuroma_relocation", displayName: "Relocation nerve grafting", snomedCtCode: "7428004", snomedCtDisplay: "Nerve graft (procedure)", specialties: ["peripheral_nerve"], subcategory: "Neuroma Management", tags: [], sortOrder: 7 }, // VERIFY
-  { id: "pn_neuroma_nerve_capping", displayName: "Nerve capping (synthetic/biologic)", snomedCtCode: "69505002", snomedCtDisplay: "Repair of peripheral nerve (procedure)", specialties: ["peripheral_nerve"], subcategory: "Neuroma Management", tags: [], sortOrder: 8 }, // VERIFY
-  { id: "pn_morton_neurectomy", displayName: "Morton neurectomy", snomedCtCode: "69831004", snomedCtDisplay: "Excision of neuroma (procedure)", specialties: ["peripheral_nerve"], subcategory: "Neuroma Management", tags: ["elective"], sortOrder: 9 }, // VERIFY
-  { id: "pn_lfcn_neurectomy", displayName: "LFCN neurectomy", snomedCtCode: "69831004", snomedCtDisplay: "Excision of neuroma (procedure)", specialties: ["peripheral_nerve"], subcategory: "Neuroma Management", tags: ["elective"], sortOrder: 10 }, // VERIFY
+  { id: "pn_neuroma_excision_burial", displayName: "Neuroma excision + muscle/bone burial", snomedCtCode: "231075004", snomedCtDisplay: "Excision of peripheral neuroma (procedure)", specialties: ["peripheral_nerve"], subcategory: "Neuroma Management", tags: [], sortOrder: 1 },
+  { id: "pn_neuroma_tmr", displayName: "Targeted Muscle Reinnervation (TMR)", snomedCtCode: "840681000168101", snomedCtDisplay: "Nerve transfer (procedure)", specialties: ["peripheral_nerve"], subcategory: "Neuroma Management", tags: [], sortOrder: 2 },
+  { id: "pn_neuroma_rpni", displayName: "RPNI \u2014 Regenerative Peripheral Nerve Interface", snomedCtCode: "3666002", snomedCtDisplay: "Peripheral neurorrhaphy (procedure)", specialties: ["peripheral_nerve"], subcategory: "Neuroma Management", tags: [], sortOrder: 3 },
+  { id: "pn_neuroma_ds_rpni", displayName: "DS-RPNI (dermal sensory variant)", snomedCtCode: "3666002", snomedCtDisplay: "Peripheral neurorrhaphy (procedure)", specialties: ["peripheral_nerve"], subcategory: "Neuroma Management", tags: [], sortOrder: 4 },
+  { id: "pn_neuroma_c_rpni", displayName: "Composite RPNI (C-RPNI)", snomedCtCode: "3666002", snomedCtDisplay: "Peripheral neurorrhaphy (procedure)", specialties: ["peripheral_nerve"], subcategory: "Neuroma Management", tags: [], sortOrder: 5 },
+  { id: "pn_neuroma_centro_central", displayName: "Centro-central neurorrhaphy", snomedCtCode: "3666002", snomedCtDisplay: "Peripheral neurorrhaphy (procedure)", specialties: ["peripheral_nerve"], subcategory: "Neuroma Management", tags: [], sortOrder: 6 },
+  { id: "pn_neuroma_relocation", displayName: "Relocation nerve grafting", snomedCtCode: "27493007", snomedCtDisplay: "Graft to peripheral nerve (procedure)", specialties: ["peripheral_nerve"], subcategory: "Neuroma Management", tags: [], sortOrder: 7 },
+  { id: "pn_neuroma_nerve_capping", displayName: "Nerve capping (synthetic/biologic)", snomedCtCode: "3666002", snomedCtDisplay: "Peripheral neurorrhaphy (procedure)", specialties: ["peripheral_nerve"], subcategory: "Neuroma Management", tags: [], sortOrder: 8 },
+  { id: "pn_morton_neurectomy", displayName: "Morton neurectomy", snomedCtCode: "89005003", snomedCtDisplay: "Excision of Morton's neuroma of peripheral nerve (procedure)", specialties: ["peripheral_nerve"], subcategory: "Neuroma Management", tags: ["elective"], sortOrder: 9 },
+  { id: "pn_lfcn_neurectomy", displayName: "LFCN neurectomy", snomedCtCode: "231075004", snomedCtDisplay: "Excision of peripheral neuroma (procedure)", specialties: ["peripheral_nerve"], subcategory: "Neuroma Management", tags: ["elective"], sortOrder: 10 },
 ];
 
 const PN_NEUROLYSIS: ProcedurePicklistEntry[] = [
-  { id: "pn_neurolysis_external", displayName: "External neurolysis", snomedCtCode: "9853004", snomedCtDisplay: "Neurolysis (procedure)", specialties: ["peripheral_nerve"], subcategory: "Neurolysis", tags: [], sortOrder: 1 }, // VERIFY
-  { id: "pn_neurolysis_internal", displayName: "Internal neurolysis (interfascicular)", snomedCtCode: "9853004", snomedCtDisplay: "Neurolysis (procedure)", specialties: ["peripheral_nerve"], subcategory: "Neurolysis", tags: [], sortOrder: 2 }, // VERIFY
+  { id: "pn_neurolysis_external", displayName: "External neurolysis", snomedCtCode: "46779000", snomedCtDisplay: "Peripheral neuroplasty (procedure)", specialties: ["peripheral_nerve"], subcategory: "Neurolysis", tags: [], sortOrder: 1 },
+  { id: "pn_neurolysis_internal", displayName: "Internal neurolysis (interfascicular)", snomedCtCode: "46779000", snomedCtDisplay: "Peripheral neuroplasty (procedure)", specialties: ["peripheral_nerve"], subcategory: "Neurolysis", tags: [], sortOrder: 2 },
 ];
 
 const PN_BRACHIAL_PLEXUS: ProcedurePicklistEntry[] = [
-  { id: "pn_bp_exploration", displayName: "Brachial plexus exploration", snomedCtCode: "122465003", snomedCtDisplay: "Exploration of brachial plexus (procedure)", specialties: ["peripheral_nerve"], subcategory: "Brachial Plexus", tags: ["trauma"], sortOrder: 1 },
-  { id: "pn_bp_primary_repair", displayName: "Brachial plexus nerve repair \u2014 primary", snomedCtCode: "122465003", snomedCtDisplay: "Primary repair of brachial plexus (procedure)", specialties: ["peripheral_nerve"], subcategory: "Brachial Plexus", tags: ["trauma"], sortOrder: 2 },
+  { id: "pn_bp_exploration", displayName: "Brachial plexus exploration", snomedCtCode: "918631000168102", snomedCtDisplay: "Exploration of brachial plexus (procedure)", specialties: ["peripheral_nerve"], subcategory: "Brachial Plexus", tags: ["trauma"], sortOrder: 1 },
+  { id: "pn_bp_primary_repair", displayName: "Brachial plexus nerve repair \u2014 primary", snomedCtCode: "3666002", snomedCtDisplay: "Peripheral neurorrhaphy (procedure)", specialties: ["peripheral_nerve"], subcategory: "Brachial Plexus", tags: ["trauma"], sortOrder: 2 },
 ];
 
 const PN_FFMT: ProcedurePicklistEntry[] = [
-  { id: "pn_ffmt_gracilis_elbow_flexion", displayName: "Free gracilis \u2014 elbow flexion", snomedCtCode: "234019008", snomedCtDisplay: "Free muscle transfer (procedure)", specialties: ["peripheral_nerve"], subcategory: "Free Functioning Muscle Transfer", tags: ["free_flap", "microsurgery"], hasFreeFlap: true, sortOrder: 1 }, // VERIFY
-  { id: "pn_ffmt_gracilis_finger_flexion", displayName: "Free gracilis \u2014 finger/wrist flexion", snomedCtCode: "234019008", snomedCtDisplay: "Free muscle transfer (procedure)", specialties: ["peripheral_nerve"], subcategory: "Free Functioning Muscle Transfer", tags: ["free_flap", "microsurgery"], hasFreeFlap: true, sortOrder: 2 }, // VERIFY
-  { id: "pn_ffmt_gracilis_elbow_extension", displayName: "Free gracilis \u2014 elbow extension", snomedCtCode: "234019008", snomedCtDisplay: "Free muscle transfer (procedure)", specialties: ["peripheral_nerve"], subcategory: "Free Functioning Muscle Transfer", tags: ["free_flap", "microsurgery"], hasFreeFlap: true, sortOrder: 3 }, // VERIFY
+  { id: "pn_ffmt_gracilis_elbow_flexion", displayName: "Free gracilis \u2014 elbow flexion", snomedCtCode: "178220001", snomedCtDisplay: "Distant muscle microvascular free flap (procedure)", specialties: ["peripheral_nerve"], subcategory: "Free Functioning Muscle Transfer", tags: ["free_flap", "microsurgery"], hasFreeFlap: true, sortOrder: 1 },
+  { id: "pn_ffmt_gracilis_finger_flexion", displayName: "Free gracilis \u2014 finger/wrist flexion", snomedCtCode: "178220001", snomedCtDisplay: "Distant muscle microvascular free flap (procedure)", specialties: ["peripheral_nerve"], subcategory: "Free Functioning Muscle Transfer", tags: ["free_flap", "microsurgery"], hasFreeFlap: true, sortOrder: 2 },
+  { id: "pn_ffmt_gracilis_elbow_extension", displayName: "Free gracilis \u2014 elbow extension", snomedCtCode: "178220001", snomedCtDisplay: "Distant muscle microvascular free flap (procedure)", specialties: ["peripheral_nerve"], subcategory: "Free Functioning Muscle Transfer", tags: ["free_flap", "microsurgery"], hasFreeFlap: true, sortOrder: 3 },
 ];
 
 const PN_TENDON_TRANSFER: ProcedurePicklistEntry[] = [
-  { id: "pn_tt_radial_nerve_set", displayName: "Tendon transfer set \u2014 radial nerve palsy", snomedCtCode: "28778006", snomedCtDisplay: "Transfer of tendon (procedure)", specialties: ["hand_wrist", "peripheral_nerve"], subcategory: "Tendon Transfer for Nerve Palsy", tags: ["elective"], sortOrder: 1 }, // VERIFY
-  { id: "pn_tt_opponensplasty", displayName: "Opponensplasty (Camitz / other)", snomedCtCode: "28778006", snomedCtDisplay: "Transfer of tendon (procedure)", specialties: ["hand_wrist", "peripheral_nerve"], subcategory: "Tendon Transfer for Nerve Palsy", tags: ["elective"], sortOrder: 2 }, // VERIFY
-  { id: "pn_tt_claw_correction", displayName: "Intrinsic replacement for claw hand", snomedCtCode: "28778006", snomedCtDisplay: "Transfer of tendon (procedure)", specialties: ["hand_wrist", "peripheral_nerve"], subcategory: "Tendon Transfer for Nerve Palsy", tags: ["elective"], sortOrder: 3 }, // VERIFY
-  { id: "pn_tt_adductorplasty", displayName: "Adductorplasty for key pinch", snomedCtCode: "28778006", snomedCtDisplay: "Transfer of tendon (procedure)", specialties: ["hand_wrist", "peripheral_nerve"], subcategory: "Tendon Transfer for Nerve Palsy", tags: ["elective"], sortOrder: 4 }, // VERIFY
-  { id: "pn_tt_tib_post_foot_drop", displayName: "Tibialis posterior transfer (foot drop)", snomedCtCode: "28778006", snomedCtDisplay: "Transfer of tendon (procedure)", specialties: ["peripheral_nerve"], subcategory: "Tendon Transfer for Nerve Palsy", tags: ["elective"], sortOrder: 5 }, // VERIFY
-  { id: "pn_tt_other", displayName: "Tendon transfer \u2014 other (for nerve palsy)", snomedCtCode: "28778006", snomedCtDisplay: "Transfer of tendon (procedure)", specialties: ["hand_wrist", "peripheral_nerve"], subcategory: "Tendon Transfer for Nerve Palsy", tags: ["elective"], sortOrder: 6 }, // VERIFY
+  { id: "pn_tt_radial_nerve_set", displayName: "Tendon transfer set \u2014 radial nerve palsy", snomedCtCode: "264983002", snomedCtDisplay: "Transfer of tendon (procedure)", specialties: ["hand_wrist", "peripheral_nerve"], subcategory: "Tendon Transfer for Nerve Palsy", tags: ["elective"], sortOrder: 1 },
+  { id: "pn_tt_opponensplasty", displayName: "Opponensplasty (Camitz / other)", snomedCtCode: "264983002", snomedCtDisplay: "Transfer of tendon (procedure)", specialties: ["hand_wrist", "peripheral_nerve"], subcategory: "Tendon Transfer for Nerve Palsy", tags: ["elective"], sortOrder: 2 },
+  { id: "pn_tt_claw_correction", displayName: "Intrinsic replacement for claw hand", snomedCtCode: "264983002", snomedCtDisplay: "Transfer of tendon (procedure)", specialties: ["hand_wrist", "peripheral_nerve"], subcategory: "Tendon Transfer for Nerve Palsy", tags: ["elective"], sortOrder: 3 },
+  { id: "pn_tt_adductorplasty", displayName: "Adductorplasty for key pinch", snomedCtCode: "264983002", snomedCtDisplay: "Transfer of tendon (procedure)", specialties: ["hand_wrist", "peripheral_nerve"], subcategory: "Tendon Transfer for Nerve Palsy", tags: ["elective"], sortOrder: 4 },
+  { id: "pn_tt_tib_post_foot_drop", displayName: "Tibialis posterior transfer (foot drop)", snomedCtCode: "264983002", snomedCtDisplay: "Transfer of tendon (procedure)", specialties: ["peripheral_nerve"], subcategory: "Tendon Transfer for Nerve Palsy", tags: ["elective"], sortOrder: 5 },
+  { id: "pn_tt_other", displayName: "Tendon transfer \u2014 other (for nerve palsy)", snomedCtCode: "264983002", snomedCtDisplay: "Transfer of tendon (procedure)", specialties: ["hand_wrist", "peripheral_nerve"], subcategory: "Tendon Transfer for Nerve Palsy", tags: ["elective"], sortOrder: 6 },
 ];
 
 const PN_TUMOUR: ProcedurePicklistEntry[] = [
-  { id: "pn_tumour_enucleation", displayName: "Nerve tumour enucleation (schwannoma)", snomedCtCode: "392021009", snomedCtDisplay: "Excision of peripheral nerve tumor (procedure)", specialties: ["peripheral_nerve"], subcategory: "Nerve Tumour", tags: [], sortOrder: 1 }, // VERIFY
-  { id: "pn_tumour_excision", displayName: "Nerve tumour excision with graft", snomedCtCode: "392021009", snomedCtDisplay: "Excision of peripheral nerve tumor (procedure)", specialties: ["peripheral_nerve"], subcategory: "Nerve Tumour", tags: [], sortOrder: 2 }, // VERIFY
-  { id: "pn_tumour_radical_excision", displayName: "Nerve tumour radical excision (MPNST)", snomedCtCode: "392021009", snomedCtDisplay: "Excision of peripheral nerve tumor (procedure)", specialties: ["peripheral_nerve"], subcategory: "Nerve Tumour", tags: ["oncological"], sortOrder: 3 }, // VERIFY
+  { id: "pn_tumour_enucleation", displayName: "Nerve tumour enucleation (schwannoma)", snomedCtCode: "59866006", snomedCtDisplay: "Excision of lesion of peripheral nerve (procedure)", specialties: ["peripheral_nerve"], subcategory: "Nerve Tumour", tags: [], sortOrder: 1 },
+  { id: "pn_tumour_excision", displayName: "Nerve tumour excision with graft", snomedCtCode: "59866006", snomedCtDisplay: "Excision of lesion of peripheral nerve (procedure)", specialties: ["peripheral_nerve"], subcategory: "Nerve Tumour", tags: [], sortOrder: 2 },
+  { id: "pn_tumour_radical_excision", displayName: "Nerve tumour radical excision (MPNST)", snomedCtCode: "59866006", snomedCtDisplay: "Excision of lesion of peripheral nerve (procedure)", specialties: ["peripheral_nerve"], subcategory: "Nerve Tumour", tags: ["oncological"], sortOrder: 3 },
 ];
 
 // ═══════════════════════════════════════════════════════════════════════════

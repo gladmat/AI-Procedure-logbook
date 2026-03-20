@@ -317,8 +317,8 @@ const PN_DX_UPPER_EXTREMITY: DiagnosisPicklistEntry[] = [
     id: "pn_dx_spinal_accessory_injury",
     displayName: "Spinal accessory nerve injury",
     shortName: "SAN injury",
-    snomedCtCode: "14755002", // Existing verified code
-    snomedCtDisplay: "Injury of spinal accessory nerve (disorder)",
+    snomedCtCode: "90630009",
+    snomedCtDisplay: "Injury of accessory nerve (disorder)",
     specialty: "peripheral_nerve",
     subcategory: "Upper Extremity Nerve Injury",
     clinicalGroup: "trauma",
@@ -358,7 +358,7 @@ const PN_DX_BRACHIAL_PLEXUS: DiagnosisPicklistEntry[] = [
     id: "pn_dx_bp_traction_upper",
     displayName: "Brachial plexus injury — upper (C5\u2013C6, Erb)",
     shortName: "Erb's palsy",
-    snomedCtCode: "50560007", // Existing verified code
+    snomedCtCode: "78141002",
     snomedCtDisplay: "Erb-Duchenne paralysis (disorder)",
     specialty: "peripheral_nerve",
     subcategory: "Brachial Plexus",
@@ -1053,9 +1053,8 @@ const PN_DX_TUMOUR: DiagnosisPicklistEntry[] = [
     id: "pn_dx_schwannoma",
     displayName: "Schwannoma (neurilemmoma)",
     shortName: "Schwannoma",
-    snomedCtCode: "302858007", // Existing verified code
-    snomedCtDisplay:
-      "Malignant peripheral nerve sheath tumor (disorder)",
+    snomedCtCode: "189948006",
+    snomedCtDisplay: "Schwannoma (disorder)",
     specialty: "peripheral_nerve",
     subcategory: "Nerve Tumours",
     clinicalGroup: "elective",

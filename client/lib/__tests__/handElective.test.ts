@@ -192,12 +192,12 @@ describe("Staging SNOMED codes", () => {
     expect(dx!.snomedCtCode).toBe("37895003");
   });
 
-  it("scaphoid non-union has SNOMED code 263225007 (Herbert staging)", () => {
+  it("scaphoid non-union has SNOMED code 302941001 (Herbert staging)", () => {
     const dx = HAND_SURGERY_DIAGNOSES.find(
       (d) => d.id === "hand_dx_scaphoid_nonunion_elective",
     );
     expect(dx).toBeDefined();
-    expect(dx!.snomedCtCode).toBe("263225007");
+    expect(dx!.snomedCtCode).toBe("302941001");
   });
 
   it("Kienböck's has SNOMED code 787484007 (Lichtman staging)", () => {
