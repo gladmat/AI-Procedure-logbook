@@ -6,7 +6,6 @@ import {
   resolveSnomedCode,
 } from "@/lib/skinCancerDiagnoses";
 import { RARE_TYPE_METADATA, getClinicalPathway } from "@/lib/skinCancerConfig";
-import { GEN_DX_SKIN_CANCER } from "@/lib/diagnosisPicklists/generalDiagnoses";
 import { SKIN_CANCER_DIAGNOSES as SKIN_CANCER_PICKLIST } from "@/lib/diagnosisPicklists/skinCancerDiagnoses";
 import { PROCEDURE_PICKLIST } from "@/lib/procedurePicklist";
 
@@ -60,12 +59,7 @@ describe("skin cancer SNOMED repair", () => {
     });
   });
 
-  it("syncs mirrored diagnosis picklists to the corrected codes", () => {
-    expect(
-      GEN_DX_SKIN_CANCER.find(
-        (entry) => entry.id === "gen_dx_actinic_keratosis",
-      )?.snomedCtCode,
-    ).toBe("201101007");
+  it("verifies skin cancer picklist SNOMED codes", () => {
     expect(
       SKIN_CANCER_PICKLIST.find((entry) => entry.id === "sc_dx_keratoacanthoma")
         ?.snomedCtCode,

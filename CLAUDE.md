@@ -1003,6 +1003,44 @@ Following established patterns:
 - Follow-up data: stored per-case, linked by patient identifier
 - Staging: server/diagnosisStagingConfig.ts (ISL required, Cheng/ICG optional)
 
+## General Category Restructure — Locked Decisions
+
+### Architecture
+- General has NO specialty-specific assessment component (no GeneralAssessment)
+- General uses standard case entry: diagnosis → staging (if applicable) → procedures
+- Diagnoses are organised into 10 subcategories (section headers in picker)
+- NPUAP staging (pressure injuries) and Hurley staging (HS) already exist — no new staging systems needed
+
+### Anti-Patterns — DO NOT
+- DO NOT create a GeneralAssessment component — it is not needed
+- DO NOT duplicate skin cancer diagnoses — REMOVED from General, they live in Skin Cancer module
+- DO NOT duplicate lymphoedema diagnoses or procedures — they live in Lymphoedema module
+- DO NOT create new types files — use existing DiagnosisPicklistEntry and ProcedureSuggestion
+- DO NOT use `gen_other_pilonidal_excision` — REPLACED by 3 specific pilonidal procedures
+- DO NOT add diabetic foot to General — it stays in Orthoplastic
+- DO NOT add generic lymphoedema to General — it stays in Lymphoedema (29 diagnoses)
+- DO NOT duplicate brand components — import from client/components/brand/
+
+### Cross-Specialty Rules
+- Nec fasc trunk/perineal/cervical → PRIMARY in General
+- Nec fasc extremity → PRIMARY in Orthoplastic (existing `orth_dx_nec_fasc`), General cross-tag on procedures
+- Sarcoma procedures → cross-tagged `["general", "orthoplastic"]`
+- GAS diagnoses → PRIMARY in General; breast GAS procedures (`breast_ga_*`) stay in Breast
+- VRAM flap → cross-tagged `["head_neck", "general"]` for perineal use
+- Abdominal wall / chest wall procedures → PRIMARY in General
+
+### Subcategory Order (in diagnosis picker)
+1. Soft Tissue Infections
+2. Trunk & Torso Reconstruction
+3. Soft Tissue Tumours
+4. Perineal & Genitourinary
+5. Pressure Injury
+6. HS & Pilonidal Disease
+7. Benign Lesions, Scars & Wounds
+8. Soft Tissue Trauma
+9. Gender-Affirming Surgery
+10. Congenital Conditions
+
 ## Design system: Charcoal + Amber
 
 All tokens in `client/constants/theme.ts` (single source of truth, 273 lines).
@@ -1365,13 +1403,13 @@ Conditional screen switching based on `isAuthenticated`, `hasSeenWelcome`, `hasS
 | Cleft/Craniofacial | `cleftCranioDiagnoses.ts` | 38 | Veau Classification | `cleft_cranio` specialty |
 | Breast | `breastDiagnoses.ts` | 37 | — | `breast` specialty |
 | Peripheral Nerve | `peripheralNerveDiagnoses.ts` | 37 | EMG Grade, Severity | `peripheral_nerve` specialty or diagnosis metadata |
-| General | `generalDiagnoses.ts` | 32 | NPUAP Stage, Wagner Grade, Hurley Stage | Default (no special module) |
+| General | `generalDiagnoses.ts` | 57 | NPUAP Stage, Hurley Stage | Default (no special module) |
 | Lymphoedema | `lymphoedemaDiagnoses.ts` | 29 | ISL Stage, Cheng Grade, MD Anderson ICG | `lymphoedema` specialty or diagnosis metadata |
 | Orthoplastic | `orthoplasticDiagnoses.ts` | 14 | Gustilo-Anderson | Free flap / pedicled flap module |
 | Skin Cancer | `skinCancerDiagnoses.ts` | 11 | Breslow Thickness, Ulceration, TNM (AJCC 8th Ed) | Diagnosis-driven (`hasEnhancedHistology` or SNOMED match) |
 | Body Contouring | `bodyContouringDiagnoses.ts` | (deprecated — re-exports from aesthetics) | — | — |
 
-**Total: 469 structured diagnoses** across 11 active picklist files (body contouring is deprecated/merged into aesthetics).
+**Total: 494 structured diagnoses** across 11 active picklist files (body contouring is deprecated/merged into aesthetics).
 
 **29 staging systems** defined in `server/diagnosisStagingConfig.ts`: Gustilo-Anderson, Breslow Thickness, Ulceration, Severity, EMG Grade, TNM T/N/M Stage, NPUAP Stage, Depth, TBSA %, Baker Classification, Hurley Stage, ISL Stage, Cheng Lymphoedema Grade, MD Anderson ICG Stage, Wagner Grade, Le Fort Classification, House-Brackmann Grade, Kanavel Signs, Eaton-Littler Stage, Herbert Classification, Lichtman Stage, Veau Classification, Pittsburgh Fistula Classification, Whitaker Classification, TNM T/N/M Stage (AJCC 8th Ed), Overall Stage (AJCC 8th Ed).
 

@@ -1,9 +1,9 @@
 /**
  * Skin Cancer Diagnosis Picklist
  *
- * Re-maps skin cancer entries from generalDiagnoses.ts (GEN_DX_SKIN_CANCER)
- * with specialty: "skin_cancer". Adds Merkel cell, DFSP, AFX, keratoacanthoma,
- * and Bowen's disease entries that are specific to the skin cancer specialty.
+ * Standalone skin cancer diagnosis picklist with specialty: "skin_cancer".
+ * Includes BCC, SCC, melanoma, Merkel cell, DFSP, AFX, keratoacanthoma,
+ * Bowen's disease, and rare cutaneous malignancies.
  *
  * H&N site-specific skin cancers remain in headNeckDiagnoses.ts but are
  * cross-tagged with skin_cancer via the SPECIALTY_MAP in index.ts.

@@ -507,6 +507,9 @@ const ORTH_DX_CHRONIC: DiagnosisPicklistEntry[] = [
       "nec fasc",
       "NF",
       "soft tissue infection",
+      "trunk",
+      "cervical",
+      "Fournier's",
     ],
     suggestedProcedures: [
       {

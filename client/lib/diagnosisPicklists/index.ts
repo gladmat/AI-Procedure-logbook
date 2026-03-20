@@ -28,9 +28,9 @@ import { BURNS_DIAGNOSES } from "./burnsDiagnoses";
 import { BODY_CONTOURING_DIAGNOSES } from "./bodyContouringDiagnoses";
 import { BREAST_DIAGNOSES } from "./breastDiagnoses";
 import { AESTHETICS_DIAGNOSES } from "./aestheticsDiagnoses";
-import { GENERAL_DIAGNOSES, GEN_DX_SKIN_CANCER } from "./generalDiagnoses";
+import { GENERAL_DIAGNOSES } from "./generalDiagnoses";
 
-import { HEAD_NECK_DIAGNOSES, HN_DX_SKIN_CANCER } from "./headNeckDiagnoses";
+import { HEAD_NECK_DIAGNOSES } from "./headNeckDiagnoses";
 import { ORTHOPLASTIC_DIAGNOSES } from "./orthoplasticDiagnoses";
 import { CLEFT_CRANIO_DIAGNOSES } from "./cleftCranioDiagnoses";
 import { SKIN_CANCER_DIAGNOSES } from "./skinCancerDiagnoses";
@@ -44,7 +44,7 @@ export { BURNS_DIAGNOSES } from "./burnsDiagnoses";
 export { BODY_CONTOURING_DIAGNOSES } from "./bodyContouringDiagnoses";
 export { BREAST_DIAGNOSES } from "./breastDiagnoses";
 export { AESTHETICS_DIAGNOSES } from "./aestheticsDiagnoses";
-export { GENERAL_DIAGNOSES, GEN_DX_SKIN_CANCER } from "./generalDiagnoses";
+export { GENERAL_DIAGNOSES } from "./generalDiagnoses";
 export { HEAD_NECK_DIAGNOSES, HN_DX_SKIN_CANCER } from "./headNeckDiagnoses";
 export { ORTHOPLASTIC_DIAGNOSES } from "./orthoplasticDiagnoses";
 export { CLEFT_CRANIO_DIAGNOSES } from "./cleftCranioDiagnoses";
@@ -90,8 +90,8 @@ const SPECIALTY_MAP: Partial<Record<Specialty, DiagnosisPicklistEntry[]>> = {
   body_contouring: AESTHETICS_DIAGNOSES,
   breast: BREAST_DIAGNOSES,
   aesthetics: AESTHETICS_DIAGNOSES,
-  general: [...GENERAL_DIAGNOSES, ...HN_DX_SKIN_CANCER],
-  head_neck: [...HEAD_NECK_DIAGNOSES, ...GEN_DX_SKIN_CANCER],
+  general: GENERAL_DIAGNOSES,
+  head_neck: HEAD_NECK_DIAGNOSES,
   orthoplastic: ORTHOPLASTIC_DIAGNOSES,
   cleft_cranio: CLEFT_CRANIO_DIAGNOSES,
   skin_cancer: SKIN_CANCER_DIAGNOSES,
