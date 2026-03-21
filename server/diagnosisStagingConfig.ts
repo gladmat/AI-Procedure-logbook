@@ -334,7 +334,7 @@ export const diagnosisStagingConfigs: DiagnosisStagingConfig[] = [
   // Capsular Contracture (Baker Classification)
   {
     snomedCtCodes: [
-      "236507001", // Capsular contracture of breast implant
+      "237474000", // Capsular contracture of breast
     ],
     keywords: ["capsular contracture", "baker"],
     stagingSystems: [
