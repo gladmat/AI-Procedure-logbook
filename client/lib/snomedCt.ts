@@ -51,8 +51,8 @@ export function getCodingSystemForProfile(
 
 export const SNOMED_PROCEDURES: SnomedProcedure[] = [
   {
-    snomedCtCode: "234298008",
-    snomedCtDisplay: "Free anterolateral thigh flap transfer",
+    snomedCtCode: "771225007",
+    snomedCtDisplay: "Reconstruction using free flap (procedure)",
     specialty: "free_flap",
     commonName: "ALT Flap",
     countryMappings: {
@@ -166,8 +166,8 @@ export const SNOMED_PROCEDURES: SnomedProcedure[] = [
     },
   },
   {
-    snomedCtCode: "234295007",
-    snomedCtDisplay: "Free gracilis muscle flap transfer",
+    snomedCtCode: "771225007",
+    snomedCtDisplay: "Reconstruction using free flap (procedure)",
     specialty: "free_flap",
     commonName: "Gracilis Flap",
     countryMappings: {
@@ -189,9 +189,8 @@ export const SNOMED_PROCEDURES: SnomedProcedure[] = [
     },
   },
   {
-    snomedCtCode: "234296008",
-    snomedCtDisplay:
-      "Free superficial circumflex iliac perforator flap transfer",
+    snomedCtCode: "771225007",
+    snomedCtDisplay: "Reconstruction using free flap (procedure)",
     specialty: "free_flap",
     commonName: "SCIP Flap",
     countryMappings: {

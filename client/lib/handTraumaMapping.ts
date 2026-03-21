@@ -246,7 +246,7 @@ const DIAGNOSIS_LOOKUP: Record<string, DiagnosisRef> = {
   hand_dx_fight_bite: {
     diagnosisPicklistId: "hand_dx_fight_bite",
     displayName: "Fight bite (human bite to MCP)",
-    snomedCtCode: "283680004",
+    snomedCtCode: "283705004",
   },
   hand_dx_compartment_syndrome_hand: {
     diagnosisPicklistId: "hand_dx_compartment_syndrome_hand",
@@ -341,7 +341,7 @@ const DIAGNOSIS_LOOKUP: Record<string, DiagnosisRef> = {
   hand_dx_hand_degloving: {
     diagnosisPicklistId: "hand_dx_hand_degloving",
     displayName: "Hand / finger degloving injury",
-    snomedCtCode: "283681000",
+    snomedCtCode: "262577006",
   },
 };
 
