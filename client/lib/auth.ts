@@ -144,8 +144,14 @@ export async function appleSignIn(
   });
 
   if (!res.ok) {
-    const error = await res.json();
-    throw new Error(error.error || "Apple Sign In failed");
+    let message = "Apple Sign In failed";
+    try {
+      const error = await res.json();
+      message = error.error || message;
+    } catch {
+      // Server returned non-JSON (e.g. HTML 404) — use default message
+    }
+    throw new Error(message);
   }
 
   const data: AuthResponse = await res.json();
