@@ -8,8 +8,9 @@ import {
   ActivityIndicator,
   Alert,
 } from "react-native";
-import { useRoute } from "@react-navigation/native";
+import { useRoute, useNavigation, useFocusEffect } from "@react-navigation/native";
 import type { RouteProp } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import * as Haptics from "expo-haptics";
 import { Feather } from "@/components/FeatherIcon";
 import { ThemedText } from "@/components/ThemedText";
@@ -45,8 +46,14 @@ import {
   decryptPayloadWithCaseKey,
   type CaseKeyEnvelope,
 } from "@/lib/e2ee";
+import {
+  getAssessmentStatus,
+  type AssessmentStatusResponse,
+} from "@/lib/assessmentApi";
+import { ENTRUSTMENT_LABELS, type EntrustmentLevel } from "@/types/sharing";
 
 type RouteProps = RouteProp<RootStackParamList, "SharedCaseDetail">;
+type NavProps = NativeStackNavigationProp<RootStackParamList, "SharedCaseDetail">;
 
 const ROLE_LABELS: Record<string, string> = {
   surgeon: "Surgeon",
@@ -107,6 +114,7 @@ function DetailRow({ label, value }: { label: string; value?: string | null }) {
 
 export default function SharedCaseDetailScreen() {
   const { theme } = useTheme();
+  const navigation = useNavigation<NavProps>();
   const route = useRoute<RouteProps>();
   const { sharedCaseId } = route.params;
 
@@ -120,6 +128,8 @@ export default function SharedCaseDetailScreen() {
   const [verificationNote, setVerificationNote] = useState<string | null>(null);
   const [recipientRole, setRecipientRole] = useState<string>("");
   const [ownerDisplayName, setOwnerDisplayName] = useState<string>("");
+  const [assessmentStatus, setAssessmentStatus] =
+    useState<AssessmentStatusResponse | null>(null);
 
   // Dispute modal state
   const [showDisputeInput, setShowDisputeInput] = useState(false);
@@ -215,6 +225,25 @@ export default function SharedCaseDetailScreen() {
       }
     })();
   }, [sharedCaseId]);
+
+  // Fetch assessment status when verified (on mount + each focus)
+  useFocusEffect(
+    useCallback(() => {
+      if (verificationStatus !== "verified") return;
+      let cancelled = false;
+      (async () => {
+        try {
+          const status = await getAssessmentStatus(sharedCaseId);
+          if (!cancelled) setAssessmentStatus(status);
+        } catch {
+          // Non-critical — assessment card will show default state
+        }
+      })();
+      return () => {
+        cancelled = true;
+      };
+    }, [sharedCaseId, verificationStatus]),
+  );
 
   const handleVerify = async () => {
     setSubmitting(true);
@@ -654,35 +683,125 @@ export default function SharedCaseDetailScreen() {
           )}
         </View>
 
-        {/* Assessment placeholder (Phase 4) */}
-        {verificationStatus === "verified" ? (
-          <View
-            style={[
-              styles.assessmentPlaceholder,
-              {
-                backgroundColor: theme.backgroundSecondary,
-                borderColor: theme.border,
-              },
-            ]}
-          >
-            <Feather name="bar-chart-2" size={20} color={theme.textTertiary} />
-            <View style={styles.assessmentPlaceholderText}>
-              <ThemedText
-                style={[styles.assessmentTitle, { color: theme.textTertiary }]}
-              >
-                Assess Operative Performance
-              </ThemedText>
-              <ThemedText
+        {/* Assessment card */}
+        {verificationStatus === "verified" ? (() => {
+          const my = assessmentStatus?.myAssessment;
+          const other = assessmentStatus?.otherAssessment;
+          const isRevealed = !!(my?.revealedAt && (other?.revealedAt || !other));
+
+          // Revealed — show summary with "View Results" button
+          if (isRevealed && my) {
+            return (
+              <Pressable
+                onPress={() =>
+                  navigation.navigate("AssessmentReveal", { sharedCaseId })
+                }
                 style={[
-                  styles.assessmentSubtitle,
-                  { color: theme.textTertiary },
+                  styles.assessmentCard,
+                  {
+                    backgroundColor: theme.backgroundElevated,
+                    borderColor: theme.accent,
+                  },
+                  Shadows.card,
                 ]}
               >
-                Rate entrustment and teaching quality — coming in next update
-              </ThemedText>
-            </View>
-          </View>
-        ) : null}
+                <Feather name="check-circle" size={20} color={theme.success} />
+                <View style={styles.assessmentCardText}>
+                  <ThemedText
+                    style={[styles.assessmentTitle, { color: theme.text }]}
+                  >
+                    Assessment Complete
+                  </ThemedText>
+                  <ThemedText
+                    style={[
+                      styles.assessmentSubtitle,
+                      { color: theme.textSecondary },
+                    ]}
+                  >
+                    Tap to view results
+                  </ThemedText>
+                </View>
+                <Feather
+                  name="chevron-right"
+                  size={18}
+                  color={theme.accent}
+                />
+              </Pressable>
+            );
+          }
+
+          // Submitted, waiting for other party
+          if (my && !my.revealedAt) {
+            return (
+              <View
+                style={[
+                  styles.assessmentCard,
+                  {
+                    backgroundColor: theme.backgroundElevated,
+                    borderColor: theme.border,
+                  },
+                  Shadows.card,
+                ]}
+              >
+                <Feather name="clock" size={20} color={theme.accent} />
+                <View style={styles.assessmentCardText}>
+                  <ThemedText
+                    style={[styles.assessmentTitle, { color: theme.text }]}
+                  >
+                    Assessment Submitted
+                  </ThemedText>
+                  <ThemedText
+                    style={[
+                      styles.assessmentSubtitle,
+                      { color: theme.textSecondary },
+                    ]}
+                  >
+                    Waiting for the other party to submit
+                  </ThemedText>
+                </View>
+              </View>
+            );
+          }
+
+          // Not started — show "Begin Assessment" CTA
+          return (
+            <Pressable
+              onPress={() =>
+                navigation.navigate("Assessment", { sharedCaseId })
+              }
+              style={[
+                styles.assessmentCard,
+                {
+                  backgroundColor: theme.backgroundElevated,
+                  borderColor: theme.accent,
+                },
+                Shadows.card,
+              ]}
+            >
+              <Feather name="bar-chart-2" size={20} color={theme.accent} />
+              <View style={styles.assessmentCardText}>
+                <ThemedText
+                  style={[styles.assessmentTitle, { color: theme.text }]}
+                >
+                  Assess Operative Performance
+                </ThemedText>
+                <ThemedText
+                  style={[
+                    styles.assessmentSubtitle,
+                    { color: theme.textSecondary },
+                  ]}
+                >
+                  Rate entrustment and teaching quality
+                </ThemedText>
+              </View>
+              <Feather
+                name="chevron-right"
+                size={18}
+                color={theme.accent}
+              />
+            </Pressable>
+          );
+        })() : null}
       </ScrollView>
     </View>
   );
@@ -902,17 +1021,16 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
 
-  // Assessment placeholder
-  assessmentPlaceholder: {
+  // Assessment card
+  assessmentCard: {
     flexDirection: "row",
     alignItems: "center",
     padding: Spacing.md,
     borderRadius: BorderRadius.md,
     borderWidth: 1,
     gap: Spacing.sm,
-    opacity: 0.6,
   },
-  assessmentPlaceholderText: {
+  assessmentCardText: {
     flex: 1,
   },
   assessmentTitle: {

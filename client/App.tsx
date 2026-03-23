@@ -55,8 +55,13 @@ function handleNotificationNavigation(data: Record<string, unknown>) {
     case "verification":
       navigationRef.navigate("SharedInbox");
       break;
+    case "assessments_revealed":
+      navigationRef.navigate("AssessmentReveal", { sharedCaseId });
+      break;
+    case "assessment_pending":
+      navigationRef.navigate("SharedCaseDetail", { sharedCaseId });
+      break;
     default:
-      // Future types (assessment_pending, assessments_revealed) — ignore for now
       break;
   }
 }

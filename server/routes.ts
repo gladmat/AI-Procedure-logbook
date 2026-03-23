@@ -2151,7 +2151,26 @@ export async function registerRoutes(app: Express): Promise<void> {
     async (req: AuthenticatedRequest, res: Response): Promise<void> => {
       try {
         const sharedCaseId = req.params.sharedCaseId!;
-        const assessments = await storage.getCaseAssessments(sharedCaseId);
+
+        // Look up shared case for owner/recipient IDs
+        const sharedCase = await storage.getSharedCaseById(sharedCaseId);
+        if (!sharedCase) {
+          res.status(404).json({ error: "Shared case not found" });
+          return;
+        }
+
+        let assessments = await storage.getCaseAssessments(sharedCaseId);
+
+        // 72-hour auto-reveal: if one assessment submitted > 72h ago with no second
+        if (assessments.length === 1 && !assessments[0]!.revealedAt) {
+          const submittedAt = new Date(assessments[0]!.submittedAt!).getTime();
+          const hoursSince = (Date.now() - submittedAt) / (1000 * 60 * 60);
+          if (hoursSince >= 72) {
+            await storage.revealAssessments(sharedCaseId);
+            await storage.releaseAssessmentKeyEnvelopes(sharedCaseId);
+            assessments = await storage.getCaseAssessments(sharedCaseId);
+          }
+        }
 
         const myAssessment = assessments.find(
           (a) => a.assessorUserId === req.userId!,
@@ -2173,6 +2192,20 @@ export async function registerRoutes(app: Express): Promise<void> {
           }));
         }
 
+        // Other party's public keys (only needed before user submits their own)
+        const otherUserId =
+          req.userId === sharedCase.ownerUserId
+            ? sharedCase.recipientUserId
+            : sharedCase.ownerUserId;
+        let otherPartyPublicKeys: { deviceId: string; publicKey: string }[] = [];
+        if (!myAssessment) {
+          const deviceKeys = await storage.getUserDeviceKeys(otherUserId);
+          otherPartyPublicKeys = deviceKeys.map((dk) => ({
+            deviceId: dk.deviceId,
+            publicKey: dk.publicKey,
+          }));
+        }
+
         res.json({
           myAssessment: myAssessment
             ? {
@@ -2188,10 +2221,16 @@ export async function registerRoutes(app: Express): Promise<void> {
                 assessorRole: otherAssessment.assessorRole,
                 submittedAt: otherAssessment.submittedAt,
                 revealedAt: otherAssessment.revealedAt,
+                encryptedAssessment: otherAssessment.revealedAt
+                  ? otherAssessment.encryptedAssessment
+                  : undefined,
                 keyEnvelopes:
                   otherAssessment.revealedAt ? otherEnvelopes : [],
               }
             : null,
+          ownerUserId: sharedCase.ownerUserId,
+          recipientUserId: sharedCase.recipientUserId,
+          otherPartyPublicKeys,
         });
       } catch (error) {
         console.error(

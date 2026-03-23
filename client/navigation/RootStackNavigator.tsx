@@ -39,6 +39,8 @@ import GuidedCaptureScreen from "@/screens/GuidedCaptureScreen";
 import SurgicalPreferencesScreen from "@/screens/SurgicalPreferencesScreen";
 import SharedInboxScreen from "@/screens/SharedInboxScreen";
 import SharedCaseDetailScreen from "@/screens/SharedCaseDetailScreen";
+import AssessmentScreen from "@/screens/AssessmentScreen";
+import AssessmentRevealScreen from "@/screens/AssessmentRevealScreen";
 import { WelcomeScreen } from "@/screens/onboarding/WelcomeScreen";
 import { FeaturePager } from "@/screens/onboarding/FeaturePager";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
@@ -278,6 +280,8 @@ export type RootStackParamList = {
   };
   SharedInbox: undefined;
   SharedCaseDetail: { sharedCaseId: string };
+  Assessment: { sharedCaseId: string };
+  AssessmentReveal: { sharedCaseId: string };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -907,6 +911,20 @@ export default function RootStackNavigator() {
               component={SharedCaseDetailScreen}
               options={{
                 headerTitle: "Shared Case",
+              }}
+            />
+            <Stack.Screen
+              name="Assessment"
+              component={AssessmentScreen}
+              options={{
+                headerTitle: "Assessment",
+              }}
+            />
+            <Stack.Screen
+              name="AssessmentReveal"
+              component={AssessmentRevealScreen}
+              options={{
+                headerTitle: "Results",
               }}
             />
           </>
