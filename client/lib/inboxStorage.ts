@@ -11,14 +11,36 @@ import {
 import type { InboxItem, InboxState } from "@/types/inbox";
 import { hashPatientIdentifier } from "@/lib/patientIdentifierHash";
 import { syncNativeInboxCount } from "@/lib/nativeExtensionBridge";
+import {
+  getActiveUserIdOrNull,
+  userScopedSecureKey,
+  onActiveUserChange,
+} from "./activeUser";
 
 const INBOX_STORAGE_KEY = "opus_inbox_state";
 const INBOX_BACKUP_KEY = "opus_inbox_state_backup";
-const INBOX_MMKV_ID = "opus-inbox";
-const INBOX_MMKV_KEY_ALIAS = "opus_inbox_mmkv_key";
+export const INBOX_MMKV_BASE_ID = "opus-inbox";
+export const INBOX_MMKV_KEY_ALIAS = "opus_inbox_mmkv_key";
 const INBOX_STATE_VERSION = 2;
 const DEFAULT_AUTO_DELETE_DAYS = 90;
 const DEFAULT_STALE_RESERVATION_HOURS = 24;
+
+function inboxMmkvId(): string {
+  const userId = getActiveUserIdOrNull();
+  if (!userId) return INBOX_MMKV_BASE_ID;
+  return `${INBOX_MMKV_BASE_ID}-${userId.replace(/-/g, "")}`;
+}
+
+function inboxMmkvKeyAlias(): string {
+  return userScopedSecureKey(INBOX_MMKV_KEY_ALIAS);
+}
+
+// Tear down MMKV instance on user switch so next init creates a fresh one
+onActiveUserChange(() => {
+  _mmkv = null;
+  _initialized = Platform.OS === "web";
+  _initializationPromise = null;
+});
 
 type LegacyInboxItem = {
   id: string;
@@ -98,13 +120,14 @@ async function getInboxEncryptionKey(): Promise<string | undefined> {
     return undefined;
   }
 
-  const existing = await SecureStore.getItemAsync(INBOX_MMKV_KEY_ALIAS);
+  const alias = inboxMmkvKeyAlias();
+  const existing = await SecureStore.getItemAsync(alias);
   if (existing) {
     return existing;
   }
 
   const generated = bytesToHex(await Crypto.getRandomBytesAsync(16));
-  await SecureStore.setItemAsync(INBOX_MMKV_KEY_ALIAS, generated);
+  await SecureStore.setItemAsync(alias, generated);
   return generated;
 }
 
@@ -246,16 +269,22 @@ export async function initializeInboxStorage(): Promise<void> {
     return;
   }
 
+  // Guard: require active user before initializing user-scoped MMKV
+  if (!getActiveUserIdOrNull()) {
+    return;
+  }
+
   if (!_initializationPromise) {
     _initializationPromise = (async () => {
       const encryptionKey = await getInboxEncryptionKey();
+      const mmkvId = inboxMmkvId();
 
       if (encryptionKey && Platform.OS !== "web") {
         // Try opening with encryption key (normal path after first run).
         // If the file was previously encrypted with this key, this succeeds.
         try {
           const encrypted = createMMKV({
-            id: INBOX_MMKV_ID,
+            id: mmkvId,
             encryptionKey,
           });
           // Verify the instance can read — getString returns undefined on
@@ -266,7 +295,7 @@ export async function initializeInboxStorage(): Promise<void> {
         } catch {
           // Fallback: store was previously unencrypted (first-time
           // migration) — open without key, then recrypt in-place.
-          const unencrypted = createMMKV({ id: INBOX_MMKV_ID });
+          const unencrypted = createMMKV({ id: mmkvId });
           const storage = unencrypted as MMKV & {
             recrypt?: (key?: string) => void;
           };
@@ -277,7 +306,7 @@ export async function initializeInboxStorage(): Promise<void> {
         }
       } else {
         // Web or no encryption key available — plain MMKV
-        _mmkv = createMMKV({ id: INBOX_MMKV_ID });
+        _mmkv = createMMKV({ id: mmkvId });
       }
 
       await migrateStateIfNeeded();
@@ -595,7 +624,7 @@ export function _resetInboxForTests(): void {
     _mmkv.remove(INBOX_STORAGE_KEY);
   }
   // Create a fresh unencrypted instance for tests (skips async init flow)
-  _mmkv = createMMKV({ id: INBOX_MMKV_ID });
+  _mmkv = createMMKV({ id: inboxMmkvId() });
   pendingSelectionIds = [];
   _initializationPromise = null;
   _initialized = true;

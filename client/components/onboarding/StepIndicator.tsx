@@ -2,7 +2,7 @@ import React from "react";
 import { View, useWindowDimensions, StyleSheet } from "react-native";
 import { palette } from "@/constants/theme";
 
-const TOTAL_STEPS = 4;
+const TOTAL_STEPS = 5;
 const SIDE_PADDING = 48; // 24pt each side
 const GAP = 6;
 const TOTAL_GAPS = (TOTAL_STEPS - 1) * GAP;
@@ -13,7 +13,7 @@ interface StepIndicatorProps {
 }
 
 /**
- * Reusable 4-segment step indicator for personalisation screens 6–9.
+ * Reusable 5-segment step indicator for onboarding screens.
  * Active segments are amber; inactive are charcoal.
  */
 export function StepIndicator({ currentStep }: StepIndicatorProps) {

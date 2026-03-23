@@ -105,6 +105,6 @@ export const copy = {
     ],
     finalLine:
       "Built by surgeons, for surgeons. Your operative record is your legacy \u2014 we treat it that way.",
-    cta: "Start logging",
+    cta: "Continue",
   },
 };

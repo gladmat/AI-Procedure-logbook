@@ -3,11 +3,19 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { Specialty } from "@/types/case";
 import type { DiagnosisPicklistEntry } from "@/types/diagnosis";
 import { findDiagnosisById } from "@/lib/diagnosisPicklists";
+import { userScopedAsyncKey } from "@/lib/activeUser";
 
-// ─── Storage Keys ───────────────────────────────────────────────────────────
+// ─── Storage Keys (user-scoped at runtime) ──────────────────────────────────
 
-const FAVOURITES_KEY = "@surgical_logbook_favourites";
-const RECENTS_KEY = "@surgical_logbook_recents";
+const FAVOURITES_BASE_KEY = "@surgical_logbook_favourites";
+const RECENTS_BASE_KEY = "@surgical_logbook_recents";
+
+function favouritesKey(): string {
+  return userScopedAsyncKey(FAVOURITES_BASE_KEY);
+}
+function recentsKey(): string {
+  return userScopedAsyncKey(RECENTS_BASE_KEY);
+}
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -35,7 +43,7 @@ const RECENTS_EXPIRY_DAYS = 30;
 
 async function loadFavourites(): Promise<FavouritesData> {
   try {
-    const raw = await AsyncStorage.getItem(FAVOURITES_KEY);
+    const raw = await AsyncStorage.getItem(favouritesKey());
     if (raw) return JSON.parse(raw);
   } catch (e) {
     console.error("Error loading favourites:", e);
@@ -45,7 +53,7 @@ async function loadFavourites(): Promise<FavouritesData> {
 
 async function saveFavourites(data: FavouritesData): Promise<void> {
   try {
-    await AsyncStorage.setItem(FAVOURITES_KEY, JSON.stringify(data));
+    await AsyncStorage.setItem(favouritesKey(), JSON.stringify(data));
   } catch (e) {
     console.error("Error saving favourites:", e);
   }
@@ -53,7 +61,7 @@ async function saveFavourites(data: FavouritesData): Promise<void> {
 
 async function loadRecents(): Promise<RecentsData> {
   try {
-    const raw = await AsyncStorage.getItem(RECENTS_KEY);
+    const raw = await AsyncStorage.getItem(recentsKey());
     if (raw) return JSON.parse(raw);
   } catch (e) {
     console.error("Error loading recents:", e);
@@ -63,7 +71,7 @@ async function loadRecents(): Promise<RecentsData> {
 
 async function saveRecents(data: RecentsData): Promise<void> {
   try {
-    await AsyncStorage.setItem(RECENTS_KEY, JSON.stringify(data));
+    await AsyncStorage.setItem(recentsKey(), JSON.stringify(data));
   } catch (e) {
     console.error("Error saving recents:", e);
   }

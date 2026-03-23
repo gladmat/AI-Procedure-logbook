@@ -3,12 +3,25 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SecureStore from "expo-secure-store";
 import { encryptData, decryptData } from "./encryption";
 import type { SharedCaseInboxEntry, SharedCaseData } from "@/types/sharing";
+import { userScopedAsyncKey, userScopedSecureKey } from "./activeUser";
 
-// ── Storage keys ─────────────────────────────────────────────────────────────
+// ── Storage keys (user-scoped at runtime) ────────────────────────────────────
 
-const INBOX_INDEX_KEY = "@opus_shared_inbox_index";
-const sharedCaseKey = (id: string) => `@opus_shared_case_${id}`;
-const caseKeyName = (id: string) => `opus_case_key_${id}`;
+export const SHARING_BASE_KEYS = {
+  INBOX_INDEX: "@opus_shared_inbox_index",
+  CASE_PREFIX: "@opus_shared_case_",
+  CASE_KEY_PREFIX: "opus_case_key_",
+} as const;
+
+function sharedInboxIndexKey(): string {
+  return userScopedAsyncKey(SHARING_BASE_KEYS.INBOX_INDEX);
+}
+function sharedCaseDataKey(id: string): string {
+  return userScopedAsyncKey(`${SHARING_BASE_KEYS.CASE_PREFIX}${id}`);
+}
+function sharedCaseKeyName(id: string): string {
+  return userScopedSecureKey(`${SHARING_BASE_KEYS.CASE_KEY_PREFIX}${id}`);
+}
 
 // ── SecureStore helpers (matching e2ee.ts pattern) ───────────────────────────
 
@@ -30,7 +43,7 @@ async function setSecret(key: string, value: string): Promise<void> {
 // ── Inbox index (metadata only, no PHI) ──────────────────────────────────────
 
 export async function getSharedInboxIndex(): Promise<SharedCaseInboxEntry[]> {
-  const raw = await AsyncStorage.getItem(INBOX_INDEX_KEY);
+  const raw = await AsyncStorage.getItem(sharedInboxIndexKey());
   if (!raw) return [];
   try {
     return JSON.parse(raw) as SharedCaseInboxEntry[];
@@ -42,7 +55,7 @@ export async function getSharedInboxIndex(): Promise<SharedCaseInboxEntry[]> {
 export async function updateSharedInboxIndex(
   entries: SharedCaseInboxEntry[],
 ): Promise<void> {
-  await AsyncStorage.setItem(INBOX_INDEX_KEY, JSON.stringify(entries));
+  await AsyncStorage.setItem(sharedInboxIndexKey(), JSON.stringify(entries));
 }
 
 // ── Shared case data (encrypted with K_user) ────────────────────────────────
@@ -53,13 +66,13 @@ export async function saveDecryptedSharedCase(
 ): Promise<void> {
   const plaintext = JSON.stringify(data);
   const encrypted = await encryptData(plaintext);
-  await AsyncStorage.setItem(sharedCaseKey(id), encrypted);
+  await AsyncStorage.setItem(sharedCaseDataKey(id), encrypted);
 }
 
 export async function getDecryptedSharedCase(
   id: string,
 ): Promise<SharedCaseData | null> {
-  const encrypted = await AsyncStorage.getItem(sharedCaseKey(id));
+  const encrypted = await AsyncStorage.getItem(sharedCaseDataKey(id));
   if (!encrypted) return null;
   try {
     const plaintext = await decryptData(encrypted);
@@ -75,9 +88,9 @@ export async function saveCaseKey(
   id: string,
   caseKeyHex: string,
 ): Promise<void> {
-  await setSecret(caseKeyName(id), caseKeyHex);
+  await setSecret(sharedCaseKeyName(id), caseKeyHex);
 }
 
 export async function getCaseKey(id: string): Promise<string | null> {
-  return getSecret(caseKeyName(id));
+  return getSecret(sharedCaseKeyName(id));
 }

@@ -1,20 +1,11 @@
-import React, { useState } from "react";
-import {
-  View,
-  Text,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  ActivityIndicator,
-  Alert,
-} from "react-native";
+import React from "react";
+import { View, Text, Pressable, ScrollView, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
 import { StepHeader } from "@/components/onboarding/StepHeader";
 import FeatherIcon from "@/components/FeatherIcon";
 import { palette, Colors } from "@/constants/theme";
 import { copy } from "@/constants/onboardingCopy";
-import { useAuth } from "@/contexts/AuthContext";
 
 const dark = Colors.dark;
 const SIDE_PADDING = 24;
@@ -60,24 +51,11 @@ interface Props {
 
 export function PrivacyScreen({ onComplete, onBack }: Props) {
   const insets = useSafeAreaInsets();
-  const { updateProfile } = useAuth();
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const c = copy.privacy;
 
-  const handleStartLogging = async () => {
-    setIsSubmitting(true);
-    try {
-      await updateProfile({ onboardingComplete: true });
-      onComplete();
-    } catch (error: any) {
-      Alert.alert(
-        "Error",
-        error.message || "Failed to complete setup. Please try again.",
-      );
-    } finally {
-      setIsSubmitting(false);
-    }
+  const handleContinue = () => {
+    onComplete();
   };
 
   return (
@@ -117,16 +95,8 @@ export function PrivacyScreen({ onComplete, onBack }: Props) {
 
       {/* Bottom CTA */}
       <View style={styles.bottomArea}>
-        <Pressable
-          style={[styles.ctaButton, isSubmitting && styles.ctaDisabled]}
-          onPress={handleStartLogging}
-          disabled={isSubmitting}
-        >
-          {isSubmitting ? (
-            <ActivityIndicator color={dark.buttonText} />
-          ) : (
-            <Text style={styles.ctaText}>{c.cta}</Text>
-          )}
+        <Pressable style={styles.ctaButton} onPress={handleContinue}>
+          <Text style={styles.ctaText}>{c.cta}</Text>
         </Pressable>
       </View>
     </View>
@@ -206,9 +176,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     alignSelf: "stretch",
-  },
-  ctaDisabled: {
-    opacity: 0.4,
   },
   ctaText: {
     fontSize: 17,

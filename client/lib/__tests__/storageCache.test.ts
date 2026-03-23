@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { setActiveUserId } from "../activeUser";
 
 import type { Case, DiagnosisGroup, Specialty } from "@/types/case";
 import type { CaseSummary } from "@/types/caseSummary";
@@ -79,10 +80,15 @@ vi.mock("@/lib/mediaStorage", () => ({
   deleteMultipleEncryptedMedia: vi.fn(async () => {}),
 }));
 
-const CASE_INDEX_KEY = "@surgical_logbook_case_index";
-const CASE_PREFIX = "@surgical_logbook_case_";
+const TEST_USER_ID = "test-user-00000000-0000-0000-0000";
+const CASE_INDEX_KEY = `@surgical_logbook_case_index::${TEST_USER_ID}`;
+const CASE_PREFIX = `@surgical_logbook_case_`;
 const CASE_SPECIALTY_REPAIR_KEY = "@surgical_logbook_case_specialty_repair_v1";
-const CASE_SUMMARIES_KEY = "@surgical_logbook_case_summaries_v1";
+const CASE_SUMMARIES_KEY = `@surgical_logbook_case_summaries_v1::${TEST_USER_ID}`;
+
+function scopedCaseKey(caseId: string): string {
+  return `${CASE_PREFIX}${caseId}::${TEST_USER_ID}`;
+}
 
 function makeDiagnosisGroup(
   specialty: Specialty,
@@ -147,6 +153,9 @@ function makeSummary(overrides: Partial<CaseSummary> = {}): CaseSummary {
 
 async function loadStorageModule() {
   vi.resetModules();
+  // Re-set active user in the fresh module context
+  const { setActiveUserId: setUser } = await import("@/lib/activeUser");
+  setUser(TEST_USER_ID);
   return import("@/lib/storage");
 }
 
@@ -154,6 +163,7 @@ describe("storage read caching", () => {
   beforeEach(() => {
     asyncStorageState.clear();
     asyncStorageReads.length = 0;
+    setActiveUserId(TEST_USER_ID);
   });
 
   it("reuses cached decrypted cases across repeated getCases calls", async () => {
@@ -183,11 +193,11 @@ describe("storage read caching", () => {
     );
     asyncStorageState.set(CASE_SPECIALTY_REPAIR_KEY, "1");
     asyncStorageState.set(
-      `${CASE_PREFIX}${firstCase.id}`,
+      scopedCaseKey(firstCase.id),
       JSON.stringify(firstCase),
     );
     asyncStorageState.set(
-      `${CASE_PREFIX}${secondCase.id}`,
+      scopedCaseKey(secondCase.id),
       JSON.stringify(secondCase),
     );
 
@@ -198,8 +208,8 @@ describe("storage read caching", () => {
     expect(
       asyncStorageReads.filter(
         (key) =>
-          key === `${CASE_PREFIX}${firstCase.id}` ||
-          key === `${CASE_PREFIX}${secondCase.id}`,
+          key === scopedCaseKey(firstCase.id) ||
+          key === scopedCaseKey(secondCase.id),
       ),
     ).toHaveLength(2);
 
@@ -234,8 +244,8 @@ describe("storage read caching", () => {
     const count = await getCaseCount();
 
     expect(count).toBe(2);
-    expect(asyncStorageReads).not.toContain(`${CASE_PREFIX}case-1`);
-    expect(asyncStorageReads).not.toContain(`${CASE_PREFIX}case-2`);
+    expect(asyncStorageReads).not.toContain(scopedCaseKey("case-1"));
+    expect(asyncStorageReads).not.toContain(scopedCaseKey("case-2"));
   });
 
   it("returns cached case summaries without reading case blobs", async () => {
@@ -264,7 +274,7 @@ describe("storage read caching", () => {
 
     expect(summaries).toHaveLength(1);
     expect(summaries[0]?.id).toBe("case-1");
-    expect(asyncStorageReads).not.toContain(`${CASE_PREFIX}case-1`);
+    expect(asyncStorageReads).not.toContain(scopedCaseKey("case-1"));
   });
 
   it("hydrates only requested case ids", async () => {
@@ -282,15 +292,15 @@ describe("storage read caching", () => {
 
     asyncStorageState.set(CASE_SPECIALTY_REPAIR_KEY, "1");
     asyncStorageState.set(
-      `${CASE_PREFIX}${firstCase.id}`,
+      scopedCaseKey(firstCase.id),
       JSON.stringify(firstCase),
     );
     asyncStorageState.set(
-      `${CASE_PREFIX}${secondCase.id}`,
+      scopedCaseKey(secondCase.id),
       JSON.stringify(secondCase),
     );
     asyncStorageState.set(
-      `${CASE_PREFIX}${thirdCase.id}`,
+      scopedCaseKey(thirdCase.id),
       JSON.stringify(thirdCase),
     );
 
@@ -301,8 +311,8 @@ describe("storage read caching", () => {
       firstCase.id,
       thirdCase.id,
     ]);
-    expect(asyncStorageReads).toContain(`${CASE_PREFIX}${firstCase.id}`);
-    expect(asyncStorageReads).toContain(`${CASE_PREFIX}${thirdCase.id}`);
-    expect(asyncStorageReads).not.toContain(`${CASE_PREFIX}${secondCase.id}`);
+    expect(asyncStorageReads).toContain(scopedCaseKey(firstCase.id));
+    expect(asyncStorageReads).toContain(scopedCaseKey(thirdCase.id));
+    expect(asyncStorageReads).not.toContain(scopedCaseKey(secondCase.id));
   });
 });

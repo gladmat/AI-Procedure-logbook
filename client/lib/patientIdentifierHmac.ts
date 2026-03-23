@@ -15,25 +15,41 @@ import {
   randomBytes,
   utf8ToBytes,
 } from "@noble/hashes/utils.js";
+import { userScopedSecureKey, onActiveUserChange } from "./activeUser";
 
-const HMAC_KEY_STORE_KEY = "opus_patient_hmac_key";
+export const HMAC_KEY_STORE_KEY = "opus_patient_hmac_key";
 const HMAC_HASH_PREFIX = "hmac:";
+
+let _cachedHmacKey: Uint8Array | null = null;
+
+// Clear cached key on user switch
+onActiveUserChange(() => {
+  if (_cachedHmacKey) {
+    _cachedHmacKey.fill(0);
+    _cachedHmacKey = null;
+  }
+});
 
 /**
  * Get or create the per-user HMAC key.
- * Stored in iOS Keychain via expo-secure-store.
- * Generated once per device, never transmitted.
+ * Stored in iOS Keychain via expo-secure-store, scoped by user ID.
+ * Generated once per user, never transmitted.
  */
 export async function getPatientHmacKey(): Promise<Uint8Array> {
-  const existing = await SecureStore.getItemAsync(HMAC_KEY_STORE_KEY);
+  if (_cachedHmacKey) return _cachedHmacKey;
+
+  const scopedKey = userScopedSecureKey(HMAC_KEY_STORE_KEY);
+  const existing = await SecureStore.getItemAsync(scopedKey);
   if (existing) {
-    return hexToBytes(existing);
+    _cachedHmacKey = hexToBytes(existing);
+    return _cachedHmacKey;
   }
 
   const newKey = randomBytes(32); // 256-bit random key
-  await SecureStore.setItemAsync(HMAC_KEY_STORE_KEY, bytesToHex(newKey), {
+  await SecureStore.setItemAsync(scopedKey, bytesToHex(newKey), {
     keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
   });
+  _cachedHmacKey = newKey;
   return newKey;
 }
 
@@ -49,4 +65,3 @@ export async function hashPatientIdentifierHmac(
   const hash = hmac(sha256, key, utf8ToBytes(normalized));
   return HMAC_HASH_PREFIX + bytesToHex(hash);
 }
-

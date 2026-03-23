@@ -33,14 +33,42 @@ import {
   normalizeCaseBreastFields,
 } from "./caseNormalization";
 import { hashPatientIdentifierHmac } from "./patientIdentifierHmac";
+import { userScopedAsyncKey } from "./activeUser";
 
-const CASE_INDEX_KEY = "@surgical_logbook_case_index";
-const CASE_PREFIX = "@surgical_logbook_case_";
-const TIMELINE_KEY = "@surgical_logbook_timeline";
-const USER_KEY = "@surgical_logbook_user";
-const SETTINGS_KEY = "@surgical_logbook_settings";
-const CASE_DRAFT_KEY_PREFIX = "@surgical_logbook_case_draft_";
-const CASE_SUMMARIES_KEY = "@surgical_logbook_case_summaries_v1";
+// Base key names — scoped per user at runtime via userScopedAsyncKey()
+export const STORAGE_BASE_KEYS = {
+  CASE_INDEX: "@surgical_logbook_case_index",
+  CASE_PREFIX: "@surgical_logbook_case_",
+  TIMELINE: "@surgical_logbook_timeline",
+  USER: "@surgical_logbook_user",
+  SETTINGS: "@surgical_logbook_settings",
+  CASE_DRAFT_PREFIX: "@surgical_logbook_case_draft_",
+  CASE_SUMMARIES: "@surgical_logbook_case_summaries_v1",
+} as const;
+
+function caseIndexKey(): string {
+  return userScopedAsyncKey(STORAGE_BASE_KEYS.CASE_INDEX);
+}
+function caseKey(caseId: string): string {
+  return userScopedAsyncKey(`${STORAGE_BASE_KEYS.CASE_PREFIX}${caseId}`);
+}
+function timelineKey(): string {
+  return userScopedAsyncKey(STORAGE_BASE_KEYS.TIMELINE);
+}
+function userKey(): string {
+  return userScopedAsyncKey(STORAGE_BASE_KEYS.USER);
+}
+function settingsKey(): string {
+  return userScopedAsyncKey(STORAGE_BASE_KEYS.SETTINGS);
+}
+function caseDraftKey(specialty: string): string {
+  return userScopedAsyncKey(
+    `${STORAGE_BASE_KEYS.CASE_DRAFT_PREFIX}${specialty}`,
+  );
+}
+function caseSummariesKey(): string {
+  return userScopedAsyncKey(STORAGE_BASE_KEYS.CASE_SUMMARIES);
+}
 const CASE_SUMMARY_STORE_VERSION = 1;
 
 export interface LocalUser {
@@ -268,7 +296,7 @@ async function getCaseIndex(): Promise<CaseIndexEntry[]> {
   }
 
   try {
-    const data = await AsyncStorage.getItem(CASE_INDEX_KEY);
+    const data = await AsyncStorage.getItem(caseIndexKey());
     if (data) {
       const parsed = JSON.parse(data) as CaseIndexEntry[];
       caseIndexCache = parsed;
@@ -285,14 +313,14 @@ async function getCaseIndex(): Promise<CaseIndexEntry[]> {
 async function saveCaseIndex(index: CaseIndexEntry[]): Promise<void> {
   caseIndexCache = index;
   allCasesCache = null;
-  await AsyncStorage.setItem(CASE_INDEX_KEY, JSON.stringify(index));
+  await AsyncStorage.setItem(caseIndexKey(), JSON.stringify(index));
 }
 
 
 async function saveCaseSummaries(summaries: CaseSummary[]): Promise<void> {
   caseSummaryCache = summaries;
   const encrypted = await encryptData(serializeCaseSummaryStore(summaries));
-  await AsyncStorage.setItem(CASE_SUMMARIES_KEY, encrypted);
+  await AsyncStorage.setItem(caseSummariesKey(), encrypted);
 }
 
 async function rebuildCaseSummariesFromIndex(
@@ -321,7 +349,7 @@ export async function getCaseSummaries(): Promise<CaseSummary[]> {
       return caseSummaryCache;
     }
 
-    const stored = await AsyncStorage.getItem(CASE_SUMMARIES_KEY);
+    const stored = await AsyncStorage.getItem(caseSummariesKey());
     if (stored) {
       try {
         const decrypted = await decryptData(stored);
@@ -400,7 +428,7 @@ export async function getCase(id: string): Promise<Case | null> {
       return cached;
     }
 
-    const encrypted = await AsyncStorage.getItem(`${CASE_PREFIX}${id}`);
+    const encrypted = await AsyncStorage.getItem(caseKey(id));
     if (!encrypted) return null;
 
     const decrypted = await decryptData(encrypted);
@@ -505,9 +533,9 @@ export async function saveCase(caseData: Case): Promise<void> {
 
     // Atomic write: case data + index + summaries in a single multiSet call
     await AsyncStorage.multiSet([
-      [`${CASE_PREFIX}${caseData.id}`, encrypted],
-      [CASE_INDEX_KEY, JSON.stringify(index)],
-      [CASE_SUMMARIES_KEY, encryptedSummaries],
+      [caseKey(caseData.id), encrypted],
+      [caseIndexKey(), JSON.stringify(index)],
+      [caseSummariesKey(), encryptedSummaries],
     ]);
 
     // Update in-memory caches after successful write
@@ -529,15 +557,11 @@ export async function getCaseCount(): Promise<number> {
   }
 }
 
-function getCaseDraftKey(specialty: Case["specialty"]): string {
-  return `${CASE_DRAFT_KEY_PREFIX}${specialty}`;
-}
-
 export async function getCaseDraft(
   specialty: Case["specialty"],
 ): Promise<CaseDraft | null> {
   try {
-    const data = await AsyncStorage.getItem(getCaseDraftKey(specialty));
+    const data = await AsyncStorage.getItem(caseDraftKey(specialty));
     if (!data) return null;
     const decrypted = await decryptData(data);
     return JSON.parse(decrypted);
@@ -554,7 +578,7 @@ export async function saveCaseDraft(
   try {
     const canonicalizedDraft = await canonicalizePersistedMediaUris(draft);
     const encrypted = await encryptData(JSON.stringify(canonicalizedDraft));
-    await AsyncStorage.setItem(getCaseDraftKey(specialty), encrypted);
+    await AsyncStorage.setItem(caseDraftKey(specialty), encrypted);
   } catch (error) {
     console.error("Error saving case draft:", error);
     throw error;
@@ -565,7 +589,7 @@ export async function clearCaseDraft(
   specialty: Case["specialty"],
 ): Promise<void> {
   try {
-    await AsyncStorage.removeItem(getCaseDraftKey(specialty));
+    await AsyncStorage.removeItem(caseDraftKey(specialty));
   } catch (error) {
     console.error("Error clearing case draft:", error);
     throw error;
@@ -717,10 +741,10 @@ export async function deleteCase(id: string): Promise<void> {
     );
 
     await AsyncStorage.multiSet([
-      [CASE_INDEX_KEY, JSON.stringify(filtered)],
-      [CASE_SUMMARIES_KEY, encryptedSummaries],
+      [caseIndexKey(), JSON.stringify(filtered)],
+      [caseSummariesKey(), encryptedSummaries],
     ]);
-    await AsyncStorage.removeItem(`${CASE_PREFIX}${id}`);
+    await AsyncStorage.removeItem(caseKey(id));
 
     // Update in-memory caches
     caseIndexCache = filtered;
@@ -737,7 +761,7 @@ export async function getTimelineEvents(
   caseId: string,
 ): Promise<TimelineEvent[]> {
   try {
-    const data = await AsyncStorage.getItem(TIMELINE_KEY);
+    const data = await AsyncStorage.getItem(timelineKey());
     if (!data) return [];
     const decrypted = await decryptData(data);
     const allEvents = (JSON.parse(decrypted) as TimelineEvent[]).map(
@@ -757,7 +781,7 @@ export async function getTimelineEvents(
 
 export async function saveTimelineEvent(event: TimelineEvent): Promise<void> {
   try {
-    const data = await AsyncStorage.getItem(TIMELINE_KEY);
+    const data = await AsyncStorage.getItem(timelineKey());
     let events: TimelineEvent[] = [];
     if (data) {
       const decrypted = await decryptData(data);
@@ -766,7 +790,7 @@ export async function saveTimelineEvent(event: TimelineEvent): Promise<void> {
     const canonicalizedEvent = await canonicalizePersistedMediaUris(event);
     events.unshift(normalizeTimelineEventDateOnlyFields(canonicalizedEvent));
     const encrypted = await encryptData(JSON.stringify(events));
-    await AsyncStorage.setItem(TIMELINE_KEY, encrypted);
+    await AsyncStorage.setItem(timelineKey(), encrypted);
   } catch (error) {
     console.error("Error saving timeline event:", error);
     throw error;
@@ -778,7 +802,7 @@ export async function updateTimelineEvent(
   updates: Partial<TimelineEvent>,
 ): Promise<void> {
   try {
-    const data = await AsyncStorage.getItem(TIMELINE_KEY);
+    const data = await AsyncStorage.getItem(timelineKey());
     if (!data) return;
     const decrypted = await decryptData(data);
     const events: TimelineEvent[] = JSON.parse(decrypted);
@@ -791,7 +815,7 @@ export async function updateTimelineEvent(
     });
     events[index] = normalizeTimelineEventDateOnlyFields(canonicalizedEvent);
     const encrypted = await encryptData(JSON.stringify(events));
-    await AsyncStorage.setItem(TIMELINE_KEY, encrypted);
+    await AsyncStorage.setItem(timelineKey(), encrypted);
   } catch (error) {
     console.error("Error updating timeline event:", error);
     throw error;
@@ -800,13 +824,13 @@ export async function updateTimelineEvent(
 
 export async function deleteTimelineEvent(id: string): Promise<void> {
   try {
-    const data = await AsyncStorage.getItem(TIMELINE_KEY);
+    const data = await AsyncStorage.getItem(timelineKey());
     if (!data) return;
     const decrypted = await decryptData(data);
     const events: TimelineEvent[] = JSON.parse(decrypted);
     const filtered = events.filter((e) => e.id !== id);
     const encrypted = await encryptData(JSON.stringify(filtered));
-    await AsyncStorage.setItem(TIMELINE_KEY, encrypted);
+    await AsyncStorage.setItem(timelineKey(), encrypted);
   } catch (error) {
     console.error("Error deleting timeline event:", error);
     throw error;
@@ -815,7 +839,7 @@ export async function deleteTimelineEvent(id: string): Promise<void> {
 
 export async function getLocalUser(): Promise<LocalUser | null> {
   try {
-    const data = await AsyncStorage.getItem(USER_KEY);
+    const data = await AsyncStorage.getItem(userKey());
     if (!data) return null;
     return JSON.parse(data);
   } catch (error) {
@@ -826,7 +850,7 @@ export async function getLocalUser(): Promise<LocalUser | null> {
 
 export async function saveLocalUser(user: LocalUser): Promise<void> {
   try {
-    await AsyncStorage.setItem(USER_KEY, JSON.stringify(user));
+    await AsyncStorage.setItem(userKey(), JSON.stringify(user));
   } catch (error) {
     console.error("Error saving user:", error);
     throw error;
@@ -835,7 +859,7 @@ export async function saveLocalUser(user: LocalUser): Promise<void> {
 
 export async function clearLocalUser(): Promise<void> {
   try {
-    await AsyncStorage.removeItem(USER_KEY);
+    await AsyncStorage.removeItem(userKey());
   } catch (error) {
     console.error("Error clearing user:", error);
     throw error;
@@ -844,7 +868,7 @@ export async function clearLocalUser(): Promise<void> {
 
 export async function getSettings(): Promise<AppSettings | null> {
   try {
-    const data = await AsyncStorage.getItem(SETTINGS_KEY);
+    const data = await AsyncStorage.getItem(settingsKey());
     if (!data) return null;
     return JSON.parse(data);
   } catch (error) {
@@ -855,7 +879,7 @@ export async function getSettings(): Promise<AppSettings | null> {
 
 export async function saveSettings(settings: AppSettings): Promise<void> {
   try {
-    await AsyncStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+    await AsyncStorage.setItem(settingsKey(), JSON.stringify(settings));
   } catch (error) {
     console.error("Error saving settings:", error);
     throw error;
@@ -925,24 +949,52 @@ export async function getLatestCaseForEpisode(
   }
 }
 
+/** Clear in-memory read caches. Call on logout / user switch. */
+export function clearUserCaches(): void {
+  clearCaseReadCaches();
+}
+
 export async function clearAllData(): Promise<void> {
   try {
     const index = await getCaseIndex();
+
+    // Collect media URIs from this user's cases for targeted deletion
+    const mediaUris: string[] = [];
     for (const entry of index) {
-      await AsyncStorage.removeItem(`${CASE_PREFIX}${entry.id}`);
+      const c = await getCase(entry.id);
+      if (c?.operativeMedia) {
+        mediaUris.push(...c.operativeMedia.map((m) => m.localUri));
+      }
     }
-    await AsyncStorage.removeItem(CASE_INDEX_KEY);
-    await AsyncStorage.removeItem(TIMELINE_KEY);
-    await AsyncStorage.removeItem(USER_KEY);
-    await AsyncStorage.removeItem(SETTINGS_KEY);
-    await AsyncStorage.removeItem(CASE_SUMMARIES_KEY);
-    const draftKeys = (await AsyncStorage.getAllKeys()).filter((key) =>
-      key.startsWith(CASE_DRAFT_KEY_PREFIX),
+
+    // Remove user-scoped case blobs
+    for (const entry of index) {
+      await AsyncStorage.removeItem(caseKey(entry.id));
+    }
+    await AsyncStorage.removeItem(caseIndexKey());
+    await AsyncStorage.removeItem(timelineKey());
+    await AsyncStorage.removeItem(userKey());
+    await AsyncStorage.removeItem(settingsKey());
+    await AsyncStorage.removeItem(caseSummariesKey());
+
+    // Remove user-scoped draft keys
+    const { getActiveUserId: getUid } = await import("./activeUser");
+    const userId = getUid();
+    const allKeys = await AsyncStorage.getAllKeys();
+    const draftKeys = allKeys.filter(
+      (key) =>
+        key.startsWith(STORAGE_BASE_KEYS.CASE_DRAFT_PREFIX) &&
+        key.endsWith(`::${userId}`),
     );
     if (draftKeys.length > 0) {
       await AsyncStorage.multiRemove(draftKeys);
     }
-    await clearAllMediaStorage();
+
+    // Delete only this user's media (not other users')
+    if (mediaUris.length > 0) {
+      await deleteMultipleEncryptedMedia(mediaUris);
+    }
+
     clearCaseReadCaches();
   } catch (error) {
     console.error("Error clearing all data:", error);

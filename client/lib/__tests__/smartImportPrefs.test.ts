@@ -1,4 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
+import { setActiveUserId } from "../activeUser";
 import {
   getAlwaysDeleteAfterImport,
   setAlwaysDeleteAfterImport,
@@ -24,9 +25,23 @@ vi.mock("@react-native-async-storage/async-storage", () => ({
 
 beforeEach(() => {
   store = {};
+  setActiveUserId("test-user-00000000-0000-0000-0000");
 });
 
 // ── Tests ───────────────────────────────────────────────────
+
+// Storage key is now user-scoped at runtime; use a helper to find the stored value
+function storedValue(): string | undefined {
+  const key = Object.keys(store).find((k) =>
+    k.startsWith("@opus_smart_import_always_delete"),
+  );
+  return key ? store[key] : undefined;
+}
+
+function seedStore(value: string) {
+  const key = `@opus_smart_import_always_delete::test-user-00000000-0000-0000-0000`;
+  store[key] = value;
+}
 
 describe("smartImportPrefs", () => {
   describe("getAlwaysDeleteAfterImport", () => {
@@ -35,17 +50,17 @@ describe("smartImportPrefs", () => {
     });
 
     it("returns false when stored value is not 'true'", async () => {
-      store["@opus_smart_import_always_delete"] = "false";
+      seedStore("false");
       expect(await getAlwaysDeleteAfterImport()).toBe(false);
     });
 
     it("returns false for garbage stored value", async () => {
-      store["@opus_smart_import_always_delete"] = "maybe";
+      seedStore("maybe");
       expect(await getAlwaysDeleteAfterImport()).toBe(false);
     });
 
     it("returns true when stored value is 'true'", async () => {
-      store["@opus_smart_import_always_delete"] = "true";
+      seedStore("true");
       expect(await getAlwaysDeleteAfterImport()).toBe(true);
     });
   });
@@ -53,12 +68,12 @@ describe("smartImportPrefs", () => {
   describe("setAlwaysDeleteAfterImport", () => {
     it("stores 'true' when enabled", async () => {
       await setAlwaysDeleteAfterImport(true);
-      expect(store["@opus_smart_import_always_delete"]).toBe("true");
+      expect(storedValue()).toBe("true");
     });
 
     it("stores 'false' when disabled", async () => {
       await setAlwaysDeleteAfterImport(false);
-      expect(store["@opus_smart_import_always_delete"]).toBe("false");
+      expect(storedValue()).toBe("false");
     });
   });
 

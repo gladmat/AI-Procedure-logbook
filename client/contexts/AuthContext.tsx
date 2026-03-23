@@ -26,12 +26,24 @@ import {
   updateFacility as authUpdateFacility,
   registerDeviceKey,
 } from "@/lib/auth";
-import { clearAllData } from "@/lib/storage";
+import { clearAllData, clearUserCaches } from "@/lib/storage";
 import { getOrCreateDeviceIdentity } from "@/lib/e2ee";
 import { clearAllAppLockData } from "@/lib/appLockStorage";
 import { normalizeUserFacility } from "@/lib/facilities";
-import { decryptData, encryptData } from "@/lib/encryption";
+import {
+  decryptData,
+  encryptData,
+  clearEncryptionKeyCache,
+} from "@/lib/encryption";
 import { clearDecryptedCache } from "@/components/EncryptedImage";
+import {
+  setActiveUserId,
+  getActiveUserIdOrNull,
+  userScopedAsyncKey,
+} from "@/lib/activeUser";
+import { migrateUnscopedStorage } from "@/lib/storageMigration";
+import { initializeInboxStorage } from "@/lib/inboxStorage";
+import { clearAllEpisodes } from "@/lib/episodeStorage";
 import * as Notifications from "expo-notifications";
 import Constants from "expo-constants";
 import { registerPushTokenOnServer } from "@/lib/sharingApi";
@@ -61,7 +73,12 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-const PROFILE_CACHE_KEY = "@auth_profile_cache_v1";
+const PROFILE_CACHE_BASE_KEY = "@auth_profile_cache_v1";
+const LAST_ACTIVE_USER_KEY = "@opus_last_active_user_id";
+
+function profileCacheKey(): string {
+  return userScopedAsyncKey(PROFILE_CACHE_BASE_KEY);
+}
 
 function mergeDefinedFields<T>(base: T, patch: Partial<T>): T {
   const next = { ...base };
@@ -91,9 +108,9 @@ async function cacheProfile(profile: UserProfile | null): Promise<void> {
   try {
     if (profile) {
       const encrypted = await encryptData(JSON.stringify(profile));
-      await AsyncStorage.setItem(PROFILE_CACHE_KEY, encrypted);
+      await AsyncStorage.setItem(profileCacheKey(), encrypted);
     } else {
-      await AsyncStorage.removeItem(PROFILE_CACHE_KEY);
+      await AsyncStorage.removeItem(profileCacheKey());
     }
   } catch (error) {
     console.warn("Failed to cache profile locally:", error);
@@ -102,7 +119,7 @@ async function cacheProfile(profile: UserProfile | null): Promise<void> {
 
 async function loadCachedProfile(): Promise<UserProfile | null> {
   try {
-    const raw = await AsyncStorage.getItem(PROFILE_CACHE_KEY);
+    const raw = await AsyncStorage.getItem(profileCacheKey());
     if (!raw) {
       return null;
     }
@@ -159,6 +176,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const data = await getCurrentUser();
       if (data) {
+        // Ensure active user is set (may differ from bootstrap if token was stale)
+        if (getActiveUserIdOrNull() !== data.user.id) {
+          setActiveUserId(data.user.id);
+          await AsyncStorage.setItem(LAST_ACTIVE_USER_KEY, data.user.id);
+          await migrateUnscopedStorage(data.user.id);
+          await initializeInboxStorage();
+        }
+
         setUser(data.user);
         if (data.profile) {
           setProfile(data.profile);
@@ -178,10 +203,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Only clear state if token was actually cleared (auth failure)
         const token = await getAuthToken();
         if (!token) {
+          setActiveUserId(null);
+          await AsyncStorage.removeItem(LAST_ACTIVE_USER_KEY);
           setUser(null);
           setProfile(null);
           setFacilities([]);
-          void cacheProfile(null);
         }
         // If token still exists, user is offline — keep cached state
       }
@@ -192,10 +218,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const init = async () => {
-      const cachedProfile = await loadCachedProfile();
-      if (cachedProfile) {
-        setProfile(cachedProfile);
+      // Bootstrap: restore active user from device-scoped key so we can
+      // read user-scoped profile cache and encryption key before server call
+      const lastUserId = await AsyncStorage.getItem(LAST_ACTIVE_USER_KEY);
+      if (lastUserId) {
+        setActiveUserId(lastUserId);
+        const cachedProfile = await loadCachedProfile();
+        if (cachedProfile) {
+          setProfile(cachedProfile);
+        }
       }
+
       await refreshUser();
       setIsLoading(false);
     };
@@ -204,6 +237,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string) => {
     const data = await authLogin(email, password);
+
+    // Set active user BEFORE any storage access
+    setActiveUserId(data.user.id);
+    await AsyncStorage.setItem(LAST_ACTIVE_USER_KEY, data.user.id);
+    await migrateUnscopedStorage(data.user.id);
+    await initializeInboxStorage();
+
     setUser(data.user);
     if (data.profile) {
       setProfile(data.profile);
@@ -228,6 +268,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signup = async (email: string, password: string) => {
     const data = await authSignup(email, password);
+
+    // Set active user BEFORE any storage access
+    setActiveUserId(data.user.id);
+    await AsyncStorage.setItem(LAST_ACTIVE_USER_KEY, data.user.id);
+    await initializeInboxStorage();
+
     setUser(data.user);
     if (data.profile) {
       setProfile(data.profile);
@@ -246,24 +292,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = async () => {
-    await authLogout();
-    await clearAllAppLockData();
+    // Clear sensitive data from RAM
+    clearEncryptionKeyCache();
     clearDecryptedCache();
+    clearUserCaches();
+
+    // Tear down user-scoped state (fires onActiveUserChange listeners)
+    setActiveUserId(null);
+    await AsyncStorage.removeItem(LAST_ACTIVE_USER_KEY);
+
+    // Clear auth token
+    await authLogout();
+
+    // DO NOT call clearAllAppLockData — user's PIN persists for next login
+    // DO NOT delete user data — it stays for when they log back in
+
     setUser(null);
     setProfile(null);
     setFacilities([]);
-    await cacheProfile(null);
   };
 
   const deleteAccount = async (password: string) => {
     await authDeleteAccount(password);
+
+    // Delete all user-scoped data
     await clearAllData();
+    await clearAllEpisodes();
     await clearAllAppLockData();
+
+    clearEncryptionKeyCache();
     clearDecryptedCache();
+    clearUserCaches();
+
+    await AsyncStorage.removeItem(LAST_ACTIVE_USER_KEY);
+    setActiveUserId(null);
+
     setUser(null);
     setProfile(null);
     setFacilities([]);
-    await cacheProfile(null);
   };
 
   const updateProfile = async (profileData: Partial<UserProfile>) => {

@@ -4,9 +4,19 @@ import type { Case } from "@/types/case";
 import { encryptData, decryptData } from "./encryption";
 import { getCasesByEpisodeId, hashPatientIdentifier } from "./storage";
 import { normalizeEpisodeDateOnlyFields } from "./dateFieldNormalization";
+import { userScopedAsyncKey } from "./activeUser";
 
-const EPISODE_INDEX_KEY = "@opus_episode_index";
-const EPISODE_PREFIX = "@opus_episode_";
+export const EPISODE_BASE_KEYS = {
+  INDEX: "@opus_episode_index",
+  PREFIX: "@opus_episode_",
+} as const;
+
+function episodeIndexKey(): string {
+  return userScopedAsyncKey(EPISODE_BASE_KEYS.INDEX);
+}
+function episodeKey(id: string): string {
+  return userScopedAsyncKey(`${EPISODE_BASE_KEYS.PREFIX}${id}`);
+}
 
 export interface EpisodeIndexEntry {
   id: string;
@@ -19,7 +29,7 @@ export interface EpisodeIndexEntry {
 
 async function getEpisodeIndex(): Promise<EpisodeIndexEntry[]> {
   try {
-    const encrypted = await AsyncStorage.getItem(EPISODE_INDEX_KEY);
+    const encrypted = await AsyncStorage.getItem(episodeIndexKey());
     if (!encrypted) return [];
     const decrypted = await decryptData(encrypted);
     return JSON.parse(decrypted) as EpisodeIndexEntry[];
@@ -31,14 +41,14 @@ async function getEpisodeIndex(): Promise<EpisodeIndexEntry[]> {
 
 async function saveEpisodeIndex(index: EpisodeIndexEntry[]): Promise<void> {
   const encrypted = await encryptData(JSON.stringify(index));
-  await AsyncStorage.setItem(EPISODE_INDEX_KEY, encrypted);
+  await AsyncStorage.setItem(episodeIndexKey(), encrypted);
 }
 
 // ── CRUD ────────────────────────────────────────────────────────────────────
 
 export async function getEpisode(id: string): Promise<TreatmentEpisode | null> {
   try {
-    const encrypted = await AsyncStorage.getItem(`${EPISODE_PREFIX}${id}`);
+    const encrypted = await AsyncStorage.getItem(episodeKey(id));
     if (!encrypted) return null;
     const decrypted = await decryptData(encrypted);
     return normalizeEpisodeDateOnlyFields(
@@ -59,7 +69,7 @@ export async function saveEpisode(episode: TreatmentEpisode): Promise<void> {
     });
 
     const encrypted = await encryptData(JSON.stringify(updatedEpisode));
-    await AsyncStorage.setItem(`${EPISODE_PREFIX}${episode.id}`, encrypted);
+    await AsyncStorage.setItem(episodeKey(episode.id), encrypted);
 
     const patientIdentifierHash = await hashPatientIdentifier(
       episode.patientIdentifier,
@@ -105,7 +115,7 @@ export async function updateEpisode(
 
 export async function deleteEpisode(id: string): Promise<void> {
   try {
-    await AsyncStorage.removeItem(`${EPISODE_PREFIX}${id}`);
+    await AsyncStorage.removeItem(episodeKey(id));
 
     const index = await getEpisodeIndex();
     const filtered = index.filter((e) => e.id !== id);
@@ -222,11 +232,11 @@ export async function getEpisodeWithCases(
 export async function clearAllEpisodes(): Promise<void> {
   try {
     const index = await getEpisodeIndex();
-    const keys = index.map((entry) => `${EPISODE_PREFIX}${entry.id}`);
+    const keys = index.map((entry) => episodeKey(entry.id));
     if (keys.length > 0) {
       await AsyncStorage.multiRemove(keys);
     }
-    await AsyncStorage.removeItem(EPISODE_INDEX_KEY);
+    await AsyncStorage.removeItem(episodeIndexKey());
   } catch (error) {
     console.error("Error clearing episodes:", error);
     throw error;

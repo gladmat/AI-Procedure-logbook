@@ -4,12 +4,13 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Crypto from "expo-crypto";
 import { xchacha20poly1305 } from "@noble/ciphers/chacha.js";
 import { bytesToHex, hexToBytes, utf8ToBytes } from "@noble/hashes/utils.js";
+import { userScopedSecureKey } from "./activeUser";
 
 function bytesToUtf8(bytes: Uint8Array): string {
   return new TextDecoder().decode(bytes);
 }
 
-const ENCRYPTION_KEY_ALIAS = "surgical_logbook_encryption_key";
+export const ENCRYPTION_KEY_ALIAS = "surgical_logbook_encryption_key";
 const ENVELOPE_PREFIX = "enc:v1";
 const KEY_BYTES = 32;
 const NONCE_BYTES = 24;
@@ -24,27 +25,29 @@ let _cachedKeyBytes: Uint8Array | null = null;
 async function getKeyHex(): Promise<string> {
   if (_cachedKeyHex) return _cachedKeyHex;
 
+  const scopedAlias = userScopedSecureKey(ENCRYPTION_KEY_ALIAS);
+
   if (Platform.OS === "web") {
-    const stored = await AsyncStorage.getItem(`@${ENCRYPTION_KEY_ALIAS}`);
+    const stored = await AsyncStorage.getItem(`@${scopedAlias}`);
     if (stored && isHex(stored)) {
       _cachedKeyHex = stored;
       return stored;
     }
 
     const newKey = bytesToHex(await Crypto.getRandomBytesAsync(KEY_BYTES));
-    await AsyncStorage.setItem(`@${ENCRYPTION_KEY_ALIAS}`, newKey);
+    await AsyncStorage.setItem(`@${scopedAlias}`, newKey);
     _cachedKeyHex = newKey;
     return newKey;
   }
 
-  const stored = await SecureStore.getItemAsync(ENCRYPTION_KEY_ALIAS);
+  const stored = await SecureStore.getItemAsync(scopedAlias);
   if (stored && isHex(stored)) {
     _cachedKeyHex = stored;
     return stored;
   }
 
   const newKey = bytesToHex(await Crypto.getRandomBytesAsync(KEY_BYTES));
-  await SecureStore.setItemAsync(ENCRYPTION_KEY_ALIAS, newKey);
+  await SecureStore.setItemAsync(scopedAlias, newKey);
   _cachedKeyHex = newKey;
   return newKey;
 }

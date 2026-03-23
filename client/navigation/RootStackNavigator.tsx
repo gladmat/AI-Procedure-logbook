@@ -18,6 +18,7 @@ import {
   type HospitalSelection,
 } from "@/screens/onboarding/HospitalScreen";
 import { PrivacyScreen } from "@/screens/onboarding/PrivacyScreen";
+import { SecurityScreen } from "@/screens/onboarding/SecurityScreen";
 import LockScreen from "@/screens/LockScreen";
 import SetupAppLockScreen from "@/screens/SetupAppLockScreen";
 import EditProfileScreen from "@/screens/EditProfileScreen";
@@ -61,7 +62,12 @@ import { useTheme } from "@/hooks/useTheme";
 
 const WELCOME_SEEN_KEY = "@opus_has_seen_welcome";
 const FEATURES_SEEN_KEY = "@opus_has_seen_features";
-type OnboardingStep = "categories" | "training" | "hospital" | "privacy";
+type OnboardingStep =
+  | "categories"
+  | "training"
+  | "hospital"
+  | "privacy"
+  | "security";
 type ReplayIntroStep = "welcome" | "features";
 type OnboardingDraft = {
   selectedCategories: Specialty[];
@@ -110,6 +116,8 @@ function getFirstIncompleteOnboardingStep(
     return "hospital";
   }
 
+  // Privacy is informational — always shown before security.
+  // After privacy advances to security, the PIN setup screen handles completion.
   return "privacy";
 }
 
@@ -150,6 +158,7 @@ export type RootStackParamList = {
   Training: undefined;
   Hospital: undefined;
   Privacy: undefined;
+  Security: undefined;
   Main: undefined;
   CaseDetail: { caseId: string; showComplicationForm?: boolean };
   CaseForm: {
@@ -679,7 +688,7 @@ export default function RootStackNavigator() {
               />
             )}
           </Stack.Screen>
-        ) : !onboardingComplete ? (
+        ) : !onboardingComplete && activeOnboardingStep === "privacy" ? (
           <Stack.Screen
             key="onboarding-privacy"
             name="Privacy"
@@ -688,6 +697,19 @@ export default function RootStackNavigator() {
             {() => (
               <PrivacyScreen
                 onBack={() => setCurrentOnboardingStep("hospital")}
+                onComplete={() => setCurrentOnboardingStep("security")}
+              />
+            )}
+          </Stack.Screen>
+        ) : !onboardingComplete ? (
+          <Stack.Screen
+            key="onboarding-security"
+            name="Security"
+            options={{ headerShown: false }}
+          >
+            {() => (
+              <SecurityScreen
+                onBack={() => setCurrentOnboardingStep("privacy")}
                 onComplete={() => undefined}
               />
             )}

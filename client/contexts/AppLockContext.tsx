@@ -20,6 +20,7 @@ import {
 import { isFaceIdUnsupportedInCurrentRuntime } from "@/lib/biometrics";
 import { clearDecryptedCache } from "@/components/EncryptedImage";
 import { clearEncryptionKeyCache } from "@/lib/encryption";
+import { getActiveUserIdOrNull } from "@/lib/activeUser";
 
 interface AppLockContextType {
   isLocked: boolean;
@@ -38,6 +39,12 @@ export function AppLockProvider({ children }: { children: ReactNode }) {
   const hasInitialized = useRef(false);
 
   const checkIfConfigured = useCallback(async (): Promise<boolean> => {
+    // Guard: app lock storage requires an active user for scoped keys
+    if (!getActiveUserIdOrNull()) {
+      setIsAppLockConfigured(false);
+      return false;
+    }
+
     try {
       const [enabled, pinExists] = await Promise.all([
         isAppLockEnabled(),
