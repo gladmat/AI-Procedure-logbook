@@ -1608,7 +1608,8 @@ grep -roh 'testID="[^"]*"' client/ | sort | uniq -d
 
 - Metro: `EXPO_UNSTABLE_MCP_SERVER=1 npx expo start --dev-client`
 - Simulator booted with dev build
-- Test account: `m.gladysz@outlook.com` / `testtest` / PIN: `1111`
+- Test account 1: `m.gladysz@outlook.com` / `testtest` / PIN: `1111`
+- Test account 2: `mateo.gladysz@outlook.com` / `test2test2`
 
 #### Workflow 1: Full Visual Audit
 

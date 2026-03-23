@@ -1893,6 +1893,24 @@ export async function registerRoutes(app: Express): Promise<void> {
         }
 
         res.json(updated);
+
+        // Fire push notification to case owner (non-blocking)
+        try {
+          const recipientProfile = await storage.getProfile(req.userId!);
+          const recipientName =
+            recipientProfile?.fullName || "A team member";
+          const isVerified = parseResult.data.status === "verified";
+          sendPushNotification(
+            updated.ownerUserId,
+            isVerified ? "Case Verified" : "Case Disputed",
+            isVerified
+              ? `${recipientName} verified their involvement`
+              : `${recipientName} disputed a shared case`,
+            { type: "verification", sharedCaseId: req.params.id! },
+          ).catch(() => {});
+        } catch (pushErr) {
+          console.warn("Push notification failed after verify:", pushErr);
+        }
       } catch (error) {
         console.error(
           "Error verifying shared case:",
@@ -1960,6 +1978,20 @@ export async function registerRoutes(app: Express): Promise<void> {
         }
 
         res.json(updated);
+
+        // Fire push notification to recipient (non-blocking)
+        try {
+          const ownerProfile = await storage.getProfile(req.userId!);
+          const ownerName = ownerProfile?.fullName || "A colleague";
+          sendPushNotification(
+            updated.recipientUserId,
+            "Case Updated",
+            `Dr ${ownerName} updated a shared case`,
+            { type: "shared_case_update", sharedCaseId: req.params.id! },
+          ).catch(() => {});
+        } catch (pushErr) {
+          console.warn("Push notification failed after blob update:", pushErr);
+        }
       } catch (error) {
         console.error(
           "Error updating shared case blob:",

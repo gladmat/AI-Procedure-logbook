@@ -37,6 +37,8 @@ import PlannedCaseListScreen from "@/screens/PlannedCaseListScreen";
 import CaseMediaOrganiserScreen from "@/screens/CaseMediaOrganiserScreen";
 import GuidedCaptureScreen from "@/screens/GuidedCaptureScreen";
 import SurgicalPreferencesScreen from "@/screens/SurgicalPreferencesScreen";
+import SharedInboxScreen from "@/screens/SharedInboxScreen";
+import SharedCaseDetailScreen from "@/screens/SharedCaseDetailScreen";
 import { WelcomeScreen } from "@/screens/onboarding/WelcomeScreen";
 import { FeaturePager } from "@/screens/onboarding/FeaturePager";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
@@ -274,6 +276,8 @@ export type RootStackParamList = {
     protocolSteps: import("@/data/mediaCaptureProtocols").CaptureStep[];
     procedureDate?: string;
   };
+  SharedInbox: undefined;
+  SharedCaseDetail: { sharedCaseId: string };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -889,6 +893,20 @@ export default function RootStackNavigator() {
               component={AddHistologyScreen}
               options={{
                 headerTitle: "Add Histology",
+              }}
+            />
+            <Stack.Screen
+              name="SharedInbox"
+              component={SharedInboxScreen}
+              options={{
+                headerTitle: "Shared Cases",
+              }}
+            />
+            <Stack.Screen
+              name="SharedCaseDetail"
+              component={SharedCaseDetailScreen}
+              options={{
+                headerTitle: "Shared Case",
               }}
             />
           </>

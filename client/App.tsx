@@ -1,11 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { AppState, StyleSheet, View } from "react-native";
 import * as SplashScreen from "expo-splash-screen";
+import * as Notifications from "expo-notifications";
 import {
   NavigationContainer,
   DefaultTheme,
   DarkTheme,
   Theme,
+  createNavigationContainerRef,
   getStateFromPath as defaultGetStateFromPath,
   type LinkingOptions,
 } from "@react-navigation/native";
@@ -25,6 +27,39 @@ import { MediaCallbackProvider } from "@/contexts/MediaCallbackContext";
 import { ThemeProvider, useTheme } from "@/hooks/useTheme";
 import type { RootStackParamList } from "@/navigation/RootStackNavigator";
 import { ingestPendingLockedCameraCaptures } from "@/lib/sharedCaptureIngress";
+
+// ── Push notification foreground handler ─────────────────────────────────────
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
+  }),
+});
+
+const navigationRef = createNavigationContainerRef<RootStackParamList>();
+
+function handleNotificationNavigation(data: Record<string, unknown>) {
+  const type = data.type as string | undefined;
+  const sharedCaseId = data.sharedCaseId as string | undefined;
+
+  if (!sharedCaseId || !navigationRef.isReady()) return;
+
+  switch (type) {
+    case "case_shared":
+    case "shared_case_update":
+      navigationRef.navigate("SharedCaseDetail", { sharedCaseId });
+      break;
+    case "verification":
+      navigationRef.navigate("SharedInbox");
+      break;
+    default:
+      // Future types (assessment_pending, assessments_revealed) — ignore for now
+      break;
+  }
+}
 
 // Keep native splash visible while we load assets
 SplashScreen.preventAutoHideAsync();
@@ -102,7 +137,11 @@ function ThemedNavigationContainer({
   );
 
   return (
-    <NavigationContainer theme={navigationTheme} linking={linking}>
+    <NavigationContainer
+      ref={navigationRef}
+      theme={navigationTheme}
+      linking={linking}
+    >
       {children}
     </NavigationContainer>
   );
@@ -135,6 +174,37 @@ export default function App() {
     const subscription = AppState.addEventListener("change", (nextState) => {
       if (nextState === "active") {
         void ingestPendingLockedCameraCaptures().catch(console.warn);
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
+
+  // Push notification response listener (handles notification taps)
+  useEffect(() => {
+    const subscription = Notifications.addNotificationResponseReceivedListener(
+      (response) => {
+        const data = response.notification.request.content.data as
+          | Record<string, unknown>
+          | undefined;
+        if (data) {
+          handleNotificationNavigation(data);
+        }
+      },
+    );
+
+    // Cold start: check if app was opened from a notification
+    Notifications.getLastNotificationResponseAsync().then((response) => {
+      if (response) {
+        const data = response.notification.request.content.data as
+          | Record<string, unknown>
+          | undefined;
+        if (data) {
+          // Delay to allow navigation to be ready
+          setTimeout(() => handleNotificationNavigation(data), 500);
+        }
       }
     });
 

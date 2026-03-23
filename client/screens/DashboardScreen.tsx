@@ -62,6 +62,11 @@ import {
   filterOutPlannedCases,
 } from "@/lib/dashboardSelectors";
 import { buildMediaContextFromCase } from "@/lib/mediaContext";
+import {
+  getSharedInboxIndex,
+  updateSharedInboxIndex,
+} from "@/lib/sharingStorage";
+import { getSharedInbox } from "@/lib/sharingApi";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -78,6 +83,8 @@ export default function DashboardScreen() {
   const [selectedSpecialty, setSelectedSpecialty] = useState<string | null>(
     null,
   );
+  const [sharedInboxCount, setSharedInboxCount] = useState(0);
+  const [sharedPendingCount, setSharedPendingCount] = useState(0);
   const [isFilterSticky, setIsFilterSticky] = useState(false);
 
   const { episodes: activeEpisodes, refresh: refreshEpisodes } =
@@ -105,18 +112,44 @@ export default function DashboardScreen() {
     }
   }, []);
 
+  const loadSharedInboxCounts = useCallback(async () => {
+    try {
+      const index = await getSharedInboxIndex();
+      setSharedInboxCount(index.length);
+      setSharedPendingCount(
+        index.filter((e) => e.verificationStatus === "pending").length,
+      );
+    } catch {
+      // Non-critical — local index may not exist yet
+    }
+  }, []);
+
   useFocusEffect(
     useCallback(() => {
       const task = InteractionManager.runAfterInteractions(() => {
         loadCases();
+        loadSharedInboxCounts();
       });
       return () => task.cancel();
-    }, [loadCases]),
+    }, [loadCases, loadSharedInboxCounts]),
   );
+
+  const refreshSharedInbox = useCallback(async () => {
+    try {
+      const data = await getSharedInbox();
+      await updateSharedInboxIndex(data);
+      setSharedInboxCount(data.length);
+      setSharedPendingCount(
+        data.filter((e) => e.verificationStatus === "pending").length,
+      );
+    } catch {
+      // Network unavailable — keep local counts
+    }
+  }, []);
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    await Promise.all([loadCases(), refreshEpisodes()]);
+    await Promise.all([loadCases(), refreshEpisodes(), refreshSharedInbox()]);
     setRefreshing(false);
   };
 
@@ -365,7 +398,10 @@ export default function DashboardScreen() {
   );
 
   return (
-    <View testID="screen-dashboard" style={[styles.container, { backgroundColor: theme.backgroundRoot }]}>
+    <View
+      testID="screen-dashboard"
+      style={[styles.container, { backgroundColor: theme.backgroundRoot }]}
+    >
       <ScrollView
         testID="dashboard.scroll"
         stickyHeaderIndices={[0]}
@@ -410,6 +446,58 @@ export default function DashboardScreen() {
           pulseData={pulseData}
           totalCaseCount={personalizedCases.length}
         />
+
+        {/* Zone 2.5 — Shared Cases */}
+        {sharedInboxCount > 0 ? (
+          <Pressable
+            testID="dashboard.btn-sharedCases"
+            onPress={() => navigation.navigate("SharedInbox")}
+            style={({ pressed }) => [
+              styles.sharedCasesCard,
+              {
+                backgroundColor: theme.backgroundElevated,
+                borderColor:
+                  sharedPendingCount > 0 ? theme.accent : theme.border,
+                opacity: pressed ? 0.7 : 1,
+              },
+              Shadows.card,
+            ]}
+          >
+            <View style={styles.sharedCasesRow}>
+              <View
+                style={[
+                  styles.sharedCasesIcon,
+                  { backgroundColor: theme.accent + "20" },
+                ]}
+              >
+                <Feather name="users" size={18} color={theme.accent} />
+              </View>
+              <View style={styles.sharedCasesText}>
+                <ThemedText
+                  style={[styles.sharedCasesTitle, { color: theme.text }]}
+                >
+                  {sharedInboxCount} shared case
+                  {sharedInboxCount !== 1 ? "s" : ""}
+                </ThemedText>
+                {sharedPendingCount > 0 ? (
+                  <ThemedText
+                    style={[
+                      styles.sharedCasesSubtitle,
+                      { color: theme.accent },
+                    ]}
+                  >
+                    {sharedPendingCount} pending verification
+                  </ThemedText>
+                ) : null}
+              </View>
+              <Feather
+                name="chevron-right"
+                size={18}
+                color={theme.textTertiary}
+              />
+            </View>
+          </Pressable>
+        ) : null}
 
         {/* Zone 3 — Recent Cases */}
         {!loading &&
@@ -587,6 +675,37 @@ export default function DashboardScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  sharedCasesCard: {
+    marginHorizontal: Spacing.md,
+    marginTop: Spacing.sm,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    padding: Spacing.md,
+  },
+  sharedCasesRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  sharedCasesIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: Spacing.sm,
+  },
+  sharedCasesText: {
+    flex: 1,
+  },
+  sharedCasesTitle: {
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  sharedCasesSubtitle: {
+    fontSize: 13,
+    fontWeight: "500",
+    marginTop: 1,
   },
   dischargeModalOverlay: {
     flex: 1,

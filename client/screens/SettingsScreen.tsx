@@ -304,7 +304,6 @@ export default function SettingsScreen() {
     );
   };
 
-
   const handleLogout = () => {
     Alert.alert("Sign Out", "Are you sure you want to sign out?", [
       { text: "Cancel", style: "cancel" },
@@ -769,6 +768,28 @@ export default function SettingsScreen() {
               label="Preview Onboarding From Start"
               subtitle="Replay welcome, feature slides, and onboarding steps"
               onPress={handleRestartOnboarding}
+            />
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <ThemedText
+            style={[styles.sectionTitle, { color: theme.textSecondary }]}
+          >
+            COLLABORATION
+          </ThemedText>
+          <View
+            style={[
+              styles.sectionCard,
+              { backgroundColor: theme.backgroundDefault },
+            ]}
+          >
+            <SettingsItem
+              icon="users"
+              label="Shared Cases"
+              subtitle="Cases shared with you by colleagues"
+              onPress={() => navigation.navigate("SharedInbox")}
+              testID="settings.row-sharedCases"
             />
           </View>
         </View>
