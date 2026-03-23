@@ -9,7 +9,7 @@
     "expo:start:static:build": "npx expo start --no-dev --minify --localhost",
     "expo:static:build": "node scripts/build.js",
     "server:build": "node scripts/server-build.js",
-    "server:prod": "NODE_ENV=production node server_dist/index.js",
+    "server:prod": "NODE_ENV=production node server_dist/index.mjs",
     "db:push": "node --env-file=.env ./node_modules/.bin/drizzle-kit push",
     "lint": "npx expo lint",
     "lint:fix": "npx expo lint --fix",
