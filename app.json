@@ -50,6 +50,7 @@
       ],
       "expo-web-browser",
       "expo-apple-authentication",
+      "expo-notifications",
       "expo-local-authentication",
       [
         "expo-image-picker",
