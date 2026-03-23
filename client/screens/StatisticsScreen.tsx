@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { View, ScrollView, StyleSheet, ActivityIndicator } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
@@ -6,12 +6,18 @@ import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing } from "@/constants/theme";
 import { useStatistics } from "@/hooks/useStatistics";
+import { useTrainingStatistics } from "@/hooks/useTrainingStatistics";
 import { StatCard } from "@/components/statistics/StatCard";
 import { BarChart } from "@/components/statistics/BarChart";
 import { HorizontalBarChart } from "@/components/statistics/HorizontalBarChart";
 import { MilestoneTimeline } from "@/components/statistics/MilestoneTimeline";
 import { SpecialtyDeepDiveCard } from "@/components/statistics/SpecialtyDeepDiveCard";
 import { EmptyStatistics } from "@/components/statistics/EmptyStatistics";
+import {
+  StatisticsPillBar,
+  type StatisticsTab,
+} from "@/components/statistics/StatisticsPillBar";
+import { TrainingContent } from "@/components/statistics/TrainingContent";
 import { Specialty } from "@/types/case";
 import {
   formatPercentage,
@@ -269,6 +275,7 @@ export default function StatisticsScreen() {
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
+  const [activeTab, setActiveTab] = useState<StatisticsTab>("practice");
   const {
     isLoading,
     isEmpty,
@@ -284,6 +291,7 @@ export default function StatisticsScreen() {
     burnsInsights,
     handCaseTypeInsights,
   } = useStatistics();
+  const trainingStats = useTrainingStatistics();
 
   // Bar chart data for monthly volume
   const monthlyBarData = useMemo(
@@ -416,205 +424,243 @@ export default function StatisticsScreen() {
     );
   }
 
+  const showPillBar = totalCases >= EMPTY_THRESHOLD;
+
   return (
     <ScrollView
       testID="screen-statistics"
       style={[styles.container, { backgroundColor: theme.backgroundRoot }]}
       contentContainerStyle={[
-        styles.content,
+        activeTab === "practice" ? styles.content : undefined,
         { paddingBottom: insets.bottom + tabBarHeight + Spacing.lg },
       ]}
+      stickyHeaderIndices={showPillBar ? [0] : undefined}
     >
-      {/* ═══ Tier 1: Overview ═══ */}
-
-      {/* Career hero stats */}
-      {careerOverview && (
-        <View style={styles.heroRow}>
-          <StatCard
-            label="Total Cases"
-            value={careerOverview.totalCases}
-            size="large"
-          />
-          <StatCard
-            label="Months"
-            value={careerOverview.monthsActive}
-            size="small"
-          />
-          <StatCard
-            label="Specialties"
-            value={careerOverview.specialtiesUsed.length}
-            size="small"
-          />
-        </View>
+      {showPillBar && (
+        <StatisticsPillBar activeTab={activeTab} onTabPress={setActiveTab} />
       )}
 
-      {/* Practice Profile */}
-      {specialtyBarData.length > 0 && (
+      {activeTab === "training" ? (
+        <TrainingContent
+          isConsultant={trainingStats.isConsultant}
+          learningCurves={trainingStats.learningCurves}
+          teachingAggregate={trainingStats.teachingAggregate}
+          calibrationScore={trainingStats.calibrationScore}
+          trainingOverview={trainingStats.trainingOverview}
+          entrustmentDistribution={trainingStats.entrustmentDistribution}
+          isEmpty={trainingStats.isEmpty}
+        />
+      ) : (
         <>
-          <SectionHeader title="Practice Profile" />
-          <HorizontalBarChart data={specialtyBarData} />
-        </>
-      )}
+          {/* ═══ Tier 1: Overview ═══ */}
 
-      {/* Monthly Activity */}
-      {monthlyBarData.length > 0 && (
-        <>
-          <SectionHeader title="Monthly Activity" />
-          <BarChart data={monthlyBarData} highlightLast />
-          <ThemedText
-            style={[styles.monthNote, { color: theme.textSecondary }]}
-          >
-            This month: {currentMonthCount} case
-            {currentMonthCount !== 1 ? "s" : ""}
-          </ThemedText>
-        </>
-      )}
-
-      {/* Milestones */}
-      {milestones.length > 0 && (
-        <>
-          <SectionHeader title="Milestones" />
-          <MilestoneTimeline milestones={milestones} />
-        </>
-      )}
-
-      {/* ═══ Tier 2: Specialty Deep Dives ═══ */}
-
-      {careerOverview && careerOverview.specialtyDistribution.length > 0 && (
-        <>
-          <SectionHeader title="Specialty Breakdown" />
-          {freeFlapStats && (
-            <View style={styles.cardGap}>
-              <SpecialtyDeepDiveCard
-                label="Free Flap"
-                caseCount={freeFlapStats.totalCases}
-                color={theme.accent}
-                heroMetric={{
-                  label: "Flap survival",
-                  value: formatPercentage(freeFlapStats.flapSurvivalRate),
-                }}
-                testID="statistics.card-freeFlap"
-              >
-                <FreeFlapContent stats={freeFlapStats} />
-              </SpecialtyDeepDiveCard>
+          {/* Career hero stats */}
+          {careerOverview && (
+            <View style={styles.heroRow}>
+              <StatCard
+                label="Total Cases"
+                value={careerOverview.totalCases}
+                size="large"
+              />
+              <StatCard
+                label="Months"
+                value={careerOverview.monthsActive}
+                size="small"
+              />
+              <StatCard
+                label="Specialties"
+                value={careerOverview.specialtiesUsed.length}
+                size="small"
+              />
             </View>
           )}
-          {careerOverview.specialtyDistribution.map(
-            ({ specialty, label, count }) => {
-              const color =
-                theme.specialty[specialty as keyof typeof theme.specialty] ??
-                theme.accent;
-              const stats = specialtyStats[specialty];
-              const heroMetric = getHeroMetric(specialty, stats);
 
-              return (
-                <View key={specialty} style={styles.cardGap}>
-                  <SpecialtyDeepDiveCard
-                    label={label}
-                    caseCount={count}
-                    color={color}
-                    heroMetric={heroMetric}
-                    testID={`statistics.card-${specialty}`}
-                  >
-                    {renderSpecialtyContent(specialty, stats)}
-                  </SpecialtyDeepDiveCard>
-                </View>
-              );
-            },
+          {/* Practice Profile */}
+          {specialtyBarData.length > 0 && (
+            <>
+              <SectionHeader title="Practice Profile" />
+              <HorizontalBarChart data={specialtyBarData} />
+            </>
           )}
-        </>
-      )}
 
-      {/* ═══ Tier 3: Operational Insights ═══ */}
-
-      {/* Where You Operate */}
-      {facilityBarData.length > 0 && (
-        <>
-          <SectionHeader title="Where You Operate" />
-          <HorizontalBarChart data={facilityBarData} maxBars={5} />
-        </>
-      )}
-
-      {/* Your Role */}
-      {roleBarData.length > 0 && (
-        <>
-          <SectionHeader title="Your Role" />
-          <HorizontalBarChart data={roleBarData} maxBars={7} />
-        </>
-      )}
-
-      {/* Logging Efficiency */}
-      {entryTimeStats && entryTimeStats.averageEntryTimeSeconds != null && (
-        <>
-          <SectionHeader title="Logging Efficiency" />
-          <View style={styles.metricRow}>
-            <StatCard
-              label="Avg. Entry Time"
-              value={formatEntryTime(entryTimeStats.averageEntryTimeSeconds)}
-              size="small"
-            />
-            <StatCard
-              label="Median Entry Time"
-              value={formatEntryTime(entryTimeStats.medianEntryTimeSeconds)}
-              size="small"
-            />
-          </View>
-          {operationalInsights && (
-            <ThemedText
-              style={[styles.footnote, { color: theme.textTertiary }]}
-            >
-              Based on {operationalInsights.timedEntryCount} timed{" "}
-              {operationalInsights.timedEntryCount === 1 ? "entry" : "entries"}
-            </ThemedText>
+          {/* Monthly Activity */}
+          {monthlyBarData.length > 0 && (
+            <>
+              <SectionHeader title="Monthly Activity" />
+              <BarChart data={monthlyBarData} highlightLast />
+              <ThemedText
+                style={[styles.monthNote, { color: theme.textSecondary }]}
+              >
+                This month: {currentMonthCount} case
+                {currentMonthCount !== 1 ? "s" : ""}
+              </ThemedText>
+            </>
           )}
-        </>
-      )}
 
-      {/* Your Top 10 */}
-      {operationalInsights && operationalInsights.topDxProcPairs.length > 0 && (
-        <>
-          <SectionHeader title="Your Top 10" />
-          <View style={styles.topList}>
-            {operationalInsights.topDxProcPairs.map((pair, i) => (
-              <View key={`${pair.procedureName}-${i}`} style={styles.topRow}>
-                <ThemedText style={[styles.topRank, { color: theme.accent }]}>
-                  {i + 1}.
-                </ThemedText>
-                <View style={styles.topContent}>
-                  <ThemedText
-                    style={[styles.topName, { color: theme.text }]}
-                    numberOfLines={1}
-                  >
-                    {pair.procedureName}
-                  </ThemedText>
-                </View>
-                <ThemedText
-                  style={[styles.topCount, { color: theme.textSecondary }]}
-                >
-                  {pair.count}
-                </ThemedText>
+          {/* Milestones */}
+          {milestones.length > 0 && (
+            <>
+              <SectionHeader title="Milestones" />
+              <MilestoneTimeline milestones={milestones} />
+            </>
+          )}
+
+          {/* ═══ Tier 2: Specialty Deep Dives ═══ */}
+
+          {careerOverview &&
+            careerOverview.specialtyDistribution.length > 0 && (
+              <>
+                <SectionHeader title="Specialty Breakdown" />
+                {freeFlapStats && (
+                  <View style={styles.cardGap}>
+                    <SpecialtyDeepDiveCard
+                      label="Free Flap"
+                      caseCount={freeFlapStats.totalCases}
+                      color={theme.accent}
+                      heroMetric={{
+                        label: "Flap survival",
+                        value: formatPercentage(freeFlapStats.flapSurvivalRate),
+                      }}
+                      testID="statistics.card-freeFlap"
+                    >
+                      <FreeFlapContent stats={freeFlapStats} />
+                    </SpecialtyDeepDiveCard>
+                  </View>
+                )}
+                {careerOverview.specialtyDistribution.map(
+                  ({ specialty, label, count }) => {
+                    const color =
+                      theme.specialty[
+                        specialty as keyof typeof theme.specialty
+                      ] ?? theme.accent;
+                    const stats = specialtyStats[specialty];
+                    const heroMetric = getHeroMetric(specialty, stats);
+
+                    return (
+                      <View key={specialty} style={styles.cardGap}>
+                        <SpecialtyDeepDiveCard
+                          label={label}
+                          caseCount={count}
+                          color={color}
+                          heroMetric={heroMetric}
+                          testID={`statistics.card-${specialty}`}
+                        >
+                          {renderSpecialtyContent(specialty, stats)}
+                        </SpecialtyDeepDiveCard>
+                      </View>
+                    );
+                  },
+                )}
+              </>
+            )}
+
+          {/* ═══ Tier 3: Operational Insights ═══ */}
+
+          {/* Where You Operate */}
+          {facilityBarData.length > 0 && (
+            <>
+              <SectionHeader title="Where You Operate" />
+              <HorizontalBarChart data={facilityBarData} maxBars={5} />
+            </>
+          )}
+
+          {/* Your Role */}
+          {roleBarData.length > 0 && (
+            <>
+              <SectionHeader title="Your Role" />
+              <HorizontalBarChart data={roleBarData} maxBars={7} />
+            </>
+          )}
+
+          {/* Logging Efficiency */}
+          {entryTimeStats && entryTimeStats.averageEntryTimeSeconds != null && (
+            <>
+              <SectionHeader title="Logging Efficiency" />
+              <View style={styles.metricRow}>
+                <StatCard
+                  label="Avg. Entry Time"
+                  value={formatEntryTime(
+                    entryTimeStats.averageEntryTimeSeconds,
+                  )}
+                  size="small"
+                />
+                <StatCard
+                  label="Median Entry Time"
+                  value={formatEntryTime(entryTimeStats.medianEntryTimeSeconds)}
+                  size="small"
+                />
               </View>
-            ))}
-          </View>
-        </>
-      )}
+              {operationalInsights && (
+                <ThemedText
+                  style={[styles.footnote, { color: theme.textTertiary }]}
+                >
+                  Based on {operationalInsights.timedEntryCount} timed{" "}
+                  {operationalInsights.timedEntryCount === 1
+                    ? "entry"
+                    : "entries"}
+                </ThemedText>
+              )}
+            </>
+          )}
 
-      {/* Data Completeness */}
-      {operationalInsights && (
-        <>
-          <SectionHeader title="Data Completeness" />
-          <View style={styles.metricRow}>
-            <StatCard
-              label="Cases with complete data"
-              value={`${Math.round(operationalInsights.completionRate)}%`}
-              subtitle={`${Math.round((operationalInsights.completionRate / 100) * totalCases)} of ${totalCases} cases`}
-              size="small"
-            />
-          </View>
-          <ThemedText style={[styles.footnote, { color: theme.textTertiary }]}>
-            Complete = patient ID, date, facility, diagnosis, and procedure
-            recorded.
-          </ThemedText>
+          {/* Your Top 10 */}
+          {operationalInsights &&
+            operationalInsights.topDxProcPairs.length > 0 && (
+              <>
+                <SectionHeader title="Your Top 10" />
+                <View style={styles.topList}>
+                  {operationalInsights.topDxProcPairs.map((pair, i) => (
+                    <View
+                      key={`${pair.procedureName}-${i}`}
+                      style={styles.topRow}
+                    >
+                      <ThemedText
+                        style={[styles.topRank, { color: theme.accent }]}
+                      >
+                        {i + 1}.
+                      </ThemedText>
+                      <View style={styles.topContent}>
+                        <ThemedText
+                          style={[styles.topName, { color: theme.text }]}
+                          numberOfLines={1}
+                        >
+                          {pair.procedureName}
+                        </ThemedText>
+                      </View>
+                      <ThemedText
+                        style={[
+                          styles.topCount,
+                          { color: theme.textSecondary },
+                        ]}
+                      >
+                        {pair.count}
+                      </ThemedText>
+                    </View>
+                  ))}
+                </View>
+              </>
+            )}
+
+          {/* Data Completeness */}
+          {operationalInsights && (
+            <>
+              <SectionHeader title="Data Completeness" />
+              <View style={styles.metricRow}>
+                <StatCard
+                  label="Cases with complete data"
+                  value={`${Math.round(operationalInsights.completionRate)}%`}
+                  subtitle={`${Math.round((operationalInsights.completionRate / 100) * totalCases)} of ${totalCases} cases`}
+                  size="small"
+                />
+              </View>
+              <ThemedText
+                style={[styles.footnote, { color: theme.textTertiary }]}
+              >
+                Complete = patient ID, date, facility, diagnosis, and procedure
+                recorded.
+              </ThemedText>
+            </>
+          )}
         </>
       )}
     </ScrollView>

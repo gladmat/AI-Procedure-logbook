@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import {
   View,
   FlatList,
@@ -17,6 +17,7 @@ import type { RootStackParamList } from "@/navigation/RootStackNavigator";
 import type { SharedCaseInboxEntry } from "@/types/sharing";
 import { getSharedInbox } from "@/lib/sharingApi";
 import { updateSharedInboxIndex } from "@/lib/sharingStorage";
+import { getMyAssessment, getRevealedPair } from "@/lib/assessmentStorage";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -72,11 +73,50 @@ function VerificationBadge({
   );
 }
 
+type AssessmentBadgeStatus = "submitted" | "revealed" | null;
+
+function AssessmentBadge({
+  status,
+  theme,
+}: {
+  status: AssessmentBadgeStatus;
+  theme: ReturnType<typeof useTheme>["theme"];
+}) {
+  if (!status) return null;
+
+  const config = {
+    submitted: {
+      label: "Assessed",
+      icon: "clock" as const,
+      bg: theme.warning + "20",
+      color: theme.warning,
+    },
+    revealed: {
+      label: "Assessed",
+      icon: "check-circle" as const,
+      bg: theme.success + "20",
+      color: theme.success,
+    },
+  };
+  const { label, icon, bg, color } = config[status];
+
+  return (
+    <View
+      style={[styles.badge, { backgroundColor: bg, marginRight: Spacing.xs }]}
+    >
+      <Feather name={icon} size={10} color={color} style={{ marginRight: 3 }} />
+      <ThemedText style={[styles.badgeText, { color }]}>{label}</ThemedText>
+    </View>
+  );
+}
+
 const SharedCaseCard = React.memo(function SharedCaseCard({
   entry,
+  assessmentStatus,
   onPress,
 }: {
   entry: SharedCaseInboxEntry;
+  assessmentStatus: AssessmentBadgeStatus;
   onPress: () => void;
 }) {
   const { theme } = useTheme();
@@ -122,7 +162,10 @@ const SharedCaseCard = React.memo(function SharedCaseCard({
             </ThemedText>
           </View>
         </View>
-        <VerificationBadge status={entry.verificationStatus} theme={theme} />
+        <View style={styles.badgeRow}>
+          <AssessmentBadge status={assessmentStatus} theme={theme} />
+          <VerificationBadge status={entry.verificationStatus} theme={theme} />
+        </View>
       </View>
     </Pressable>
   );
@@ -135,6 +178,9 @@ export default function SharedInboxScreen() {
   const [entries, setEntries] = useState<SharedCaseInboxEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [assessmentBadges, setAssessmentBadges] = useState<
+    Map<string, AssessmentBadgeStatus>
+  >(new Map());
 
   const loadInbox = useCallback(async () => {
     try {
@@ -152,6 +198,33 @@ export default function SharedInboxScreen() {
       setLoading(false);
     }
   }, []);
+
+  // Load assessment badge status for all entries
+  useEffect(() => {
+    if (entries.length === 0) return;
+
+    const loadBadges = async () => {
+      const results = await Promise.allSettled(
+        entries.map(async (entry) => {
+          const revealed = await getRevealedPair(entry.id);
+          if (revealed) return { id: entry.id, status: "revealed" as const };
+          const mine = await getMyAssessment(entry.id);
+          if (mine) return { id: entry.id, status: "submitted" as const };
+          return { id: entry.id, status: null };
+        }),
+      );
+
+      const map = new Map<string, AssessmentBadgeStatus>();
+      for (const r of results) {
+        if (r.status === "fulfilled" && r.value) {
+          map.set(r.value.id, r.value.status);
+        }
+      }
+      setAssessmentBadges(map);
+    };
+
+    loadBadges();
+  }, [entries]);
 
   useFocusEffect(
     useCallback(() => {
@@ -216,7 +289,11 @@ export default function SharedInboxScreen() {
         data={entries}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <SharedCaseCard entry={item} onPress={() => handleCardPress(item)} />
+          <SharedCaseCard
+            entry={item}
+            assessmentStatus={assessmentBadges.get(item.id) ?? null}
+            onPress={() => handleCardPress(item)}
+          />
         )}
         contentContainerStyle={styles.listContent}
         refreshControl={
@@ -282,7 +359,13 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginTop: 2,
   },
+  badgeRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
   badge: {
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: Spacing.sm,
     paddingVertical: 4,
     borderRadius: BorderRadius.full,

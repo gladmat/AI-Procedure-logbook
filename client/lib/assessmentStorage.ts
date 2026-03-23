@@ -93,3 +93,37 @@ export async function getAllRevealedPairIds(): Promise<string[]> {
     return [];
   }
 }
+
+// ── Batch load all revealed pairs (Phase 5 analytics entrypoint) ────────────
+
+/** A revealed pair with its storage key attached for analytics grouping. */
+export interface RevealedPairWithContext extends RevealedAssessmentPair {
+  sharedCaseId: string;
+}
+
+/**
+ * Decrypt and return all revealed assessment pairs.
+ * Filters out any pairs that fail decryption.
+ */
+export async function getAllRevealedPairs(): Promise<
+  RevealedPairWithContext[]
+> {
+  const ids = await getAllRevealedPairIds();
+  if (ids.length === 0) return [];
+
+  const results = await Promise.allSettled(
+    ids.map(async (id) => {
+      const pair = await getRevealedPair(id);
+      if (!pair) return null;
+      return { ...pair, sharedCaseId: id };
+    }),
+  );
+
+  return results
+    .filter(
+      (r): r is PromiseFulfilledResult<RevealedPairWithContext | null> =>
+        r.status === "fulfilled",
+    )
+    .map((r) => r.value)
+    .filter((v): v is RevealedPairWithContext => v != null);
+}
