@@ -322,12 +322,11 @@ There is **no continuing-care pathway** in the product model. Re-excision / foll
 2. **Melanoma quick Breslow** — compact mirrored Breslow thickness row shown before prior histology in the melanoma / histology-known flow so margin and SLNB guidance updates earlier.
 3. **Prior histology** — shown for `histology_known`. Captures prior biopsy pathology, subtype detail, excision method, margin status, and exposes re-excision follow-up CTA when margins are incomplete / close.
 4. **Lesion details** — grouped HEAD & NECK / TRUNK / UPPER LIMB / LOWER LIMB site picker, laterality (auto-midline for midline sites), clinical dimensions, encrypted lesion photo capture with auto-captioning.
-5. **Margin recommendation badge** — guideline CDS using text/range output (`5mm`, `3-4mm`, `1-2cm`, `>=2cm`) instead of collapsing ranges to a single numeric mm value.
-6. **SLNB** — auto-offered for melanoma >0.8mm or ulcerated and for Merkel cell; can also be manually considered for selected high-risk SCC / rare malignant patterns. Existing saved SLNB data keeps the section visible.
-7. **Biopsy / Excision** — biopsy pathway shows biopsy method + conditional fields; histology-known pathway uses simplified current-procedure excision planning (`HistologySection` simplified mode) with compact excision + peripheral margin layout.
-8. **Specimen histology** — full structured `currentHistology` editor used as the return-to-update flow for final pathology and margin status. In biopsy-path initial logging it stays hidden until the case is reopened or current histology already exists.
-9. **MDT toggle** — simple `discussedAtMdt` flag for the histology-known pathway.
-10. **Summary & Procedures** — interactive suggested procedures with only the primary procedure preselected by default, coding details, accept/edit mapping, and completion summary.
+5. **SLNB** — auto-offered for melanoma >0.8mm or ulcerated and for Merkel cell; can also be manually considered for selected high-risk SCC / rare malignant patterns. Existing saved SLNB data keeps the section visible.
+6. **Biopsy / Excision** — biopsy pathway shows biopsy method + conditional fields; histology-known pathway uses simplified current-procedure excision planning (`HistologySection` simplified mode) with compact excision + peripheral margin layout.
+7. **Specimen histology** — full structured `currentHistology` editor used as the return-to-update flow for final pathology and margin status. In biopsy-path initial logging it stays hidden until the case is reopened or current histology already exists.
+8. **MDT toggle** — simple `discussedAtMdt` flag for the histology-known pathway.
+9. **Summary & Procedures** — interactive suggested procedures with only the primary procedure preselected by default, coding details, accept/edit mapping, and completion summary.
 
 **Histology precedence rules:**
 
@@ -359,7 +358,6 @@ There is **no continuing-care pathway** in the product model. Re-excision / foll
 - `PathologySection` — prior histology editor for `histology_known`
 - `HistologySection` — simplified excision planner or full structured current histology editor
 - `SkinCancerSummaryPanel` — accept/edit mapping UI with diagnosis resolution details and rare-type review notes
-- `MarginRecommendationBadge` — text/range-based margin CDS
 - `SLNBSection` — sentinel lymph node assessment
 - `SkinCancerNumericInput` — draft-preserving numeric field wrapper for Breslow, margins, lesion size, and other decimal inputs
 - `ReExcisionPromptCard` — launches duplicate follow-up flow instead of showing obsolete continuing-care instructions
@@ -776,7 +774,7 @@ Following established patterns:
 | -------------------- | ----------------------------------------------------------------------------------------------------------------------- |
 | Assessment component | `client/components/skin-cancer/SkinCancerAssessment.tsx` (analogous to `hand-trauma/HandTraumaAssessment.tsx`)          |
 | Type definitions     | `client/types/skinCancer.ts` (extend existing)                                                                          |
-| Mapping/config       | `client/lib/skinCancerConfig.ts` (margin recommendations, SLNB criteria, disclosure rules)                              |
+| Mapping/config       | `client/lib/skinCancerConfig.ts` (margin logic for procedure matching, SLNB criteria, disclosure rules)                  |
 | Integration point    | `DiagnosisGroupEditor.tsx` activates the module when diagnosis metadata matches                                         |
 | Tests                | `client/lib/__tests__/skinCancerAssessment.test.ts` for disclosure logic, margin recommendations, episode auto-creation |
 
@@ -1454,7 +1452,6 @@ CaseFormScreen.tsx
 │   │       │   ├── PathologySection.tsx
 │   │       │   ├── HistologySection.tsx
 │   │       │   ├── LesionDetailsSection.tsx
-│   │       │   ├── MarginRecommendationBadge.tsx
 │   │       │   ├── SLNBSection.tsx
 │   │       │   ├── ReExcisionPromptCard.tsx
 │   │       │   ├── CompletionSummary.tsx

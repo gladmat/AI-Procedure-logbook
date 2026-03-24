@@ -23,7 +23,6 @@ import { DatePickerField } from "@/components/FormField";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { quickTStage } from "@/lib/melanomaStaging";
-import { getMarginRecommendation } from "@/lib/skinCancerConfig";
 import { RareTypeSubtypePicker } from "./RareTypeSubtypePicker";
 import { ReExcisionPromptCard } from "./ReExcisionPromptCard";
 import type {
@@ -137,15 +136,6 @@ const MARGIN_STATUS_OPTIONS: {
   { value: "pending", label: "Pending" },
   { value: "unknown", label: "Unknown" },
 ];
-
-const MOHS_RECOMMENDED: Set<string> = new Set(["mac", "dfsp", "empd"]);
-
-const BCC_AGGRESSIVE: Set<BCCSubtype> = new Set([
-  "infiltrative",
-  "morphoeic",
-  "micronodular",
-  "mixed",
-]);
 
 // ═══════════════════════════════════════════════════════════════
 // Props & helpers
@@ -349,33 +339,6 @@ export const HistologySection = React.memo(function HistologySection({
     [base, onHistologyChange],
   );
 
-  // ─── Margin recommendation ─────────────────────────────────
-
-  const marginRec = useMemo(() => {
-    if (!base.pathologyCategory) return undefined;
-    return getMarginRecommendation(base);
-  }, [base]);
-
-  // ─── Mohs recommendation ──────────────────────────────────
-
-  const showMohsNote = useMemo(() => {
-    if (
-      base.pathologyCategory === "rare_malignant" &&
-      base.rareSubtype &&
-      MOHS_RECOMMENDED.has(base.rareSubtype)
-    ) {
-      return true;
-    }
-    if (
-      base.pathologyCategory === "bcc" &&
-      base.bccSubtype &&
-      BCC_AGGRESSIVE.has(base.bccSubtype)
-    ) {
-      return true;
-    }
-    return false;
-  }, [base.pathologyCategory, base.rareSubtype, base.bccSubtype]);
-
   // ─── Status badge ──────────────────────────────────────────
 
   const badge = useMemo(
@@ -562,11 +525,6 @@ export const HistologySection = React.memo(function HistologySection({
               );
             })}
           </View>
-          {showMohsNote ? (
-            <ThemedText style={[styles.footnote, { color: theme.info }]}>
-              Mohs recommended for this tumour type
-            </ThemedText>
-          ) : null}
         </View>
       ) : null}
 
@@ -574,33 +532,6 @@ export const HistologySection = React.memo(function HistologySection({
       {(simplifiedMode || base.pathologyCategory) &&
       base.excisionMethod !== "mohs" ? (
         <View style={styles.section}>
-          {/* Margin recommendation badge — hidden in simplified mode */}
-          {!simplifiedMode && marginRec ? (
-            <View
-              style={[
-                styles.marginRecBanner,
-                {
-                  backgroundColor: theme.info + "10",
-                  borderLeftColor: theme.info,
-                },
-              ]}
-            >
-              <ThemedText
-                style={[styles.marginRecTitle, { color: theme.info }]}
-              >
-                Recommended: {marginRec.recommendedText} (
-                {marginRec.guidelineSource})
-              </ThemedText>
-              {marginRec.guidelineNote ? (
-                <ThemedText
-                  style={[styles.marginRecNote, { color: theme.textSecondary }]}
-                >
-                  {marginRec.guidelineNote}
-                </ThemedText>
-              ) : null}
-            </View>
-          ) : null}
-
           <View style={styles.marginInputRow}>
             {/* Deep margin — hidden in simplified (excision) mode */}
             {!simplifiedMode ? (
@@ -1652,24 +1583,6 @@ const styles = StyleSheet.create({
   tStageText: {
     fontSize: 13,
     fontWeight: "500",
-  },
-  footnote: {
-    fontSize: 13,
-    fontStyle: "italic",
-  },
-  marginRecBanner: {
-    paddingVertical: Spacing.sm,
-    paddingHorizontal: Spacing.md,
-    borderLeftWidth: 3,
-    borderRadius: BorderRadius.xs,
-    gap: 2,
-  },
-  marginRecTitle: {
-    fontSize: 13,
-    fontWeight: "600",
-  },
-  marginRecNote: {
-    fontSize: 12,
   },
   marginInputRow: {
     flexDirection: "row",

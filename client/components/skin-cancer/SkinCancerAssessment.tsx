@@ -16,7 +16,6 @@
  *   [Melanoma] SectionWrapper "N. Breslow Thickness" (quick mirrored field)
  *   [Histology known] SectionWrapper "N. Pathology" (Tier 2 details only)
  *   SectionWrapper "N. Lesion" (site, laterality, dimensions)
- *   [conditional] MarginRecommendationBadge
  *   [conditional] SectionWrapper "N. SLNB"
  *   SectionWrapper "N. Excision" (method + margin inputs)
  *   [Histology known] SectionWrapper "N. Context" (optional metadata)
@@ -47,7 +46,6 @@ import { useCaseFormSelector } from "@/contexts/CaseFormContext";
 import {
   shouldOfferSLNB,
   canConsiderSLNB,
-  getMarginRecommendation,
   getSkinCancerCompletion,
   getSkinCancerDiagnosisAutoConfig,
   getSkinCancerPathwayStageForCategory,
@@ -71,7 +69,6 @@ import {
 import { SectionWrapper } from "@/components/shared/SectionWrapper";
 import { PathologySection } from "./PathologySection";
 import { HistologySection } from "./HistologySection";
-import { MarginRecommendationBadge } from "./MarginRecommendationBadge";
 import { SLNBSection } from "./SLNBSection";
 import { SkinCancerSummaryPanel } from "./SkinCancerSummaryPanel";
 import { CompletionSummary } from "./CompletionSummary";
@@ -205,11 +202,6 @@ export function SkinCancerAssessment({
   const showSlnb = autoSlnb || manualSlnbToggle || !!assessment?.slnb;
 
   const hasAcceptHandler = !!onAcceptMapping || !!onAcceptProcedures;
-
-  const marginRec = useMemo(
-    () => (relevantHisto ? getMarginRecommendation(relevantHisto) : undefined),
-    [relevantHisto],
-  );
 
   const procedureStatus: SectionStatus = hasAcceptHandler
     ? isAccepted || procedureCount > 0
@@ -705,11 +697,6 @@ export function SkinCancerAssessment({
               onPhotoAdded={onPhotoAdded}
             />
           </SectionWrapper>
-
-          {/* ── Margin recommendation badge ── */}
-          {marginRec ? (
-            <MarginRecommendationBadge recommendation={marginRec} />
-          ) : null}
 
           {/* ── SLNB ── */}
           {showSlnb ? (

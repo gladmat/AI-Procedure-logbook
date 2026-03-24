@@ -23,7 +23,6 @@ import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { quickTStage } from "@/lib/melanomaStaging";
-import { getMarginRecommendation } from "@/lib/skinCancerConfig";
 import { RareTypeSubtypePicker } from "./RareTypeSubtypePicker";
 import { ReExcisionPromptCard } from "./ReExcisionPromptCard";
 import { SkinCancerNumericInput } from "./SkinCancerNumericInput";
@@ -132,15 +131,6 @@ const MARGIN_STATUS_OPTIONS: {
   { value: "incomplete", label: "Involved" },
   { value: "unknown", label: "Unknown" },
 ];
-
-const MOHS_RECOMMENDED: Set<string> = new Set(["mac", "dfsp", "empd"]);
-
-const BCC_AGGRESSIVE: Set<BCCSubtype> = new Set([
-  "infiltrative",
-  "morphoeic",
-  "micronodular",
-  "mixed",
-]);
 
 // ═══════════════════════════════════════════════════════════════
 // Props
@@ -256,30 +246,6 @@ export function PathologySection({
       onPriorHistologyChange,
     ],
   );
-
-  // ── Margin recommendation ──
-  const marginRec = useMemo(() => {
-    if (!base.pathologyCategory || isPathwayA) return undefined;
-    return getMarginRecommendation(base);
-  }, [base, isPathwayA]);
-
-  // ── Mohs recommendation ──
-  const showMohsNote = useMemo(() => {
-    if (isPathwayA) return false;
-    if (
-      base.pathologyCategory === "rare_malignant" &&
-      base.rareSubtype &&
-      MOHS_RECOMMENDED.has(base.rareSubtype)
-    )
-      return true;
-    if (
-      base.pathologyCategory === "bcc" &&
-      base.bccSubtype &&
-      BCC_AGGRESSIVE.has(base.bccSubtype)
-    )
-      return true;
-    return false;
-  }, [isPathwayA, base.pathologyCategory, base.rareSubtype, base.bccSubtype]);
 
   // ── T-stage auto display ──
   const tStageDisplay = useMemo(() => {
@@ -416,46 +382,11 @@ export function PathologySection({
                 );
               })}
             </View>
-            {showMohsNote ? (
-              <ThemedText style={[styles.footnote, { color: theme.info }]}>
-                Mohs recommended for this tumour type
-              </ThemedText>
-            ) : null}
           </View>
 
           {/* ── Margin Fields — hidden when Mohs selected ── */}
           {base.excisionMethod !== "mohs" ? (
             <View style={styles.section}>
-              {/* Margin recommendation */}
-              {marginRec ? (
-                <View
-                  style={[
-                    styles.marginRecBanner,
-                    {
-                      backgroundColor: theme.info + "10",
-                      borderLeftColor: theme.info,
-                    },
-                  ]}
-                >
-                  <ThemedText
-                    style={[styles.marginRecTitle, { color: theme.info }]}
-                  >
-                    Recommended: {marginRec.recommendedText} (
-                    {marginRec.guidelineSource})
-                  </ThemedText>
-                  {marginRec.guidelineNote ? (
-                    <ThemedText
-                      style={[
-                        styles.marginRecNote,
-                        { color: theme.textSecondary },
-                      ]}
-                    >
-                      {marginRec.guidelineNote}
-                    </ThemedText>
-                  ) : null}
-                </View>
-              ) : null}
-
               <View style={styles.marginInputRow}>
                 <View style={styles.marginInputGroup}>
                   <ThemedText
@@ -1328,10 +1259,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "500",
   },
-  footnote: {
-    fontSize: 13,
-    fontStyle: "italic",
-  },
   disclosureHeader: {
     flexDirection: "row",
     alignItems: "center",
@@ -1341,20 +1268,6 @@ const styles = StyleSheet.create({
   disclosureText: {
     fontSize: 13,
     fontWeight: "600",
-  },
-  marginRecBanner: {
-    paddingVertical: Spacing.sm,
-    paddingHorizontal: Spacing.md,
-    borderLeftWidth: 3,
-    borderRadius: BorderRadius.xs,
-    gap: 2,
-  },
-  marginRecTitle: {
-    fontSize: 13,
-    fontWeight: "600",
-  },
-  marginRecNote: {
-    fontSize: 12,
   },
   marginInputRow: {
     flexDirection: "row",
