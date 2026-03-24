@@ -139,6 +139,12 @@ export type NerveIdentifier =
   | "facial"
   | "spinal_accessory"
   | "hypoglossal"
+  // Facial nerve branches
+  | "facial_temporal"
+  | "facial_zygomatic"
+  | "facial_buccal"
+  | "facial_marginal_mandibular"
+  | "facial_cervical"
   // Other
   | "other";
 
@@ -185,9 +191,14 @@ export const NERVE_LABELS: Record<NerveIdentifier, string> = {
   ilioinguinal: "Ilioinguinal nerve",
   iliohypogastric: "Iliohypogastric nerve",
   genitofemoral: "Genitofemoral nerve",
-  facial: "Facial nerve",
+  facial: "Facial nerve (main trunk)",
   spinal_accessory: "Spinal accessory nerve",
   hypoglossal: "Hypoglossal nerve",
+  facial_temporal: "Temporal branch (frontal)",
+  facial_zygomatic: "Zygomatic branch",
+  facial_buccal: "Buccal branch",
+  facial_marginal_mandibular: "Marginal mandibular branch",
+  facial_cervical: "Cervical branch",
   other: "Other",
 };
 
@@ -197,6 +208,7 @@ export type NerveGroup =
   | "upper_extremity_branches"
   | "brachial_plexus_branches"
   | "lower_extremity"
+  | "facial"
   | "cranial"
   | "other";
 
@@ -205,6 +217,7 @@ export const NERVE_GROUP_LABELS: Record<NerveGroup, string> = {
   upper_extremity_branches: "Upper Extremity — Branches",
   brachial_plexus_branches: "Brachial Plexus Branches",
   lower_extremity: "Lower Extremity",
+  facial: "Facial Nerve",
   cranial: "Cranial",
   other: "Other",
 };
@@ -252,7 +265,15 @@ export const NERVE_GROUPS: Record<NerveGroup, NerveIdentifier[]> = {
     "iliohypogastric",
     "genitofemoral",
   ],
-  cranial: ["facial", "spinal_accessory", "hypoglossal"],
+  facial: [
+    "facial",
+    "facial_temporal",
+    "facial_zygomatic",
+    "facial_buccal",
+    "facial_marginal_mandibular",
+    "facial_cervical",
+  ],
+  cranial: ["spinal_accessory", "hypoglossal"],
   other: ["other"],
 };
 
@@ -471,6 +492,12 @@ export interface PeripheralNerveAssessmentData {
 
   // Neuroma sub-module
   neuroma?: NeuromaAssessmentData;
+
+  // Compression / tumour lightweight fields
+  ultrasoundPerformed?: boolean;
+  overallSeverity?: "mild" | "moderate" | "severe";
+  tumourSizeMm?: number;
+  tumourRelationship?: "eccentric" | "central" | "encasing";
 }
 
 // ══════════════════════════════════════════════════
@@ -637,6 +664,7 @@ export interface FFMTDetails {
 // ══════════════════════════════════════════════════
 
 export interface NeuromaAssessmentData {
+  affectedNerve?: NerveIdentifier;
   aetiology: "post_amputation" | "traumatic" | "iatrogenic";
 
   morphology?: "bulbous" | "fusiform" | "atypical";

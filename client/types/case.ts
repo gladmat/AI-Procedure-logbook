@@ -2120,7 +2120,7 @@ export const SPECIALTY_LABELS: Record<Specialty, string> = {
   lymphoedema: "Lymphoedema",
   body_contouring: "Body Contouring",
   aesthetics: "Aesthetics",
-  peripheral_nerve: "Peripheral Nerve",
+  peripheral_nerve: "Facial & Peripheral Nerve",
   general: "General / Other",
 };
 

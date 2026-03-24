@@ -45,7 +45,11 @@ export { BODY_CONTOURING_DIAGNOSES } from "./bodyContouringDiagnoses";
 export { BREAST_DIAGNOSES } from "./breastDiagnoses";
 export { AESTHETICS_DIAGNOSES } from "./aestheticsDiagnoses";
 export { GENERAL_DIAGNOSES } from "./generalDiagnoses";
-export { HEAD_NECK_DIAGNOSES, HN_DX_SKIN_CANCER } from "./headNeckDiagnoses";
+export {
+  HEAD_NECK_DIAGNOSES,
+  HN_DX_SKIN_CANCER,
+  HN_DX_FACIAL_NERVE,
+} from "./headNeckDiagnoses";
 export { ORTHOPLASTIC_DIAGNOSES } from "./orthoplasticDiagnoses";
 export { CLEFT_CRANIO_DIAGNOSES } from "./cleftCranioDiagnoses";
 export { SKIN_CANCER_DIAGNOSES } from "./skinCancerDiagnoses";
@@ -78,7 +82,8 @@ export const ALL_DIAGNOSES: DiagnosisPicklistEntry[] = [
   ...CLEFT_CRANIO_DIAGNOSES,
   ...SKIN_CANCER_DIAGNOSES,
   ...LYMPHOEDEMA_DIAGNOSES,
-  ...PERIPHERAL_NERVE_DIAGNOSES,
+  // Filter out cross-references to avoid duplicate IDs in the master registry
+  ...PERIPHERAL_NERVE_DIAGNOSES.filter((dx) => !dx.crossReferenceFrom),
 ];
 
 // ─── Lookup by specialty ─────────────────────────────────────────────────────
@@ -160,6 +165,12 @@ const DIAGNOSIS_ID_ALIASES: Record<string, string> = {
   // Unified trigger digit: merged from separate finger/thumb entries
   hand_dx_trigger_finger: "hand_dx_trigger_digit",
   hand_dx_trigger_thumb: "hand_dx_trigger_digit",
+  // Peripheral nerve: BP traction-pattern + penetrating → single traumatic parent
+  pn_dx_bp_traction_upper: "pn_dx_bp_traumatic",
+  pn_dx_bp_traction_extended: "pn_dx_bp_traumatic",
+  pn_dx_bp_traction_complete: "pn_dx_bp_traumatic",
+  pn_dx_bp_traction_lower: "pn_dx_bp_traumatic",
+  pn_dx_bp_penetrating: "pn_dx_bp_traumatic",
   // Body contouring → aesthetics merge (Phase 2)
   bc_dx_abdominal_excess: "aes_dx_abdominal_excess",
   bc_dx_panniculitis: "aes_dx_panniculitis",

@@ -45,6 +45,84 @@ export function isNeuromaDiagnosis(
   return diagnosis?.neuromaModule === true;
 }
 
+/** Returns true when the diagnosis activates the nerve tumour minimal assessment */
+export function isNerveTumourDiagnosis(
+  diagnosis: DiagnosisPicklistEntry | undefined,
+): boolean {
+  return diagnosis?.nerveTumourModule === true;
+}
+
+// ══════════════════════════════════════════════════
+// BODY REGION MAPPING
+// ══════════════════════════════════════════════════
+
+export type BodyRegion =
+  | "upper_extremity"
+  | "lower_extremity"
+  | "brachial_plexus"
+  | "facial"
+  | "compression"
+  | "nerve_tumour"
+  | "any";
+
+/** Map diagnosis subcategory → body region for context-aware nerve filtering */
+export function getBodyRegion(
+  diagnosis: DiagnosisPicklistEntry | undefined,
+): BodyRegion {
+  if (!diagnosis) return "any";
+  if (diagnosis.nerveTumourModule) return "nerve_tumour";
+  if (diagnosis.brachialPlexusModule) return "brachial_plexus";
+
+  switch (diagnosis.subcategory) {
+    case "Upper Extremity Nerve Injury":
+      return "upper_extremity";
+    case "Lower Extremity Nerve Injury":
+      return "lower_extremity";
+    case "Compression Neuropathies":
+      return "compression";
+    case "Facial Nerve":
+      return "facial";
+    case "Neuroma":
+    case "Nerve Tumours":
+      return "any"; // neuroma/tumour can be on any nerve
+    default:
+      return "any";
+  }
+}
+
+// ══════════════════════════════════════════════════
+// DIAGNOSIS → NERVE AUTO-SELECT
+// ══════════════════════════════════════════════════
+
+/** When a diagnosis maps to a specific nerve, auto-populate on mount */
+export const DIAGNOSIS_TO_NERVE: Partial<Record<string, NerveIdentifier>> = {
+  // Upper extremity
+  pn_dx_median_nerve_injury: "median",
+  pn_dx_ulnar_nerve_injury: "ulnar",
+  pn_dx_radial_nerve_injury: "radial",
+  pn_dx_long_thoracic_palsy: "long_thoracic",
+  pn_dx_spinal_accessory_injury: "spinal_accessory",
+
+  // Lower extremity
+  pn_dx_common_peroneal_injury: "common_peroneal",
+  pn_dx_sciatic_injury: "sciatic",
+  pn_dx_femoral_nerve_injury: "femoral",
+  pn_dx_obturator_neuropathy: "obturator",
+  pn_dx_pudendal_neuropathy: "pudendal",
+
+  // Compression neuropathies
+  pn_dx_ain_syndrome: "anterior_interosseous",
+  pn_dx_pin_syndrome: "posterior_interosseous",
+  pn_dx_radial_tunnel_syndrome: "radial",
+  pn_dx_pronator_syndrome: "median",
+  pn_dx_guyon_canal_syndrome: "ulnar",
+  pn_dx_suprascapular_neuropathy: "suprascapular",
+  pn_dx_common_peroneal_compression: "common_peroneal",
+  pn_dx_tarsal_tunnel: "tibial",
+  pn_dx_meralgia_paresthetica: "lateral_femoral_cutaneous",
+  pn_dx_morton_neuroma: "interdigital",
+};
+
 // ══════════════════════════════════════════════════
 // DEFAULTS
 // ══════════════════════════════════════════════════
@@ -188,6 +266,24 @@ export function deriveInjuryPattern(
   if (injuredCount === 1) return "isolated_root";
 
   return undefined;
+}
+
+/** Human-readable label for a derived injury pattern */
+export function deriveInjuryPatternLabel(
+  roots: Partial<Record<BPRoot, BPLevelInjury>>,
+): string | undefined {
+  const pattern = deriveInjuryPattern(roots);
+  if (!pattern) return undefined;
+
+  const labels: Record<BPInjuryPattern, string> = {
+    upper_c5_c6: "Upper (C5\u2013C6, Erb)",
+    extended_upper_c5_c7: "Extended upper (C5\u2013C7)",
+    complete_c5_t1: "Complete (C5\u2013T1)",
+    lower_c8_t1: "Lower (C8\u2013T1, Klumpke)",
+    isolated_root: "Isolated root",
+    other: "Other / atypical",
+  };
+  return labels[pattern];
 }
 
 // ══════════════════════════════════════════════════

@@ -11,7 +11,7 @@ export const PROCEDURE_CATEGORIES = [
   { id: "burns", label: "Burns" },
   { id: "lymphoedema", label: "Lymphoedema" },
   { id: "aesthetics", label: "Aesthetics" },
-  { id: "peripheral_nerve", label: "Peripheral Nerve" },
+  { id: "peripheral_nerve", label: "Facial & Peripheral Nerve" },
   { id: "general", label: "General / Other" },
 ] as const;
 

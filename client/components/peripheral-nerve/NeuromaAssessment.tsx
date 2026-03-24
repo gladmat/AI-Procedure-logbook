@@ -29,8 +29,15 @@ import { Spacing, BorderRadius } from "@/constants/theme";
 import type {
   NeuromaAssessmentData,
   NeuromaTechnique,
+  NerveIdentifier,
+  NerveGroup,
 } from "@/types/peripheralNerve";
-import { NEUROMA_TECHNIQUE_LABELS } from "@/types/peripheralNerve";
+import {
+  NEUROMA_TECHNIQUE_LABELS,
+  NERVE_LABELS,
+  NERVE_GROUPS,
+  NERVE_GROUP_LABELS,
+} from "@/types/peripheralNerve";
 import {
   NEUROMA_AETIOLOGY_LABELS,
   NEUROMA_MORPHOLOGY_LABELS,
@@ -68,6 +75,16 @@ const RPNI_TECHNIQUES: NeuromaTechnique[] = [
   "ds_rpni",
   "c_rpni",
   "mc_rpni",
+];
+
+/** All nerve groups for affected nerve picker */
+const NEUROMA_NERVE_GROUPS: NerveGroup[] = [
+  "upper_extremity",
+  "upper_extremity_branches",
+  "lower_extremity",
+  "brachial_plexus_branches",
+  "facial",
+  "cranial",
 ];
 
 /** NRS 0-10 chip values */
@@ -121,6 +138,14 @@ export const NeuromaAssessment = React.memo(function NeuromaAssessment({
     [theme],
   );
 
+  const handleNerveSelect = useCallback(
+    (nerve: NerveIdentifier) => {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      update({ affectedNerve: data.affectedNerve === nerve ? undefined : nerve });
+    },
+    [data.affectedNerve, update],
+  );
+
   const isTMR = data.technique === "tmr";
   const isRPNI = RPNI_TECHNIQUES.includes(data.technique as NeuromaTechnique);
 
@@ -139,6 +164,49 @@ export const NeuromaAssessment = React.memo(function NeuromaAssessment({
       <ThemedText style={[styles.moduleTitle, { color: theme.link }]}>
         Neuroma Assessment
       </ThemedText>
+
+      {/* ═══ Section 0: Affected Nerve ═══ */}
+      <View style={styles.section}>
+        <ThemedText style={[styles.fieldLabel, { color: theme.textSecondary }]}>
+          Affected Nerve
+        </ThemedText>
+        {NEUROMA_NERVE_GROUPS.map((group) => (
+          <View key={group}>
+            <ThemedText
+              style={[
+                styles.groupLabel,
+                { color: theme.textSecondary },
+              ]}
+            >
+              {NERVE_GROUP_LABELS[group]}
+            </ThemedText>
+            <View style={styles.chipRow}>
+              {NERVE_GROUPS[group].map((nerve) => {
+                const selected = data.affectedNerve === nerve;
+                return (
+                  <Pressable
+                    key={nerve}
+                    style={chipStyle(selected)}
+                    onPress={() => handleNerveSelect(nerve)}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected }}
+                  >
+                    <ThemedText
+                      style={[
+                        styles.chipText,
+                        { color: chipTextColor(selected) },
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {NERVE_LABELS[nerve]}
+                    </ThemedText>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+        ))}
+      </View>
 
       {/* ═══ Section 1: Aetiology ═══ */}
       <View style={styles.section}>
@@ -807,6 +875,11 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 14,
     fontWeight: "600",
+  },
+  groupLabel: {
+    fontSize: 12,
+    fontWeight: "600",
+    marginBottom: Spacing.xs,
   },
   fieldLabel: {
     fontSize: 12,

@@ -322,7 +322,7 @@ Return the data as JSON.`,
   aesthetics: BODY_CONTOURING_CONFIG,
   peripheral_nerve: {
     id: "peripheral_nerve",
-    displayName: "Peripheral Nerve",
+    displayName: "Facial & Peripheral Nerve",
     icon: "zap",
     aiPrompt: "Extract peripheral nerve surgery details...",
     fields: [],

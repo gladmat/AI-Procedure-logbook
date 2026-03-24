@@ -1015,7 +1015,7 @@ const HN_DX_FACIAL_FRACTURES: DiagnosisPicklistEntry[] = [
 // Procedure suggestions are intentionally LOOSE — too many variables.
 // ═══════════════════════════════════════════════════════════════════════════════
 
-const HN_DX_FACIAL_NERVE: DiagnosisPicklistEntry[] = [
+export const HN_DX_FACIAL_NERVE: DiagnosisPicklistEntry[] = [
   {
     id: "hn_dx_bells_palsy",
     displayName: "Bell's palsy (idiopathic)",

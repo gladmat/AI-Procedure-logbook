@@ -144,6 +144,8 @@ import {
   isPeripheralNerveDiagnosis,
   isBrachialPlexusDiagnosis,
   isNeuromaDiagnosis,
+  isNerveTumourDiagnosis,
+  getBodyRegion,
 } from "@/lib/peripheralNerveConfig";
 import type { PeripheralNerveAssessmentData } from "@/types/peripheralNerve";
 import { PeripheralNerveAssessment } from "@/components/peripheral-nerve";
@@ -1239,6 +1241,18 @@ function DiagnosisGroupEditorInner({
       isNeuromaDiagnosis(selectedDiagnosis ?? undefined) ||
       !!group.peripheralNerveAssessment?.neuroma,
     [selectedDiagnosis, group.peripheralNerveAssessment?.neuroma],
+  );
+
+  // Nerve tumour sub-module: diagnosis-driven
+  const isNerveTumourModule = useMemo(
+    () => isNerveTumourDiagnosis(selectedDiagnosis ?? undefined),
+    [selectedDiagnosis],
+  );
+
+  // Body region for context-aware nerve filtering
+  const peripheralNerveBodyRegion = useMemo(
+    () => getBodyRegion(selectedDiagnosis ?? undefined),
+    [selectedDiagnosis],
   );
 
   // Lymphoedema: diagnosis-metadata driven + specialty + existing data
@@ -3434,6 +3448,20 @@ function DiagnosisGroupEditorInner({
                 selectedProcedureIds={procedurePicklistIds}
                 isBrachialPlexus={isBrachialPlexusModule}
                 isNeuroma={isNeuromaModule}
+                isNerveTumour={isNerveTumourModule}
+                bodyRegion={peripheralNerveBodyRegion}
+                laterality={
+                  diagnosisClinicalDetails.laterality as
+                    | "left"
+                    | "right"
+                    | undefined
+                }
+                onLateralityChange={(lat) =>
+                  setDiagnosisClinicalDetails((prev) => ({
+                    ...prev,
+                    laterality: lat,
+                  }))
+                }
               />
             ) : null}
 
@@ -3457,7 +3485,7 @@ function DiagnosisGroupEditorInner({
               />
             ) : null}
 
-            {primaryDiagnosis && !isSkinCancerModule && !isElectiveHand && !isCraniofacialModule && !isAestheticProcedureFirst ? (
+            {primaryDiagnosis && !isSkinCancerModule && !isElectiveHand && !isCraniofacialModule && !isAestheticProcedureFirst && !isPeripheralNerveModule ? (
               <DiagnosisClinicalFields
                 diagnosis={{
                   snomedCtCode: primaryDiagnosis.conceptId,

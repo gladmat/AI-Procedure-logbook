@@ -33,6 +33,7 @@ Key capabilities: multi-specialty case logging, SNOMED CT coded diagnoses and pr
 - **Head & Neck Progressive Disclosure COMPLETE** — CompactProcedureList (shared by breast + H&N), HeadNeckDiagnosisPicker (88 diagnoses, 9 subcategories)
 - **Hand Elective UX + Dupuytren Module COMPLETE** — reconstruction pathway multi-select pending actions, elective hand laterality simplified to Left/Right only, trigger finger per-finger multi-select, Dupuytren's split into primary/recurrent/palm-only diagnoses with DupuytrenAssessment component (per-ray MCP/PIP measurement, auto-calculated Tubiana staging, first web space, diathesis features, previous treatment tracking), removed flat Tubiana staging config, CSV/FHIR export support, 37 tests
 - **Team Sharing Phases 1–8 COMPLETE** — Career stage internationalisation (88 stages, 6 countries, 6-tier seniority), team contacts CRUD + Settings UI, case form Team section (chip-based operative team tagging, 6-pill SectionNavBar), sharing server infrastructure (E2EE, assessments, push), operativeTeam → share-on-save bridge, EPA derivation (seniority-chain algorithm, 14 tests), seniority-tier-based assessor role detection, background contact discovery (24h throttle), link confirmation + discovery badges, invitation emails (Resend, amber-branded), signup email matching, learning curve dashboard (dot plot charts, teaching aggregate, calibration score)
+- **Facial & Peripheral Nerve Remediation Phases 1–2 COMPLETE** — Category renamed to "Facial & Peripheral Nerve", BP diagnoses collapsed (8→4: obstetric, traumatic, radiation, tumour), compression neuropathy subcategory (10 entries), facial nerve cross-referenced from H&N (9 entries), nerve tumour module (4 entries with nerveTumourModule flag), context-aware nerve picker (bodyRegion filtering), DIAGNOSIS_TO_NERVE auto-select (20 mappings), 4 rendering paths (BP-only, compression-lightweight, nerve-tumour-minimal, standard), laterality inside assessment (Left/Right only), BP aetiology-filtered mechanisms, neuroma affected nerve Section 0, legacy ID aliases for removed BP entries, 22 facial reanimation procedures cross-tagged peripheral_nerve, deriveInjuryPatternLabel for inferred BP pattern badge, 23 tests
 - **Phase 5 IN PROGRESS** — Version 2.5.0, EAS config done (dev/preview/production profiles), pending manual regression + TestFlight submission
 
 ## Tech stack
@@ -940,32 +941,49 @@ Following established patterns:
 ### Architecture
 - Assessment activates on diagnosis metadata (`peripheralNerveModule: true`), NOT specialty gate
 - PeripheralNerveAssessment renders INLINE in DiagnosisGroupEditor (like HandTraumaAssessment)
-- BrachialPlexusAssessment is a sub-module WITHIN PeripheralNerveAssessment (amber-bordered) — Phase 4
-- NeuromaAssessment is a sub-module WITHIN PeripheralNerveAssessment (amber-bordered) — Phase 5
+- BrachialPlexusAssessment is a sub-module WITHIN PeripheralNerveAssessment (amber-bordered)
+- NeuromaAssessment is a sub-module WITHIN PeripheralNerveAssessment (amber-bordered)
+- Category renamed to "Facial & Peripheral Nerve" (display only — specialty ID remains `peripheral_nerve`)
+- 4 body-region rendering paths: BP-only (skip generic picker), compression-lightweight (electrodiagnostics + ultrasound + severity), nerve-tumour-minimal (affected nerve + size + relationship), standard (full sections 1–5 + sub-modules)
+- `BodyRegion` type: `'upper_extremity' | 'lower_extremity' | 'brachial_plexus' | 'facial' | 'compression' | 'nerve_tumour' | 'any'` — derived from diagnosis subcategory/metadata via `getBodyRegion()`
+- Context-aware nerve picker: `getPickerGroupsForRegion(bodyRegion)` filters NERVE_GROUPS to show only relevant nerves
+- `DIAGNOSIS_TO_NERVE` auto-selects nerve on mount when diagnosis maps to a specific nerve (20 entries)
+- Laterality (Left/Right only) renders INSIDE the assessment module; external DiagnosisClinicalFields hidden for PN
+- 7 subcategories: Upper Extremity (5), Brachial Plexus (4), Compression Neuropathies (10), Lower Extremity (5), Facial Nerve (9 xref from H&N), Neuroma (6), Nerve Tumours (4)
+- Legacy ID aliases in `DIAGNOSIS_ID_ALIASES` for removed BP traction-pattern IDs → `pn_dx_bp_traumatic`
+- `nerveTumourModule: true` metadata flag on 4 tumour diagnoses triggers minimal inline card
+- `crossReferenceFrom: "head_neck"` marker on facial nerve entries; filtered from ALL_DIAGNOSES to prevent duplicates
 
 ### Anti-Patterns — DO NOT
 - DO NOT duplicate compression neuropathy procedures — CTS, cubital tunnel stay in hand_wrist
 - DO NOT duplicate digital/median/ulnar nerve repair — stay in hand_wrist, get secondary tag
-- DO NOT duplicate facial reanimation procedures — stay in head_neck, get secondary tag
+- DO NOT duplicate facial reanimation procedures — stay in head_neck, get `peripheral_nerve` secondary tag
 - DO NOT create separate types for brachial plexus — it's nested within PeripheralNerveAssessmentData
 - DO NOT use free text for nerve identification — always use NerveIdentifier enum
 - DO NOT create a hard specialty gate — use diagnosis-driven activation
 - DO NOT put electrodiagnostic details in a modal — it's a collapsible inline section
 - DO NOT duplicate brand components — import from client/components/brand/
+- DO NOT show all nerve groups for every diagnosis — use bodyRegion-filtered picker
+- DO NOT show Bilateral/N/A laterality for peripheral nerve — Left/Right only, inside the assessment module
 
 ### Cross-Specialty Rules
 - Procedures with MULTIPLE specialties use the FIRST listed as primary
 - CTS logged under hand_wrist context → counts for hand surgery training numbers
 - CTS logged under peripheral_nerve context → also appears in peripheral nerve audit
 - Brachial plexus cases can be tagged both peripheral_nerve and microsurgery
+- 22 facial nerve/reanimation procedures from head_neck have `peripheral_nerve` in specialties[]
+- Facial nerve diagnoses cross-referenced via `crossReferenceFrom` field, NOT duplicated
 
 ### Component Registry
 - `PeripheralNerveAssessment` → `client/components/peripheral-nerve/PeripheralNerveAssessment.tsx`
+- `BrachialPlexusAssessment` → `client/components/peripheral-nerve/BrachialPlexusAssessment.tsx`
+- `NeuromaAssessment` → `client/components/peripheral-nerve/NeuromaAssessment.tsx`
 - `NerveInjuryClassification` → `client/components/peripheral-nerve/NerveInjuryClassification.tsx`
 - `ElectrodiagnosticSummaryComponent` → `client/components/peripheral-nerve/ElectrodiagnosticSummary.tsx`
 - `NerveGraftDetailsComponent` → `client/components/peripheral-nerve/NerveGraftDetailsComponent.tsx`
 - `NerveTransferPicker` → `client/components/peripheral-nerve/NerveTransferPicker.tsx`
-- Config: `client/lib/peripheralNerveConfig.ts`
+- `BrachialPlexusDiagram` → `client/components/peripheral-nerve/BrachialPlexusDiagram.tsx`
+- Config: `client/lib/peripheralNerveConfig.ts` (`getBodyRegion`, `DIAGNOSIS_TO_NERVE`, `deriveInjuryPatternLabel`, `isNerveTumourDiagnosis`)
 - Types: `client/types/peripheralNerve.ts`
 - Diagnoses: `client/lib/diagnosisPicklists/peripheralNerveDiagnoses.ts`
 
@@ -973,8 +991,11 @@ Following established patterns:
 - Nerve assessment data: DiagnosisGroup.peripheralNerveAssessment
 - Brachial plexus data: DiagnosisGroup.peripheralNerveAssessment.brachialPlexus
 - Neuroma data: DiagnosisGroup.peripheralNerveAssessment.neuroma
+- Compression/tumour lightweight fields: on assessment (`ultrasoundPerformed`, `overallSeverity`, `tumourSizeMm`, `tumourRelationship`)
+- Neuroma affected nerve: DiagnosisGroup.peripheralNerveAssessment.neuroma.affectedNerve
 - Graft/conduit details: on assessment, NOT on procedure
 - FFMT procedures: trigger existing FreeFlapDetailsForm via hasFreeFlap: true
+- BP aetiology derived from diagnosisId (obstetric/traumatic/radiation/tumour) → filters mechanism options
 
 ## Lymphoedema Module — Locked Decisions
 
@@ -1282,7 +1303,7 @@ RACS MALT codes and other training-programme formats are derived at export time 
 
 ## Testing
 
-- **Framework:** Vitest 4.0.18, **1411 tests** across 75 files
+- **Framework:** Vitest 4.0.18, **1427 tests** across 76 files
 - **Client tests:** `client/lib/__tests__/` and `client/components/` — covering hand trauma (diagnosis, mapping, ux), skin cancer (config 89, phase4 11, phase5 18, diagnoses 7), dashboard (selectors 7), hand (infection 42, elective 103), dupuytren (37), joint implant (44), osteotomy (18), media (encryption 7, fileStorage 3, tagHelpers 82, captureProtocols 41, operativeMedia 19, form 4, defaults 4, context 3), inbox (storage 13, assignment 17), capture (smartImportPrefs 10, sharedIngress 2), case (specialty 5, storageCache 4, draftPersistence 1), statistics (helpers 3, stats 7), dates (values 12, normalization 4), export (implant 3, breast), planned case (18), media organiser (15), NHI validation (12), patient identity (11), operative role (68), head & neck integration (4), breast (phase3, phase4, export), FISS calculator (12), craniofacial, aesthetics, burns, peripheral nerve, lymphoedema, team contacts (11), operative team (15), sharing bridge (8), EPA derivation (14), assessment roles + calibration (22), plus media UI coverage
 - **Server tests:** `server/__tests__/` — auth (17), validation (7), diagnosisStagingConfig (3), teamContacts (17), invitations (6)
 - **Run:** `npm run test` (once) or `npm run test:watch` (watch mode)
@@ -1424,14 +1445,14 @@ Conditional screen switching based on `isAuthenticated`, `hasSeenWelcome`, `hasS
 | Burns | `burnsDiagnoses.ts` | 41 | Depth, TBSA %, Severity | `burns` specialty |
 | Cleft/Craniofacial | `cleftCranioDiagnoses.ts` | 38 | Veau Classification | `cleft_cranio` specialty |
 | Breast | `breastDiagnoses.ts` | 37 | — | `breast` specialty |
-| Peripheral Nerve | `peripheralNerveDiagnoses.ts` | 37 | EMG Grade, Severity | `peripheral_nerve` specialty or diagnosis metadata |
+| Peripheral Nerve | `peripheralNerveDiagnoses.ts` | 43 (34 native + 9 facial nerve cross-ref) | EMG Grade, Severity | `peripheral_nerve` specialty or diagnosis metadata |
 | General | `generalDiagnoses.ts` | 57 | NPUAP Stage, Hurley Stage | Default (no special module) |
 | Lymphoedema | `lymphoedemaDiagnoses.ts` | 29 | ISL Stage, Cheng Grade, MD Anderson ICG | `lymphoedema` specialty or diagnosis metadata |
 | Orthoplastic | `orthoplasticDiagnoses.ts` | 14 | Gustilo-Anderson | Free flap / pedicled flap module |
 | Skin Cancer | `skinCancerDiagnoses.ts` | 11 | Breslow Thickness, Ulceration, TNM (AJCC 8th Ed) | Diagnosis-driven (`hasEnhancedHistology` or SNOMED match) |
 | Body Contouring | `bodyContouringDiagnoses.ts` | (deprecated — re-exports from aesthetics) | — | — |
 
-**Total: 497 structured diagnoses** across 11 active picklist files (body contouring is deprecated/merged into aesthetics).
+**Total: 503 structured diagnoses** across 11 active picklist files (body contouring is deprecated/merged into aesthetics).
 
 **29 staging systems** defined in `server/diagnosisStagingConfig.ts`: Gustilo-Anderson, Breslow Thickness, Ulceration, Severity, EMG Grade, TNM T/N/M Stage, NPUAP Stage, Depth, TBSA %, Baker Classification, Hurley Stage, ISL Stage, Cheng Lymphoedema Grade, MD Anderson ICG Stage, Wagner Grade, Le Fort Classification, House-Brackmann Grade, Kanavel Signs, Eaton-Littler Stage, Herbert Classification, Lichtman Stage, Veau Classification, Pittsburgh Fistula Classification, Whitaker Classification, TNM T/N/M Stage (AJCC 8th Ed), Overall Stage (AJCC 8th Ed).
 

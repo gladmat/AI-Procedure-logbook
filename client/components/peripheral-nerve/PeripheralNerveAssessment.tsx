@@ -37,6 +37,8 @@ import {
   REPAIR_TECHNIQUE_LABELS,
 } from "@/types/peripheralNerve";
 import type { NerveGroup } from "@/types/peripheralNerve";
+import type { BodyRegion } from "@/lib/peripheralNerveConfig";
+import { DIAGNOSIS_TO_NERVE, deriveInjuryPatternLabel } from "@/lib/peripheralNerveConfig";
 import { NerveInjuryClassification } from "./NerveInjuryClassification";
 import { ElectrodiagnosticSummaryComponent } from "./ElectrodiagnosticSummary";
 import { NerveGraftDetailsComponent } from "./NerveGraftDetailsComponent";
@@ -51,6 +53,10 @@ interface PeripheralNerveAssessmentProps {
   selectedProcedureIds?: string[];
   isBrachialPlexus?: boolean;
   isNeuroma?: boolean;
+  isNerveTumour?: boolean;
+  bodyRegion?: BodyRegion;
+  laterality?: "left" | "right";
+  onLateralityChange?: (lat: "left" | "right") => void;
 }
 
 /** Check if any selected procedure is a repair/graft/transfer/conduit */
@@ -88,12 +94,35 @@ function hasTransferProcedure(procedureIds: string[] | undefined): boolean {
 }
 
 /** Primary nerve groups for the picker */
-const PICKER_GROUPS: NerveGroup[] = [
+const ALL_PICKER_GROUPS: NerveGroup[] = [
   "upper_extremity",
+  "upper_extremity_branches",
   "lower_extremity",
   "brachial_plexus_branches",
+  "facial",
   "cranial",
 ];
+
+/** Filter nerve groups based on body region context */
+function getPickerGroupsForRegion(
+  bodyRegion: BodyRegion | undefined,
+): NerveGroup[] {
+  switch (bodyRegion) {
+    case "upper_extremity":
+      return ["upper_extremity", "upper_extremity_branches"];
+    case "lower_extremity":
+      return ["lower_extremity"];
+    case "facial":
+      return ["facial"];
+    case "nerve_tumour":
+    case "any":
+    case undefined:
+      return ALL_PICKER_GROUPS;
+    // brachial_plexus and compression skip the generic picker entirely
+    default:
+      return ALL_PICKER_GROUPS;
+  }
+}
 
 const REPAIR_TIMINGS: RepairTiming[] = [
   "primary",
@@ -116,6 +145,10 @@ export const PeripheralNerveAssessment = React.memo(
     selectedProcedureIds,
     isBrachialPlexus,
     isNeuroma,
+    isNerveTumour,
+    bodyRegion,
+    laterality,
+    onLateralityChange,
   }: PeripheralNerveAssessmentProps) {
     const { theme } = useTheme();
 
@@ -125,6 +158,36 @@ export const PeripheralNerveAssessment = React.memo(
       },
       [assessment, onAssessmentChange],
     );
+
+    // Auto-select nerve from diagnosis on mount when not already set
+    const autoNerve = diagnosisId ? DIAGNOSIS_TO_NERVE[diagnosisId] : undefined;
+    React.useEffect(() => {
+      if (autoNerve && !assessment.nerveInjured) {
+        update({ nerveInjured: autoNerve });
+      }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [autoNerve]);
+
+    const pickerGroups = useMemo(
+      () => getPickerGroupsForRegion(bodyRegion),
+      [bodyRegion],
+    );
+
+    // Derive BP aetiology from diagnosis ID
+    const bpAetiology = useMemo((): "obstetric" | "traumatic" | "radiation" | "tumour" | undefined => {
+      if (!diagnosisId) return undefined;
+      if (diagnosisId.includes("obstetric")) return "obstetric";
+      if (diagnosisId.includes("traumatic")) return "traumatic";
+      if (diagnosisId.includes("radiation")) return "radiation";
+      if (diagnosisId.includes("tumour")) return "tumour";
+      return undefined;
+    }, [diagnosisId]);
+
+    // Derive BP injury pattern label for inferred pattern badge
+    const inferredPatternLabel = useMemo(() => {
+      if (!isBrachialPlexus || !assessment.brachialPlexus?.roots) return undefined;
+      return deriveInjuryPatternLabel(assessment.brachialPlexus.roots);
+    }, [isBrachialPlexus, assessment.brachialPlexus?.roots]);
 
     // Determine which repair sub-sections are visible
     const showRepairSection = useMemo(
@@ -190,6 +253,352 @@ export const PeripheralNerveAssessment = React.memo(
       [assessment.repairTechnique, update],
     );
 
+    // ═══ BRACHIAL PLEXUS: Skip generic picker entirely ═══
+    if (bodyRegion === "brachial_plexus") {
+      return (
+        <View
+          testID="caseForm.peripheralNerve.assessment"
+          style={[
+            styles.container,
+            {
+              borderColor: theme.accent,
+              backgroundColor: theme.backgroundSecondary,
+            },
+          ]}
+        >
+          <ThemedText style={[styles.moduleTitle, { color: theme.accent }]}>
+            Brachial Plexus Assessment
+          </ThemedText>
+
+          {/* Laterality */}
+          {onLateralityChange && (
+            <View style={styles.chipRow}>
+              {(["left", "right"] as const).map((side) => {
+                const selected = laterality === side;
+                return (
+                  <Pressable
+                    key={side}
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      onLateralityChange(side);
+                    }}
+                    style={[
+                      styles.chip,
+                      {
+                        backgroundColor: selected
+                          ? theme.accent
+                          : theme.backgroundElevated,
+                        borderColor: selected ? theme.accent : theme.border,
+                      },
+                    ]}
+                  >
+                    <ThemedText
+                      style={{
+                        fontSize: 14,
+                        fontWeight: "600",
+                        color: selected ? theme.buttonText : theme.text,
+                      }}
+                    >
+                      {side === "left" ? "Left" : "Right"}
+                    </ThemedText>
+                  </Pressable>
+                );
+              })}
+            </View>
+          )}
+
+          {/* Inferred pattern badge */}
+          {inferredPatternLabel && (
+            <View
+              style={[
+                styles.patternBadge,
+                { backgroundColor: `${theme.accent}20` },
+              ]}
+            >
+              <ThemedText
+                style={{ fontSize: 13, fontWeight: "600", color: theme.accent }}
+              >
+                Inferred pattern: {inferredPatternLabel}
+              </ThemedText>
+            </View>
+          )}
+
+          <BrachialPlexusAssessment
+            data={assessment.brachialPlexus ?? { roots: {} }}
+            onChange={(brachialPlexus) => update({ brachialPlexus })}
+            aetiology={bpAetiology}
+          />
+        </View>
+      );
+    }
+
+    // ═══ COMPRESSION: Lightweight assessment ═══
+    if (bodyRegion === "compression") {
+      return (
+        <View
+          testID="caseForm.peripheralNerve.assessment"
+          style={[
+            styles.container,
+            {
+              borderColor: theme.accent,
+              backgroundColor: theme.backgroundSecondary,
+            },
+          ]}
+        >
+          <ThemedText style={[styles.moduleTitle, { color: theme.accent }]}>
+            Nerve Assessment
+          </ThemedText>
+
+          {/* Laterality */}
+          {onLateralityChange && (
+            <View style={styles.chipRow}>
+              {(["left", "right"] as const).map((side) => {
+                const selected = laterality === side;
+                return (
+                  <Pressable
+                    key={side}
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      onLateralityChange(side);
+                    }}
+                    style={[
+                      styles.chip,
+                      {
+                        backgroundColor: selected
+                          ? theme.accent
+                          : theme.backgroundElevated,
+                        borderColor: selected ? theme.accent : theme.border,
+                      },
+                    ]}
+                  >
+                    <ThemedText
+                      style={{
+                        fontSize: 14,
+                        fontWeight: "600",
+                        color: selected ? theme.buttonText : theme.text,
+                      }}
+                    >
+                      {side === "left" ? "Left" : "Right"}
+                    </ThemedText>
+                  </Pressable>
+                );
+              })}
+            </View>
+          )}
+
+          {/* Electrodiagnostics */}
+          <SectionWrapper title="Electrodiagnostics" icon="zap">
+            <ElectrodiagnosticSummaryComponent
+              data={assessment.electrodiagnostics}
+              onChange={(electrodiagnostics) => update({ electrodiagnostics })}
+            />
+          </SectionWrapper>
+
+          {/* Ultrasound */}
+          <View style={styles.switchRow}>
+            <ThemedText style={{ color: theme.text, fontSize: 15 }}>
+              Ultrasound performed
+            </ThemedText>
+            <Switch
+              value={assessment.ultrasoundPerformed === true}
+              onValueChange={(val) => update({ ultrasoundPerformed: val })}
+              trackColor={{ true: theme.accent, false: theme.border }}
+              thumbColor={theme.backgroundRoot}
+            />
+          </View>
+
+          {/* Overall severity */}
+          <View>
+            <ThemedText
+              style={[styles.fieldLabel, { color: theme.textSecondary }]}
+            >
+              Overall Severity
+            </ThemedText>
+            <View style={styles.chipRow}>
+              {(["mild", "moderate", "severe"] as const).map((sev) => {
+                const selected = assessment.overallSeverity === sev;
+                return (
+                  <Pressable
+                    key={sev}
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      update({
+                        overallSeverity:
+                          assessment.overallSeverity === sev ? undefined : sev,
+                      });
+                    }}
+                    style={[
+                      styles.chip,
+                      {
+                        backgroundColor: selected
+                          ? theme.accent
+                          : theme.backgroundElevated,
+                        borderColor: selected ? theme.accent : theme.border,
+                      },
+                    ]}
+                  >
+                    <ThemedText
+                      style={{
+                        fontSize: 14,
+                        fontWeight: "500",
+                        color: selected ? theme.buttonText : theme.text,
+                        textTransform: "capitalize",
+                      }}
+                    >
+                      {sev}
+                    </ThemedText>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+        </View>
+      );
+    }
+
+    // ═══ NERVE TUMOUR: Minimal inline card ═══
+    if (isNerveTumour) {
+      return (
+        <View
+          testID="caseForm.peripheralNerve.assessment"
+          style={[
+            styles.container,
+            {
+              borderColor: theme.accent,
+              backgroundColor: theme.backgroundSecondary,
+            },
+          ]}
+        >
+          <ThemedText style={[styles.moduleTitle, { color: theme.accent }]}>
+            Nerve Tumour Assessment
+          </ThemedText>
+
+          {/* Affected nerve — full picker (all groups) */}
+          <SectionWrapper title="Affected Nerve" icon="activity">
+            <View style={{ gap: Spacing.md }}>
+              {ALL_PICKER_GROUPS.map((group) => (
+                <View key={group}>
+                  <ThemedText
+                    style={[styles.groupLabel, { color: theme.textSecondary }]}
+                  >
+                    {NERVE_GROUP_LABELS[group]}
+                  </ThemedText>
+                  <View style={styles.chipRow}>
+                    {NERVE_GROUPS[group].map((nerve) => {
+                      const selected = assessment.nerveInjured === nerve;
+                      return (
+                        <Pressable
+                          key={nerve}
+                          onPress={() => handleNerveSelect(nerve)}
+                          style={[
+                            styles.chip,
+                            {
+                              backgroundColor: selected
+                                ? theme.accent
+                                : theme.backgroundElevated,
+                              borderColor: selected
+                                ? theme.accent
+                                : theme.border,
+                            },
+                          ]}
+                        >
+                          <ThemedText
+                            style={{
+                              fontSize: 13,
+                              fontWeight: "500",
+                              color: selected ? theme.buttonText : theme.text,
+                            }}
+                            numberOfLines={1}
+                          >
+                            {NERVE_LABELS[nerve]}
+                          </ThemedText>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                </View>
+              ))}
+            </View>
+          </SectionWrapper>
+
+          {/* Tumour size */}
+          <View>
+            <ThemedText
+              style={[styles.fieldLabel, { color: theme.textSecondary }]}
+            >
+              Tumour Size (mm)
+            </ThemedText>
+            <TextInput
+              value={assessment.tumourSizeMm?.toString() ?? ""}
+              onChangeText={(text) =>
+                update({ tumourSizeMm: text ? Number(text) : undefined })
+              }
+              keyboardType="numeric"
+              placeholder="mm"
+              placeholderTextColor={theme.textTertiary}
+              style={[
+                styles.numericInput,
+                {
+                  color: theme.text,
+                  backgroundColor: theme.backgroundElevated,
+                  borderColor: theme.border,
+                },
+              ]}
+            />
+          </View>
+
+          {/* Relationship to nerve */}
+          <View>
+            <ThemedText
+              style={[styles.fieldLabel, { color: theme.textSecondary }]}
+            >
+              Relationship to Nerve
+            </ThemedText>
+            <View style={styles.chipRow}>
+              {(["eccentric", "central", "encasing"] as const).map((rel) => {
+                const selected = assessment.tumourRelationship === rel;
+                return (
+                  <Pressable
+                    key={rel}
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      update({
+                        tumourRelationship:
+                          assessment.tumourRelationship === rel
+                            ? undefined
+                            : rel,
+                      });
+                    }}
+                    style={[
+                      styles.chip,
+                      {
+                        backgroundColor: selected
+                          ? theme.accent
+                          : theme.backgroundElevated,
+                        borderColor: selected ? theme.accent : theme.border,
+                      },
+                    ]}
+                  >
+                    <ThemedText
+                      style={{
+                        fontSize: 14,
+                        fontWeight: "500",
+                        color: selected ? theme.buttonText : theme.text,
+                        textTransform: "capitalize",
+                      }}
+                    >
+                      {rel}
+                    </ThemedText>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+        </View>
+      );
+    }
+
+    // ═══ STANDARD ASSESSMENT (upper/lower extremity, neuroma, any) ═══
     return (
       <View
         testID="caseForm.peripheralNerve.assessment"
@@ -205,10 +614,47 @@ export const PeripheralNerveAssessment = React.memo(
           Peripheral Nerve Assessment
         </ThemedText>
 
+        {/* Laterality */}
+        {onLateralityChange && (
+          <View style={styles.chipRow}>
+            {(["left", "right"] as const).map((side) => {
+              const selected = laterality === side;
+              return (
+                <Pressable
+                  key={side}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    onLateralityChange(side);
+                  }}
+                  style={[
+                    styles.chip,
+                    {
+                      backgroundColor: selected
+                        ? theme.accent
+                        : theme.backgroundElevated,
+                      borderColor: selected ? theme.accent : theme.border,
+                    },
+                  ]}
+                >
+                  <ThemedText
+                    style={{
+                      fontSize: 14,
+                      fontWeight: "600",
+                      color: selected ? theme.buttonText : theme.text,
+                    }}
+                  >
+                    {side === "left" ? "Left" : "Right"}
+                  </ThemedText>
+                </Pressable>
+              );
+            })}
+          </View>
+        )}
+
         {/* ═══ Section 1: Nerve Injured ═══ */}
         <SectionWrapper title="1. Nerve Injured" icon="activity">
           <View style={{ gap: Spacing.md }}>
-            {PICKER_GROUPS.map((group) => (
+            {pickerGroups.map((group) => (
               <View key={group}>
                 <ThemedText
                   style={[styles.groupLabel, { color: theme.textSecondary }]}
@@ -551,6 +997,7 @@ export const PeripheralNerveAssessment = React.memo(
           <BrachialPlexusAssessment
             data={assessment.brachialPlexus ?? { roots: {} }}
             onChange={(brachialPlexus) => update({ brachialPlexus })}
+            aetiology={bpAetiology}
           />
         )}
         {isNeuroma && (
@@ -624,5 +1071,11 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     minHeight: 44,
     gap: Spacing.sm,
+  },
+  patternBadge: {
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.sm,
+    alignSelf: "flex-start",
   },
 });

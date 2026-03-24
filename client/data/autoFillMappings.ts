@@ -180,6 +180,10 @@ export const DIAGNOSIS_TO_RECIPIENT_SITE: Record<string, AnatomicalRegion> = {
   gen_dx_pressure_trochanteric: "thigh",
   gen_dx_pressure_heel: "foot",
 
+  // Peripheral nerve — brachial plexus FFMT cases
+  pn_dx_bp_traumatic: "upper_arm",
+  pn_dx_bp_obstetric: "upper_arm",
+
   // Craniofacial — potential free tissue transfer
   cc_dx_craniofacial_microsomia: "head_neck",
   cc_dx_treacher_collins: "head_neck",

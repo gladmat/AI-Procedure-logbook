@@ -68,6 +68,7 @@ import { NerveTransferPicker } from "./NerveTransferPicker";
 interface BrachialPlexusAssessmentProps {
   data: BrachialPlexusAssessmentData;
   onChange: (data: BrachialPlexusAssessmentData) => void;
+  aetiology?: "obstetric" | "traumatic" | "radiation" | "tumour";
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -83,7 +84,26 @@ const PATTERNS: BPInjuryPattern[] = [
   "other",
 ];
 
-const MECHANISMS: BPMechanism[] = [
+const TRAUMATIC_MECHANISMS: BPMechanism[] = [
+  "motorcycle",
+  "mva",
+  "bicycle",
+  "fall",
+  "shoulder_dislocation",
+  "clavicle_fracture",
+  "penetrating",
+  "gunshot",
+  "iatrogenic",
+  "compression",
+  "other",
+];
+
+const OBSTETRIC_MECHANISMS: BPMechanism[] = [
+  "obstetric",
+  "other",
+];
+
+const ALL_MECHANISMS: BPMechanism[] = [
   "motorcycle",
   "mva",
   "bicycle",
@@ -98,6 +118,23 @@ const MECHANISMS: BPMechanism[] = [
   "radiation",
   "other",
 ];
+
+function getMechanismsForAetiology(
+  aetiology?: "obstetric" | "traumatic" | "radiation" | "tumour",
+): BPMechanism[] {
+  switch (aetiology) {
+    case "obstetric":
+      return OBSTETRIC_MECHANISMS;
+    case "traumatic":
+      return TRAUMATIC_MECHANISMS;
+    case "radiation":
+      return ["radiation", "other"];
+    case "tumour":
+      return ["compression", "other"];
+    default:
+      return ALL_MECHANISMS;
+  }
+}
 
 const APPROACHES = Object.keys(BP_APPROACH_LABELS) as Array<
   NonNullable<BrachialPlexusAssessmentData["approach"]>
@@ -140,6 +177,7 @@ export const BrachialPlexusAssessment = React.memo(
   function BrachialPlexusAssessment({
     data,
     onChange,
+    aetiology,
   }: BrachialPlexusAssessmentProps) {
     const { theme, isDark } = useTheme();
 
@@ -167,6 +205,11 @@ export const BrachialPlexusAssessment = React.memo(
       [data.roots],
     );
     const activePattern = data.injuryPattern ?? derivedPattern;
+
+    const filteredMechanisms = useMemo(
+      () => getMechanismsForAetiology(aetiology),
+      [aetiology],
+    );
 
     // ── Pattern quick-select ────────────────────────────────────────────
 
@@ -513,7 +556,7 @@ export const BrachialPlexusAssessment = React.memo(
               Mechanism
             </ThemedText>
             <View style={styles.chipRow}>
-              {MECHANISMS.map((mech) => (
+              {filteredMechanisms.map((mech) => (
                 <Pressable
                   key={mech}
                   style={chipStyle(data.mechanism === mech)}

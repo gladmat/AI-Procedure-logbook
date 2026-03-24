@@ -132,11 +132,17 @@ export interface DiagnosisPicklistEntry {
   /** Whether this diagnosis activates the neuroma sub-module */
   neuromaModule?: boolean;
 
+  /** Whether this diagnosis activates the nerve tumour minimal assessment */
+  nerveTumourModule?: boolean;
+
   /** Whether this diagnosis represents a revision/recurrent case */
   isRevision?: boolean;
 
   /** If true, this diagnosis appears in all non-gender-affirming clinical contexts */
   crossContextVisible?: boolean;
+
+  /** When set, this entry is a cross-reference from another specialty's picklist */
+  crossReferenceFrom?: string;
 
   /** Procedure suggestions — the core feature */
   suggestedProcedures: ProcedureSuggestion[];
