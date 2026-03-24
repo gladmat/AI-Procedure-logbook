@@ -38,6 +38,7 @@ import {
 } from "@/lib/personalization";
 import { getApiUrl } from "@/lib/query-client";
 import { getProfessionalRegistrationEntries } from "@shared/professionalRegistrations";
+import { getCareerStageLabel } from "@shared/careerStages";
 
 const APP_VERSION = Constants.expoConfig?.version || "1.0.0";
 const BUILD_NUMBER =
@@ -129,14 +130,7 @@ function SettingsItem({
   );
 }
 
-const CAREER_STAGE_LABELS: Record<string, string> = {
-  junior_house_officer: "Junior House Officer",
-  registrar_non_training: "Registrar (Non-Training)",
-  set_trainee: "SET Trainee",
-  fellow: "Fellow",
-  consultant_specialist: "Consultant / Specialist",
-  moss: "Medical Officer Special Scale",
-};
+// Career stage labels resolved dynamically via getCareerStageLabel from shared/careerStages
 
 const COUNTRY_OF_PRACTICE_LABELS: Record<string, string> = {
   new_zealand: "New Zealand",
@@ -531,8 +525,7 @@ export default function SettingsScreen() {
                       { color: theme.textTertiary },
                     ]}
                   >
-                    {CAREER_STAGE_LABELS[profile.careerStage] ||
-                      profile.careerStage}
+                    {getCareerStageLabel(profile.careerStage)}
                   </ThemedText>
                 ) : null}
               </View>
@@ -608,6 +601,16 @@ export default function SettingsScreen() {
               </View>
             ))}
           </View>
+          <SettingsItem
+            icon="users"
+            label="My Operative Team"
+            subtitle="Manage colleagues and roles"
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              navigation.navigate("TeamContacts");
+            }}
+            testID="settings.row-teamContacts"
+          />
         </View>
 
         <View style={styles.section}>

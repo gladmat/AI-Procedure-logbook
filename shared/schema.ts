@@ -101,6 +101,8 @@ export const countryOfPracticeEnum = [
   "poland",
   "united_kingdom",
   "united_states",
+  "germany",
+  "switzerland",
   "other",
 ] as const;
 export type CountryOfPractice = (typeof countryOfPracticeEnum)[number];
@@ -153,6 +155,8 @@ export const profiles = pgTable("profiles", {
     .default("unverified")
     .notNull(),
   careerStage: varchar("career_stage", { length: 50 }),
+  phone: varchar("phone", { length: 20 }),
+  discoverable: boolean("discoverable").default(true).notNull(),
   surgicalPreferences: jsonb("surgical_preferences")
     .$type<Record<string, unknown>>()
     .default(sql`'{}'::jsonb`),
@@ -537,3 +541,66 @@ export const insertPushTokenSchema = createInsertSchema(pushTokens).omit({
 
 export type PushToken = typeof pushTokens.$inferSelect;
 export type InsertPushToken = z.infer<typeof insertPushTokenSchema>;
+
+// ──────────────────────────────────────────────────────────────────────────
+// Team Contacts — per-user operative team roster
+// ──────────────────────────────────────────────────────────────────────────
+
+export const teamContacts = pgTable(
+  "team_contacts",
+  {
+    id: varchar("id")
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    ownerUserId: varchar("owner_user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    linkedUserId: varchar("linked_user_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    displayName: varchar("display_name", { length: 100 }).notNull(),
+    firstName: varchar("first_name", { length: 50 }).notNull(),
+    lastName: varchar("last_name", { length: 50 }).notNull(),
+    email: varchar("email", { length: 255 }),
+    phone: varchar("phone", { length: 20 }),
+    registrationNumber: varchar("registration_number", { length: 50 }),
+    registrationJurisdiction: varchar("registration_jurisdiction", {
+      length: 20,
+    }),
+    careerStage: varchar("career_stage", { length: 50 }),
+    defaultRole: varchar("default_role", { length: 5 }),
+    notes: varchar("notes", { length: 500 }),
+    facilityIds: jsonb("facility_ids")
+      .$type<string[]>()
+      .default(sql`'[]'::jsonb`),
+    invitationSentAt: timestamp("invitation_sent_at"),
+    invitationAcceptedAt: timestamp("invitation_accepted_at"),
+    linkConfirmedAt: timestamp("link_confirmed_at"),
+    createdAt: timestamp("created_at")
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+    updatedAt: timestamp("updated_at")
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+  },
+  (t) => [
+    index("team_contacts_owner_idx").on(t.ownerUserId),
+    index("team_contacts_linked_idx").on(t.linkedUserId),
+  ],
+);
+
+export const teamContactsRelations = relations(teamContacts, ({ one }) => ({
+  owner: one(users, {
+    fields: [teamContacts.ownerUserId],
+    references: [users.id],
+  }),
+}));
+
+export const insertTeamContactSchema = createInsertSchema(teamContacts).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type TeamContactRow = typeof teamContacts.$inferSelect;
+export type InsertTeamContact = z.infer<typeof insertTeamContactSchema>;

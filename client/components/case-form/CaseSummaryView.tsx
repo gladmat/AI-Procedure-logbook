@@ -3,6 +3,10 @@ import { View, Pressable, StyleSheet } from "react-native";
 import { Feather } from "@/components/FeatherIcon";
 import { ThemedText } from "@/components/ThemedText";
 import { useCaseFormState } from "@/contexts/CaseFormContext";
+import {
+  TEAM_MEMBER_ROLE_LABELS as TEAM_MEMBER_ROLE_LABELS_MAP,
+  type TeamMemberOperativeRole,
+} from "@/types/teamContacts";
 import { useTheme } from "@/hooks/useTheme";
 import {
   Spacing,
@@ -281,6 +285,23 @@ export function CaseSummaryView({
         <SummaryRow label="Gender" value={state.gender || undefined} />
         <SummaryRow label="Ethnicity" value={state.ethnicity || undefined} />
       </SummaryCard>
+
+      {/* Operative Team */}
+      {state.operativeTeam && state.operativeTeam.length > 0 && (
+        <SummaryCard title="Operative Team" sectionId="team" onEdit={onEdit}>
+          {state.operativeTeam.map((member) => (
+            <SummaryRow
+              key={member.contactId}
+              label={member.displayName}
+              value={
+                TEAM_MEMBER_ROLE_LABELS_MAP[
+                  member.operativeRole as TeamMemberOperativeRole
+                ] ?? member.operativeRole
+              }
+            />
+          ))}
+        </SummaryCard>
+      )}
 
       {/* Diagnosis Groups */}
       {state.diagnosisGroups.map((group, idx) => {

@@ -41,6 +41,7 @@ import type { ValidationError } from "@/hooks/useCaseForm";
 import { useCaseDraft } from "@/hooks/useCaseDraft";
 import { CaseFormProvider } from "@/contexts/CaseFormContext";
 import { PatientInfoSection } from "@/components/case-form/PatientInfoSection";
+import { TeamSection } from "@/components/case-form/TeamSection";
 import { CaseSection } from "@/components/case-form/CaseSection";
 import { OperativeSection } from "@/components/case-form/OperativeSection";
 import { OutcomesSection } from "@/components/case-form/OutcomesSection";
@@ -706,6 +707,10 @@ export default function CaseFormScreen() {
                   onLinkEpisode={handleLinkEpisode}
                 />
               ) : null}
+            </SectionWrapper>
+
+            <SectionWrapper sectionId="team" onLayout={handleSectionLayout}>
+              <TeamSection />
             </SectionWrapper>
 
             <SectionWrapper sectionId="case" onLayout={handleSectionLayout}>

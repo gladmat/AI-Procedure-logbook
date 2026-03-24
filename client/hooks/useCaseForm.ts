@@ -71,6 +71,13 @@ import { toIsoDateValue } from "@/lib/dateValues";
 import type { OperativeRole, SupervisionLevel } from "@/types/operativeRole";
 import { toNearestLegacyRole } from "@/types/operativeRole";
 import { suggestRoleDefaults, isConsultantLevel } from "@/lib/roleDefaults";
+import type {
+  CaseTeamMember,
+  TeamMemberOperativeRole,
+} from "@/types/teamContacts";
+import type { TeamContact } from "@/types/teamContacts";
+import { abbreviateName } from "@/types/teamContacts";
+import { getSeniorityTier } from "@/lib/seniorityTier";
 import {
   restoreDraftDateOnlyValue,
   restoreDraftOperativeMedia,
@@ -94,6 +101,7 @@ import {
 } from "@/lib/breastEpisodeHelpers";
 import { buildShareableBlob } from "@/lib/buildShareableBlob";
 import { shareCase } from "@/lib/sharingApi";
+import { getUserDeviceKeys } from "@/lib/teamContactsApi";
 import {
   generateCaseKeyHex,
   encryptPayloadWithCaseKey,
@@ -281,6 +289,9 @@ export interface CaseFormState {
     publicKeys: { deviceId: string; publicKey: string }[];
   }[];
 
+  // Operative team (contact-based team tagging for case roster)
+  operativeTeam: CaseTeamMember[];
+
   // UI state
   saving: boolean;
   isPlanMode: boolean;
@@ -300,7 +311,15 @@ export type CaseFormAction =
       type: "ADD_TEAM_MEMBER";
       member: CaseFormState["teamMembers"][number];
     }
-  | { type: "REMOVE_TEAM_MEMBER"; userId: string };
+  | { type: "REMOVE_TEAM_MEMBER"; userId: string }
+  | { type: "TOGGLE_OPERATIVE_TEAM"; contact: TeamContact }
+  | {
+      type: "SET_OPERATIVE_TEAM_ROLE";
+      contactId: string;
+      role: TeamMemberOperativeRole;
+    }
+  | { type: "REMOVE_OPERATIVE_TEAM_MEMBER"; contactId: string }
+  | { type: "CLEAR_OPERATIVE_TEAM" };
 
 export function setField<K extends keyof CaseFormState>(
   field: K,
@@ -389,6 +408,7 @@ export function getDefaultFormState(
     episodeSequence: 0,
     encounterClass: "",
     teamMembers: [],
+    operativeTeam: [],
     saving: false,
     isPlanMode: false,
   };
@@ -510,6 +530,7 @@ function loadCaseIntoFormState(
     episodeSequence: caseData.episodeSequence ?? 0,
     encounterClass: (caseData.encounterClass as EncounterClass) ?? "",
     teamMembers: [],
+    operativeTeam: caseData.operativeTeam ?? [],
     saving: false,
     isPlanMode: false,
   };
@@ -612,6 +633,8 @@ export function formStateToDraft(
     episodeId: state.episodeId || undefined,
     episodeSequence: state.episodeSequence || undefined,
     encounterClass: state.encounterClass || undefined,
+    operativeTeam:
+      state.operativeTeam.length > 0 ? state.operativeTeam : undefined,
     ownerId: "draft",
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
@@ -691,6 +714,7 @@ export function draftToFormState(
   result.episodeId = draft.episodeId ?? "";
   result.episodeSequence = draft.episodeSequence ?? 0;
   result.encounterClass = (draft.encounterClass as EncounterClass) ?? "";
+  result.operativeTeam = (draft as any).operativeTeam ?? [];
 
   return result;
 }
@@ -863,6 +887,15 @@ function caseFormReducer(
         next.dischargeDate = next.admissionDate;
       }
 
+      // Facility change: clear operative team (contacts differ per facility)
+      if (
+        action.field === "facility" &&
+        action.value !== state.facility &&
+        state.operativeTeam.length > 0
+      ) {
+        next.operativeTeam = [];
+      }
+
       return next;
     }
     case "SET_DIAGNOSIS_GROUPS":
@@ -891,6 +924,52 @@ function caseFormReducer(
           (m) => m.userId !== action.userId,
         ),
       };
+    case "TOGGLE_OPERATIVE_TEAM": {
+      const { contact } = action;
+      const existing = state.operativeTeam.find(
+        (m) => m.contactId === contact.id,
+      );
+      if (existing) {
+        return {
+          ...state,
+          operativeTeam: state.operativeTeam.filter(
+            (m) => m.contactId !== contact.id,
+          ),
+        };
+      }
+      const newMember: CaseTeamMember = {
+        contactId: contact.id,
+        linkedUserId: contact.linkedUserId ?? null,
+        displayName: contact.displayName,
+        abbreviatedName: abbreviateName(contact.firstName, contact.lastName),
+        careerStage: contact.careerStage ?? null,
+        operativeRole:
+          (contact.defaultRole as TeamMemberOperativeRole) ?? "FA",
+        presentForProcedures: null,
+      };
+      return {
+        ...state,
+        operativeTeam: [...state.operativeTeam, newMember],
+      };
+    }
+    case "SET_OPERATIVE_TEAM_ROLE":
+      return {
+        ...state,
+        operativeTeam: state.operativeTeam.map((m) =>
+          m.contactId === action.contactId
+            ? { ...m, operativeRole: action.role }
+            : m,
+        ),
+      };
+    case "REMOVE_OPERATIVE_TEAM_MEMBER":
+      return {
+        ...state,
+        operativeTeam: state.operativeTeam.filter(
+          (m) => m.contactId !== action.contactId,
+        ),
+      };
+    case "CLEAR_OPERATIVE_TEAM":
+      return { ...state, operativeTeam: [] };
     default:
       return state;
   }
@@ -2015,6 +2094,8 @@ export function useCaseForm({
                     addedAt: new Date().toISOString(),
                   })),
                 ],
+          operativeTeam:
+            state.operativeTeam.length > 0 ? state.operativeTeam : undefined,
           ownerId: isEditMode && existingCase ? existingCase.ownerId : userId,
           formOpenedAt: formOpenedAt || undefined,
           formSavedAt,
@@ -2056,49 +2137,85 @@ export function useCaseForm({
           }
         }
 
-        // Share with tagged team members (non-blocking — failures don't affect save)
-        if (state.teamMembers.length > 0) {
-          try {
-            const caseKeyHex = await generateCaseKeyHex();
-            const teamRoles = state.teamMembers.map((m) => ({
-              userId: m.userId,
-              displayName: m.displayName,
-              role: m.role,
-            }));
-            const blob = buildShareableBlob(savedCase, teamRoles);
-            const encryptedBlob = await encryptPayloadWithCaseKey(
-              JSON.stringify(blob),
-              caseKeyHex,
-            );
+        // Share with tagged team members + linked operative team (non-blocking)
+        {
+          // Collect shareable members: old email-tagged + linked operative team
+          const shareableMembers: {
+            userId: string;
+            displayName: string;
+            role: string;
+            publicKeys: { deviceId: string; publicKey: string }[];
+          }[] = [...state.teamMembers];
 
-            const recipients = [];
-            for (const member of state.teamMembers) {
-              const keyEnvelopes = [];
-              for (const pk of member.publicKeys) {
-                const envelope = await wrapCaseKeyForRecipient(
-                  caseKeyHex,
-                  pk.publicKey,
-                );
-                keyEnvelopes.push({
-                  deviceId: pk.deviceId,
-                  envelopeJson: JSON.stringify(envelope),
+          // Add linked operativeTeam members (fetch their device keys)
+          const linkedOpMembers = state.operativeTeam.filter(
+            (m) => m.linkedUserId,
+          );
+          for (const member of linkedOpMembers) {
+            // Skip if already in shareableMembers (avoid double-share)
+            if (
+              shareableMembers.some((m) => m.userId === member.linkedUserId)
+            ) {
+              continue;
+            }
+            try {
+              const keys = await getUserDeviceKeys(member.linkedUserId!);
+              if (keys.length > 0) {
+                shareableMembers.push({
+                  userId: member.linkedUserId!,
+                  displayName: member.displayName,
+                  role: member.operativeRole,
+                  publicKeys: keys,
                 });
               }
-              recipients.push({
-                userId: member.userId,
-                role: member.role,
-                keyEnvelopes,
-              });
+            } catch {
+              // Skip — user may have no device keys registered
             }
+          }
 
-            await shareCase({
-              caseId: savedCase.id,
-              encryptedShareableBlob: encryptedBlob,
-              recipients,
-            });
-          } catch (sharingError) {
-            console.warn("Sharing failed:", sharingError);
-            // Case saved successfully — sharing will need manual retry
+          if (shareableMembers.length > 0) {
+            try {
+              const caseKeyHex = await generateCaseKeyHex();
+              const teamRoles = shareableMembers.map((m) => ({
+                userId: m.userId,
+                displayName: m.displayName,
+                role: m.role,
+              }));
+              const blob = buildShareableBlob(savedCase, teamRoles);
+              const encryptedBlob = await encryptPayloadWithCaseKey(
+                JSON.stringify(blob),
+                caseKeyHex,
+              );
+
+              const recipients = [];
+              for (const member of shareableMembers) {
+                const keyEnvelopes = [];
+                for (const pk of member.publicKeys) {
+                  const envelope = await wrapCaseKeyForRecipient(
+                    caseKeyHex,
+                    pk.publicKey,
+                  );
+                  keyEnvelopes.push({
+                    deviceId: pk.deviceId,
+                    envelopeJson: JSON.stringify(envelope),
+                  });
+                }
+                recipients.push({
+                  userId: member.userId,
+                  role: member.role,
+                  keyEnvelopes,
+                });
+              }
+
+              await shareCase({
+                caseId: savedCase.id,
+                encryptedShareableBlob: encryptedBlob,
+                recipients,
+              });
+            } catch (sharingError) {
+              console.warn("Sharing failed:", sharingError);
+              // Case saved successfully — sharing will need manual retry
+            }
           }
         }
 

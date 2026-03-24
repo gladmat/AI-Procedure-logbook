@@ -2087,6 +2087,38 @@ export default function CaseDetailScreen() {
           </>
         ) : null}
 
+        {/* Operative Team */}
+        {caseData.operativeTeam && caseData.operativeTeam.length > 0 ? (
+          <>
+            <SectionHeader title="Operative Team" />
+            <View
+              style={[
+                styles.card,
+                { backgroundColor: theme.backgroundDefault },
+              ]}
+            >
+              {caseData.operativeTeam.map((member) => (
+                <View
+                  key={member.contactId}
+                  style={[
+                    styles.detailRow,
+                    { borderBottomColor: theme.border },
+                  ]}
+                >
+                  <ThemedText
+                    style={[styles.detailLabel, { color: theme.textSecondary }]}
+                  >
+                    {member.displayName}
+                  </ThemedText>
+                  <ThemedText style={[styles.detailValue, { color: theme.text }]}>
+                    {member.operativeRole}
+                  </ThemedText>
+                </View>
+              ))}
+            </View>
+          </>
+        ) : null}
+
         {/* Joint Case Context */}
         {caseData.jointCaseContext?.isJointCase ? (
           <>

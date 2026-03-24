@@ -1,10 +1,8 @@
 import type { OperativeRole, SupervisionLevel } from "@/types/operativeRole";
+import { CAREER_STAGE_OPTIONS } from "@shared/careerStages";
 
-/**
- * Career stages considered consultant-level for role defaults.
- * These users get auto-filled as responsible consultant and default to SURGEON + INDEPENDENT.
- */
-const CONSULTANT_CAREER_STAGES = new Set([
+/** Legacy fallback set for backward compat when a value isn't in CAREER_STAGE_OPTIONS */
+const LEGACY_CONSULTANT_STAGES = new Set([
   "consultant_specialist",
   "fellow",
   "moss",
@@ -12,12 +10,15 @@ const CONSULTANT_CAREER_STAGES = new Set([
 
 /**
  * Returns true if the given career stage is consultant-level.
- * Used for auto-filling responsible consultant and suggesting role defaults.
+ * Looks up from CAREER_STAGE_OPTIONS first, then falls back to legacy check.
  */
 export function isConsultantLevel(
   careerStage: string | null | undefined,
 ): boolean {
-  return careerStage != null && CONSULTANT_CAREER_STAGES.has(careerStage);
+  if (!careerStage) return false;
+  const option = CAREER_STAGE_OPTIONS.find((o) => o.value === careerStage);
+  if (option) return option.isConsultantLevel;
+  return LEGACY_CONSULTANT_STAGES.has(careerStage);
 }
 
 /**

@@ -9,6 +9,7 @@ import type { SkinCancerLesionAssessment } from "./skinCancer";
 import type { JointImplantDetails } from "./jointImplant";
 import type { MediaTag } from "./media";
 import type { OperativeRole, SupervisionLevel } from "./operativeRole";
+import type { CaseTeamMember } from "./teamContacts";
 import { parseDateOnlyValue } from "@/lib/dateValues";
 
 // Case status for active patient tracking
@@ -1985,6 +1986,7 @@ export interface Case {
 
   clinicalDetails: ClinicalDetails;
   teamMembers: TeamMember[];
+  operativeTeam?: CaseTeamMember[];
   ownerId: string;
   encryptionKeyId?: string;
   createdAt: string;

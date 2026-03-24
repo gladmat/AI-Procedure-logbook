@@ -23,6 +23,7 @@ import {
   getRegistrationJurisdictionForCountry,
   normalizeProfessionalRegistrations,
 } from "@shared/professionalRegistrations";
+import { getCareerStagesForCountry } from "@shared/careerStages";
 
 const COUNTRIES = [
   { value: "new_zealand", label: "New Zealand" },
@@ -30,16 +31,9 @@ const COUNTRIES = [
   { value: "united_kingdom", label: "United Kingdom" },
   { value: "united_states", label: "United States" },
   { value: "poland", label: "Poland" },
+  { value: "germany", label: "Germany" },
+  { value: "switzerland", label: "Switzerland" },
   { value: "other", label: "Other" },
-];
-
-const CAREER_STAGES = [
-  { value: "junior_house_officer", label: "Junior House Officer" },
-  { value: "registrar_non_training", label: "Registrar (Non-Training)" },
-  { value: "set_trainee", label: "SET Trainee" },
-  { value: "fellow", label: "Fellow" },
-  { value: "consultant_specialist", label: "Consultant / Specialist" },
-  { value: "moss", label: "Medical Officer Special Scale" },
 ];
 
 type Step = "agreement" | "country" | "career" | "facilities";
@@ -466,7 +460,12 @@ export default function OnboardingScreen() {
                       backgroundColor: colors.link + "15",
                     },
                   ]}
-                  onPress={() => setCountryOfPractice(country.value)}
+                  onPress={() => {
+                    if (countryOfPractice !== country.value) {
+                      setCareerStage(null);
+                    }
+                    setCountryOfPractice(country.value);
+                  }}
                   testID={`onboarding.country.card-${country.value}`}
                 >
                   <Text
@@ -526,7 +525,7 @@ export default function OnboardingScreen() {
             </Text>
 
             <View style={styles.optionsList}>
-              {CAREER_STAGES.map((stage) => (
+              {getCareerStagesForCountry(countryOfPractice).map((stage) => (
                 <Pressable
                   key={stage.value}
                   style={[

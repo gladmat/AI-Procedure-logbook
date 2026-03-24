@@ -103,6 +103,9 @@ const CSV_HEADERS = [
   "primary_procedure_snomed",
   "primary_procedure_role",
   "responsible_consultant",
+  "team_member_names",
+  "team_member_roles",
+  "team_member_count",
   "operative_role",
   "supervision_level",
   "secondary_diagnoses",
@@ -675,6 +678,12 @@ function caseToRow(c: Case, options: CsvExportOptions): string {
     })(),
     // responsible_consultant
     c.responsibleConsultantName ?? "",
+    // team_member_names
+    (c.operativeTeam ?? []).map((m) => m.displayName).join("; "),
+    // team_member_roles
+    (c.operativeTeam ?? []).map((m) => m.operativeRole).join("; "),
+    // team_member_count
+    String((c.operativeTeam ?? []).length),
     // operative_role
     (() => {
       const role = resolveOperativeRole(

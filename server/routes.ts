@@ -175,6 +175,45 @@ const revokeDeviceKeySchema = z.object({
   deviceId: z.string().min(1).max(64),
 });
 
+// ── Team contacts validation schemas ────────────────────────────────────────
+
+const teamContactCreateSchema = z.object({
+  firstName: z.string().min(1).max(50),
+  lastName: z.string().min(1).max(50),
+  email: z.string().email().max(255).nullable().optional(),
+  phone: z.string().max(20).nullable().optional(),
+  registrationNumber: z.string().max(50).nullable().optional(),
+  registrationJurisdiction: z.string().max(20).nullable().optional(),
+  careerStage: z.string().max(50).nullable().optional(),
+  defaultRole: z
+    .enum(["PS", "FA", "SS", "US", "SA"])
+    .nullable()
+    .optional(),
+  notes: z.string().max(500).nullable().optional(),
+  facilityIds: z.array(z.string()).optional(),
+});
+
+const teamContactUpdateSchema = teamContactCreateSchema.partial();
+
+const teamContactLinkSchema = z.object({
+  linkedUserId: z.string().min(1),
+});
+
+const discoverContactsSchema = z.object({
+  contacts: z
+    .array(
+      z.object({
+        contactId: z.string().min(1),
+        email: z.string().email().optional(),
+        phone: z.string().optional(),
+        registrationNumber: z.string().optional(),
+        registrationJurisdiction: z.string().optional(),
+      }),
+    )
+    .min(1)
+    .max(50),
+});
+
 // ── Sharing validation schemas ──────────────────────────────────────────────
 
 const shareSchema = z.object({
@@ -227,6 +266,11 @@ const pushTokenSchema = z.object({
   expoPushToken: z.string().min(1),
   deviceId: z.string().min(1).max(64),
   platform: z.string().max(10).optional(),
+});
+
+const invitationSchema = z.object({
+  contactId: z.string().min(1),
+  email: z.string().email(),
 });
 
 function parseJsonObject(
@@ -300,6 +344,13 @@ const userSearchRateLimiter = new Map<
 const USER_SEARCH_RATE_LIMIT = 10;
 const USER_SEARCH_RATE_WINDOW_MS = 60 * 1000;
 
+const invitationRateLimiter = new Map<
+  string,
+  { count: number; resetTime: number }
+>();
+const INVITATION_RATE_LIMIT = 20;
+const INVITATION_RATE_WINDOW_MS = 24 * 60 * 60 * 1000; // 24 hours
+
 // Periodic cleanup: evict expired entries every 60 seconds
 setInterval(() => {
   const now = Date.now();
@@ -311,6 +362,11 @@ setInterval(() => {
   for (const [key, entry] of userSearchRateLimiter) {
     if (now > entry.resetTime) {
       userSearchRateLimiter.delete(key);
+    }
+  }
+  for (const [key, entry] of invitationRateLimiter) {
+    if (now > entry.resetTime) {
+      invitationRateLimiter.delete(key);
     }
   }
 }, 60_000).unref();
@@ -366,6 +422,26 @@ function checkUserSearchRateLimit(userId: string): boolean {
   }
 
   if (entry.count >= USER_SEARCH_RATE_LIMIT) {
+    return false;
+  }
+
+  entry.count++;
+  return true;
+}
+
+function checkInvitationRateLimit(userId: string): boolean {
+  const now = Date.now();
+  const entry = invitationRateLimiter.get(userId);
+
+  if (!entry || now > entry.resetTime) {
+    invitationRateLimiter.set(userId, {
+      count: 1,
+      resetTime: now + INVITATION_RATE_WINDOW_MS,
+    });
+    return true;
+  }
+
+  if (entry.count >= INVITATION_RATE_LIMIT) {
     return false;
   }
 
@@ -2003,11 +2079,345 @@ export async function registerRoutes(app: Express): Promise<void> {
   );
 
   // ──────────────────────────────────────────────────────────────────────────
-  // User Lookup Routes
-  // Consumer: Mobile client (find team members by email for sharing)
+  // Team Contacts Routes
+  // Consumer: Mobile client (Settings → My Operative Team)
   // ──────────────────────────────────────────────────────────────────────────
 
-  // Search by exact email — returns user info + public keys for E2EE
+  // List team contacts for current user
+  app.get(
+    "/api/team-contacts",
+    authenticateToken,
+    async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+      try {
+        const contacts = await storage.getTeamContacts(req.userId!);
+        const facilityId = req.query.facilityId as string | undefined;
+        if (facilityId) {
+          const filtered = contacts.filter(
+            (c) =>
+              Array.isArray(c.facilityIds) &&
+              (c.facilityIds as string[]).includes(facilityId),
+          );
+          res.json(filtered);
+          return;
+        }
+        res.json(contacts);
+      } catch (error) {
+        console.error(
+          "Error listing team contacts:",
+          error instanceof Error ? error.message : "Unknown error",
+        );
+        res.status(500).json({ error: "Failed to list team contacts" });
+      }
+    },
+  );
+
+  // Get single team contact
+  app.get(
+    "/api/team-contacts/:id",
+    authenticateToken,
+    async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+      try {
+        const contact = await storage.getTeamContact(
+          req.params.id!,
+          req.userId!,
+        );
+        if (!contact) {
+          res.status(404).json({ error: "Contact not found" });
+          return;
+        }
+        res.json(contact);
+      } catch (error) {
+        console.error(
+          "Error getting team contact:",
+          error instanceof Error ? error.message : "Unknown error",
+        );
+        res.status(500).json({ error: "Failed to get team contact" });
+      }
+    },
+  );
+
+  // Create team contact
+  app.post(
+    "/api/team-contacts",
+    authenticateToken,
+    async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+      try {
+        const parseResult = teamContactCreateSchema.safeParse(req.body);
+        if (!parseResult.success) {
+          res.status(400).json({
+            error: "Invalid contact data",
+            details: parseResult.error.flatten(),
+          });
+          return;
+        }
+
+        const { firstName, lastName, ...rest } = parseResult.data;
+        const displayName = `${firstName} ${lastName}`;
+
+        const contact = await storage.createTeamContact({
+          ownerUserId: req.userId!,
+          firstName,
+          lastName,
+          displayName,
+          ...rest,
+          facilityIds: rest.facilityIds ?? [],
+        });
+        res.json(contact);
+      } catch (error) {
+        console.error(
+          "Error creating team contact:",
+          error instanceof Error ? error.message : "Unknown error",
+        );
+        res.status(500).json({ error: "Failed to create team contact" });
+      }
+    },
+  );
+
+  // Update team contact
+  app.put(
+    "/api/team-contacts/:id",
+    authenticateToken,
+    async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+      try {
+        const parseResult = teamContactUpdateSchema.safeParse(req.body);
+        if (!parseResult.success) {
+          res.status(400).json({
+            error: "Invalid contact data",
+            details: parseResult.error.flatten(),
+          });
+          return;
+        }
+
+        const data = parseResult.data;
+
+        // Auto-update displayName if name fields changed
+        if (data.firstName || data.lastName) {
+          const existing = await storage.getTeamContact(
+            req.params.id!,
+            req.userId!,
+          );
+          if (!existing) {
+            res.status(404).json({ error: "Contact not found" });
+            return;
+          }
+          const newFirst = data.firstName ?? existing.firstName;
+          const newLast = data.lastName ?? existing.lastName;
+          (data as Record<string, unknown>).displayName =
+            `${newFirst} ${newLast}`;
+        }
+
+        const updated = await storage.updateTeamContact(
+          req.params.id!,
+          req.userId!,
+          data,
+        );
+        if (!updated) {
+          res.status(404).json({ error: "Contact not found" });
+          return;
+        }
+        res.json(updated);
+      } catch (error) {
+        console.error(
+          "Error updating team contact:",
+          error instanceof Error ? error.message : "Unknown error",
+        );
+        res.status(500).json({ error: "Failed to update team contact" });
+      }
+    },
+  );
+
+  // Delete team contact
+  app.delete(
+    "/api/team-contacts/:id",
+    authenticateToken,
+    async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+      try {
+        const deleted = await storage.deleteTeamContact(
+          req.params.id!,
+          req.userId!,
+        );
+        if (!deleted) {
+          res.status(404).json({ error: "Contact not found" });
+          return;
+        }
+        res.json({ success: true });
+      } catch (error) {
+        console.error(
+          "Error deleting team contact:",
+          error instanceof Error ? error.message : "Unknown error",
+        );
+        res.status(500).json({ error: "Failed to delete team contact" });
+      }
+    },
+  );
+
+  // Link team contact to an Opus user
+  app.put(
+    "/api/team-contacts/:id/link",
+    authenticateToken,
+    async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+      try {
+        const parseResult = teamContactLinkSchema.safeParse(req.body);
+        if (!parseResult.success) {
+          res.status(400).json({
+            error: "Invalid link data",
+            details: parseResult.error.flatten(),
+          });
+          return;
+        }
+
+        // Validate target user exists and is discoverable
+        const targetUser = await storage.getUser(
+          parseResult.data.linkedUserId,
+        );
+        if (!targetUser) {
+          res.status(404).json({ error: "Target user not found" });
+          return;
+        }
+        const targetProfile = await storage.getProfile(targetUser.id);
+        if (targetProfile && targetProfile.discoverable === false) {
+          res.status(404).json({ error: "Target user not found" });
+          return;
+        }
+
+        const updated = await storage.linkTeamContact(
+          req.params.id!,
+          req.userId!,
+          parseResult.data.linkedUserId,
+        );
+        if (!updated) {
+          res.status(404).json({ error: "Contact not found" });
+          return;
+        }
+        res.json(updated);
+      } catch (error) {
+        console.error(
+          "Error linking team contact:",
+          error instanceof Error ? error.message : "Unknown error",
+        );
+        res.status(500).json({ error: "Failed to link team contact" });
+      }
+    },
+  );
+
+  // Unlink team contact from an Opus user
+  app.put(
+    "/api/team-contacts/:id/unlink",
+    authenticateToken,
+    async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+      try {
+        const updated = await storage.unlinkTeamContact(
+          req.params.id!,
+          req.userId!,
+        );
+        if (!updated) {
+          res.status(404).json({ error: "Contact not found" });
+          return;
+        }
+        res.json(updated);
+      } catch (error) {
+        console.error(
+          "Error unlinking team contact:",
+          error instanceof Error ? error.message : "Unknown error",
+        );
+        res.status(500).json({ error: "Failed to unlink team contact" });
+      }
+    },
+  );
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Invitation Routes
+  // Consumer: Mobile client (invite unlinked contacts to join Opus)
+  // ──────────────────────────────────────────────────────────────────────────
+
+  app.post(
+    "/api/invitations",
+    authenticateToken,
+    async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+      try {
+        if (!checkInvitationRateLimit(req.userId!)) {
+          res
+            .status(429)
+            .json({ error: "Too many invitations. Please try again later." });
+          return;
+        }
+
+        const parseResult = invitationSchema.safeParse(req.body);
+        if (!parseResult.success) {
+          res.status(400).json({
+            error: "Invalid invitation data",
+            details: parseResult.error.flatten(),
+          });
+          return;
+        }
+
+        const { contactId, email } = parseResult.data;
+
+        // Verify the contact belongs to this user
+        const contact = await storage.getTeamContact(contactId, req.userId!);
+        if (!contact) {
+          res.status(404).json({ error: "Contact not found" });
+          return;
+        }
+
+        // Record the invitation timestamp
+        const invitedAt = new Date();
+        await storage.recordInvitation(contactId, req.userId!, email);
+
+        // Actual email sending is deferred to Phase 7
+        res.json({ success: true, invitedAt: invitedAt.toISOString() });
+      } catch (error) {
+        console.error(
+          "Error sending invitation:",
+          error instanceof Error ? error.message : "Unknown error",
+        );
+        res.status(500).json({ error: "Failed to send invitation" });
+      }
+    },
+  );
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // User Lookup Routes
+  // Consumer: Mobile client (find team members by email/phone/registration)
+  // ──────────────────────────────────────────────────────────────────────────
+
+  // Get device public keys for a specific user (for E2EE case sharing)
+  app.get(
+    "/api/users/:id/keys",
+    authenticateToken,
+    async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+      try {
+        const targetUserId = req.params.id!;
+        const user = await storage.getUser(targetUserId);
+        if (!user) {
+          res.status(404).json({ error: "User not found" });
+          return;
+        }
+
+        const profile = await storage.getProfile(targetUserId);
+        if (profile && profile.discoverable === false) {
+          res.status(404).json({ error: "User not found" });
+          return;
+        }
+
+        const deviceKeys = await storage.getUserDeviceKeys(targetUserId);
+        res.json({
+          publicKeys: deviceKeys.map((dk) => ({
+            deviceId: dk.deviceId,
+            publicKey: dk.publicKey,
+          })),
+        });
+      } catch (error) {
+        console.error(
+          "Error getting user keys:",
+          error instanceof Error ? error.message : "Unknown error",
+        );
+        res.status(500).json({ error: "Failed to get user keys" });
+      }
+    },
+  );
+
+  // Search by exact email, phone, or registration — returns user info + public keys for E2EE
   app.get(
     "/api/users/search",
     authenticateToken,
@@ -2020,19 +2430,42 @@ export async function registerRoutes(app: Express): Promise<void> {
           return;
         }
 
-        const email = req.query.email as string;
-        if (!email) {
-          res.status(400).json({ error: "Email query parameter is required" });
+        const email = req.query.email as string | undefined;
+        const phone = req.query.phone as string | undefined;
+        const registration = req.query.registration as string | undefined;
+        const jurisdiction = req.query.jurisdiction as string | undefined;
+
+        let user: Awaited<ReturnType<typeof storage.getUser>> | undefined;
+
+        if (email) {
+          user = await storage.getUserByEmail(email);
+        } else if (phone) {
+          user = await storage.getUserByPhone(phone);
+        } else if (registration && jurisdiction) {
+          // Search via professional registrations JSONB — handled at profile level
+          // For now, fall through to not found (full JSONB search deferred)
+          user = undefined;
+        } else {
+          res.status(400).json({
+            error:
+              "At least one search parameter required: email, phone, or registration+jurisdiction",
+          });
           return;
         }
 
-        const user = await storage.getUserByEmail(email);
         if (!user) {
           res.status(404).json({ error: "User not found" });
           return;
         }
 
         const profile = await storage.getProfile(user.id);
+
+        // Only return discoverable users
+        if (profile && profile.discoverable === false) {
+          res.status(404).json({ error: "User not found" });
+          return;
+        }
+
         const deviceKeys = await storage.getUserDeviceKeys(user.id);
 
         res.json({
@@ -2049,6 +2482,69 @@ export async function registerRoutes(app: Express): Promise<void> {
           error instanceof Error ? error.message : "Unknown error",
         );
         res.status(500).json({ error: "Failed to search users" });
+      }
+    },
+  );
+
+  // Batch discover unlinked contacts
+  app.post(
+    "/api/users/discover",
+    authenticateToken,
+    async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+      try {
+        const parseResult = discoverContactsSchema.safeParse(req.body);
+        if (!parseResult.success) {
+          res.status(400).json({
+            error: "Invalid discover request",
+            details: parseResult.error.flatten(),
+          });
+          return;
+        }
+
+        const { contacts } = parseResult.data;
+        const matches: {
+          contactId: string;
+          userId: string;
+          displayName: string | null;
+          publicKeys: { deviceId: string; publicKey: string }[];
+        }[] = [];
+
+        for (const contact of contacts) {
+          let user: Awaited<ReturnType<typeof storage.getUser>> | undefined;
+
+          // Priority: email → phone → registration
+          if (contact.email) {
+            user = await storage.getUserByEmail(contact.email);
+          }
+          if (!user && contact.phone) {
+            user = await storage.getUserByPhone(contact.phone);
+          }
+          // registration+jurisdiction search deferred
+
+          if (!user) continue;
+
+          const profile = await storage.getProfile(user.id);
+          if (profile && profile.discoverable === false) continue;
+
+          const deviceKeys = await storage.getUserDeviceKeys(user.id);
+          matches.push({
+            contactId: contact.contactId,
+            userId: user.id,
+            displayName: profile?.fullName ?? null,
+            publicKeys: deviceKeys.map((dk) => ({
+              deviceId: dk.deviceId,
+              publicKey: dk.publicKey,
+            })),
+          });
+        }
+
+        res.json({ matches });
+      } catch (error) {
+        console.error(
+          "Error discovering contacts:",
+          error instanceof Error ? error.message : "Unknown error",
+        );
+        res.status(500).json({ error: "Failed to discover contacts" });
       }
     },
   );

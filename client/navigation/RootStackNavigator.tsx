@@ -37,6 +37,8 @@ import PlannedCaseListScreen from "@/screens/PlannedCaseListScreen";
 import CaseMediaOrganiserScreen from "@/screens/CaseMediaOrganiserScreen";
 import GuidedCaptureScreen from "@/screens/GuidedCaptureScreen";
 import SurgicalPreferencesScreen from "@/screens/SurgicalPreferencesScreen";
+import TeamContactsScreen from "@/screens/TeamContactsScreen";
+import AddEditTeamContactScreen from "@/screens/AddEditTeamContactScreen";
 import SharedInboxScreen from "@/screens/SharedInboxScreen";
 import SharedCaseDetailScreen from "@/screens/SharedCaseDetailScreen";
 import AssessmentScreen from "@/screens/AssessmentScreen";
@@ -218,6 +220,8 @@ export type RootStackParamList = {
   EditProfile: undefined;
   ManageFacilities: undefined;
   SurgicalPreferences: undefined;
+  TeamContacts: undefined;
+  AddEditTeamContact: { contactId?: string } | undefined;
   Personalisation: undefined;
   CaseSearch: undefined;
   NeedsAttentionList: { selectedSpecialty?: Specialty | null };
@@ -816,6 +820,20 @@ export default function RootStackNavigator() {
               component={SurgicalPreferencesScreen}
               options={{
                 headerTitle: "Surgical Preferences",
+              }}
+            />
+            <Stack.Screen
+              name="TeamContacts"
+              component={TeamContactsScreen}
+              options={{
+                headerTitle: "My Operative Team",
+              }}
+            />
+            <Stack.Screen
+              name="AddEditTeamContact"
+              component={AddEditTeamContactScreen}
+              options={{
+                headerTitle: "Team Contact",
               }}
             />
             <Stack.Screen

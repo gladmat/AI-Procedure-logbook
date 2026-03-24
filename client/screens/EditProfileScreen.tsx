@@ -32,6 +32,7 @@ import {
   type ProfessionalRegistrations,
   normalizeProfessionalRegistrations,
 } from "@shared/professionalRegistrations";
+import { getCareerStagesForCountry } from "@shared/careerStages";
 
 const SEX_OPTIONS = [
   { value: "male", label: "Male" },
@@ -46,16 +47,9 @@ const COUNTRIES = [
   { value: "united_kingdom", label: "United Kingdom" },
   { value: "united_states", label: "United States" },
   { value: "poland", label: "Poland" },
+  { value: "germany", label: "Germany" },
+  { value: "switzerland", label: "Switzerland" },
   { value: "other", label: "Other" },
-];
-
-const CAREER_STAGES = [
-  { value: "junior_house_officer", label: "Junior House Officer" },
-  { value: "registrar_non_training", label: "Registrar (Non-Training)" },
-  { value: "set_trainee", label: "SET Trainee" },
-  { value: "fellow", label: "Fellow" },
-  { value: "consultant_specialist", label: "Consultant / Specialist" },
-  { value: "moss", label: "Medical Officer Special Scale" },
 ];
 
 if (
@@ -684,6 +678,9 @@ export default function EditProfileScreen() {
                     ]}
                     onPress={() => {
                       setHasLocalEdits(true);
+                      if (countryOfPractice !== country.value) {
+                        setCareerStage("");
+                      }
                       setCountryOfPractice(country.value);
                       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                     }}
@@ -714,7 +711,7 @@ export default function EditProfileScreen() {
               Career Stage
             </ThemedText>
             <View style={styles.optionPills}>
-              {CAREER_STAGES.map((stage) => {
+              {getCareerStagesForCountry(countryOfPractice || null).map((stage) => {
                 const isSelected = careerStage === stage.value;
                 return (
                   <Pressable

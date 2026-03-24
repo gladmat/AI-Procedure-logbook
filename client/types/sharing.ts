@@ -9,6 +9,7 @@ import type {
   StayType,
   AdmissionUrgency,
 } from "./case";
+import type { CaseTeamMember } from "./teamContacts";
 
 // ── Shared case inbox ────────────────────────────────────────────────────────
 
@@ -57,6 +58,7 @@ export interface SharedCaseData {
 
   // Team
   teamRoles: TeamMemberEntry[];
+  operativeTeam?: CaseTeamMember[];
   operativeRole?: OperativeRole;
   supervisionLevel?: string;
 }

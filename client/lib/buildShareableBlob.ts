@@ -32,6 +32,7 @@ export function buildShareableBlob(
       complications: caseData.complications,
     },
     teamRoles,
+    operativeTeam: caseData.operativeTeam,
     operativeRole: caseData.defaultOperativeRole,
     supervisionLevel: caseData.defaultSupervisionLevel,
   };

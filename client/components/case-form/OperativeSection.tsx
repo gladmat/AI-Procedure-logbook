@@ -44,7 +44,6 @@ import {
 import { isConsultantLevel } from "@/lib/roleDefaults";
 import { useAuth } from "@/contexts/AuthContext";
 import { EncounterClass, ENCOUNTER_CLASS_LABELS } from "@/types/episode";
-import { TeamMemberTagging } from "./TeamMemberTagging";
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
@@ -439,10 +438,6 @@ export const OperativeSection = React.memo(function OperativeSection() {
         }
         testID="caseForm.operative.picker-anaestheticType"
       />
-
-      {/* ── Team Members ────────────────────────────────────────────────── */}
-
-      <TeamMemberTagging />
 
       {/* ── Surgical Factors ────────────────────────────────────────────── */}
 

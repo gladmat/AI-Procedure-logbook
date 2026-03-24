@@ -29,6 +29,9 @@ import {
   type InsertAssessmentKeyEnvelope,
   pushTokens,
   type PushToken,
+  teamContacts,
+  type TeamContactRow,
+  type InsertTeamContact,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, ne, sql, lt, isNull, isNotNull, desc } from "drizzle-orm";
@@ -161,6 +164,43 @@ export interface IStorage {
   ): Promise<PushToken>;
   deletePushToken(userId: string, deviceId: string): Promise<boolean>;
   getPushTokensForUser(userId: string): Promise<PushToken[]>;
+
+  // Team contacts
+  getTeamContacts(ownerUserId: string): Promise<TeamContactRow[]>;
+  getTeamContact(
+    id: string,
+    ownerUserId: string,
+  ): Promise<TeamContactRow | undefined>;
+  createTeamContact(data: InsertTeamContact): Promise<TeamContactRow>;
+  updateTeamContact(
+    id: string,
+    ownerUserId: string,
+    data: Partial<InsertTeamContact>,
+  ): Promise<TeamContactRow | undefined>;
+  deleteTeamContact(id: string, ownerUserId: string): Promise<boolean>;
+  linkTeamContact(
+    id: string,
+    ownerUserId: string,
+    linkedUserId: string,
+  ): Promise<TeamContactRow | undefined>;
+  unlinkTeamContact(
+    id: string,
+    ownerUserId: string,
+  ): Promise<TeamContactRow | undefined>;
+
+  // Discovery helpers
+  getUserByPhone(phone: string): Promise<User | undefined>;
+
+  // Invitations
+  recordInvitation(
+    contactId: string,
+    ownerUserId: string,
+    email: string,
+  ): Promise<TeamContactRow | undefined>;
+
+  // Sharing authorization helpers
+  isSharedCaseOwner(userId: string, sharedCaseId: string): Promise<boolean>;
+  isSharedCaseRecipient(userId: string, sharedCaseId: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -775,6 +815,144 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(pushTokens)
       .where(eq(pushTokens.userId, userId));
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Team Contacts
+  // ──────────────────────────────────────────────────────────────────────────
+
+  async getTeamContacts(ownerUserId: string): Promise<TeamContactRow[]> {
+    return db
+      .select()
+      .from(teamContacts)
+      .where(eq(teamContacts.ownerUserId, ownerUserId));
+  }
+
+  async getTeamContact(
+    id: string,
+    ownerUserId: string,
+  ): Promise<TeamContactRow | undefined> {
+    const [contact] = await db
+      .select()
+      .from(teamContacts)
+      .where(
+        and(eq(teamContacts.id, id), eq(teamContacts.ownerUserId, ownerUserId)),
+      );
+    return contact || undefined;
+  }
+
+  async createTeamContact(data: InsertTeamContact): Promise<TeamContactRow> {
+    const [created] = await db
+      .insert(teamContacts)
+      .values(data)
+      .returning();
+    return created!;
+  }
+
+  async updateTeamContact(
+    id: string,
+    ownerUserId: string,
+    data: Partial<InsertTeamContact>,
+  ): Promise<TeamContactRow | undefined> {
+    const [updated] = await db
+      .update(teamContacts)
+      .set({ ...data, updatedAt: new Date() })
+      .where(
+        and(eq(teamContacts.id, id), eq(teamContacts.ownerUserId, ownerUserId)),
+      )
+      .returning();
+    return updated || undefined;
+  }
+
+  async deleteTeamContact(id: string, ownerUserId: string): Promise<boolean> {
+    const result = await db
+      .delete(teamContacts)
+      .where(
+        and(eq(teamContacts.id, id), eq(teamContacts.ownerUserId, ownerUserId)),
+      )
+      .returning();
+    return result.length > 0;
+  }
+
+  async linkTeamContact(
+    id: string,
+    ownerUserId: string,
+    linkedUserId: string,
+  ): Promise<TeamContactRow | undefined> {
+    const [updated] = await db
+      .update(teamContacts)
+      .set({
+        linkedUserId,
+        linkConfirmedAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(
+        and(eq(teamContacts.id, id), eq(teamContacts.ownerUserId, ownerUserId)),
+      )
+      .returning();
+    return updated || undefined;
+  }
+
+  async unlinkTeamContact(
+    id: string,
+    ownerUserId: string,
+  ): Promise<TeamContactRow | undefined> {
+    const [updated] = await db
+      .update(teamContacts)
+      .set({
+        linkedUserId: null,
+        linkConfirmedAt: null,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(eq(teamContacts.id, id), eq(teamContacts.ownerUserId, ownerUserId)),
+      )
+      .returning();
+    return updated || undefined;
+  }
+
+  async getUserByPhone(phone: string): Promise<User | undefined> {
+    const [profile] = await db
+      .select()
+      .from(profiles)
+      .where(eq(profiles.phone, phone));
+    if (!profile) return undefined;
+    return this.getUser(profile.userId);
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Invitations
+  // ──────────────────────────────────────────────────────────────────────────
+
+  async recordInvitation(
+    contactId: string,
+    ownerUserId: string,
+    email: string,
+  ): Promise<TeamContactRow | undefined> {
+    return this.updateTeamContact(contactId, ownerUserId, {
+      email,
+      invitationSentAt: new Date(),
+    });
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Sharing Authorization Helpers
+  // ──────────────────────────────────────────────────────────────────────────
+
+  async isSharedCaseOwner(
+    userId: string,
+    sharedCaseId: string,
+  ): Promise<boolean> {
+    const sc = await this.getSharedCaseById(sharedCaseId);
+    return !!sc && sc.ownerUserId === userId;
+  }
+
+  async isSharedCaseRecipient(
+    userId: string,
+    sharedCaseId: string,
+  ): Promise<boolean> {
+    const sc = await this.getSharedCaseById(sharedCaseId);
+    return !!sc && sc.recipientUserId === userId;
   }
 }
 

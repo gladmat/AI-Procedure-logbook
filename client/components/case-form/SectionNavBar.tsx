@@ -13,6 +13,7 @@ export interface FormSection {
 
 export const FORM_SECTIONS: FormSection[] = [
   { id: "patient", label: "Patient" },
+  { id: "team", label: "Team" },
   { id: "case", label: "Case" },
   { id: "operative", label: "Operative" },
   { id: "media", label: "Media" },
