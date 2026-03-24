@@ -45,6 +45,14 @@ import type {
 } from "@/types/craniofacial";
 import { formatTriggerFingerGrading } from "@/lib/handElectiveFieldConfig";
 import {
+  OSTEOTOMY_BONE_LABELS,
+  DEFORMITY_TYPE_LABELS,
+  TECHNIQUE_LABELS as OSTEOTOMY_TECHNIQUE_LABELS,
+  GRAFT_TYPE_LABELS as OSTEOTOMY_GRAFT_LABELS,
+  FIXATION_LABELS as OSTEOTOMY_FIXATION_LABELS,
+  OSTEOTOMY_PROCEDURE_IDS,
+} from "@/types/osteotomy";
+import {
   NERVE_LABELS,
   MECHANISM_LABELS as PN_MECHANISM_LABELS,
   TIMING_LABELS as PN_TIMING_LABELS,
@@ -149,6 +157,12 @@ const CSV_HEADERS = [
   "implant_approach",
   "implant_bearing",
   "implant_joint_type",
+  "osteotomy_bone",
+  "osteotomy_deformity",
+  "osteotomy_technique",
+  "osteotomy_graft",
+  "osteotomy_fixation",
+  "osteotomy_3d_planning",
   "planned_date",
   // ── Breast module columns ──
   "breast_laterality",
@@ -309,6 +323,37 @@ function getCaseImplantExportFields(c: Case) {
     jointType: displayFields
       .map((fields) => fields.jointType || "-")
       .join("; "),
+  };
+}
+
+function getCaseOsteotomyExportFields(c: Case) {
+  const osteotomyProcedures = (c.diagnosisGroups ?? []).flatMap((group) =>
+    (group.procedures ?? []).filter(
+      (p) =>
+        p.picklistEntryId &&
+        (OSTEOTOMY_PROCEDURE_IDS as readonly string[]).includes(
+          p.picklistEntryId,
+        ) &&
+        p.osteotomyDetails,
+    ),
+  );
+  if (osteotomyProcedures.length === 0) {
+    return { bone: "", deformity: "", technique: "", graft: "", fixation: "", threeDPlanning: "" };
+  }
+  const first = osteotomyProcedures[0]!.osteotomyDetails!;
+  return {
+    bone: first.bone ? OSTEOTOMY_BONE_LABELS[first.bone] : "",
+    deformity: first.deformityType
+      .map((d) => DEFORMITY_TYPE_LABELS[d])
+      .join("; "),
+    technique: first.osteotomyTechnique
+      ? OSTEOTOMY_TECHNIQUE_LABELS[first.osteotomyTechnique]
+      : "",
+    graft: first.graftType ? OSTEOTOMY_GRAFT_LABELS[first.graftType] : "",
+    fixation: first.fixation
+      ? OSTEOTOMY_FIXATION_LABELS[first.fixation]
+      : "",
+    threeDPlanning: first.threeDPlanning ? "Yes" : "",
   };
 }
 
@@ -632,6 +677,7 @@ function caseToRow(c: Case, options: CsvExportOptions): string {
   const handInfection = primaryGroup?.handInfectionDetails;
 
   const implantFields = getCaseImplantExportFields(c);
+  const osteotomyFields = getCaseOsteotomyExportFields(c);
   const breastFields = extractBreastCsvFields(groups);
   const headNeckFields = extractHeadNeckCsvFields(c);
   const craniofacialFields = extractCraniofacialCsvFields(groups);
@@ -776,6 +822,12 @@ function caseToRow(c: Case, options: CsvExportOptions): string {
     implantFields.approach,
     implantFields.bearing,
     implantFields.jointType,
+    osteotomyFields.bone,
+    osteotomyFields.deformity,
+    osteotomyFields.technique,
+    osteotomyFields.graft,
+    osteotomyFields.fixation,
+    osteotomyFields.threeDPlanning,
     c.plannedDate ?? "",
     // ── Breast module ──
     ...breastFields,

@@ -1104,6 +1104,9 @@ export function buildDuplicateState(
       id: uuidv4(),
       clinicalDetails: p.clinicalDetails ? { ...p.clinicalDetails } : undefined,
       implantDetails: p.implantDetails ? { ...p.implantDetails } : undefined,
+      osteotomyDetails: p.osteotomyDetails
+        ? { ...p.osteotomyDetails, deformityType: [...p.osteotomyDetails.deformityType] }
+        : undefined,
       lvaOperativeDetails: p.lvaOperativeDetails
         ? structuredClone(p.lvaOperativeDetails)
         : undefined,

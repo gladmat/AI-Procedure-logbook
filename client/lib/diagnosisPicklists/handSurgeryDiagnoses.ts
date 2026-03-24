@@ -239,26 +239,6 @@ const HAND_DX_FRACTURES: DiagnosisPicklistEntry[] = [
     sortOrder: 7,
   },
   {
-    id: "hand_dx_malunion_hand",
-    displayName: "Malunion of hand / wrist",
-    snomedCtCode: "287075005",
-    snomedCtDisplay: "Fracture malunion - Loss of function of hand (disorder)",
-    specialty: "hand_wrist",
-    subcategory: "Fractures",
-    clinicalGroup: "reconstructive",
-    hasStaging: false,
-    searchSynonyms: ["malunion", "malunited fracture", "rotational deformity"],
-    suggestedProcedures: [
-      {
-        procedurePicklistId: "hand_fx_corrective_osteotomy",
-        displayName: "Corrective osteotomy (malunion)",
-        isDefault: true,
-        sortOrder: 1,
-      },
-    ],
-    sortOrder: 8,
-  },
-  {
     id: "hand_dx_carpal_fracture_other",
     displayName: "Carpal fracture (other than scaphoid)",
     shortName: "Other carpal #",
@@ -2286,6 +2266,176 @@ const HAND_DX_ELECTIVE_TENDON: DiagnosisPicklistEntry[] = [
 ];
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// POST-TRAUMATIC BONE
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const HAND_DX_POST_TRAUMATIC_BONE: DiagnosisPicklistEntry[] = [
+  {
+    id: "hand_dx_malunion_metacarpal_phalanx",
+    displayName: "Malunion — metacarpal / phalanx",
+    shortName: "MC/phalanx malunion",
+    snomedCtCode: "287075005",
+    snomedCtDisplay: "Fracture malunion - hand (disorder)",
+    specialty: "hand_wrist",
+    subcategory: "Post-traumatic Bone",
+    clinicalGroup: "elective",
+    hasStaging: false,
+    searchSynonyms: [
+      "malunion",
+      "malunited fracture",
+      "rotational deformity",
+      "angular deformity",
+      "metacarpal malunion",
+      "phalanx malunion",
+      "corrective osteotomy",
+      "scissoring",
+    ],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hand_elective_corrective_osteotomy_hand",
+        displayName: "Corrective osteotomy — metacarpal / phalanx",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "hand_elective_bone_graft_hand",
+        displayName: "Bone graft (structural / opening wedge)",
+        isDefault: false,
+        isConditional: true,
+        conditionDescription: "If opening wedge osteotomy with graft needed",
+        sortOrder: 2,
+      },
+    ],
+    sortOrder: 1,
+  },
+  {
+    id: "hand_dx_malunion_distal_radius",
+    displayName: "Malunion — distal radius",
+    shortName: "Distal radius malunion",
+    snomedCtCode: "287074009",
+    snomedCtDisplay: "Fracture malunion - forearm (disorder)",
+    specialty: "hand_wrist",
+    subcategory: "Post-traumatic Bone",
+    clinicalGroup: "elective",
+    hasStaging: false,
+    searchSynonyms: [
+      "distal radius malunion",
+      "Colles malunion",
+      "Smith malunion",
+      "radial shortening",
+      "dorsal tilt",
+      "volar tilt",
+      "radial inclination",
+      "corrective osteotomy radius",
+      "extra-articular malunion",
+      "intra-articular malunion",
+    ],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hand_elective_corrective_osteotomy_radius",
+        displayName: "Corrective osteotomy — distal radius",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "hand_elective_bone_graft_hand",
+        displayName: "Bone graft (structural)",
+        isDefault: false,
+        isConditional: true,
+        conditionDescription: "Opening wedge with graft",
+        sortOrder: 2,
+      },
+      {
+        procedurePicklistId: "hand_elective_ulna_shortening",
+        displayName: "Ulna shortening osteotomy",
+        isDefault: false,
+        isConditional: true,
+        conditionDescription: "If positive ulnar variance / ulnar impaction",
+        sortOrder: 3,
+      },
+    ],
+    sortOrder: 2,
+  },
+  {
+    id: "hand_dx_nonunion_hand_wrist",
+    displayName: "Non-union — hand / wrist (excluding scaphoid)",
+    shortName: "Non-union",
+    snomedCtCode: "302941001", // Non-union of fracture (disorder)
+    snomedCtDisplay: "Non-union of fracture of hand (disorder)",
+    specialty: "hand_wrist",
+    subcategory: "Post-traumatic Bone",
+    clinicalGroup: "elective",
+    hasStaging: false,
+    searchSynonyms: [
+      "non-union",
+      "nonunion",
+      "pseudarthrosis",
+      "metacarpal non-union",
+      "phalanx non-union",
+      "radius non-union",
+      "failed fixation",
+      "bone graft",
+      "atrophic non-union",
+      "hypertrophic non-union",
+    ],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hand_elective_nonunion_repair",
+        displayName: "Non-union repair (bone graft + fixation)",
+        isDefault: true,
+        sortOrder: 1,
+      },
+      {
+        procedurePicklistId: "hand_elective_vascularised_bone_graft",
+        displayName: "Vascularised bone graft",
+        isDefault: false,
+        isConditional: true,
+        conditionDescription: "Atrophic non-union or prior failed grafting",
+        sortOrder: 2,
+      },
+      {
+        procedurePicklistId: "hand_elective_hardware_removal",
+        displayName: "Hardware removal (prior to re-fixation)",
+        isDefault: false,
+        sortOrder: 3,
+      },
+    ],
+    sortOrder: 3,
+  },
+  {
+    id: "hand_dx_symptomatic_hardware",
+    displayName: "Symptomatic hardware — hand / wrist",
+    shortName: "Metalwork removal",
+    snomedCtCode: "4586000",
+    snomedCtDisplay: "Complication of internal fixation device (disorder)",
+    specialty: "hand_wrist",
+    subcategory: "Post-traumatic Bone",
+    clinicalGroup: "elective",
+    hasStaging: false,
+    searchSynonyms: [
+      "hardware removal",
+      "metalwork removal",
+      "plate removal",
+      "screw removal",
+      "K-wire removal",
+      "symptomatic plate",
+      "prominent metalwork",
+      "implant removal",
+      "tendon irritation hardware",
+    ],
+    suggestedProcedures: [
+      {
+        procedurePicklistId: "hand_elective_hardware_removal",
+        displayName: "Hardware removal",
+        isDefault: true,
+        sortOrder: 1,
+      },
+    ],
+    sortOrder: 4,
+  },
+];
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // RHEUMATOID HAND
 // ═══════════════════════════════════════════════════════════════════════════════
 
@@ -3066,6 +3216,7 @@ export const HAND_SURGERY_DIAGNOSES: DiagnosisPicklistEntry[] = [
   ...HAND_DX_DUPUYTREN,
   ...HAND_DX_JOINT,
   ...HAND_DX_ELECTIVE_TENDON,
+  ...HAND_DX_POST_TRAUMATIC_BONE,
   ...HAND_DX_RHEUMATOID,
   ...HAND_DX_DISLOCATIONS,
   ...HAND_DX_OTHER,

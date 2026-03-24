@@ -128,6 +128,8 @@ import { extractBreastFlapExtension } from "@/types/breast";
 import { normalizeBreastAssessment } from "@/lib/breastState";
 import type { BreastFlapContext } from "@/components/ProcedureClinicalDetails";
 import { JointImplantSection } from "@/components/joint-implant/JointImplantSection";
+import { CorrectiveOsteotomyDetails } from "@/components/hand-elective/CorrectiveOsteotomyDetails";
+import { OSTEOTOMY_PROCEDURE_IDS, createEmptyOsteotomyData } from "@/types/osteotomy";
 import { CraniofacialAssessment } from "@/components/craniofacial/CraniofacialAssessment";
 import { isCraniofacialDiagnosis } from "@/lib/craniofacialConfig";
 import type { CraniofacialAssessmentData } from "@/types/craniofacial";
@@ -3959,6 +3961,24 @@ function DiagnosisGroupEditorInner({
                                   updateProcedure({
                                     ...proc,
                                     implantDetails: details,
+                                  })
+                                }
+                              />
+                            ) : null}
+                            {proc.picklistEntryId &&
+                            (OSTEOTOMY_PROCEDURE_IDS as readonly string[]).includes(
+                              proc.picklistEntryId,
+                            ) ? (
+                              <CorrectiveOsteotomyDetails
+                                procedureId={proc.picklistEntryId}
+                                value={
+                                  proc.osteotomyDetails ??
+                                  createEmptyOsteotomyData()
+                                }
+                                onChange={(details) =>
+                                  updateProcedure({
+                                    ...proc,
+                                    osteotomyDetails: details,
                                   })
                                 }
                               />

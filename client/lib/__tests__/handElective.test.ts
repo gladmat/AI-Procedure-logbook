@@ -29,7 +29,7 @@ function getDiagnosesForSubcategory(subcategory: string) {
 }
 
 // ═══════════════════════════════════════════════════════════
-// 1. All 7 elective subcategories have diagnoses
+// 1. All 8 elective subcategories have diagnoses
 // ═══════════════════════════════════════════════════════════
 
 describe("Elective subcategory coverage", () => {
@@ -38,6 +38,7 @@ describe("Elective subcategory coverage", () => {
     "Dupuytren's Disease",
     "Joint & Degenerative",
     "Elective Tendon",
+    "Post-traumatic Bone",
     "Rheumatoid Hand",
     "Tumours & Other",
     "Congenital",
@@ -66,7 +67,6 @@ describe("Strict elective scoping", () => {
   it("does not include reconstructive hand diagnoses in elective search scope", () => {
     const reconstructiveIds = [
       "hand_dx_scaphoid_nonunion",
-      "hand_dx_malunion_hand",
     ];
     const electiveIds = new Set(allElective.map((d) => d.id));
     for (const id of reconstructiveIds) {
@@ -567,4 +567,139 @@ describe("Per-finger Quinnell grading", () => {
     expect(dx).toBeDefined();
     expect(dx!.hasStaging).toBe(false);
   });
+});
+
+// ═══════════════════════════════════════════════════════════
+// Post-traumatic Bone subcategory
+// ═══════════════════════════════════════════════════════════
+
+describe("Post-traumatic Bone subcategory", () => {
+  const ptbDiagnoses = allElective.filter(
+    (d) => d.subcategory === "Post-traumatic Bone",
+  );
+
+  it("has exactly 4 diagnoses", () => {
+    expect(ptbDiagnoses).toHaveLength(4);
+  });
+
+  it("all diagnoses are clinicalGroup 'elective'", () => {
+    for (const dx of ptbDiagnoses) {
+      expect(dx.clinicalGroup).toBe("elective");
+    }
+  });
+
+  it("contains expected diagnosis IDs", () => {
+    const ids = ptbDiagnoses.map((d) => d.id);
+    expect(ids).toContain("hand_dx_malunion_metacarpal_phalanx");
+    expect(ids).toContain("hand_dx_malunion_distal_radius");
+    expect(ids).toContain("hand_dx_nonunion_hand_wrist");
+    expect(ids).toContain("hand_dx_symptomatic_hardware");
+  });
+
+  it("all diagnoses have procedure suggestions", () => {
+    for (const dx of ptbDiagnoses) {
+      expect(dx.suggestedProcedures.length).toBeGreaterThan(0);
+    }
+  });
+
+  it("all suggested procedures reference valid procedure picklist IDs", () => {
+    for (const dx of ptbDiagnoses) {
+      for (const sp of dx.suggestedProcedures) {
+        expect(procedureIds.has(sp.procedurePicklistId)).toBe(true);
+      }
+    }
+  });
+
+  it("malunion MC/phalanx defaults to corrective osteotomy hand", () => {
+    const dx = ptbDiagnoses.find(
+      (d) => d.id === "hand_dx_malunion_metacarpal_phalanx",
+    )!;
+    const defaultProcs = dx.suggestedProcedures.filter((p) => p.isDefault);
+    expect(defaultProcs).toHaveLength(1);
+    expect(defaultProcs[0].procedurePicklistId).toBe(
+      "hand_elective_corrective_osteotomy_hand",
+    );
+  });
+
+  it("malunion distal radius defaults to corrective osteotomy radius", () => {
+    const dx = ptbDiagnoses.find(
+      (d) => d.id === "hand_dx_malunion_distal_radius",
+    )!;
+    const defaultProcs = dx.suggestedProcedures.filter((p) => p.isDefault);
+    expect(defaultProcs).toHaveLength(1);
+    expect(defaultProcs[0].procedurePicklistId).toBe(
+      "hand_elective_corrective_osteotomy_radius",
+    );
+  });
+
+  it("non-union defaults to non-union repair", () => {
+    const dx = ptbDiagnoses.find(
+      (d) => d.id === "hand_dx_nonunion_hand_wrist",
+    )!;
+    const defaultProcs = dx.suggestedProcedures.filter((p) => p.isDefault);
+    expect(defaultProcs).toHaveLength(1);
+    expect(defaultProcs[0].procedurePicklistId).toBe(
+      "hand_elective_nonunion_repair",
+    );
+  });
+
+  it("symptomatic hardware defaults to hardware removal", () => {
+    const dx = ptbDiagnoses.find(
+      (d) => d.id === "hand_dx_symptomatic_hardware",
+    )!;
+    const defaultProcs = dx.suggestedProcedures.filter((p) => p.isDefault);
+    expect(defaultProcs).toHaveLength(1);
+    expect(defaultProcs[0].procedurePicklistId).toBe(
+      "hand_elective_hardware_removal",
+    );
+  });
+
+  it("old hand_dx_malunion_hand is removed from HAND_SURGERY_DIAGNOSES", () => {
+    const ids = HAND_SURGERY_DIAGNOSES.map((d) => d.id);
+    expect(ids).not.toContain("hand_dx_malunion_hand");
+  });
+
+  it("old hand_fx_corrective_osteotomy procedure is removed", () => {
+    expect(procedureIds.has("hand_fx_corrective_osteotomy")).toBe(false);
+  });
+
+  it("scaphoid non-union remains in Joint & Degenerative (not moved)", () => {
+    const scaphoidNu = HAND_SURGERY_DIAGNOSES.find(
+      (d) => d.id === "hand_dx_scaphoid_nonunion_elective",
+    );
+    expect(scaphoidNu).toBeDefined();
+    expect(scaphoidNu!.subcategory).toBe("Joint & Degenerative");
+  });
+});
+
+// ═══════════════════════════════════════════════════════════
+// Post-traumatic Bone procedure entries
+// ═══════════════════════════════════════════════════════════
+
+describe("Post-traumatic Bone procedures", () => {
+  const ptbProcedureIds = [
+    "hand_elective_corrective_osteotomy_hand",
+    "hand_elective_corrective_osteotomy_radius",
+    "hand_elective_ulna_shortening",
+    "hand_elective_nonunion_repair",
+    "hand_elective_bone_graft_hand",
+    "hand_elective_hardware_removal",
+  ];
+
+  it.each(ptbProcedureIds)(
+    "procedure '%s' exists in PROCEDURE_PICKLIST",
+    (id) => {
+      const proc = PROCEDURE_PICKLIST.find((p) => p.id === id);
+      expect(proc).toBeDefined();
+    },
+  );
+
+  it.each(ptbProcedureIds)(
+    "procedure '%s' has correct subcategory and specialty",
+    (id) => {
+      const proc = PROCEDURE_PICKLIST.find((p) => p.id === id)!;
+      expect(proc.subcategory).toBe("Post-traumatic Bone");
+      expect(proc.specialties).toContain("hand_wrist");
+    },
+  );
 });

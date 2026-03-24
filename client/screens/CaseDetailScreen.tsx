@@ -113,6 +113,7 @@ import {
   IMPLANT_LATERALITY_LABELS,
   formatImplantSize,
 } from "@/lib/jointImplant";
+import { getOsteotomySummary } from "@/types/osteotomy";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 import {
   generateDupuytrenSummaryText,
@@ -1358,6 +1359,20 @@ export default function CaseDetailScreen() {
                               value={proc.saplDetails.technique.replace(/_/g, " ")}
                             />
                           ) : null}
+                        </View>
+                      ) : null}
+                      {/* Corrective osteotomy details */}
+                      {proc.osteotomyDetails?.bone ? (
+                        <View
+                          style={[
+                            styles.procedureClinicalDetails,
+                            { borderTopColor: theme.border },
+                          ]}
+                        >
+                          <DetailRow
+                            label="Osteotomy"
+                            value={getOsteotomySummary(proc.osteotomyDetails)}
+                          />
                         </View>
                       ) : null}
                     </View>

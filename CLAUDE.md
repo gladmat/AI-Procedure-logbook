@@ -21,7 +21,7 @@ Key capabilities: multi-specialty case logging, SNOMED CT coded diagnoses and pr
 - **Acute Hand Category COMPLETE** — 3-way hand surgery branching, acute diagnoses, hand infection 4-layer assessment, infection-to-overlay bridge
 - **Phase 3 COMPLETE** — Inline validation, keyboard optimisation, haptic audit, duplicate case, favourites/recents
 - **Phase 4 COMPLETE** — CSV/FHIR/PDF export, analytics dashboard
-- **Elective Hand + Joint Implant COMPLETE** — 38 elective diagnoses, 7 subcategories, 3 arthroplasty with implant tracking, 26 implant catalogue entries
+- **Elective Hand + Joint Implant COMPLETE** — 40 elective diagnoses, 8 subcategories (incl. Post-traumatic Bone with CorrectiveOsteotomyDetails inline card), 3 arthroplasty with implant tracking, 26 implant catalogue entries
 - **Skin Cancer Terminology Repair COMPLETE** — corrected SNOMED codes, rare malignancy metadata, UK-extension procedure codes
 - **Media Overhaul COMPLETE** — unified MediaTag taxonomy (64 tags, 7 groups), 7 capture protocols, EXIF stripping, 5 UI components
 - **Capture Pipeline A–H COMPLETE** — Opus Inbox (encrypted MMKV), Smart Import, Opus Camera (quick snap + guided), planned cases, smart assignment, auto-organise, NHI auto-match, transactional reservation lifecycle, iOS native scaffold (widget + locked-camera + deep links)
@@ -88,7 +88,7 @@ client/
     statistics/                  # BarChart, HorizontalBarChart, StatCard, MilestoneTimeline, SpecialtyDeepDiveCard
     hand-trauma/                 # 15 files — unified hand trauma assessment
     hand-infection/              # HandInfectionCard — 4-layer progressive disclosure
-    hand-elective/               # HandElectivePicker — chip-based elective hand diagnosis selector
+    hand-elective/               # HandElectivePicker + CorrectiveOsteotomyDetails — chip-based elective hand diagnosis selector
     acute-hand/                  # AcuteHandAssessment + AcuteHandSummaryPanel
     dupuytren/                   # DupuytrenAssessment — per-ray measurement + auto Tubiana staging
     joint-implant/               # JointImplantSection — 3-layer progressive disclosure
@@ -113,8 +113,8 @@ client/
     epaDerivation.ts             # Seniority-chain EPA pair algorithm
     discoveryService.ts          # Background contact discovery (24h throttle)
     seniorityTier.ts             # 6-tier career seniority model
-    __tests__/                   # 76 test files
-  types/                         # case, media, inbox, episode, infection, skinCancer, breast, dupuytren,
+    __tests__/                   # 77 test files
+  types/                         # case, media, inbox, episode, infection, skinCancer, breast, dupuytren, osteotomy,
                                  #   handInfection, wound, jointImplant, operativeRole, teamContacts, sharing, etc.
   constants/                     # theme.ts (design tokens), categories, hospitals, trainingProgrammes
   data/                          # AO codes, flap configs, implant catalogue, capture protocols, clinical data
@@ -216,7 +216,7 @@ Each has: dedicated diagnosis picklist, specialty colour, SVG icon, procedure su
 
 ### Procedure picklists & SNOMED CT
 
-509 procedures across all specialties in `client/lib/procedurePicklist.ts`. Each entry has SNOMED CT codes, specialty tags, subcategory. All specialties use the subcategory picker UI.
+825 procedures across all specialties in `client/lib/procedurePicklist.ts`. Each entry has SNOMED CT codes, specialty tags, subcategory. All specialties use the subcategory picker UI.
 
 ### Diagnosis-to-procedure suggestions
 
@@ -262,14 +262,15 @@ Tests: `client/lib/__tests__/handTraumaDiagnosis.test.ts`, `handTraumaMapping.te
 
 **Elective flow** (`HandElectivePicker`, `client/components/hand-elective/`):
 
-- 38 structured diagnoses across 7 subcategories: Dupuytren's Disease (7), CTS & Nerve Compression (7), Arthritis & Joint (8), Tendon Conditions (5), Ganglion & Tumour (4), Deformity & Reconstruction (4), Other Elective (3)
+- 40 structured diagnoses across 8 subcategories: Dupuytren's Disease (3), Stenosing Tenosynovitis (2), Joint & Degenerative (9), Elective Tendon (7), Post-traumatic Bone (4), Rheumatoid Hand (5), Tumours & Other (6), Congenital (3)
 - Chip-based subcategory picker with expandable diagnosis list per category
-- 11 new procedures including 3 arthroplasty procedures with `hasImplant: true` flag (CMC1, PIP, MCP arthroplasty)
+- 17 procedures including 3 arthroplasty procedures with `hasImplant: true` flag (CMC1, PIP, MCP arthroplasty) and 6 post-traumatic bone procedures
 - 3 new staging configurations: Tubiana-Dupuytren (5 grades), CTS-Severity (3 levels), Quinnell-Trigger (5 grades)
 - Staging auto-activates when diagnosis has `stagingSnomedCode` matching server config
 - Integrates with `JointImplantSection` for arthroplasty procedures (see Joint Implant Tracking below)
 - **Dupuytren sub-module:** `DupuytrenAssessment` (`client/components/dupuytren/`), types in `client/types/dupuytren.ts`, helpers in `client/lib/dupuytrenHelpers.ts`. Primary/recurrent/palm-only diagnoses with per-ray MCP/PIP measurement, auto-calculated Tubiana staging, first web space, diathesis features, previous treatment tracking.
-- Tests: `client/lib/__tests__/handElective.test.ts` (52 tests), `dupuytren.test.ts` (37 tests)
+- **Post-traumatic Bone sub-module:** `CorrectiveOsteotomyDetails` (`client/components/hand-elective/CorrectiveOsteotomyDetails.tsx`), types in `client/types/osteotomy.ts`. Procedure-driven inline card (activates for 3 osteotomy procedure IDs). 5 sections: bone, deformity (multi-select), technique, graft (with donor site), fixation. Contextual defaults on mount (radius procedure → distal_radius bone, ulna shortening → distal_ulna + oblique technique). Progressive disclosure: opening wedge → autograft default, closing wedge → no graft. CSV (6 columns), FHIR (extension on Procedure), PDF export. `getOsteotomySummary()` helper for compact display.
+- Tests: `client/lib/__tests__/handElective.test.ts` (103 tests), `dupuytren.test.ts` (37 tests), `osteotomy.test.ts` (18 tests)
 
 ### Joint implant tracking
 
@@ -577,7 +578,7 @@ PIN and biometric unlock via `AppLockContext`. Setup in `SetupAppLockScreen`, un
 
 ### Data export
 
-CSV (`exportCsv.ts`, 55+ columns with primary dx/proc dedicated columns, semicolon-delimited secondary, 6 hand infection columns, 6 implant columns, 5 patient identity columns, Dupuytren + breast columns), FHIR R4 (`exportFhir.ts`, full Bundle with Patient, Condition, Procedure, Encounter, Device resources), and PDF (`exportPdf.ts`, HTML-to-PDF via expo-print with implant column + patient name/DOB header, shared via expo-sharing). Export orchestration in `export.ts`. Configurable via `PersonalisationScreen`.
+CSV (`exportCsv.ts`, 55+ columns with primary dx/proc dedicated columns, semicolon-delimited secondary, 6 hand infection columns, 6 implant columns, 6 osteotomy columns, 5 patient identity columns, Dupuytren + breast columns), FHIR R4 (`exportFhir.ts`, full Bundle with Patient, Condition, Procedure, Encounter, Device resources), and PDF (`exportPdf.ts`, HTML-to-PDF via expo-print with implant column + patient name/DOB header, shared via expo-sharing). Export orchestration in `export.ts`. Configurable via `PersonalisationScreen`.
 
 ### Flap outcomes
 
@@ -1281,8 +1282,8 @@ RACS MALT codes and other training-programme formats are derived at export time 
 
 ## Testing
 
-- **Framework:** Vitest 4.0.18, **1368 tests** across 74 files
-- **Client tests:** `client/lib/__tests__/` and `client/components/` — covering hand trauma (diagnosis, mapping, ux), skin cancer (config 89, phase4 11, phase5 18, diagnoses 7), dashboard (selectors 7), hand (infection 42, elective 52), dupuytren (37), joint implant (44), media (encryption 7, fileStorage 3, tagHelpers 82, captureProtocols 41, operativeMedia 19, form 4, defaults 4, context 3), inbox (storage 13, assignment 17), capture (smartImportPrefs 10, sharedIngress 2), case (specialty 5, storageCache 4, draftPersistence 1), statistics (helpers 3, stats 7), dates (values 12, normalization 4), export (implant 3, breast), planned case (18), media organiser (15), NHI validation (12), patient identity (11), operative role (68), head & neck integration (4), breast (phase3, phase4, export), FISS calculator (12), craniofacial, aesthetics, burns, peripheral nerve, lymphoedema, team contacts (11), operative team (15), sharing bridge (8), EPA derivation (14), assessment roles + calibration (22), plus media UI coverage
+- **Framework:** Vitest 4.0.18, **1411 tests** across 75 files
+- **Client tests:** `client/lib/__tests__/` and `client/components/` — covering hand trauma (diagnosis, mapping, ux), skin cancer (config 89, phase4 11, phase5 18, diagnoses 7), dashboard (selectors 7), hand (infection 42, elective 103), dupuytren (37), joint implant (44), osteotomy (18), media (encryption 7, fileStorage 3, tagHelpers 82, captureProtocols 41, operativeMedia 19, form 4, defaults 4, context 3), inbox (storage 13, assignment 17), capture (smartImportPrefs 10, sharedIngress 2), case (specialty 5, storageCache 4, draftPersistence 1), statistics (helpers 3, stats 7), dates (values 12, normalization 4), export (implant 3, breast), planned case (18), media organiser (15), NHI validation (12), patient identity (11), operative role (68), head & neck integration (4), breast (phase3, phase4, export), FISS calculator (12), craniofacial, aesthetics, burns, peripheral nerve, lymphoedema, team contacts (11), operative team (15), sharing bridge (8), EPA derivation (14), assessment roles + calibration (22), plus media UI coverage
 - **Server tests:** `server/__tests__/` — auth (17), validation (7), diagnosisStagingConfig (3), teamContacts (17), invitations (6)
 - **Run:** `npm run test` (once) or `npm run test:watch` (watch mode)
 
@@ -1417,7 +1418,7 @@ Conditional screen switching based on `isAuthenticated`, `hasSeenWelcome`, `hasS
 
 | Specialty | File | Count | Staging Systems | Module Trigger |
 |-----------|------|-------|-----------------|----------------|
-| Hand Surgery | `handSurgeryDiagnoses.ts` | 100 | Gustilo-Anderson, Eaton-Littler, Herbert, Lichtman, Kanavel Signs | `hand_wrist` specialty + `caseType` gate |
+| Hand Surgery | `handSurgeryDiagnoses.ts` | 103 | Gustilo-Anderson, Eaton-Littler, Herbert, Lichtman, Kanavel Signs | `hand_wrist` specialty + `caseType` gate |
 | Head & Neck | `headNeckDiagnoses.ts` | 88 | TNM (T/N/M + Overall), House-Brackmann, Le Fort, Pittsburgh Fistula, Whitaker | `head_neck` specialty |
 | Aesthetics | `aestheticsDiagnoses.ts` | 42 | Baker Classification | `aesthetics` specialty or `aes_`/`bc_` procedure prefix |
 | Burns | `burnsDiagnoses.ts` | 41 | Depth, TBSA %, Severity | `burns` specialty |
@@ -1430,7 +1431,7 @@ Conditional screen switching based on `isAuthenticated`, `hasSeenWelcome`, `hasS
 | Skin Cancer | `skinCancerDiagnoses.ts` | 11 | Breslow Thickness, Ulceration, TNM (AJCC 8th Ed) | Diagnosis-driven (`hasEnhancedHistology` or SNOMED match) |
 | Body Contouring | `bodyContouringDiagnoses.ts` | (deprecated — re-exports from aesthetics) | — | — |
 
-**Total: 494 structured diagnoses** across 11 active picklist files (body contouring is deprecated/merged into aesthetics).
+**Total: 497 structured diagnoses** across 11 active picklist files (body contouring is deprecated/merged into aesthetics).
 
 **29 staging systems** defined in `server/diagnosisStagingConfig.ts`: Gustilo-Anderson, Breslow Thickness, Ulceration, Severity, EMG Grade, TNM T/N/M Stage, NPUAP Stage, Depth, TBSA %, Baker Classification, Hurley Stage, ISL Stage, Cheng Lymphoedema Grade, MD Anderson ICG Stage, Wagner Grade, Le Fort Classification, House-Brackmann Grade, Kanavel Signs, Eaton-Littler Stage, Herbert Classification, Lichtman Stage, Veau Classification, Pittsburgh Fistula Classification, Whitaker Classification, TNM T/N/M Stage (AJCC 8th Ed), Overall Stage (AJCC 8th Ed).
 
@@ -1461,7 +1462,8 @@ CaseFormScreen.tsx
 │   │       │   ├── AcuteHandSummaryPanel.tsx
 │   │       │   └── HandInfectionCard   — client/components/hand-infection/HandInfectionCard.tsx
 │   │       ├── HandElectivePicker      — client/components/hand-elective/HandElectivePicker.tsx
-│   │       │   └── HandElectiveAssessment.tsx
+│   │       │   ├── HandElectiveAssessment.tsx
+│   │       │   └── CorrectiveOsteotomyDetails.tsx
 │   │       ├── DupuytrenAssessment     — client/components/dupuytren/DupuytrenAssessment.tsx
 │   │       ├── BreastAssessment        — client/components/breast/BreastAssessment.tsx
 │   │       │   ├── BreastContextSelector.tsx

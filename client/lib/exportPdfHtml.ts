@@ -20,6 +20,7 @@ import {
   formatRoleDisplay,
   resolveSupervisionLevel,
 } from "@/types/operativeRole";
+import { getOsteotomySummary, OSTEOTOMY_PROCEDURE_IDS } from "@/types/osteotomy";
 import {
   getImplantSummary as getBreastImplantSummary,
   getFlapSummary as getBreastFlapSummary,
@@ -319,6 +320,19 @@ export function buildPdfHtml(cases: Case[], options: PdfExportOptions): string {
     const peripheralNerveSummary = getPeripheralNerveSummary(c);
     const lymphaticSummary = getLymphaticSummary(c);
 
+    // Osteotomy summary
+    const osteotomyProc = (c.diagnosisGroups ?? [])
+      .flatMap((g) => g.procedures ?? [])
+      .find(
+        (p) =>
+          p.picklistEntryId &&
+          (OSTEOTOMY_PROCEDURE_IDS as readonly string[]).includes(p.picklistEntryId) &&
+          p.osteotomyDetails?.bone,
+      );
+    const osteotomySummary = osteotomyProc?.osteotomyDetails
+      ? `Osteotomy: ${getOsteotomySummary(osteotomyProc.osteotomyDetails)}`
+      : "";
+
     const implantSummary = [jointImplantSummary, ...breastParts]
       .filter(Boolean)
       .join("; ");
@@ -370,7 +384,7 @@ export function buildPdfHtml(cases: Case[], options: PdfExportOptions): string {
       escapeHtml(primary?.diagnosis?.displayName || ""),
       escapeHtml(primaryProc?.procedureName || ""),
       escapeHtml(
-        [implantSummary, headNeckFlapSummary, dupuytrenSummary, craniofacialSummary, peripheralNerveSummary, lymphaticSummary].filter(Boolean).join("; "),
+        [implantSummary, headNeckFlapSummary, dupuytrenSummary, osteotomySummary, craniofacialSummary, peripheralNerveSummary, lymphaticSummary].filter(Boolean).join("; "),
       ),
       escapeHtml(complications),
       escapeHtml(c.outcome || ""),

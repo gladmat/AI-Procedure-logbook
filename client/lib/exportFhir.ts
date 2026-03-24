@@ -1039,6 +1039,54 @@ function buildProcedure(
     }
   }
 
+  // Corrective osteotomy details extension
+  if (proc.osteotomyDetails?.bone) {
+    const osteoExts: { url: string; valueString?: string; valueBoolean?: boolean }[] = [];
+    const ost = proc.osteotomyDetails;
+    if (ost.bone) {
+      osteoExts.push({ url: "bone", valueString: ost.bone });
+    }
+    if (ost.boneSite) {
+      osteoExts.push({ url: "boneSite", valueString: ost.boneSite });
+    }
+    if (ost.deformityType.length > 0) {
+      osteoExts.push({
+        url: "deformityType",
+        valueString: ost.deformityType.join("; "),
+      });
+    }
+    if (ost.osteotomyTechnique) {
+      osteoExts.push({
+        url: "technique",
+        valueString: ost.osteotomyTechnique,
+      });
+    }
+    if (ost.graftType && ost.graftType !== "none") {
+      osteoExts.push({ url: "graftType", valueString: ost.graftType });
+      if (ost.graftDonorSite) {
+        osteoExts.push({
+          url: "graftDonorSite",
+          valueString: ost.graftDonorSite,
+        });
+      }
+    }
+    if (ost.fixation) {
+      osteoExts.push({ url: "fixation", valueString: ost.fixation });
+    }
+    if (ost.threeDPlanning) {
+      osteoExts.push({ url: "threeDPlanning", valueBoolean: true });
+    }
+    const ext = {
+      url: "urn:opus:corrective-osteotomy",
+      extension: osteoExts,
+    };
+    if (procedure.extension) {
+      procedure.extension.push(ext);
+    } else {
+      procedure.extension = [ext];
+    }
+  }
+
   // bodySite with procedure/implant-aware laterality and digit context
   const laterality = (proc.laterality ??
     proc.implantDetails?.laterality ??

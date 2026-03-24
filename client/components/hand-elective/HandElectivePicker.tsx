@@ -4,7 +4,7 @@
  * Two-step subcategory-browse → diagnosis-list picker for elective hand cases.
  * Rendered inline in DiagnosisGroupEditor when handCaseType === "elective".
  *
- * Step 1: 7 subcategory cards in a 2-column grid + search bar
+ * Step 1: 8 subcategory cards in a 2-column grid + search bar
  * Step 2: Flat diagnosis list within selected subcategory
  *
  * Replaces the generic DiagnosisPicker for elective hand, providing a curated
@@ -46,6 +46,7 @@ const ELECTIVE_SUBCATEGORIES: {
   { key: "Dupuytren's Disease", icon: "layers", label: "Dupuytren's Disease" },
   { key: "Joint & Degenerative", icon: "disc", label: "Joint & Degenerative" },
   { key: "Elective Tendon", icon: "link", label: "Elective Tendon" },
+  { key: "Post-traumatic Bone", icon: "tool", label: "Post-traumatic Bone" },
   { key: "Rheumatoid Hand", icon: "activity", label: "Rheumatoid Hand" },
   { key: "Tumours & Other", icon: "target", label: "Tumours & Masses" },
   { key: "Congenital", icon: "star", label: "Congenital" },
