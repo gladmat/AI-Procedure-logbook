@@ -5,7 +5,10 @@ import type {
   AnticoagulationProtocolId,
   FlapMonitoringProtocolId,
 } from "@/types/surgicalPreferences";
-import type { SkinCancerLesionAssessment } from "./skinCancer";
+import type {
+  SkinCancerLesionAssessment,
+  ExcisionCompleteness,
+} from "./skinCancer";
 import type { JointImplantDetails } from "./jointImplant";
 import type { MediaTag } from "./media";
 import type { OperativeRole, SupervisionLevel } from "./operativeRole";
@@ -1589,16 +1592,9 @@ export interface BodyContouringDetails {
   drainOutputMl?: number;
 }
 
-export type ExcisionCompleteness = "complete" | "incomplete" | "uncertain";
-
-export const EXCISION_COMPLETENESS_LABELS: Record<
-  ExcisionCompleteness,
-  string
-> = {
-  complete: "Complete",
-  incomplete: "Incomplete",
-  uncertain: "Uncertain",
-};
+// Re-export from canonical source for backward compatibility
+export type { ExcisionCompleteness } from "./skinCancer";
+export { EXCISION_COMPLETENESS_LABELS } from "./skinCancer";
 
 export interface SkinLesionExcisionDetails {
   histologyDiagnosis?: string;

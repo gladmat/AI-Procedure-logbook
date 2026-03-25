@@ -40,6 +40,11 @@ yarn-error.*
 # local Claude worktrees
 .claude/worktrees/
 
+# Replit / AI session artifacts
+.local/
+attached_assets/
+.test-results/
+
 # typescript
 *.tsbuildinfo
 

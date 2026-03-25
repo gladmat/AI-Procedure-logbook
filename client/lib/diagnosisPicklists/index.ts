@@ -25,7 +25,6 @@ import type {
 
 import { HAND_SURGERY_DIAGNOSES } from "./handSurgeryDiagnoses";
 import { BURNS_DIAGNOSES } from "./burnsDiagnoses";
-import { BODY_CONTOURING_DIAGNOSES } from "./bodyContouringDiagnoses";
 import { BREAST_DIAGNOSES } from "./breastDiagnoses";
 import { AESTHETICS_DIAGNOSES } from "./aestheticsDiagnoses";
 import { GENERAL_DIAGNOSES } from "./generalDiagnoses";
@@ -41,7 +40,6 @@ import { PERIPHERAL_NERVE_DIAGNOSES } from "./peripheralNerveDiagnoses";
 
 export { HAND_SURGERY_DIAGNOSES } from "./handSurgeryDiagnoses";
 export { BURNS_DIAGNOSES } from "./burnsDiagnoses";
-export { BODY_CONTOURING_DIAGNOSES } from "./bodyContouringDiagnoses";
 export { BREAST_DIAGNOSES } from "./breastDiagnoses";
 export { AESTHETICS_DIAGNOSES } from "./aestheticsDiagnoses";
 export { GENERAL_DIAGNOSES } from "./generalDiagnoses";

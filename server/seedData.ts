@@ -1,6 +1,6 @@
 import { type InsertSnomedRef } from "@shared/schema";
 
-export const vesselSeedData: InsertSnomedRef[] = [
+const vesselSeedData: InsertSnomedRef[] = [
   // LOWER LEG ARTERIES
   {
     snomedCtCode: "181349004",
@@ -662,7 +662,7 @@ export const vesselSeedData: InsertSnomedRef[] = [
   },
 ];
 
-export const flapTypeSeedData: InsertSnomedRef[] = [
+const flapTypeSeedData: InsertSnomedRef[] = [
   // Common free flaps with SNOMED CT codes
   {
     snomedCtCode: "234298008",
@@ -826,7 +826,7 @@ export const flapTypeSeedData: InsertSnomedRef[] = [
   },
 ];
 
-export const donorVesselSeedData: InsertSnomedRef[] = [
+const donorVesselSeedData: InsertSnomedRef[] = [
   // ALT Flap donor vessels
   {
     snomedCtCode: "244311009",
@@ -980,7 +980,7 @@ export const donorVesselSeedData: InsertSnomedRef[] = [
   },
 ];
 
-export const compositionOptions: InsertSnomedRef[] = [
+const compositionOptions: InsertSnomedRef[] = [
   {
     snomedCtCode: "comp_fasciocutaneous",
     displayName: "Fasciocutaneous",
@@ -1060,7 +1060,7 @@ export const compositionOptions: InsertSnomedRef[] = [
   },
 ];
 
-export const anatomicalRegionOptions: InsertSnomedRef[] = [
+const anatomicalRegionOptions: InsertSnomedRef[] = [
   {
     snomedCtCode: "region_lower_leg",
     displayName: "Lower leg",
@@ -1140,7 +1140,7 @@ export const anatomicalRegionOptions: InsertSnomedRef[] = [
   },
 ];
 
-export const couplingMethodOptions: InsertSnomedRef[] = [
+const couplingMethodOptions: InsertSnomedRef[] = [
   {
     snomedCtCode: "coupling_hand_sewn",
     displayName: "Hand-sewn",
@@ -1176,7 +1176,7 @@ export const couplingMethodOptions: InsertSnomedRef[] = [
   },
 ];
 
-export const anastomosisConfigOptions: InsertSnomedRef[] = [
+const anastomosisConfigOptions: InsertSnomedRef[] = [
   {
     snomedCtCode: "config_end_to_end",
     displayName: "End-to-end",
@@ -1212,7 +1212,7 @@ export const anastomosisConfigOptions: InsertSnomedRef[] = [
   },
 ];
 
-export const comorbidityOptions: InsertSnomedRef[] = [
+const comorbidityOptions: InsertSnomedRef[] = [
   {
     snomedCtCode: "84114007",
     displayName: "Acquired brain injury",
@@ -1575,7 +1575,7 @@ export const comorbidityOptions: InsertSnomedRef[] = [
   },
 ];
 
-export const anaestheticTypeOptions: InsertSnomedRef[] = [
+const anaestheticTypeOptions: InsertSnomedRef[] = [
   {
     snomedCtCode: "50697003",
     displayName: "General anaesthesia",

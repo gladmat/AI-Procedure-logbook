@@ -34,6 +34,7 @@ Key capabilities: multi-specialty case logging, SNOMED CT coded diagnoses and pr
 - **Hand Elective UX + Dupuytren Module COMPLETE** — reconstruction pathway multi-select pending actions, elective hand laterality simplified to Left/Right only, trigger finger per-finger multi-select, Dupuytren's split into primary/recurrent/palm-only diagnoses with DupuytrenAssessment component (per-ray MCP/PIP measurement, auto-calculated Tubiana staging, first web space, diathesis features, previous treatment tracking), removed flat Tubiana staging config, CSV/FHIR export support, 37 tests
 - **Team Sharing Phases 1–8 COMPLETE** — Career stage internationalisation (88 stages, 6 countries, 6-tier seniority), team contacts CRUD + Settings UI, case form Team section (chip-based operative team tagging, 6-pill SectionNavBar), sharing server infrastructure (E2EE, assessments, push), operativeTeam → share-on-save bridge, EPA derivation (seniority-chain algorithm, 14 tests), seniority-tier-based assessor role detection, background contact discovery (24h throttle), link confirmation + discovery badges, invitation emails (Resend, amber-branded), signup email matching, learning curve dashboard (dot plot charts, teaching aggregate, calibration score)
 - **Facial & Peripheral Nerve Remediation Phases 1–2 COMPLETE** — Category renamed to "Facial & Peripheral Nerve", BP diagnoses collapsed (8→4: obstetric, traumatic, radiation, tumour), compression neuropathy subcategory (10 entries), facial nerve cross-referenced from H&N (9 entries), nerve tumour module (4 entries with nerveTumourModule flag), context-aware nerve picker (bodyRegion filtering), DIAGNOSIS_TO_NERVE auto-select (20 mappings), 4 rendering paths (BP-only, compression-lightweight, nerve-tumour-minimal, standard), laterality inside assessment (Left/Right only), BP aetiology-filtered mechanisms, neuroma affected nerve Section 0, legacy ID aliases for removed BP entries, 22 facial reanimation procedures cross-tagged peripheral_nerve, deriveInjuryPatternLabel for inferred BP pattern badge, 23 tests
+- **Code Audit & Remediation COMPLETE** — Removed 7 unused npm packages, dead `teams`/`teamMembers` schema tables, 6 dead code files, 9 unused seed data exports; fixed patient identifier hashing inconsistency (inbox SHA-256 → HMAC-SHA256 consistent with case storage); deduplicated `ExcisionCompleteness`, disambiguated `LiposuctionArea`/`AmputationLevel` type name collisions; deleted ~45MB Replit session artifacts; deprecated `bodyContouringDiagnoses` stub removed
 - **Phase 5 IN PROGRESS** — Version 2.5.0, EAS config done (dev/preview/production profiles), pending manual regression + TestFlight submission
 
 ## Tech stack
@@ -133,7 +134,7 @@ server/
   __tests__/                     # 3 test files (auth, validation, staging config)
 shared/
   schema.ts                      # Drizzle ORM table definitions, 8 tables
-migrations/                      # 4 SQL migration files
+migrations/                      # 7 SQL migration files
 ```
 
 ## Architecture
@@ -188,13 +189,15 @@ Header uses a truncating centered title. Header right is compact: overflow icon 
 - All field setters use `?? ""` / `?? defaultValue` (unconditional) so cleared fields persist
 - `handleSaveRef.current` always points to latest `handleSave` closure
 
-## Database schema (PostgreSQL, 14 tables)
+## Database schema (PostgreSQL, 12 tables)
 
 Defined in `shared/schema.ts`. All PKs are UUIDs via `gen_random_uuid()`. Cascade deletes on user deletion.
 
 Tables: `users` (auth + tokenVersion for JWT revocation), `profiles` (1:1 with JSONB professionalRegistrations + surgicalPreferences + phone + discoverable), `user_facilities`, `user_device_keys` (X25519 E2EE), `password_reset_tokens` (single-use, 1hr expiry), `snomed_ref`, `team_contacts` (per-user operative team roster, JSONB facilityIds, optional linkedUserId → users), `shared_cases` (E2EE case sharing with recipient role + verification status), `case_key_envelopes` (per-device wrapped case keys), `case_assessments` (blinded supervisor/trainee assessments), `assessment_key_envelopes` (released on mutual reveal), `push_tokens` (Expo push notification tokens).
 
-**Performance indexes** (`migrations/add_performance_indexes.sql`): 8 additional indexes on high-frequency query paths. All `IF NOT EXISTS`.
+Legacy `teams` and `teamMembers` tables removed in `20260326_drop_legacy_teams.sql` — replaced by `team_contacts`.
+
+**Performance indexes** (`migrations/add_performance_indexes.sql`): indexes on high-frequency query paths. All `IF NOT EXISTS`.
 
 ## API endpoints (server/routes.ts)
 
@@ -1224,7 +1227,7 @@ Touch targets: minimum 48px (`Spacing.touchTarget`)
 - **Expo slug:** surgical-logbook
 - **EAS Project ID:** 0bc1b91c-c240-4f4e-b030-31d16389cd1e
 - **Expo account:** @gladmat
-- **Version:** 2.5.0, buildNumber 5
+- **Version:** 2.5.0, buildNumber 7
 - **New Architecture:** enabled
 - **React Compiler:** enabled (experimental)
 
@@ -1320,7 +1323,7 @@ RACS MALT codes and other training-programme formats are derived at export time 
 
 ## Testing
 
-- **Framework:** Vitest 4.0.18, **1427 tests** across 76 files
+- **Framework:** Vitest 4.0.18, **1417 tests** across 75 files
 - **Client tests:** `client/lib/__tests__/` and `client/components/` — covering hand trauma (diagnosis, mapping, ux), skin cancer (config 89, phase4 11, phase5 18, diagnoses 7), dashboard (selectors 7), hand (infection 42, elective 103), dupuytren (37), joint implant (44), osteotomy (18), media (encryption 7, fileStorage 3, tagHelpers 82, captureProtocols 41, operativeMedia 19, form 4, defaults 4, context 3), inbox (storage 13, assignment 17), capture (smartImportPrefs 10, sharedIngress 2), case (specialty 5, storageCache 4, draftPersistence 1), statistics (helpers 3, stats 7), dates (values 12, normalization 4), export (implant 3, breast), planned case (18), media organiser (15), NHI validation (12), patient identity (11), operative role (68), head & neck integration (4), breast (phase3, phase4, export), FISS calculator (12), craniofacial, aesthetics, burns, peripheral nerve, lymphoedema, team contacts (11), operative team (15), sharing bridge (8), EPA derivation (14), assessment roles + calibration (22), plus media UI coverage
 - **Server tests:** `server/__tests__/` — auth (17), validation (7), diagnosisStagingConfig (3), teamContacts (17), invitations (6)
 - **Run:** `npm run test` (once) or `npm run test:watch` (watch mode)

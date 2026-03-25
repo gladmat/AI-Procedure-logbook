@@ -15,7 +15,7 @@ import type {
 } from "@/types/case";
 import { ALL_PROTOCOLS, type CaptureStep } from "@/data/mediaCaptureProtocols";
 import { suggestTemporalTag } from "@/lib/mediaTagHelpers";
-import { hashPatientIdentifier } from "@/lib/patientIdentifierHash";
+import { hashPatientIdentifierHmac } from "@/lib/patientIdentifierHmac";
 
 /**
  * Look up a capture protocol by its ID.
@@ -159,17 +159,20 @@ export function autoAssign(
 /**
  * Find cases that match the patient identifier(s) from inbox items.
  * Case-insensitive comparison. Sorted by match count descending.
+ * Uses per-user HMAC-SHA256 (consistent with main case storage).
  */
-export function findMatchingCasesByPatientId(
+export async function findMatchingCasesByPatientId(
   inboxItems: InboxItem[],
   cases: Case[],
-): { caseData: Case; matchCount: number }[] {
+): Promise<{ caseData: Case; matchCount: number }[]> {
   // Collect unique patient hashes from inbox items.
   const pidSet = new Set<string>();
   for (const item of inboxItems) {
     const pid =
       item.patientIdentifierHash ??
-      hashPatientIdentifier(item.patientIdentifier);
+      (item.patientIdentifier
+        ? await hashPatientIdentifierHmac(item.patientIdentifier)
+        : undefined);
     if (pid) pidSet.add(pid);
   }
 
@@ -178,8 +181,8 @@ export function findMatchingCasesByPatientId(
   const matches: { caseData: Case; matchCount: number }[] = [];
 
   for (const c of cases) {
-    const casePid = hashPatientIdentifier(c.patientIdentifier);
-    if (!casePid) continue;
+    if (!c.patientIdentifier) continue;
+    const casePid = await hashPatientIdentifierHmac(c.patientIdentifier);
     if (!pidSet.has(casePid)) continue;
 
     // Count how many inbox items match this case's patient ID
@@ -187,7 +190,9 @@ export function findMatchingCasesByPatientId(
     for (const item of inboxItems) {
       const itemHash =
         item.patientIdentifierHash ??
-        hashPatientIdentifier(item.patientIdentifier);
+        (item.patientIdentifier
+          ? await hashPatientIdentifierHmac(item.patientIdentifier)
+          : undefined);
       if (itemHash === casePid) {
         matchCount++;
       }

@@ -53,6 +53,13 @@ vi.mock("../mediaStorage", () => ({
   }),
 }));
 
+// Mock HMAC module — return deterministic hash without Keychain access
+vi.mock("@/lib/patientIdentifierHmac", () => ({
+  hashPatientIdentifierHmac: vi.fn(async (id: string) =>
+    `hmac:${id.toUpperCase().trim()}`,
+  ),
+}));
+
 import {
   _resetInboxForTests,
   addMultipleToInbox,
@@ -128,7 +135,8 @@ describe("inboxStorage", () => {
       templateId: "free_flap",
       templateStepIndex: 2,
     });
-    expect(item.patientIdentifierHash).toMatch(/^[a-f0-9]{64}$/);
+    // HMAC hash is mocked to return `hmac:` + uppercased/trimmed identifier
+    expect(item.patientIdentifierHash).toBe("hmac:NHI 123");
 
     const persisted = getInboxItems()[0];
     expect(persisted).toBeDefined();

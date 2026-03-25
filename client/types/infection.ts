@@ -231,7 +231,7 @@ export const RECONSTRUCTION_TYPE_LABELS: Record<ReconstructionType, string> = {
   vac_negative_pressure: "VAC/Negative Pressure",
 };
 
-export type AmputationLevel =
+export type InfectionAmputationLevel =
   | "digit"
   | "ray"
   | "partial_hand"
@@ -242,7 +242,7 @@ export type AmputationLevel =
   | "above_knee"
   | "other";
 
-export const AMPUTATION_LEVEL_LABELS: Record<AmputationLevel, string> = {
+export const INFECTION_AMPUTATION_LEVEL_LABELS: Record<InfectionAmputationLevel, string> = {
   digit: "Digit",
   ray: "Ray",
   partial_hand: "Partial Hand",
@@ -262,7 +262,7 @@ export interface InfectionEpisode {
   debridementExtent?: DebridementExtent;
   compartmentsInvolved?: CompartmentsInvolved;
   reconstructionType?: ReconstructionType;
-  amputationLevel?: AmputationLevel;
+  amputationLevel?: InfectionAmputationLevel;
   notes?: string;
   createdAt: string;
   updatedAt: string;

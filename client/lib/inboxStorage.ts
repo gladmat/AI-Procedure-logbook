@@ -9,7 +9,7 @@ import {
   deleteEncryptedMedia,
 } from "./mediaStorage";
 import type { InboxItem, InboxState } from "@/types/inbox";
-import { hashPatientIdentifier } from "@/lib/patientIdentifierHash";
+import { hashPatientIdentifierHmac } from "@/lib/patientIdentifierHmac";
 import { syncNativeInboxCount } from "@/lib/nativeExtensionBridge";
 import {
   getActiveUserIdOrNull,
@@ -218,7 +218,9 @@ async function migrateStateIfNeeded(): Promise<void> {
       const patientIdentifierHash =
         "patientIdentifierHash" in candidate && candidate.patientIdentifierHash
           ? candidate.patientIdentifierHash
-          : hashPatientIdentifier(patientIdentifier);
+          : patientIdentifier
+            ? await hashPatientIdentifierHmac(patientIdentifier)
+            : undefined;
 
       return {
         id: candidate.id,
@@ -319,16 +321,17 @@ export async function initializeInboxStorage(): Promise<void> {
   await _initializationPromise;
 }
 
-function buildInboxItem(args: {
+async function buildInboxItem(args: {
   id: string;
   localUri: string;
   mimeType: string;
   sourceType: InboxItem["sourceType"];
   metadata?: InboxItemMetadata;
-}): InboxItem {
+}): Promise<InboxItem> {
   const now = new Date().toISOString();
   const importedAt = args.metadata?.importedAt ?? now;
   const capturedAt = args.metadata?.capturedAt ?? importedAt;
+  const pid = args.metadata?.patientIdentifier?.trim() || undefined;
 
   return {
     id: args.id,
@@ -343,10 +346,10 @@ function buildInboxItem(args: {
     height: args.metadata?.height,
     templateId: args.metadata?.templateId,
     templateStepIndex: args.metadata?.templateStepIndex,
-    patientIdentifier: args.metadata?.patientIdentifier?.trim() || undefined,
-    patientIdentifierHash: hashPatientIdentifier(
-      args.metadata?.patientIdentifier ?? undefined,
-    ),
+    patientIdentifier: pid,
+    patientIdentifierHash: pid
+      ? await hashPatientIdentifierHmac(pid)
+      : undefined,
   };
 }
 
@@ -393,7 +396,7 @@ export async function addToInbox(
   metadata?: InboxItemMetadata,
 ): Promise<InboxItem> {
   const saved = await saveEncryptedMediaFromUri(sourceUri, mimeType);
-  const item = buildInboxItem({
+  const item = await buildInboxItem({
     id: uuidv4(),
     localUri: saved.localUri,
     mimeType: saved.mimeType,

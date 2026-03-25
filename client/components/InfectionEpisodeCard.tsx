@@ -12,13 +12,13 @@ import {
   DebridementExtent,
   CompartmentsInvolved,
   ReconstructionType,
-  AmputationLevel,
+  InfectionAmputationLevel,
   EPISODE_INTENT_LABELS,
   DEBRIDEMENT_EXTENT_LABELS,
   DEBRIDEMENT_EXTENT_DESCRIPTIONS,
   COMPARTMENTS_INVOLVED_LABELS,
   RECONSTRUCTION_TYPE_LABELS,
-  AMPUTATION_LEVEL_LABELS,
+  INFECTION_AMPUTATION_LEVEL_LABELS,
 } from "@/types/infection";
 
 interface InfectionEpisodeCardProps {
@@ -57,7 +57,7 @@ const RECONSTRUCTION_OPTIONS = Object.entries(RECONSTRUCTION_TYPE_LABELS).map(
   }),
 );
 
-const AMPUTATION_OPTIONS = Object.entries(AMPUTATION_LEVEL_LABELS).map(
+const AMPUTATION_OPTIONS = Object.entries(INFECTION_AMPUTATION_LEVEL_LABELS).map(
   ([value, label]) => ({
     value,
     label,
@@ -274,7 +274,7 @@ export function InfectionEpisodeCard({
                 ]}
                 onSelect={(v) =>
                   updateEpisode({
-                    amputationLevel: (v as AmputationLevel) || undefined,
+                    amputationLevel: (v as InfectionAmputationLevel) || undefined,
                   })
                 }
               />

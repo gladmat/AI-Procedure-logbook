@@ -3,7 +3,7 @@ import { View, TextInput, Pressable, StyleSheet } from "react-native";
 import * as Haptics from "expo-haptics";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
-import type { LiposuctionDetails, LiposuctionArea } from "@/types/aesthetics";
+import type { LiposuctionDetails } from "@/types/aesthetics";
 import { Spacing, BorderRadius } from "@/constants/theme";
 
 interface LiposuctionDetailsCardProps {

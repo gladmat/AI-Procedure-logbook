@@ -254,7 +254,7 @@ export class DatabaseStorage implements IStorage {
   async deleteUserAccount(userId: string): Promise<void> {
     // With cascades configured, deleting the user row removes all related data:
     // profiles, user_facilities, user_device_keys, password_reset_tokens,
-    // team_members, and owned teams.
+    // team_contacts, shared_cases, case_key_envelopes, and push_tokens.
     await db.delete(users).where(eq(users.id, userId));
   }
 

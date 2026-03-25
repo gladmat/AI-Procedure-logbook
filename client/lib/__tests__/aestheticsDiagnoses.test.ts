@@ -3,7 +3,6 @@ import {
   AESTHETICS_DIAGNOSES,
   getAestheticsSubcategories,
 } from "../diagnosisPicklists/aestheticsDiagnoses";
-import { BODY_CONTOURING_DIAGNOSES } from "../diagnosisPicklists/bodyContouringDiagnoses";
 import {
   ALL_DIAGNOSES,
   findDiagnosisById,
@@ -86,9 +85,13 @@ describe("Subcategories", () => {
 });
 
 describe("Body contouring backward compatibility", () => {
-  it("BODY_CONTOURING_DIAGNOSES re-export returns absorbed entries", () => {
+  it("body contouring subcategories absorbed into aesthetics", () => {
+    const bcSubcategories = ["Abdomen", "Upper Body", "Lower Body", "Post-Bariatric", "Lipodystrophy"];
+    const bcDiagnoses = AESTHETICS_DIAGNOSES.filter((dx) =>
+      bcSubcategories.includes(dx.subcategory),
+    );
     // 12 original + 1 new post-bariatric breast = 13
-    expect(BODY_CONTOURING_DIAGNOSES.length).toBeGreaterThanOrEqual(12);
+    expect(bcDiagnoses.length).toBeGreaterThanOrEqual(12);
   });
 
   it("all 12 bc_dx_* aliases resolve via findDiagnosisById", () => {

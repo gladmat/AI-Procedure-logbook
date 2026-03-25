@@ -390,13 +390,13 @@ export interface LiposuctionDetails {
   technique: "sal" | "pal" | "vaser" | "lal" | "rfal" | "wal" | "hd_vaser";
   role: "primary" | "adjunct";
   wettingTechnique: "dry" | "wet" | "superwet" | "tumescent";
-  areas: LiposuctionArea[];
+  areas: AestheticLiposuctionArea[];
   totalAspirateMl?: number;
   totalTumescentMl?: number;
   cannulaSizeMm?: number;
 }
 
-export interface LiposuctionArea {
+export interface AestheticLiposuctionArea {
   site: string;
   aspirateVolumeMl?: number;
 }

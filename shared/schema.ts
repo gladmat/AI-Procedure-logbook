@@ -222,93 +222,9 @@ export const insertUserFacilitySchema = createInsertSchema(userFacilities).omit(
 export type UserFacility = typeof userFacilities.$inferSelect;
 export type InsertUserFacility = z.infer<typeof insertUserFacilitySchema>;
 
-export const teams = pgTable(
-  "teams",
-  {
-    id: varchar("id")
-      .primaryKey()
-      .default(sql`gen_random_uuid()`),
-    name: text("name").notNull(),
-    description: text("description"),
-    ownerId: varchar("owner_id")
-      .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
-    createdAt: timestamp("created_at")
-      .default(sql`CURRENT_TIMESTAMP`)
-      .notNull(),
-    updatedAt: timestamp("updated_at")
-      .default(sql`CURRENT_TIMESTAMP`)
-      .notNull(),
-  },
-  (t) => [index("teams_owner_idx").on(t.ownerId)],
-);
-
-export const teamsRelations = relations(teams, ({ one, many }) => ({
-  owner: one(users, {
-    fields: [teams.ownerId],
-    references: [users.id],
-  }),
-  members: many(teamMembers),
-}));
-
-export const insertTeamSchema = createInsertSchema(teams).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
-export type Team = typeof teams.$inferSelect;
-export type InsertTeam = z.infer<typeof insertTeamSchema>;
-
-export const teamMemberRoleEnum = [
-  "owner",
-  "admin",
-  "member",
-  "viewer",
-] as const;
-export type TeamMemberRole = (typeof teamMemberRoleEnum)[number];
-
-export const teamMembers = pgTable(
-  "team_members",
-  {
-    id: varchar("id")
-      .primaryKey()
-      .default(sql`gen_random_uuid()`),
-    teamId: varchar("team_id")
-      .notNull()
-      .references(() => teams.id, { onDelete: "cascade" }),
-    userId: varchar("user_id")
-      .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
-    role: varchar("role", { length: 20 }).default("member").notNull(),
-    joinedAt: timestamp("joined_at")
-      .default(sql`CURRENT_TIMESTAMP`)
-      .notNull(),
-  },
-  (t) => [
-    index("team_members_team_idx").on(t.teamId),
-    index("team_members_user_idx").on(t.userId),
-  ],
-);
-
-export const teamMembersRelations = relations(teamMembers, ({ one }) => ({
-  team: one(teams, {
-    fields: [teamMembers.teamId],
-    references: [teams.id],
-  }),
-  user: one(users, {
-    fields: [teamMembers.userId],
-    references: [users.id],
-  }),
-}));
-
-export const insertTeamMemberSchema = createInsertSchema(teamMembers).omit({
-  id: true,
-  joinedAt: true,
-});
-
-export type TeamMember = typeof teamMembers.$inferSelect;
-export type InsertTeamMember = z.infer<typeof insertTeamMemberSchema>;
+// NOTE: Legacy `teams` and `teamMembers` tables removed — replaced by
+// `team_contacts` (per-user operative team roster with optional linkedUserId).
+// Migration `20260326_drop_legacy_teams.sql` drops the DB tables.
 
 export const snomedRef = pgTable(
   "snomed_ref",

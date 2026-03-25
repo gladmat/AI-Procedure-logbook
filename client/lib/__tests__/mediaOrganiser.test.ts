@@ -1,7 +1,15 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { InboxItem } from "@/types/inbox";
 import type { OperativeMediaItem, Case } from "@/types/case";
 import type { CaptureStep } from "@/data/mediaCaptureProtocols";
+
+// Mock HMAC module — return a deterministic hash (uppercased + prefixed) so
+// tests can verify matching logic without Keychain access.
+vi.mock("@/lib/patientIdentifierHmac", () => ({
+  hashPatientIdentifierHmac: async (id: string) =>
+    `hmac:${id.toUpperCase().trim()}`,
+}));
+
 import {
   autoAssign,
   findMatchingCasesByPatientId,
@@ -187,7 +195,7 @@ describe("autoAssign", () => {
 // ═══════════════════════════════════════════════════════════
 
 describe("findMatchingCasesByPatientId", () => {
-  it("matches inbox items to cases by patient ID", () => {
+  it("matches inbox items to cases by patient ID", async () => {
     const inboxItems = [
       makeInboxItem({ patientIdentifier: "NHI-123" }),
       makeInboxItem({ patientIdentifier: "NHI-123" }),
@@ -197,34 +205,34 @@ describe("findMatchingCasesByPatientId", () => {
       makeCase({ id: "c2", patientIdentifier: "NHI-456" }),
     ];
 
-    const result = findMatchingCasesByPatientId(inboxItems, cases);
+    const result = await findMatchingCasesByPatientId(inboxItems, cases);
     expect(result).toHaveLength(1);
     expect(result[0]!.caseData.id).toBe("c1");
     expect(result[0]!.matchCount).toBe(2);
   });
 
-  it("returns empty array when no patient IDs in inbox items", () => {
+  it("returns empty array when no patient IDs in inbox items", async () => {
     const inboxItems = [makeInboxItem(), makeInboxItem()];
     const cases = [makeCase({ patientIdentifier: "NHI-123" })];
-    expect(findMatchingCasesByPatientId(inboxItems, cases)).toEqual([]);
+    expect(await findMatchingCasesByPatientId(inboxItems, cases)).toEqual([]);
   });
 
-  it("performs case-insensitive matching", () => {
+  it("performs case-insensitive matching", async () => {
     const inboxItems = [makeInboxItem({ patientIdentifier: "nhi-123" })];
     const cases = [makeCase({ id: "c1", patientIdentifier: "NHI-123" })];
 
-    const result = findMatchingCasesByPatientId(inboxItems, cases);
+    const result = await findMatchingCasesByPatientId(inboxItems, cases);
     expect(result).toHaveLength(1);
     expect(result[0]!.caseData.id).toBe("c1");
   });
 
-  it("returns empty array when no cases match", () => {
+  it("returns empty array when no cases match", async () => {
     const inboxItems = [makeInboxItem({ patientIdentifier: "NHI-999" })];
     const cases = [makeCase({ patientIdentifier: "NHI-123" })];
-    expect(findMatchingCasesByPatientId(inboxItems, cases)).toEqual([]);
+    expect(await findMatchingCasesByPatientId(inboxItems, cases)).toEqual([]);
   });
 
-  it("sorts results by match count descending", () => {
+  it("sorts results by match count descending", async () => {
     const inboxItems = [
       makeInboxItem({ patientIdentifier: "NHI-A" }),
       makeInboxItem({ patientIdentifier: "NHI-B" }),
@@ -236,7 +244,7 @@ describe("findMatchingCasesByPatientId", () => {
       makeCase({ id: "cB", patientIdentifier: "NHI-B" }),
     ];
 
-    const result = findMatchingCasesByPatientId(inboxItems, cases);
+    const result = await findMatchingCasesByPatientId(inboxItems, cases);
     expect(result).toHaveLength(2);
     expect(result[0]!.caseData.id).toBe("cB");
     expect(result[0]!.matchCount).toBe(3);
@@ -244,11 +252,11 @@ describe("findMatchingCasesByPatientId", () => {
     expect(result[1]!.matchCount).toBe(1);
   });
 
-  it("handles empty inputs", () => {
-    expect(findMatchingCasesByPatientId([], [])).toEqual([]);
-    expect(findMatchingCasesByPatientId([], [makeCase()])).toEqual([]);
+  it("handles empty inputs", async () => {
+    expect(await findMatchingCasesByPatientId([], [])).toEqual([]);
+    expect(await findMatchingCasesByPatientId([], [makeCase()])).toEqual([]);
     expect(
-      findMatchingCasesByPatientId(
+      await findMatchingCasesByPatientId(
         [makeInboxItem({ patientIdentifier: "X" })],
         [],
       ),
